@@ -22,6 +22,22 @@ export const Secondary: Story = {
   },
 };
 
+export const Ghost: Story = {
+  args: {
+    children: "취소",
+    variant: "ghost",
+  },
+};
+
+export const SendIcon: Story = {
+  args: {
+    "aria-label": "분석 요청",
+    children: "↑",
+    size: "icon",
+    variant: "send",
+  },
+};
+
 export const Loading: Story = {
   args: {
     children: "분석",

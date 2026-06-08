@@ -6,18 +6,22 @@ export interface InputComposerProps extends Omit<
   "onChange" | "value"
 > {
   actionLabel?: string;
+  label?: string;
   maxLength: number;
   onSubmit: () => void;
   onValueChange: (value: string) => void;
+  submitAriaLabel?: string;
   value: string;
 }
 
 export function InputComposer({
-  actionLabel = "Analyze",
+  actionLabel = "↑",
+  label = "기본 분석",
   maxLength,
   onSubmit,
   onValueChange,
   placeholder,
+  submitAriaLabel = "분석 요청",
   value,
   ...props
 }: InputComposerProps) {
@@ -35,10 +39,19 @@ export function InputComposer({
         {...props}
       />
       <div className="nado-composer__footer">
-        <span className="nado-composer__count">
-          {value.length} / {maxLength}
-        </span>
-        <Button disabled={isSubmitDisabled} onClick={onSubmit}>
+        <div className="nado-composer__meta">
+          <span className="nado-composer__label">{label}</span>
+          <span className="nado-composer__count">
+            {value.length} / {maxLength}
+          </span>
+        </div>
+        <Button
+          aria-label={submitAriaLabel}
+          disabled={isSubmitDisabled}
+          onClick={onSubmit}
+          size="icon"
+          variant="send"
+        >
           {actionLabel}
         </Button>
       </div>

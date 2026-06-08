@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost";
-export type ButtonSize = "sm" | "md";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "send";
+export type ButtonSize = "sm" | "md" | "icon";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
@@ -31,6 +31,7 @@ export function Button({
 
   return (
     <button
+      aria-busy={isLoading ? true : undefined}
       className={classes}
       disabled={disabled || isLoading}
       type={type}
