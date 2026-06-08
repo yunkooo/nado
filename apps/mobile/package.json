@@ -8,7 +8,7 @@
     "build": "tsc --noEmit -p tsconfig.json && node -e \"const fs=require('fs'); fs.mkdirSync('dist',{recursive:true}); fs.writeFileSync('dist/.buildkeep','');\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests --config ../../vitest.config.ts",
-    "lint": "prettier --check App.tsx app.json index.ts tsconfig.json package.json"
+    "lint": "prettier --check App.tsx app.json index.ts tsconfig.json package.json \"src/**/*.ts\""
   },
   "dependencies": {
     "@nado/shared": "workspace:*",
