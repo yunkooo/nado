@@ -205,23 +205,20 @@ export default function HomePage() {
 
   return (
     <main className="nado-app-shell">
-      <button
-        aria-controls="nado-sidebar"
-        aria-expanded={isSidebarOpen}
-        aria-label={isSidebarOpen ? "사이드바 닫기" : "사이드바 열기"}
-        className={[
-          "nado-mobile-menu-button",
-          isSidebarOpen ? "nado-mobile-menu-button--open" : null,
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        onClick={() => setIsSidebarOpen((current) => !current)}
-        type="button"
-      >
-        <span className="nado-mobile-menu-button__bar" />
-        <span className="nado-mobile-menu-button__bar" />
-        <span className="nado-mobile-menu-button__bar" />
-      </button>
+      {!isSidebarOpen ? (
+        <button
+          aria-controls="nado-sidebar"
+          aria-expanded="false"
+          aria-label="사이드바 열기"
+          className="nado-mobile-menu-button"
+          onClick={() => setIsSidebarOpen(true)}
+          type="button"
+        >
+          <span className="nado-mobile-menu-button__bar" />
+          <span className="nado-mobile-menu-button__bar" />
+          <span className="nado-mobile-menu-button__bar" />
+        </button>
+      ) : null}
       {isSidebarOpen ? (
         <button
           aria-label="사이드바 배경 닫기"
@@ -238,12 +235,23 @@ export default function HomePage() {
         aria-label="주요 화면"
       >
         <div className="nado-sidebar__main">
-          <div className="nado-brand">
-            <span className="nado-brand__mark" aria-hidden="true">
-              n
-            </span>
-            <strong className="nado-brand__name">nado</strong>
-          </div>
+          <header className="nado-sidebar__header">
+            <div className="nado-brand">
+              <span className="nado-brand__mark" aria-hidden="true">
+                n
+              </span>
+              <strong className="nado-brand__name">nado</strong>
+            </div>
+            <button
+              aria-label="사이드바 닫기"
+              className="nado-sidebar-close"
+              onClick={closeSidebar}
+              type="button"
+            >
+              <span className="nado-sidebar-close__bar" />
+              <span className="nado-sidebar-close__bar" />
+            </button>
+          </header>
           <nav className="nado-nav" aria-label="주요 메뉴">
             <a
               className="nado-nav__item nado-nav__item--active"

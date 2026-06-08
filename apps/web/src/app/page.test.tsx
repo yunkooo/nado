@@ -54,6 +54,14 @@ describe("HomePage", () => {
     expect(markup).toContain('aria-expanded="false"');
   });
 
+  it("renders a close button inside the sidebar header", () => {
+    const markup = renderToStaticMarkup(createElement(HomePage));
+
+    expect(markup).toContain("nado-sidebar__header");
+    expect(markup).toContain("nado-sidebar-close");
+    expect(markup).toContain('aria-label="사이드바 닫기"');
+  });
+
   it("keeps the desktop sidebar fixed to the viewport height", () => {
     expect(styles).toContain("height: 100dvh");
     expect(styles).toContain("position: sticky");
@@ -63,6 +71,7 @@ describe("HomePage", () => {
 
   it("defines the mobile drawer sidebar styles", () => {
     expect(styles).toContain(".nado-mobile-menu-button");
+    expect(styles).toContain(".nado-sidebar-close");
     expect(styles).toContain(".nado-sidebar--open");
     expect(styles).toContain("transform: translateX(-100%)");
     expect(styles).toContain("transform: translateX(0)");

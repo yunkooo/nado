@@ -34,6 +34,7 @@ a {
 }
 
 .nado-mobile-menu-button,
+.nado-sidebar-close,
 .nado-sidebar-scrim {
   display: none;
 }
@@ -53,6 +54,13 @@ a {
 .nado-sidebar__main {
   display: grid;
   gap: 12px;
+}
+
+.nado-sidebar__header {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
 }
 
 .nado-sidebar__footer {
@@ -187,22 +195,40 @@ a {
     border-radius: var(--nado-radius-pill);
     display: block;
     height: 2px;
-    transition:
-      opacity 140ms ease,
-      transform 140ms ease;
     width: 18px;
   }
 
-  .nado-mobile-menu-button--open .nado-mobile-menu-button__bar:first-child {
-    transform: translateY(6px) rotate(45deg);
+  .nado-sidebar-close {
+    align-items: center;
+    background: var(--nado-color-surface);
+    border: 1px solid var(--nado-color-border);
+    border-radius: var(--nado-radius-md);
+    cursor: pointer;
+    display: inline-flex;
+    height: 36px;
+    justify-content: center;
+    margin-left: auto;
+    padding: 0;
+    position: relative;
+    width: 36px;
   }
 
-  .nado-mobile-menu-button--open .nado-mobile-menu-button__bar:nth-child(2) {
-    opacity: 0;
+  .nado-sidebar-close__bar {
+    background: var(--nado-color-ink);
+    border-radius: var(--nado-radius-pill);
+    display: block;
+    height: 2px;
+    left: 9px;
+    position: absolute;
+    width: 18px;
   }
 
-  .nado-mobile-menu-button--open .nado-mobile-menu-button__bar:last-child {
-    transform: translateY(-6px) rotate(-45deg);
+  .nado-sidebar-close__bar:first-child {
+    transform: rotate(45deg);
+  }
+
+  .nado-sidebar-close__bar:last-child {
+    transform: rotate(-45deg);
   }
 
   .nado-sidebar-scrim {
