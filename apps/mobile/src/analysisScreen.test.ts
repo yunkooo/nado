@@ -5,6 +5,7 @@ import {
   ANALYSIS_PRIVACY_HELPER_TEXT,
   getAnalysisComposerState,
   mobileTabs,
+  shouldShowAnalysisResult,
 } from "./analysisScreen";
 
 describe("mobile analysis screen state", () => {
@@ -16,11 +17,11 @@ describe("mobile analysis screen state", () => {
     ]);
   });
 
-  it("disables analysis for blank input", () => {
+  it("disables analysis and keeps the AI transfer notice for blank input", () => {
     expect(getAnalysisComposerState("   ")).toEqual({
       countLabel: `3 / ${MAX_ANALYSIS_TEXT_LENGTH}`,
       hasInput: false,
-      helperText: "",
+      helperText: ANALYSIS_PRIVACY_HELPER_TEXT,
       placeholderText: ANALYSIS_INPUT_PLACEHOLDER_TEXT,
       isSubmitDisabled: true,
     });
@@ -34,5 +35,19 @@ describe("mobile analysis screen state", () => {
       placeholderText: ANALYSIS_INPUT_PLACEHOLDER_TEXT,
       isSubmitDisabled: false,
     });
+  });
+
+  it("does not show analysis result before submit", () => {
+    expect(shouldShowAnalysisResult("I need help.", null)).toBe(false);
+  });
+
+  it("shows analysis result after submitting the current text", () => {
+    expect(shouldShowAnalysisResult("I need help.", "I need help.")).toBe(true);
+  });
+
+  it("hides the previous result when input changes after submit", () => {
+    expect(shouldShowAnalysisResult("I need more help.", "I need help.")).toBe(
+      false,
+    );
   });
 });

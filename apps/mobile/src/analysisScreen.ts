@@ -17,8 +17,17 @@ export function getAnalysisComposerState(text: string) {
   return {
     countLabel: `${text.length} / ${MAX_ANALYSIS_TEXT_LENGTH}`,
     hasInput,
-    helperText: hasInput ? ANALYSIS_PRIVACY_HELPER_TEXT : "",
+    helperText: ANALYSIS_PRIVACY_HELPER_TEXT,
     placeholderText: ANALYSIS_INPUT_PLACEHOLDER_TEXT,
     isSubmitDisabled: !hasInput,
   };
+}
+
+export function shouldShowAnalysisResult(
+  text: string,
+  submittedText: string | null,
+) {
+  const currentText = text.trim();
+
+  return currentText.length > 0 && currentText === submittedText;
 }

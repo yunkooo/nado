@@ -10,13 +10,29 @@ import {
   View,
 } from "react-native";
 import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
-import { getAnalysisComposerState, mobileTabs } from "./src/analysisScreen";
+import {
+  getAnalysisComposerState,
+  mobileTabs,
+  shouldShowAnalysisResult,
+} from "./src/analysisScreen";
 
 export default function App() {
   const [text, setText] = useState(
     "I was wondering if you could help me with this issue.",
   );
+  const [submittedText, setSubmittedText] = useState<string | null>(null);
   const composerState = getAnalysisComposerState(text);
+  const shouldShowResult = shouldShowAnalysisResult(text, submittedText);
+
+  const handleAnalyzePress = () => {
+    const trimmedText = text.trim();
+
+    if (trimmedText.length === 0) {
+      return;
+    }
+
+    setSubmittedText(trimmedText);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -41,7 +57,7 @@ export default function App() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          {composerState.hasInput ? (
+          {shouldShowResult ? (
             <View style={styles.resultArea}>
               <Text style={styles.resultTitle}>분석 결과</Text>
               <Text style={styles.emptyText}>
@@ -71,6 +87,7 @@ export default function App() {
               <Pressable
                 accessibilityRole="button"
                 disabled={composerState.isSubmitDisabled}
+                onPress={handleAnalyzePress}
                 style={({ pressed }) => [
                   styles.analyzeButton,
                   composerState.isSubmitDisabled
