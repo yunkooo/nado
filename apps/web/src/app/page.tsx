@@ -2,29 +2,214 @@
 
 import { useState } from "react";
 import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
-import { Button, InputComposer } from "@nado/ui";
+import {
+  AnalysisResult,
+  Button,
+  InputComposer,
+  InputSample,
+  type AnalysisResultData,
+} from "@nado/ui";
 
-const sampleChunks = [
-  { english: "I was wondering if", korean: "제가 ~인지 궁금해하고 있었습니다" },
-  { english: "you could help me", korean: "당신이 저를 도와줄 수 있는지" },
-  { english: "with this issue", korean: "이 문제와 관련해서" },
-];
+const analysisFixture: AnalysisResultData = {
+  sourceText:
+    "Many developers choose a framework because it promises faster shipping, but the real test appears after the product grows. A simple setup can help a small team move quickly, while unclear rules can make every change harder to review. Before adding tools, the team should understand which problems are frequent, which costs are acceptable, and when a lighter process is enough. This habit keeps the codebase easier to maintain without slowing the product team down as the company changes.",
+  translation: [
+    "개발자들은 프레임워크가 더 빠른 출시를 가능하게 해줄 거라고 기대하며 선택하지만, 실제 검증은 제품이 커진 뒤에 시작됩니다.",
+    "단순한 구성은 작은 팀이 빠르게 움직이게 도와주지만, 규칙이 흐릿하면 모든 변경을 검토하는 일이 더 어려워질 수 있습니다.",
+    "도구를 추가하기 전에 팀은 자주 반복되는 문제가 무엇인지, 감당 가능한 비용은 어디까지인지, 더 가벼운 절차로 충분한 순간은 언제인지 먼저 이해해야 합니다.",
+    "이런 습관은 회사가 바뀌어도 제품 팀의 속도를 과하게 늦추지 않으면서 코드베이스를 유지보수하기 쉬운 상태로 지켜줍니다.",
+  ],
+  translationNotes: [
+    {
+      term: "promises faster shipping",
+      note: "개발 맥락에서는 “더 빠른 배송”보다 “더 빠른 출시/배포”에 가깝다.",
+    },
+    {
+      term: "the real test appears",
+      note: "문자 그대로의 시험보다 제품 성장 후 드러나는 유지보수 난관을 뜻한다.",
+    },
+    {
+      term: "lighter process is enough",
+      note: "절차가 가볍다는 뜻보다 과한 도구 없이도 충분한 수준을 말한다.",
+    },
+  ],
+  sentences: [
+    {
+      indexLabel: "문장 1",
+      chunks: [
+        {
+          english: "Many developers choose a framework",
+          korean: "많은 개발자들은 프레임워크를 선택합니다",
+        },
+        {
+          english: "because it promises faster shipping",
+          korean: "그것이 더 빠른 출시를 약속하기 때문에",
+        },
+        {
+          english: "but the real test appears after the product grows",
+          korean: "하지만 진짜 시험은 제품이 성장한 뒤에 나타납니다",
+        },
+      ],
+      naturalTranslation:
+        "많은 개발자들은 더 빠른 출시를 기대하며 프레임워크를 선택하지만, 제품이 성장한 뒤에야 진짜 문제가 드러납니다.",
+      grammarPoints: [
+        {
+          target: "because",
+          type: "이유 접속사",
+          explanation: "프레임워크를 선택한 이유를 설명합니다.",
+        },
+        {
+          target: "but",
+          type: "대조 접속사",
+          explanation: "기대와 실제 테스트를 대조합니다.",
+        },
+      ],
+    },
+    {
+      indexLabel: "문장 2",
+      chunks: [
+        {
+          english: "A simple setup can help a small team move quickly",
+          korean: "단순한 설정은 작은 팀이 빠르게 움직이도록 도울 수 있습니다",
+        },
+        {
+          english: "while unclear rules can make every change harder to review",
+          korean:
+            "반면 불명확한 규칙은 모든 변경을 검토하기 더 어렵게 만들 수 있습니다",
+        },
+      ],
+      naturalTranslation:
+        "단순한 구성은 작은 팀이 빠르게 움직이게 도와주지만, 규칙이 흐릿하면 모든 변경을 검토하는 일이 더 어려워질 수 있습니다.",
+      grammarPoints: [
+        {
+          target: "help a team move",
+          type: "help + 목적어 + 동사원형",
+          explanation: "팀이 움직이도록 돕는다는 구조입니다.",
+        },
+        {
+          target: "make every change harder",
+          type: "make + 목적어 + 형용사",
+          explanation: "변경을 더 어렵게 만든다는 의미를 만듭니다.",
+        },
+      ],
+    },
+    {
+      indexLabel: "문장 3",
+      chunks: [
+        {
+          english: "Before adding tools",
+          korean: "도구를 추가하기 전에",
+        },
+        {
+          english: "the team should understand which problems are frequent",
+          korean: "팀은 어떤 문제가 자주 발생하는지 이해해야 합니다",
+        },
+        {
+          english: "which costs are acceptable",
+          korean: "어떤 비용이 받아들일 수 있는지",
+        },
+        {
+          english: "and when a lighter process is enough",
+          korean: "그리고 언제 더 가벼운 절차로 충분한지",
+        },
+      ],
+      naturalTranslation:
+        "도구를 추가하기 전에 팀은 자주 반복되는 문제가 무엇인지, 감당 가능한 비용은 어디까지인지, 더 가벼운 절차로 충분한 순간은 언제인지 먼저 이해해야 합니다.",
+      grammarPoints: [
+        {
+          target: "Before adding",
+          type: "전치사 + 동명사",
+          explanation: "“추가하기 전에”라는 시간 조건입니다.",
+        },
+        {
+          target: "which / when",
+          type: "간접의문문",
+          explanation: "understand의 목적어 역할을 하는 질문 덩어리입니다.",
+        },
+      ],
+    },
+    {
+      indexLabel: "문장 4",
+      chunks: [
+        {
+          english: "This habit keeps the codebase easier to maintain",
+          korean:
+            "이 습관은 코드베이스를 유지보수하기 더 쉬운 상태로 유지합니다",
+        },
+        {
+          english: "without slowing the product team down",
+          korean: "제품 팀의 속도를 늦추지 않으면서",
+        },
+        {
+          english: "as the company changes",
+          korean: "회사가 변하는 동안",
+        },
+      ],
+      naturalTranslation:
+        "이런 습관은 회사가 바뀌어도 제품 팀의 속도를 과하게 늦추지 않으면서 코드베이스를 유지보수하기 쉬운 상태로 지켜줍니다.",
+      grammarPoints: [
+        {
+          target: "keeps the codebase easier",
+          type: "keep + 목적어 + 형용사",
+          explanation: "코드베이스를 더 쉬운 상태로 유지한다는 구조입니다.",
+        },
+        {
+          target: "without slowing",
+          type: "without + 동명사",
+          explanation: "속도를 늦추지 않는 조건을 붙입니다.",
+        },
+        {
+          target: "as the company changes",
+          type: "시간 접속사",
+          explanation: "회사가 변하는 동안이라는 배경을 덧붙입니다.",
+        },
+      ],
+    },
+  ],
+  vocabularySuggestions: [
+    {
+      term: "framework",
+      meaning: "프레임워크",
+    },
+    {
+      term: "shipping",
+      meaning: "출시/배포",
+    },
+    {
+      term: "setup",
+      meaning: "구성",
+    },
+    {
+      term: "acceptable",
+      meaning: "감수 가능한",
+    },
+    {
+      term: "lighter process",
+      meaning: "더 가벼운 절차",
+    },
+    {
+      term: "maintain",
+      meaning: "유지보수하다",
+    },
+  ],
+};
+
+const inputDisclosure =
+  "입력한 문장은 AI 분석을 위해 전송되며, 단어장에는 원문 문장을 저장하지 않습니다.";
 
 export default function HomePage() {
-  const [text, setText] = useState(
-    "I was wondering if you could help me with this issue.",
-  );
-
-  const helperText =
-    text.trim().length === 0
-      ? "영어 한 문장 또는 짧은 문단을 입력해 주세요."
-      : "입력한 문장은 AI 분석을 위해 전송되며, 단어장에는 원문 문장을 저장하지 않습니다.";
+  const [text, setText] = useState("");
 
   return (
     <main className="nado-app-shell">
       <aside className="nado-sidebar" aria-label="주요 화면">
-        <strong className="nado-logo">nado</strong>
-        <nav className="nado-nav">
+        <div className="nado-brand">
+          <span className="nado-brand__mark" aria-hidden="true">
+            n
+          </span>
+          <strong className="nado-brand__name">nado</strong>
+        </div>
+        <nav className="nado-nav" aria-label="주요 메뉴">
           <a className="nado-nav__item nado-nav__item--active" href="/">
             분석
           </a>
@@ -39,63 +224,32 @@ export default function HomePage() {
 
       <section className="nado-workspace" aria-label="분석 화면">
         <header className="nado-topbar">
-          <div>
-            <p className="nado-eyebrow">English reading note</p>
-            <h1>영어 문장을 독해 노트로 바꾸기</h1>
+          <div className="nado-topbar__title-group">
+            <strong>기본 분석</strong>
+            <span>모드 선택 없이 자동으로 학습 흐름 적용</span>
           </div>
           <Button variant="secondary">Google 로그인</Button>
         </header>
 
-        <div className="nado-result">
-          <section className="nado-section" aria-labelledby="translation-title">
-            <h2 id="translation-title">자연스러운 번역</h2>
-            <p>이 문제를 도와주실 수 있는지 궁금합니다.</p>
-          </section>
-
-          <section className="nado-section" aria-labelledby="point-title">
-            <h2 id="point-title">번역 포인트</h2>
-            <p>
-              <strong>was wondering if</strong>는 직접 묻기보다 부드럽고
-              정중하게 요청을 시작하는 표현입니다.
-            </p>
-          </section>
-
-          <section className="nado-section" aria-labelledby="chunk-title">
-            <h2 id="chunk-title">문장별 분석</h2>
-            <div className="nado-chunks">
-              {sampleChunks.map((chunk, index) => (
-                <span className="nado-chunk" key={chunk.english}>
-                  <span className="nado-chunk__english">{chunk.english}</span>
-                  <span className="nado-chunk__korean">{chunk.korean}</span>
-                  {index < sampleChunks.length - 1 ? (
-                    <span className="nado-slash">/</span>
-                  ) : null}
-                </span>
-              ))}
-            </div>
-          </section>
-
-          <section className="nado-section" aria-labelledby="suggestion-title">
-            <h2 id="suggestion-title">우선 저장 추천</h2>
-            <div className="nado-chip-row">
-              <button className="nado-chip" type="button">
-                wonder if
-              </button>
-              <button className="nado-chip" type="button">
-                help with
-              </button>
-            </div>
-          </section>
-        </div>
+        <section className="nado-analysis-workspace">
+          <div className="nado-analysis-page">
+            <InputSample
+              count={analysisFixture.sourceText.length}
+              maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+              text={analysisFixture.sourceText}
+            />
+            <AnalysisResult result={analysisFixture} />
+          </div>
+        </section>
 
         <footer className="nado-composer-wrap">
-          <p className="nado-helper">{helperText}</p>
+          <p className="nado-input-disclosure">{inputDisclosure}</p>
           <InputComposer
-            actionLabel="분석"
             maxLength={MAX_ANALYSIS_TEXT_LENGTH}
             onSubmit={() => undefined}
             onValueChange={setText}
-            placeholder="영어 문장을 입력하세요."
+            placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
+            submitAriaLabel="분석 요청"
             value={text}
           />
         </footer>

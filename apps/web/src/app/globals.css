@@ -27,151 +27,138 @@ a {
 }
 
 .nado-app-shell {
+  background: var(--nado-color-surface);
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: 224px minmax(0, 1fr);
   min-height: 100vh;
 }
 
 .nado-sidebar {
-  background: #24352d;
-  color: #f7f8f5;
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-  padding: 24px;
+  align-content: start;
+  background: var(--nado-color-sidebar);
+  border-right: 1px solid #d8d8d0;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
 }
 
-.nado-logo {
-  font-size: 1.3rem;
+.nado-brand {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+  height: 38px;
+  padding: 0 8px;
+}
+
+.nado-brand__mark {
+  align-items: center;
+  background: var(--nado-color-ink);
+  border-radius: 7px;
+  color: #fbfbf8;
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 800;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+.nado-brand__name {
+  font-size: 0.9375rem;
+  font-weight: 800;
 }
 
 .nado-nav {
   display: grid;
-  gap: 8px;
+  gap: 4px;
 }
 
 .nado-nav__item {
-  border-radius: 8px;
-  color: #dbe4dc;
-  padding: 10px 12px;
+  align-items: center;
+  border-radius: 7px;
+  color: #66665f;
+  display: flex;
+  font-size: 0.8125rem;
+  height: 34px;
+  padding: 0 10px;
 }
 
 .nado-nav__item--active {
-  background: #f7f8f5;
-  color: #17201b;
+  background: var(--nado-color-sidebar-active);
+  color: var(--nado-color-ink);
+  font-weight: 700;
 }
 
 .nado-workspace {
+  background: var(--nado-color-surface);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  min-width: 0;
   min-height: 100vh;
 }
 
 .nado-topbar {
   align-items: center;
+  background: var(--nado-color-surface);
   border-bottom: 1px solid var(--nado-color-border);
   display: flex;
+  gap: 16px;
   justify-content: space-between;
-  padding: 24px 32px;
+  min-height: 52px;
+  padding: 0 24px;
 }
 
-.nado-topbar h1 {
-  font-size: 1.5rem;
-  line-height: 1.25;
-  margin: 4px 0 0;
+.nado-topbar__title-group {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  min-width: 0;
 }
 
-.nado-eyebrow,
-.nado-helper {
+.nado-topbar__title-group strong {
+  font-size: 0.9375rem;
+}
+
+.nado-topbar__title-group span {
   color: var(--nado-color-ink-muted);
-  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
 }
 
-.nado-eyebrow {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
+.nado-analysis-workspace {
+  overflow: auto;
+  padding: 28px 28px 150px;
 }
 
-.nado-result {
+.nado-analysis-page {
   display: grid;
   gap: 24px;
-  padding: 32px;
-}
-
-.nado-section {
-  border-bottom: 1px solid var(--nado-color-border);
-  display: grid;
-  gap: 10px;
-  padding-bottom: 24px;
-}
-
-.nado-section h2 {
-  font-size: 1rem;
-  margin: 0;
-}
-
-.nado-section p {
-  line-height: 1.75;
-  margin: 0;
-}
-
-.nado-chunks {
-  align-items: end;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.nado-chunk {
-  align-items: center;
-  display: inline-flex;
-  gap: 10px;
-}
-
-.nado-chunk__english,
-.nado-chunk__korean {
-  display: block;
-  white-space: nowrap;
-}
-
-.nado-chunk__english {
-  font-weight: 700;
-}
-
-.nado-chunk__korean {
-  color: var(--nado-color-ink-muted);
-  font-size: 0.8rem;
-}
-
-.nado-slash {
-  color: var(--nado-color-accent);
-  font-weight: 800;
-}
-
-.nado-chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.nado-chip {
-  background: #fff3ed;
-  border: 1px solid #f1cbbd;
-  border-radius: 999px;
-  color: #8c4528;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-  padding: 6px 10px;
+  margin: 0 auto;
+  max-width: 1080px;
 }
 
 .nado-composer-wrap {
-  background: color-mix(in srgb, var(--nado-color-canvas), white 60%);
+  background: rgba(255, 255, 255, 0.92);
   border-top: 1px solid var(--nado-color-border);
   display: grid;
   gap: 10px;
-  padding: 16px 32px 24px;
+  padding: 14px 24px 18px;
+}
+
+.nado-composer-wrap .nado-composer,
+.nado-input-disclosure {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 860px;
+  width: 100%;
+}
+
+.nado-input-disclosure {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  margin-bottom: 0;
+  margin-top: 0;
 }
 
 @media (max-width: 820px) {
@@ -180,25 +167,28 @@ a {
   }
 
   .nado-sidebar {
-    flex-direction: row;
-    justify-content: space-between;
-    padding: 16px;
-  }
-
-  .nado-nav {
-    display: flex;
+    display: none;
   }
 
   .nado-topbar {
     align-items: flex-start;
     flex-direction: column;
-    gap: 16px;
-    padding: 20px;
+    justify-content: center;
+    padding: 12px 14px;
   }
 
-  .nado-result,
+  .nado-topbar__title-group {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .nado-analysis-workspace {
+    padding: 18px 14px 140px;
+  }
+
   .nado-composer-wrap {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 14px;
+    padding-right: 14px;
   }
 }
