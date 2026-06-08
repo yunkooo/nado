@@ -224,10 +224,6 @@ export default function HomePage() {
 
       <section className="nado-workspace" aria-label="분석 화면">
         <header className="nado-topbar">
-          <div className="nado-topbar__title-group">
-            <strong>기본 분석</strong>
-            <span>모드 선택 없이 자동으로 학습 흐름 적용</span>
-          </div>
           <Button variant="secondary">Google 로그인</Button>
         </header>
 

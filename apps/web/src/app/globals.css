@@ -103,26 +103,9 @@ a {
   border-bottom: 1px solid var(--nado-color-border);
   display: flex;
   gap: 16px;
-  justify-content: space-between;
+  justify-content: flex-end;
   min-height: 52px;
   padding: 0 24px;
-}
-
-.nado-topbar__title-group {
-  align-items: center;
-  display: flex;
-  gap: 16px;
-  min-width: 0;
-}
-
-.nado-topbar__title-group strong {
-  font-size: 0.9375rem;
-}
-
-.nado-topbar__title-group span {
-  color: var(--nado-color-ink-muted);
-  font-size: 0.75rem;
-  line-height: 1.5;
 }
 
 .nado-analysis-workspace {
@@ -171,16 +154,8 @@ a {
   }
 
   .nado-topbar {
-    align-items: flex-start;
-    flex-direction: column;
-    justify-content: center;
+    justify-content: flex-end;
     padding: 12px 14px;
-  }
-
-  .nado-topbar__title-group {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 4px;
   }
 
   .nado-analysis-workspace {

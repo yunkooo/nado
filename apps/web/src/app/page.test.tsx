@@ -24,4 +24,11 @@ describe("HomePage", () => {
     expect(markup).toContain("0 / 500");
     expect(markup).toContain("disabled");
   });
+
+  it("does not render the topbar analysis mode copy", () => {
+    const markup = renderToStaticMarkup(createElement(HomePage));
+
+    expect(markup).not.toContain("nado-topbar__title-group");
+    expect(markup).not.toContain("모드 선택 없이 자동으로 학습 흐름 적용");
+  });
 });
