@@ -199,10 +199,44 @@ const inputDisclosure =
 
 export default function HomePage() {
   const [text, setText] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const closeSidebar = () => setIsSidebarOpen(false);
 
   return (
     <main className="nado-app-shell">
-      <aside className="nado-sidebar" aria-label="주요 화면">
+      <button
+        aria-controls="nado-sidebar"
+        aria-expanded={isSidebarOpen}
+        aria-label={isSidebarOpen ? "사이드바 닫기" : "사이드바 열기"}
+        className={[
+          "nado-mobile-menu-button",
+          isSidebarOpen ? "nado-mobile-menu-button--open" : null,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        onClick={() => setIsSidebarOpen((current) => !current)}
+        type="button"
+      >
+        <span className="nado-mobile-menu-button__bar" />
+        <span className="nado-mobile-menu-button__bar" />
+        <span className="nado-mobile-menu-button__bar" />
+      </button>
+      {isSidebarOpen ? (
+        <button
+          aria-label="사이드바 배경 닫기"
+          className="nado-sidebar-scrim"
+          onClick={closeSidebar}
+          type="button"
+        />
+      ) : null}
+      <aside
+        className={["nado-sidebar", isSidebarOpen ? "nado-sidebar--open" : null]
+          .filter(Boolean)
+          .join(" ")}
+        id="nado-sidebar"
+        aria-label="주요 화면"
+      >
         <div className="nado-sidebar__main">
           <div className="nado-brand">
             <span className="nado-brand__mark" aria-hidden="true">
@@ -211,13 +245,21 @@ export default function HomePage() {
             <strong className="nado-brand__name">nado</strong>
           </div>
           <nav className="nado-nav" aria-label="주요 메뉴">
-            <a className="nado-nav__item nado-nav__item--active" href="/">
+            <a
+              className="nado-nav__item nado-nav__item--active"
+              href="/"
+              onClick={closeSidebar}
+            >
               분석
             </a>
-            <a className="nado-nav__item" href="/vocabulary">
+            <a
+              className="nado-nav__item"
+              href="/vocabulary"
+              onClick={closeSidebar}
+            >
               단어장
             </a>
-            <a className="nado-nav__item" href="/review">
+            <a className="nado-nav__item" href="/review" onClick={closeSidebar}>
               복습
             </a>
           </nav>

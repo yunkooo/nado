@@ -38,10 +38,20 @@ describe("HomePage", () => {
   it("places the Google login button at the bottom of the sidebar", () => {
     const markup = renderToStaticMarkup(createElement(HomePage));
 
+    expect(markup).toContain('id="nado-sidebar"');
     expect(markup).toContain("nado-sidebar__footer");
     expect(markup).toContain("nado-sidebar-login");
     expect(markup).toContain("Google 로그인");
     expect(markup).not.toContain("nado-topbar");
+  });
+
+  it("renders a collapsed mobile sidebar trigger", () => {
+    const markup = renderToStaticMarkup(createElement(HomePage));
+
+    expect(markup).toContain("nado-mobile-menu-button");
+    expect(markup).toContain('aria-label="사이드바 열기"');
+    expect(markup).toContain('aria-controls="nado-sidebar"');
+    expect(markup).toContain('aria-expanded="false"');
   });
 
   it("keeps the desktop sidebar fixed to the viewport height", () => {
@@ -49,5 +59,13 @@ describe("HomePage", () => {
     expect(styles).toContain("position: sticky");
     expect(styles).toContain("top: 0");
     expect(styles).toContain("overflow-y: auto");
+  });
+
+  it("defines the mobile drawer sidebar styles", () => {
+    expect(styles).toContain(".nado-mobile-menu-button");
+    expect(styles).toContain(".nado-sidebar--open");
+    expect(styles).toContain("transform: translateX(-100%)");
+    expect(styles).toContain("transform: translateX(0)");
+    expect(styles).toContain(".nado-sidebar-scrim");
   });
 });
