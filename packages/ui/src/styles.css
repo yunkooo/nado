@@ -209,6 +209,7 @@
   background: var(--nado-color-surface);
   border: 1px solid var(--nado-color-border);
   border-radius: var(--nado-radius-md);
+  container: nado-result-card / inline-size;
   overflow: hidden;
 }
 
@@ -314,10 +315,11 @@
 
 .nado-reading-line {
   align-items: flex-start;
-  container-type: inline-size;
+  container: nado-reading-line / inline-size;
   display: flex;
   flex-wrap: wrap;
   gap: 12px 10px;
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -461,7 +463,40 @@
   }
 }
 
-@container (max-width: 420px) {
+@container nado-result-card (max-width: 420px) {
+  .nado-result-card__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .nado-result-card__meta {
+    flex: initial;
+  }
+
+  .nado-section {
+    padding: 18px;
+  }
+
+  .nado-sentence-analysis {
+    grid-template-columns: 1fr;
+  }
+
+  .nado-sentence-analysis__index {
+    padding-top: 0;
+  }
+
+  .nado-grammar-list__item {
+    gap: 4px;
+    grid-template-columns: 1fr;
+  }
+
+  .nado-grammar-list__label {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+}
+
+@container nado-reading-line (max-width: 420px) {
   .nado-reading-line__english,
   .nado-reading-line__korean {
     overflow-wrap: anywhere;
