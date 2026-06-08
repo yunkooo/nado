@@ -34,12 +34,28 @@ a {
 }
 
 .nado-sidebar {
-  align-content: start;
   background: var(--nado-color-sidebar);
   border-right: 1px solid #d8d8d0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 14px;
+}
+
+.nado-sidebar__main {
   display: grid;
   gap: 12px;
-  padding: 14px;
+}
+
+.nado-sidebar__footer {
+  border-top: 1px solid #d8d8d0;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.nado-sidebar-login {
+  justify-content: flex-start;
+  width: 100%;
 }
 
 .nado-brand {
@@ -92,20 +108,9 @@ a {
 .nado-workspace {
   background: var(--nado-color-surface);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto;
   min-width: 0;
   min-height: 100vh;
-}
-
-.nado-topbar {
-  align-items: center;
-  background: var(--nado-color-surface);
-  border-bottom: 1px solid var(--nado-color-border);
-  display: flex;
-  gap: 16px;
-  justify-content: flex-end;
-  min-height: 52px;
-  padding: 0 24px;
 }
 
 .nado-analysis-workspace {
@@ -151,11 +156,6 @@ a {
 
   .nado-sidebar {
     display: none;
-  }
-
-  .nado-topbar {
-    justify-content: flex-end;
-    padding: 12px 14px;
   }
 
   .nado-analysis-workspace {

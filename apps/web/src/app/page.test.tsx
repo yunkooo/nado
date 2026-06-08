@@ -31,4 +31,13 @@ describe("HomePage", () => {
     expect(markup).not.toContain("nado-topbar__title-group");
     expect(markup).not.toContain("모드 선택 없이 자동으로 학습 흐름 적용");
   });
+
+  it("places the Google login button at the bottom of the sidebar", () => {
+    const markup = renderToStaticMarkup(createElement(HomePage));
+
+    expect(markup).toContain("nado-sidebar__footer");
+    expect(markup).toContain("nado-sidebar-login");
+    expect(markup).toContain("Google 로그인");
+    expect(markup).not.toContain("nado-topbar");
+  });
 });

@@ -203,30 +203,33 @@ export default function HomePage() {
   return (
     <main className="nado-app-shell">
       <aside className="nado-sidebar" aria-label="주요 화면">
-        <div className="nado-brand">
-          <span className="nado-brand__mark" aria-hidden="true">
-            n
-          </span>
-          <strong className="nado-brand__name">nado</strong>
+        <div className="nado-sidebar__main">
+          <div className="nado-brand">
+            <span className="nado-brand__mark" aria-hidden="true">
+              n
+            </span>
+            <strong className="nado-brand__name">nado</strong>
+          </div>
+          <nav className="nado-nav" aria-label="주요 메뉴">
+            <a className="nado-nav__item nado-nav__item--active" href="/">
+              분석
+            </a>
+            <a className="nado-nav__item" href="/vocabulary">
+              단어장
+            </a>
+            <a className="nado-nav__item" href="/review">
+              복습
+            </a>
+          </nav>
         </div>
-        <nav className="nado-nav" aria-label="주요 메뉴">
-          <a className="nado-nav__item nado-nav__item--active" href="/">
-            분석
-          </a>
-          <a className="nado-nav__item" href="/vocabulary">
-            단어장
-          </a>
-          <a className="nado-nav__item" href="/review">
-            복습
-          </a>
-        </nav>
+        <footer className="nado-sidebar__footer">
+          <Button className="nado-sidebar-login" variant="secondary">
+            Google 로그인
+          </Button>
+        </footer>
       </aside>
 
       <section className="nado-workspace" aria-label="분석 화면">
-        <header className="nado-topbar">
-          <Button variant="secondary">Google 로그인</Button>
-        </header>
-
         <section className="nado-analysis-workspace">
           <div className="nado-analysis-page">
             <InputSample
