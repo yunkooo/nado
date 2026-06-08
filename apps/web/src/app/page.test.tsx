@@ -1,7 +1,10 @@
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import HomePage from "./page";
+
+const styles = readFileSync(new URL("./globals.css", import.meta.url), "utf8");
 
 describe("HomePage", () => {
   it("renders the PRD analysis flow from the Storybook components", () => {
@@ -39,5 +42,12 @@ describe("HomePage", () => {
     expect(markup).toContain("nado-sidebar-login");
     expect(markup).toContain("Google 로그인");
     expect(markup).not.toContain("nado-topbar");
+  });
+
+  it("keeps the desktop sidebar fixed to the viewport height", () => {
+    expect(styles).toContain("height: 100dvh");
+    expect(styles).toContain("position: sticky");
+    expect(styles).toContain("top: 0");
+    expect(styles).toContain("overflow-y: auto");
   });
 });
