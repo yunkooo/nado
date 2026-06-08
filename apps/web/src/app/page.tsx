@@ -199,9 +199,20 @@ const inputDisclosure =
 
 export default function HomePage() {
   const [text, setText] = useState("");
+  const [hasAnalysisResult, setHasAnalysisResult] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const closeSidebar = () => setIsSidebarOpen(false);
+
+  const handleSubmitAnalysis = () => {
+    const nextText = text.trim();
+
+    if (nextText.length === 0 || text.length > MAX_ANALYSIS_TEXT_LENGTH) {
+      return;
+    }
+
+    setHasAnalysisResult(true);
+  };
 
   return (
     <main className="nado-app-shell">
@@ -282,12 +293,29 @@ export default function HomePage() {
       <section className="nado-workspace" aria-label="분석 화면">
         <section className="nado-analysis-workspace">
           <div className="nado-analysis-page">
-            <InputSample
-              count={analysisFixture.sourceText.length}
-              maxLength={MAX_ANALYSIS_TEXT_LENGTH}
-              text={analysisFixture.sourceText}
-            />
-            <AnalysisResult result={analysisFixture} />
+            {hasAnalysisResult ? (
+              <>
+                <InputSample
+                  count={analysisFixture.sourceText.length}
+                  maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+                  text={analysisFixture.sourceText}
+                />
+                <AnalysisResult result={analysisFixture} />
+              </>
+            ) : (
+              <section
+                aria-label="분석 결과 없음"
+                className="nado-empty-result"
+              >
+                <span className="nado-eyebrow">분석 결과 없음</span>
+                <h1>아직 분석 결과가 없어요</h1>
+                <p>
+                  영어 문장이나 짧은 문단을 입력하고 분석을 실행하면 자연스러운
+                  번역, 문장별 끊어읽기, 문법 포인트, 저장 추천을 이곳에
+                  보여줄게요.
+                </p>
+              </section>
+            )}
           </div>
         </section>
 
@@ -295,7 +323,7 @@ export default function HomePage() {
           <p className="nado-input-disclosure">{inputDisclosure}</p>
           <InputComposer
             maxLength={MAX_ANALYSIS_TEXT_LENGTH}
-            onSubmit={() => undefined}
+            onSubmit={handleSubmitAnalysis}
             onValueChange={setText}
             placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
             submitAriaLabel="분석 요청"
