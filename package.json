@@ -13,6 +13,7 @@
     "test": "turbo test",
     "lint": "turbo lint",
     "format:check": "prettier --check .",
+    "smoke:backend": "pnpm --filter @nado/api smoke:backend",
     "supabase:start": "pnpm exec supabase start",
     "supabase:stop": "pnpm exec supabase stop",
     "supabase:status": "pnpm exec supabase status"

@@ -57,6 +57,25 @@ pnpm dev:api
 
 `/api/analyze`는 로그인 없이 사용할 수 있다. `/api/vocabulary` 계열은 Google 로그인 후 받은 Supabase access token이 필요하다.
 
+## 백엔드 smoke 검증
+
+API 서버를 실행한 상태에서 아래 명령으로 실제 HTTP 경로를 확인한다.
+
+```bash
+pnpm smoke:backend
+```
+
+기본값은 `GET /health`만 확인한다. `.env`에 `NADO_SMOKE_ANALYZE_TEXT`가 있으면 `POST /api/analyze`도 확인한다. `NADO_SMOKE_ACCESS_TOKEN`이 있으면 단어장 저장, 목록, 삭제까지 확인한다.
+
+```bash
+NADO_API_BASE_URL=http://localhost:4000 \
+NADO_SMOKE_ANALYZE_TEXT="I was wondering if you could help me." \
+NADO_SMOKE_ACCESS_TOKEN="<Supabase access token>" \
+pnpm smoke:backend
+```
+
+단어장 smoke 검증은 `NADO_SMOKE_VOCABULARY_TERM` 값으로 임시 단어를 저장한 뒤 삭제한다. 기본값은 `nado-smoke`다.
+
 ## 앱 경계
 
 - `apps/web`: Next.js 웹 MVP의 첫 구현 대상
