@@ -76,4 +76,9 @@ describe("HomePage", () => {
     expect(styles).toContain("transform: translateX(0)");
     expect(styles).toContain(".nado-sidebar-scrim");
   });
+
+  it("defines submitted analysis status styles", () => {
+    expect(styles).toContain(".nado-analysis-status");
+    expect(styles).toContain("min-height: 96px");
+  });
 });
