@@ -41,6 +41,15 @@ API 서버는 단어장 API에서 `Authorization: Bearer <Supabase access token>
 
 분석 API는 서버 환경변수의 `OPENAI_API_KEY`를 사용한다. `OPENAI_MODEL`은 기본 예시값을 제공하지만, 비용과 품질을 비교한 뒤 Railway 환경변수에서 조정할 수 있다.
 
+분석 API는 사용량 추적을 위해 `analysis_usage_limits`를 `SUPABASE_SERVICE_ROLE_KEY`로 읽고 쓴다. 이 key는 서버 전용이며 웹, 모바일, 데스크톱 클라이언트에 노출하면 안 된다. 익명 사용자는 `X-Forwarded-For`의 첫 IP를 `NADO_USAGE_IP_HASH_SALT`와 함께 SHA-256으로 해시해서 하루 단위로 추적하고, 로그인 사용자는 Supabase user id로 추적한다.
+
+일일 분석 제한은 아래 환경변수로 조정한다.
+
+- `NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT`: 익명 사용자 하루 분석 제한
+- `NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT`: 로그인 사용자 하루 분석 제한
+
+값이 없거나 `0`이면 요청을 차단하지 않고 사용량만 기록한다. 제한에 도달하면 `POST /api/analyze`는 `429`와 `Retry-After` 헤더를 반환한다.
+
 ## API 서버 확인
 
 ```bash

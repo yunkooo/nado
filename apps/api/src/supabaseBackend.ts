@@ -1,6 +1,12 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { vocabularyMeaningSchema } from "@nado/shared";
 import {
+  createAnalysisUsageService,
+  type AnalysisUsageRecord,
+  type AnalysisUsageStore,
+  type UsageIdentity,
+} from "./analysisUsageService.js";
+import {
   createVocabularyService,
   type NewVocabularyRow,
   type VocabularyRow,
@@ -9,11 +15,13 @@ import {
 
 export type SupabaseBackendOptions = {
   anonKey?: string;
+  serviceRoleKey?: string;
   supabaseUrl?: string;
 };
 
 const VOCABULARY_COLUMNS =
   "id,user_id,term,normalized_term,type,meanings,created_at,updated_at";
+const ANALYSIS_USAGE_COLUMNS = "id,user_id,ip_hash,period_start,request_count";
 
 export function createSupabaseAuthService(
   options: SupabaseBackendOptions = {},
@@ -43,6 +51,22 @@ export function createSupabaseVocabularyService(
   });
 }
 
+export function createSupabaseAnalysisUsageService(
+  options: SupabaseBackendOptions = {},
+) {
+  return createAnalysisUsageService({
+    anonymousDailyLimit: readIntegerEnv(
+      process.env.NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT,
+    ),
+    authenticatedDailyLimit: readIntegerEnv(
+      process.env.NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT,
+    ),
+    store: createSupabaseAnalysisUsageStore(
+      createServiceRoleSupabaseClient(options),
+    ),
+  });
+}
+
 function createServerSupabaseClient(
   accessToken: string | undefined,
   options: SupabaseBackendOptions,
@@ -66,6 +90,97 @@ function createServerSupabaseClient(
         : undefined,
     },
   });
+}
+
+function createServiceRoleSupabaseClient(
+  options: SupabaseBackendOptions,
+): SupabaseClient {
+  const supabaseUrl = options.supabaseUrl ?? process.env.SUPABASE_URL;
+  const serviceRoleKey =
+    options.serviceRoleKey ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      persistSession: false,
+    },
+  });
+}
+
+function createSupabaseAnalysisUsageStore(
+  client: Pick<SupabaseClient, "from">,
+): AnalysisUsageStore {
+  return {
+    async findUsage(
+      identity: UsageIdentity,
+      periodStart: string,
+    ): Promise<AnalysisUsageRecord | null> {
+      let query = client
+        .from("analysis_usage_limits")
+        .select(ANALYSIS_USAGE_COLUMNS)
+        .eq("period_start", periodStart);
+
+      query = identity.userId
+        ? query.eq("user_id", identity.userId)
+        : query.eq("ip_hash", identity.ipHash);
+
+      const { data, error } = await query.maybeSingle();
+
+      if (error) {
+        throw new Error(`Supabase usage lookup failed: ${error.message}`);
+      }
+
+      return data ? toAnalysisUsageRecord(data) : null;
+    },
+
+    async insertUsage(
+      identity: UsageIdentity,
+      periodStart: string,
+    ): Promise<AnalysisUsageRecord> {
+      const { data, error } = await client
+        .from("analysis_usage_limits")
+        .insert({
+          ip_hash: identity.ipHash,
+          period_start: periodStart,
+          request_count: 1,
+          user_id: identity.userId,
+        })
+        .select(ANALYSIS_USAGE_COLUMNS)
+        .single();
+
+      if (error) {
+        throw new Error(`Supabase usage insert failed: ${error.message}`);
+      }
+
+      return toAnalysisUsageRecord(data);
+    },
+
+    async updateUsageCount(
+      id: string,
+      requestCount: number,
+    ): Promise<AnalysisUsageRecord> {
+      const { data, error } = await client
+        .from("analysis_usage_limits")
+        .update({
+          request_count: requestCount,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .select(ANALYSIS_USAGE_COLUMNS)
+        .single();
+
+      if (error) {
+        throw new Error(`Supabase usage update failed: ${error.message}`);
+      }
+
+      return toAnalysisUsageRecord(data);
+    },
+  };
 }
 
 function createSupabaseVocabularyStore(
@@ -192,11 +307,62 @@ function toVocabularyRow(value: unknown): VocabularyRow {
   };
 }
 
+function toAnalysisUsageRecord(value: unknown): AnalysisUsageRecord {
+  if (!isRecord(value)) {
+    throw new Error("Supabase usage row was not an object.");
+  }
+
+  return {
+    id: readString(value, "id"),
+    ipHash: readNullableString(value, "ip_hash"),
+    periodStart: readString(value, "period_start"),
+    requestCount: readNumber(value, "request_count"),
+    userId: readNullableString(value, "user_id"),
+  };
+}
+
+function readIntegerEnv(value: string | undefined): number {
+  if (!value) {
+    return 0;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
 function readString(value: Record<string, unknown>, key: string): string {
   const field = value[key];
 
   if (typeof field !== "string") {
     throw new Error(`Supabase vocabulary row field ${key} was not a string.`);
+  }
+
+  return field;
+}
+
+function readNullableString(
+  value: Record<string, unknown>,
+  key: string,
+): string | null {
+  const field = value[key];
+
+  if (field === null) {
+    return null;
+  }
+
+  if (typeof field !== "string") {
+    throw new Error(`Supabase row field ${key} was not a nullable string.`);
+  }
+
+  return field;
+}
+
+function readNumber(value: Record<string, unknown>, key: string): number {
+  const field = value[key];
+
+  if (typeof field !== "number") {
+    throw new Error(`Supabase row field ${key} was not a number.`);
   }
 
   return field;

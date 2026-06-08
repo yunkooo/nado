@@ -25,6 +25,14 @@ describe("app", () => {
       status: "not_analyzable" as const,
     }),
   };
+  const analysisUsageService = {
+    consume: async () => ({
+      limit: null,
+      ok: true as const,
+      remaining: null,
+      used: 1,
+    }),
+  };
 
   it("returns health status", async () => {
     const response = await app.request("/health");
@@ -96,6 +104,7 @@ describe("app", () => {
           };
         },
       },
+      analysisUsageService,
     });
 
     const response = await app.request("/api/analyze", {
@@ -152,6 +161,7 @@ describe("app", () => {
           throw new Error("OpenAI request failed");
         },
       },
+      analysisUsageService,
     });
 
     const response = await app.request("/api/analyze", {
@@ -167,6 +177,114 @@ describe("app", () => {
         message: "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
       },
     });
+  });
+
+  it("returns rate_limited before calling the analyze service when usage is exhausted", async () => {
+    let analyzeCalls = 0;
+    const app = createApp({
+      analyzeService: {
+        analyze: async () => {
+          analyzeCalls += 1;
+
+          return {
+            reason: "not used",
+            status: "not_analyzable",
+          };
+        },
+      },
+      analysisUsageService: {
+        consume: async () => ({
+          limit: 1,
+          ok: false,
+          retryAfterSeconds: 60,
+          used: 1,
+        }),
+      },
+    });
+
+    const response = await app.request("/api/analyze", {
+      body: JSON.stringify({ text: "I was wondering if you could help me." }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("60");
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "rate_limited",
+        message: "오늘 사용할 수 있는 분석 횟수를 모두 사용했어요.",
+      },
+    });
+    expect(analyzeCalls).toBe(0);
+  });
+
+  it("uses an authenticated user id for analyze usage when a bearer token is valid", async () => {
+    const identities: unknown[] = [];
+    const app = createApp({
+      analyzeService: analysisService,
+      analysisUsageService: {
+        consume: async (identity) => {
+          identities.push(identity);
+
+          return {
+            limit: 5,
+            ok: true,
+            remaining: 4,
+            used: 1,
+          };
+        },
+      },
+      authService: {
+        getUser: async () => ({ id: "user_1" }),
+      },
+    });
+
+    const response = await app.request("/api/analyze", {
+      body: JSON.stringify({ text: "I was wondering if you could help me." }),
+      headers: {
+        Authorization: "Bearer valid-token",
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(200);
+    expect(identities).toEqual([{ ipHash: null, userId: "user_1" }]);
+  });
+
+  it("uses a hashed client IP for anonymous analyze usage", async () => {
+    const identities: Array<{ ipHash: string | null; userId: string | null }> =
+      [];
+    const app = createApp({
+      analyzeService: analysisService,
+      analysisUsageService: {
+        consume: async (identity) => {
+          identities.push(identity);
+
+          return {
+            limit: null,
+            ok: true,
+            remaining: null,
+            used: 1,
+          };
+        },
+      },
+    });
+
+    const response = await app.request("/api/analyze", {
+      body: JSON.stringify({ text: "I was wondering if you could help me." }),
+      headers: {
+        "Content-Type": "application/json",
+        "X-Forwarded-For": "203.0.113.10, 10.0.0.1",
+      },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(200);
+    expect(identities).toHaveLength(1);
+    expect(identities[0]?.userId).toBeNull();
+    expect(identities[0]?.ipHash).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it("rejects vocabulary requests without a bearer token", async () => {

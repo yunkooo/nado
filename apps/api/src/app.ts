@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Hono } from "hono";
 import {
   analyzeResponseSchema,
@@ -10,8 +11,13 @@ import type {
   SaveVocabularyRequest,
   VocabularyItem,
 } from "@nado/shared";
+import type {
+  AnalysisUsageDecision,
+  UsageIdentity,
+} from "./analysisUsageService.js";
 import { createOpenAIAnalysisService } from "./openaiAnalysisService.js";
 import {
+  createSupabaseAnalysisUsageService,
   createSupabaseAuthService,
   createSupabaseVocabularyService,
 } from "./supabaseBackend.js";
@@ -59,9 +65,15 @@ export type VocabularyServiceFactory = (
   accessToken: string,
 ) => VocabularyService;
 
+export type AnalysisUsageService = {
+  consume(identity: UsageIdentity): Promise<AnalysisUsageDecision>;
+};
+
 export type AppDependencies = {
   analyzeService?: AnalyzeService;
+  analysisUsageService?: AnalysisUsageService;
   authService?: AuthService;
+  usageIpHashSalt?: string;
   vocabularyServiceFactory?: VocabularyServiceFactory;
 };
 
@@ -69,7 +81,13 @@ export function createApp(dependencies: AppDependencies = {}): Hono {
   const app = new Hono();
   const analyzeService =
     dependencies.analyzeService ?? createOpenAIAnalysisService();
+  const analysisUsageService =
+    dependencies.analysisUsageService ?? lazySupabaseAnalysisUsageService();
   const authService = dependencies.authService ?? createSupabaseAuthService();
+  const usageIpHashSalt =
+    dependencies.usageIpHashSalt ??
+    process.env.NADO_USAGE_IP_HASH_SALT ??
+    "nado-local-dev";
   const vocabularyServiceFactory =
     dependencies.vocabularyServiceFactory ?? createSupabaseVocabularyService;
 
@@ -118,6 +136,28 @@ export function createApp(dependencies: AppDependencies = {}): Hono {
         reason: "영어 문장으로 분석하기 어려운 입력입니다.",
         status: "not_analyzable",
       });
+    }
+
+    const usageIdentity = await resolveAnalyzeUsageIdentity(
+      context.req.header("Authorization"),
+      context.req.header("X-Forwarded-For"),
+      context.req.header("X-Real-IP"),
+    );
+    const usageDecision = await analysisUsageService.consume(usageIdentity);
+
+    if (!usageDecision.ok) {
+      return context.json(
+        {
+          error: {
+            code: "rate_limited",
+            message: "오늘 사용할 수 있는 분석 횟수를 모두 사용했어요.",
+          },
+        },
+        429,
+        {
+          "Retry-After": String(usageDecision.retryAfterSeconds),
+        },
+      );
     }
 
     try {
@@ -245,6 +285,30 @@ export function createApp(dependencies: AppDependencies = {}): Hono {
       user,
     };
   }
+
+  async function resolveAnalyzeUsageIdentity(
+    authorization: string | undefined,
+    forwardedFor: string | undefined,
+    realIp: string | undefined,
+  ): Promise<UsageIdentity> {
+    const accessToken = parseBearerToken(authorization);
+
+    if (accessToken) {
+      const user = await authService.getUser(accessToken);
+
+      if (user) {
+        return {
+          ipHash: null,
+          userId: user.id,
+        };
+      }
+    }
+
+    return {
+      ipHash: hashClientIp(readClientIp(forwardedFor, realIp), usageIpHashSalt),
+      userId: null,
+    };
+  }
 }
 
 export const app = createApp();
@@ -269,5 +333,30 @@ function notAuthenticatedError() {
       code: "not_authenticated",
       message: "Google 로그인이 필요합니다.",
     },
+  };
+}
+
+function readClientIp(
+  forwardedFor: string | undefined,
+  realIp: string | undefined,
+): string {
+  return (
+    forwardedFor
+      ?.split(",")
+      .map((part) => part.trim())
+      .find(Boolean) ??
+    realIp?.trim() ??
+    "unknown"
+  );
+}
+
+function hashClientIp(ipAddress: string, salt: string): string {
+  return createHash("sha256").update(`${salt}:${ipAddress}`).digest("hex");
+}
+
+function lazySupabaseAnalysisUsageService(): AnalysisUsageService {
+  return {
+    consume: (identity) =>
+      createSupabaseAnalysisUsageService().consume(identity),
   };
 }
