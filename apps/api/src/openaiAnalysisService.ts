@@ -40,53 +40,71 @@ export function createOpenAIAnalysisService(
         throw new Error("OPENAI_API_KEY is required.");
       }
 
-      const response = await fetchImplementation(endpoint, {
-        body: JSON.stringify({
-          input: text,
-          instructions: ANALYSIS_INSTRUCTIONS,
-          model,
-          store: false,
-          text: {
-            format: {
-              name: "nado_analysis_response",
-              schema: analyzeResponseJsonSchema,
-              strict: true,
-              type: "json_schema",
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const response = await fetchImplementation(endpoint, {
+          body: JSON.stringify({
+            input: text,
+            instructions: ANALYSIS_INSTRUCTIONS,
+            model,
+            store: false,
+            text: {
+              format: {
+                name: "nado_analysis_response",
+                schema: analyzeResponseJsonSchema,
+                strict: true,
+                type: "json_schema",
+              },
             },
+          }),
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
           },
-        }),
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-      });
+          method: "POST",
+        });
 
-      if (!response.ok) {
-        throw new Error("OpenAI request failed.");
+        if (!response.ok) {
+          throw new Error("OpenAI request failed.");
+        }
+
+        try {
+          return await parseAnalysisResponse(response);
+        } catch (error) {
+          if (attempt === 0 && error instanceof StructuredOutputError) {
+            continue;
+          }
+
+          throw error;
+        }
       }
 
-      const payload = await readJson(response);
-      const outputText = extractOutputText(payload);
-      const parsedOutput = parseJson(outputText);
-      const parsedAnalysis = analyzeResponseSchema.safeParse(parsedOutput);
-
-      if (!parsedAnalysis.success) {
-        throw new Error(
-          "OpenAI structured output did not match the analysis schema.",
-        );
-      }
-
-      return parsedAnalysis.data;
+      throw new Error("OpenAI structured output retry failed.");
     },
   };
+}
+
+async function parseAnalysisResponse(
+  response: Response,
+): Promise<AnalyzeResponse> {
+  const payload = await readJson(response);
+  const outputText = extractOutputText(payload);
+  const parsedOutput = parseJson(outputText);
+  const parsedAnalysis = analyzeResponseSchema.safeParse(parsedOutput);
+
+  if (!parsedAnalysis.success) {
+    throw new StructuredOutputError(
+      "OpenAI structured output did not match the analysis schema.",
+    );
+  }
+
+  return parsedAnalysis.data;
 }
 
 async function readJson(response: Response): Promise<unknown> {
   try {
     return await response.json();
   } catch {
-    throw new Error("OpenAI response was not valid JSON.");
+    throw new StructuredOutputError("OpenAI response was not valid JSON.");
   }
 }
 
@@ -94,13 +112,15 @@ function parseJson(value: string): unknown {
   try {
     return JSON.parse(value);
   } catch {
-    throw new Error("OpenAI output text was not valid JSON.");
+    throw new StructuredOutputError("OpenAI output text was not valid JSON.");
   }
 }
 
 function extractOutputText(payload: unknown): string {
   if (!isRecord(payload)) {
-    throw new Error("OpenAI response did not include output text.");
+    throw new StructuredOutputError(
+      "OpenAI response did not include output text.",
+    );
   }
 
   if (typeof payload.output_text === "string") {
@@ -108,7 +128,9 @@ function extractOutputText(payload: unknown): string {
   }
 
   if (!Array.isArray(payload.output)) {
-    throw new Error("OpenAI response did not include output text.");
+    throw new StructuredOutputError(
+      "OpenAI response did not include output text.",
+    );
   }
 
   const textParts: string[] = [];
@@ -126,7 +148,9 @@ function extractOutputText(payload: unknown): string {
   }
 
   if (textParts.length === 0) {
-    throw new Error("OpenAI response did not include output text.");
+    throw new StructuredOutputError(
+      "OpenAI response did not include output text.",
+    );
   }
 
   return textParts.join("");
@@ -135,3 +159,5 @@ function extractOutputText(payload: unknown): string {
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
+
+class StructuredOutputError extends Error {}

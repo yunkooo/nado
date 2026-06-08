@@ -119,6 +119,40 @@ describe("createOpenAIAnalysisService", () => {
     expect(calls).toBe(0);
   });
 
+  it("retries once when structured output is malformed", async () => {
+    let calls = 0;
+    const service = createOpenAIAnalysisService({
+      apiKey: "test-api-key",
+      fetch: async () => {
+        calls += 1;
+
+        if (calls === 1) {
+          return new Response(
+            JSON.stringify({
+              output_text: JSON.stringify({
+                result: {},
+                status: "analyzable",
+              }),
+            }),
+            { status: 200 },
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            output_text: JSON.stringify(sampleAnalyzeResponse),
+          }),
+          { status: 200 },
+        );
+      },
+    });
+
+    await expect(service.analyze("Hello.")).resolves.toEqual(
+      sampleAnalyzeResponse,
+    );
+    expect(calls).toBe(2);
+  });
+
   it("rejects malformed structured output", async () => {
     const service = createOpenAIAnalysisService({
       apiKey: "test-api-key",
