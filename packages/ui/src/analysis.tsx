@@ -220,9 +220,10 @@ export function VocabularySuggestionList({
       {suggestions.map((suggestion) => (
         <Chip
           aria-label={`${suggestion.term}: ${suggestion.meaning}`}
+          as="span"
           key={`${suggestion.term}-${suggestion.meaning}`}
-          label={suggestion.term}
-          prefix={suggestion.meaning}
+          label={`${suggestion.term} · ${suggestion.meaning}`}
+          prefix="+"
         />
       ))}
     </div>
@@ -234,13 +235,10 @@ export interface AnalysisResultProps {
 }
 
 export function AnalysisResult({ result }: AnalysisResultProps) {
-  const sentenceCount = result.sentences.length;
-  const vocabularyCount = result.vocabularySuggestions.length;
-
   return (
     <ResultCard
-      description="문장 구조와 의미 흐름을 학습하기 쉽게 나눴어요."
-      meta={`${sentenceCount}문장 · ${vocabularyCount}개 저장 추천`}
+      description="자연스러운 번역, 문장별 끊어읽기 직역, 문법 포인트, 단어 추천을 한 번에 제공합니다."
+      meta="500자 이내 기본 분석"
       title="분석 결과"
     >
       <Section title="전체 자연스러운 번역">

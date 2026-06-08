@@ -68,6 +68,24 @@ export const Basic: Story = {
   ),
 };
 
+export const TextAction: Story = {
+  args: {
+    maxLength: MAX_ANALYSIS_TEXT_LENGTH,
+    onSubmit: () => undefined,
+    onValueChange: () => undefined,
+    value: "",
+  },
+  render: () => (
+    <ComposerPreview
+      actionLabel="분석"
+      initialValue="I need help understanding this sentence."
+      maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+      placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
+      submitAriaLabel="분석 요청"
+    />
+  ),
+};
+
 export const NearLimit: Story = {
   args: {
     maxLength: MAX_ANALYSIS_TEXT_LENGTH,
@@ -80,6 +98,25 @@ export const NearLimit: Story = {
       initialValue={`${"The team should understand which problems are frequent, which costs are acceptable, and when a lighter process is enough. ".repeat(4)}This habit keeps the codebase easier to maintain.`.slice(
         0,
         487,
+      )}
+      maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+      placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
+      submitAriaLabel="분석 요청"
+    />
+  ),
+};
+
+export const LongInput: Story = {
+  args: {
+    maxLength: MAX_ANALYSIS_TEXT_LENGTH,
+    onSubmit: () => undefined,
+    onValueChange: () => undefined,
+    value: "",
+  },
+  render: () => (
+    <ComposerPreview
+      initialValue={"Many developers choose a framework because it promises faster shipping, but the real test appears after the product grows. ".repeat(
+        6,
       )}
       maxLength={MAX_ANALYSIS_TEXT_LENGTH}
       placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"

@@ -60,7 +60,6 @@ describe("analysis design system components", () => {
   it("renders disabled composer submit state for empty input", () => {
     const markup = renderToStaticMarkup(
       <InputComposer
-        actionLabel="분석"
         label="기본 분석"
         maxLength={500}
         onSubmit={noop}
@@ -77,6 +76,24 @@ describe("analysis design system components", () => {
     expect(markup).toContain('aria-label="분석 요청"');
   });
 
+  it("renders text submit button when action label is a word", () => {
+    const markup = renderToStaticMarkup(
+      <InputComposer
+        actionLabel="분석"
+        label="기본 분석"
+        maxLength={500}
+        onSubmit={noop}
+        onValueChange={noop}
+        placeholder="영어 문장을 붙여넣으세요"
+        value="I need help."
+      />,
+    );
+
+    expect(markup).toContain("분석");
+    expect(markup).toContain("nado-button--md");
+    expect(markup).not.toContain("nado-button--icon");
+  });
+
   it("renders suggestion chips with prefix and disabled state", () => {
     const markup = renderToStaticMarkup(
       <Chip disabled label="setup" prefix="저장" />,
@@ -86,6 +103,15 @@ describe("analysis design system components", () => {
     expect(markup).toContain("저장");
     expect(markup).toContain("setup");
     expect(markup).toContain("disabled");
+  });
+
+  it("renders vocabulary suggestions as static chips by default", () => {
+    const markup = renderToStaticMarkup(
+      <AnalysisResult result={analysisFixture} />,
+    );
+
+    expect(markup).toContain('<span class="nado-chip"');
+    expect(markup).not.toContain('<button class="nado-chip"');
   });
 
   it("renders reading chunks with slash separators", () => {

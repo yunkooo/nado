@@ -11,6 +11,7 @@ export interface InputComposerProps extends Omit<
   onSubmit: () => void;
   onValueChange: (value: string) => void;
   submitAriaLabel?: string;
+  submitButtonKind?: "auto" | "icon" | "text";
   value: string;
 }
 
@@ -22,11 +23,15 @@ export function InputComposer({
   onValueChange,
   placeholder,
   submitAriaLabel = "분석 요청",
+  submitButtonKind = "auto",
   value,
   ...props
 }: InputComposerProps) {
   const trimmedLength = value.trim().length;
   const isSubmitDisabled = trimmedLength === 0 || value.length > maxLength;
+  const isIconButton =
+    submitButtonKind === "icon" ||
+    (submitButtonKind === "auto" && actionLabel.trim() === "↑");
 
   return (
     <div className="nado-composer">
@@ -46,11 +51,11 @@ export function InputComposer({
           </span>
         </div>
         <Button
-          aria-label={submitAriaLabel}
+          aria-label={isIconButton ? submitAriaLabel : undefined}
           disabled={isSubmitDisabled}
           onClick={onSubmit}
-          size="icon"
-          variant="send"
+          size={isIconButton ? "icon" : "md"}
+          variant={isIconButton ? "send" : "primary"}
         >
           {actionLabel}
         </Button>

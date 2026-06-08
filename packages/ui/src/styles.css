@@ -107,28 +107,28 @@
 }
 
 .nado-button--send {
-  background: var(--nado-color-primary);
+  background: #8f8f8b;
   color: var(--nado-color-primary-ink);
 }
 
 .nado-chip {
-  background: var(--nado-color-surface-muted);
-  border-color: var(--nado-color-border);
-  border-radius: var(--nado-radius-pill);
-  color: var(--nado-color-ink);
+  background: #f6f8ff;
+  border-color: #d8d8d2;
+  border-radius: 7px;
+  color: var(--nado-color-primary);
   gap: 6px;
-  min-height: 32px;
-  padding: 0 12px;
+  min-height: 31px;
+  padding: 7px 10px;
   white-space: nowrap;
 }
 
 .nado-chip__prefix {
-  color: var(--nado-color-ink-muted);
+  color: inherit;
   font-size: 0.75rem;
 }
 
 .nado-chip__label {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
 }
 
 .nado-composer {
@@ -182,12 +182,12 @@
 }
 
 .nado-input-sample {
-  background: var(--nado-color-surface-muted);
+  background: #fbfbf8;
   border: 1px solid var(--nado-color-border);
   border-radius: var(--nado-radius-md);
   display: grid;
-  gap: 10px;
-  padding: 16px;
+  gap: 12px;
+  padding: 18px;
 }
 
 .nado-input-sample__header {
@@ -198,10 +198,11 @@
 }
 
 .nado-input-sample__text {
-  color: var(--nado-color-ink);
+  color: #30302c;
   font-size: 0.9375rem;
   line-height: 1.7;
   margin: 0;
+  max-width: 920px;
 }
 
 .nado-result-card {
@@ -212,12 +213,14 @@
 }
 
 .nado-result-card__header {
-  align-items: flex-start;
+  align-items: center;
+  background: #fbfbf8;
   border-bottom: 1px solid var(--nado-color-border);
   display: flex;
-  gap: 16px;
+  gap: 14px;
   justify-content: space-between;
-  padding: 20px;
+  min-height: 56px;
+  padding: 14px 18px;
 }
 
 .nado-result-card__title-group {
@@ -227,14 +230,14 @@
 }
 
 .nado-result-card__title {
-  font-size: 1.125rem;
+  font-size: 0.9375rem;
   line-height: 1.3;
 }
 
 .nado-result-card__description,
 .nado-result-card__meta {
   color: var(--nado-color-ink-muted);
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   line-height: 1.55;
 }
 
@@ -252,8 +255,8 @@
 
 .nado-section {
   display: grid;
-  gap: 14px;
-  padding: 20px;
+  gap: 10px;
+  padding: 22px;
 }
 
 .nado-section + .nado-section {
@@ -261,7 +264,9 @@
 }
 
 .nado-section__title {
-  font-size: 0.95rem;
+  color: var(--nado-color-ink-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
   line-height: 1.35;
 }
 
@@ -271,13 +276,14 @@
 
 .nado-translation-block {
   display: grid;
-  gap: 10px;
+  gap: 7px;
 }
 
 .nado-translation-block__paragraph {
-  color: var(--nado-color-ink);
-  font-size: 0.95rem;
-  line-height: 1.75;
+  color: #282824;
+  font-size: 1.0625rem;
+  font-weight: 650;
+  line-height: 1.58;
   margin: 0;
 }
 
@@ -308,41 +314,46 @@
 
 .nado-reading-line {
   align-items: flex-start;
+  container-type: inline-size;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px 10px;
   min-width: 0;
 }
 
 .nado-reading-line__chunk {
-  background: var(--nado-color-surface-muted);
-  border: 1px solid var(--nado-color-border);
-  border-radius: var(--nado-radius-sm);
   display: inline-grid;
-  gap: 3px;
+  flex: 0 1 auto;
+  gap: 6px;
   max-width: 100%;
-  padding: 7px 9px;
-  white-space: normal;
+  min-width: 0;
+  vertical-align: top;
 }
 
 .nado-reading-line__english {
-  color: var(--nado-color-ink);
-  font-size: 0.875rem;
-  font-weight: 700;
-  overflow-wrap: anywhere;
+  color: #252521;
+  font-size: 1.25rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.38;
+  white-space: nowrap;
 }
 
 .nado-reading-line__korean {
-  color: var(--nado-color-ink-muted);
-  font-size: 0.75rem;
-  overflow-wrap: anywhere;
+  color: #5f5f59;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  line-height: 1.45;
+  white-space: nowrap;
 }
 
 .nado-reading-line__slash {
   color: var(--nado-color-accent);
   flex: 0 0 auto;
-  font-weight: 800;
-  line-height: 36px;
+  font-size: 1.875rem;
+  font-weight: 900;
+  line-height: 1.15;
+  padding-top: 1px;
 }
 
 .nado-sentence-list {
@@ -351,17 +362,14 @@
 
 .nado-sentence-analysis {
   display: grid;
-  gap: 16px;
-  grid-template-columns: 42px minmax(0, 1fr);
-  padding: 18px 0;
-}
-
-.nado-sentence-analysis:first-child {
-  padding-top: 0;
+  gap: 14px;
+  grid-template-columns: 48px minmax(0, 1fr);
+  padding: 0 0 20px;
 }
 
 .nado-sentence-analysis + .nado-sentence-analysis {
   border-top: 1px solid var(--nado-color-border);
+  padding-top: 20px;
 }
 
 .nado-sentence-analysis:last-child {
@@ -369,16 +377,11 @@
 }
 
 .nado-sentence-analysis__index {
-  align-items: center;
-  border: 1px solid var(--nado-color-border);
-  border-radius: var(--nado-radius-pill);
-  color: var(--nado-color-primary);
-  display: inline-flex;
+  color: var(--nado-color-ink-muted);
   font-size: 0.75rem;
   font-weight: 800;
-  height: 34px;
-  justify-content: center;
-  width: 34px;
+  padding-top: 7px;
+  white-space: nowrap;
 }
 
 .nado-sentence-analysis__content {
@@ -388,42 +391,43 @@
 }
 
 .nado-sentence-analysis__translation {
-  color: var(--nado-color-ink);
-  font-size: 0.9rem;
-  line-height: 1.65;
+  border-top: 1px solid #eeeeea;
+  color: #4d4d48;
+  font-size: 0.875rem;
+  line-height: 1.6;
   margin: 0;
+  padding-top: 10px;
 }
 
 .nado-grammar-list__item {
   display: grid;
-  gap: 6px;
+  align-items: baseline;
+  column-gap: 20px;
+  grid-template-columns: max-content minmax(0, 1fr);
 }
 
 .nado-grammar-list__label {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
+  white-space: nowrap;
 }
 
 .nado-grammar-list__label strong {
-  color: var(--nado-color-primary);
+  color: var(--nado-color-ink);
   font-size: 0.8125rem;
 }
 
 .nado-grammar-list__label span {
-  background: color-mix(in srgb, var(--nado-color-primary), white 88%);
-  border-radius: var(--nado-radius-pill);
-  color: var(--nado-color-primary);
-  font-size: 0.72rem;
-  font-weight: 800;
-  padding: 2px 7px;
+  color: var(--nado-color-ink-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
 }
 
 .nado-grammar-list__text {
-  color: var(--nado-color-ink-muted);
-  font-size: 0.85rem;
-  line-height: 1.6;
+  color: #55554f;
+  font-size: 0.8125rem;
+  line-height: 1.55;
 }
 
 .nado-vocabulary-list {
@@ -448,7 +452,19 @@
   }
 
   .nado-sentence-analysis__index {
-    height: 30px;
-    width: 30px;
+    padding-top: 0;
+  }
+
+  .nado-grammar-list__item {
+    gap: 4px;
+    grid-template-columns: 1fr;
+  }
+}
+
+@container (max-width: 420px) {
+  .nado-reading-line__english,
+  .nado-reading-line__korean {
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 }
