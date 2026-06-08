@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.next/
+.turbo/
+storybook-static/
+pnpm-lock.yaml
+
+.agent-skills/
+docs/superpowers/
+AGENTS.md

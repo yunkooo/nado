@@ -1,0 +1,99 @@
+:root {
+  --nado-color-canvas: #f7f8f5;
+  --nado-color-surface: #ffffff;
+  --nado-color-surface-muted: #eef3ef;
+  --nado-color-ink: #17201b;
+  --nado-color-ink-muted: #627268;
+  --nado-color-border: #d8ded7;
+  --nado-color-primary: #2f6f57;
+  --nado-color-primary-ink: #ffffff;
+  --nado-color-accent: #d86f45;
+  --nado-radius-sm: 4px;
+  --nado-radius-md: 8px;
+}
+
+.nado-button {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--nado-radius-md);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 40px;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.nado-button:focus-visible,
+.nado-composer__input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--nado-color-primary), white 68%);
+  outline-offset: 2px;
+}
+
+.nado-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.nado-button--sm {
+  min-height: 32px;
+  padding: 0 12px;
+}
+
+.nado-button--md {
+  padding: 0 16px;
+}
+
+.nado-button--primary {
+  background: var(--nado-color-primary);
+  color: var(--nado-color-primary-ink);
+}
+
+.nado-button--secondary {
+  background: var(--nado-color-surface-muted);
+  border-color: var(--nado-color-border);
+  color: var(--nado-color-ink);
+}
+
+.nado-button--ghost {
+  background: transparent;
+  color: var(--nado-color-primary);
+}
+
+.nado-composer {
+  background: var(--nado-color-surface);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.nado-composer__input {
+  border: 0;
+  color: var(--nado-color-ink);
+  font: inherit;
+  line-height: 1.6;
+  min-height: 104px;
+  resize: vertical;
+}
+
+.nado-composer__input::placeholder {
+  color: var(--nado-color-ink-muted);
+}
+
+.nado-composer__footer {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.nado-composer__count {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.875rem;
+}

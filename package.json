@@ -1,0 +1,29 @@
+{
+  "name": "nado",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.5.2",
+  "scripts": {
+    "dev": "turbo dev --parallel",
+    "dev:api": "pnpm --filter @nado/api dev",
+    "dev:web": "pnpm --filter @nado/web dev",
+    "dev:storybook": "pnpm --filter @nado/storybook dev",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "format:check": "prettier --check .",
+    "supabase:start": "pnpm exec supabase start",
+    "supabase:stop": "pnpm exec supabase stop",
+    "supabase:status": "pnpm exec supabase status"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "prettier": "^3.8.3",
+    "supabase": "^2.105.0",
+    "tsx": "^4.22.4",
+    "turbo": "^2.9.16",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}
