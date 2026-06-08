@@ -129,6 +129,13 @@ export const analyzeResponseSchema = z.discriminatedUnion("status", [
   }),
 ]);
 
+const generatedAnalyzeResponseJsonSchema = z.toJSONSchema(
+  analyzeResponseSchema,
+) as Record<string, unknown>;
+delete generatedAnalyzeResponseJsonSchema.$schema;
+
+export const analyzeResponseJsonSchema = generatedAnalyzeResponseJsonSchema;
+
 export const vocabularyListResponseSchema = z.object({
   items: z.array(vocabularyItemSchema),
 });
