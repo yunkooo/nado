@@ -18,6 +18,19 @@ import {
   shouldShowAnalysisResult,
 } from "./src/analysisScreen";
 
+const mobileColors = {
+  canvas: "#f1f1ed",
+  surface: "#ffffff",
+  surfaceMuted: "#f7f7f4",
+  sidebar: "#e9e9e4",
+  sidebarActive: "#d9d9d2",
+  ink: "#20201d",
+  inkMuted: "#6f6f68",
+  border: "#e7e7e2",
+  primary: "#26365f",
+  primaryInk: "#ffffff",
+} as const;
+
 export default function App() {
   const [text, setText] = useState(INITIAL_ANALYSIS_TEXT);
   const [submittedText, setSubmittedText] = useState<string | null>(null);
@@ -81,7 +94,7 @@ export default function App() {
               maxLength={MAX_ANALYSIS_TEXT_LENGTH}
               onChangeText={setText}
               placeholder={composerState.placeholderText}
-              placeholderTextColor="#7a7a73"
+              placeholderTextColor={mobileColors.inkMuted}
               style={styles.input}
               textAlignVertical="top"
               value={text}
@@ -158,7 +171,7 @@ export default function App() {
 const styles = StyleSheet.create({
   analyzeButton: {
     alignItems: "center",
-    backgroundColor: "#26365f",
+    backgroundColor: mobileColors.primary,
     borderRadius: 8,
     minHeight: 42,
     minWidth: 74,
@@ -166,19 +179,19 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   analyzeButtonDisabled: {
-    backgroundColor: "#d9d9d2",
+    backgroundColor: mobileColors.sidebarActive,
   },
   analyzeButtonText: {
-    color: "#ffffff",
+    color: mobileColors.primaryInk,
     fontSize: 15,
     fontWeight: "800",
   },
   analyzeButtonTextDisabled: {
-    color: "#7a7a73",
+    color: mobileColors.inkMuted,
   },
   bottomArea: {
-    backgroundColor: "#f1f1ed",
-    borderTopColor: "#e7e7e2",
+    backgroundColor: mobileColors.canvas,
+    borderTopColor: mobileColors.border,
     borderTopWidth: 1,
     gap: 10,
     paddingHorizontal: 14,
@@ -188,13 +201,13 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   composer: {
-    backgroundColor: "#ffffff",
-    borderColor: "#e7e7e2",
+    backgroundColor: mobileColors.surface,
+    borderColor: mobileColors.border,
     borderRadius: 18,
     borderWidth: 1,
     gap: 10,
     padding: 14,
-    shadowColor: "#20201d",
+    shadowColor: mobileColors.ink,
     shadowOffset: { height: 8, width: 0 },
     shadowOpacity: 0.08,
     shadowRadius: 18,
@@ -211,22 +224,22 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
   },
   count: {
-    color: "#6f6f68",
+    color: mobileColors.inkMuted,
     fontSize: 13,
     fontWeight: "700",
   },
   emptyText: {
-    color: "#6f6f68",
+    color: mobileColors.inkMuted,
     fontSize: 15,
     lineHeight: 23,
   },
   helperText: {
-    color: "#6f6f68",
+    color: mobileColors.inkMuted,
     fontSize: 12,
     lineHeight: 18,
   },
   input: {
-    color: "#20201d",
+    color: mobileColors.ink,
     fontSize: 15,
     lineHeight: 22,
     minHeight: 74,
@@ -234,8 +247,8 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     alignItems: "center",
-    backgroundColor: "#f7f7f4",
-    borderColor: "#e7e7e2",
+    backgroundColor: mobileColors.surfaceMuted,
+    borderColor: mobileColors.border,
     borderRadius: 8,
     borderWidth: 1,
     minHeight: 36,
@@ -246,12 +259,12 @@ const styles = StyleSheet.create({
     opacity: 0.64,
   },
   loginButtonText: {
-    color: "#20201d",
+    color: mobileColors.ink,
     fontSize: 13,
     fontWeight: "800",
   },
   logo: {
-    color: "#26365f",
+    color: mobileColors.primary,
     fontSize: 18,
     fontWeight: "900",
   },
@@ -259,8 +272,8 @@ const styles = StyleSheet.create({
     opacity: 0.72,
   },
   resultArea: {
-    backgroundColor: "#ffffff",
-    borderColor: "#e7e7e2",
+    backgroundColor: mobileColors.surface,
+    borderColor: mobileColors.border,
     borderRadius: 8,
     borderWidth: 1,
     gap: 8,
@@ -268,12 +281,12 @@ const styles = StyleSheet.create({
     padding: 18,
   },
   resultTitle: {
-    color: "#20201d",
+    color: mobileColors.ink,
     fontSize: 16,
     fontWeight: "800",
   },
   safeArea: {
-    backgroundColor: "#f1f1ed",
+    backgroundColor: mobileColors.canvas,
     flex: 1,
   },
   shell: {
@@ -281,8 +294,8 @@ const styles = StyleSheet.create({
   },
   tabbar: {
     alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderColor: "#e7e7e2",
+    backgroundColor: mobileColors.surface,
+    borderColor: mobileColors.border,
     borderRadius: 8,
     borderWidth: 1,
     flexDirection: "row",
@@ -299,26 +312,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   tabItemActive: {
-    backgroundColor: "#e9e9e4",
+    backgroundColor: mobileColors.sidebar,
   },
   tabItemDisabled: {
     opacity: 0.54,
   },
   tabText: {
-    color: "#6f6f68",
+    color: mobileColors.inkMuted,
     fontSize: 13,
     fontWeight: "800",
   },
   tabTextActive: {
-    color: "#26365f",
+    color: mobileColors.primary,
   },
   tabTextDisabled: {
-    color: "#8f8f88",
+    color: mobileColors.inkMuted,
   },
   topbar: {
     alignItems: "center",
-    backgroundColor: "#f1f1ed",
-    borderBottomColor: "#e7e7e2",
+    backgroundColor: mobileColors.canvas,
+    borderBottomColor: mobileColors.border,
     borderBottomWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
