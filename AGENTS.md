@@ -10,6 +10,14 @@
 - 사용자가 만들었을 수 있는 변경사항을 임의로 되돌리지 않는다.
 - 민감 정보, API key, token, `.env` 값은 커밋하지 않는다.
 
+## React/Next.js 작업 규칙
+
+- React/Next.js 코드 작성, 리뷰, 리팩터링, 성능 개선 작업을 할 때는 먼저 `.agent-skills/react-best-practices/AGENTS.md`를 확인하고 해당 지침을 이 프로젝트의 추가 규칙으로 적용한다.
+- 세부 규칙이나 예시가 필요하면 `.agent-skills/react-best-practices/rules/`의 개별 rule 문서를 함께 확인한다.
+- 적용 우선순위는 Vercel React Best Practices의 순서에 따른다: 비동기 waterfall 제거, 번들 크기 최적화, 서버 사이드 성능, 클라이언트 데이터 fetching, re-render 최적화, 렌더링 성능, JavaScript 성능, 고급 패턴.
+- 단, 사용자 직접 요청과 이 파일의 기본 원칙이 우선이며, 현재 코드 구조와 프로젝트 단계에 맞지 않는 과도한 최적화는 하지 않는다.
+- `useMemo`, `useCallback`, `memo`, `useRef` 같은 최적화성 API는 실제 병목이나 명확한 렌더링/상태 경계 문제가 있을 때 근거를 남기고 사용한다.
+
 ## 커밋 규칙
 
 - 커밋 메시지는 한국어로 작성한다.
