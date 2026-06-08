@@ -11,15 +11,15 @@ import {
 } from "react-native";
 import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
 import {
+  ANALYSIS_INPUT_ACCESSIBILITY_LABEL,
+  INITIAL_ANALYSIS_TEXT,
   getAnalysisComposerState,
   mobileTabs,
   shouldShowAnalysisResult,
 } from "./src/analysisScreen";
 
 export default function App() {
-  const [text, setText] = useState(
-    "I was wondering if you could help me with this issue.",
-  );
+  const [text, setText] = useState(INITIAL_ANALYSIS_TEXT);
   const [submittedText, setSubmittedText] = useState<string | null>(null);
   const composerState = getAnalysisComposerState(text);
   const shouldShowResult = shouldShowAnalysisResult(text, submittedText);
@@ -44,8 +44,11 @@ export default function App() {
           </View>
           <Pressable
             accessibilityRole="button"
+            accessibilityState={{ disabled: true }}
+            disabled
             style={({ pressed }) => [
               styles.loginButton,
+              styles.loginButtonDisabled,
               pressed ? styles.pressed : null,
             ]}
           >
@@ -73,6 +76,7 @@ export default function App() {
               <Text style={styles.helperText}>{composerState.helperText}</Text>
             ) : null}
             <TextInput
+              accessibilityLabel={ANALYSIS_INPUT_ACCESSIBILITY_LABEL}
               multiline
               maxLength={MAX_ANALYSIS_TEXT_LENGTH}
               onChangeText={setText}
@@ -119,11 +123,16 @@ export default function App() {
               return (
                 <Pressable
                   accessibilityRole="tab"
-                  accessibilityState={{ selected }}
+                  accessibilityState={{
+                    disabled: tab.disabled,
+                    selected,
+                  }}
+                  disabled={tab.disabled}
                   key={tab.key}
                   style={({ pressed }) => [
                     styles.tabItem,
                     selected ? styles.tabItemActive : null,
+                    tab.disabled ? styles.tabItemDisabled : null,
                     pressed ? styles.pressed : null,
                   ]}
                 >
@@ -131,6 +140,7 @@ export default function App() {
                     style={[
                       styles.tabText,
                       selected ? styles.tabTextActive : null,
+                      tab.disabled ? styles.tabTextDisabled : null,
                     ]}
                   >
                     {tab.label}
@@ -232,6 +242,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
+  loginButtonDisabled: {
+    opacity: 0.64,
+  },
   loginButtonText: {
     color: "#20201d",
     fontSize: 13,
@@ -288,6 +301,9 @@ const styles = StyleSheet.create({
   tabItemActive: {
     backgroundColor: "#e9e9e4",
   },
+  tabItemDisabled: {
+    opacity: 0.54,
+  },
   tabText: {
     color: "#6f6f68",
     fontSize: 13,
@@ -295,6 +311,9 @@ const styles = StyleSheet.create({
   },
   tabTextActive: {
     color: "#26365f",
+  },
+  tabTextDisabled: {
+    color: "#8f8f88",
   },
   topbar: {
     alignItems: "center",

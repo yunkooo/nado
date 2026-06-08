@@ -1,14 +1,16 @@
 import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
 
+export const INITIAL_ANALYSIS_TEXT = "";
+export const ANALYSIS_INPUT_ACCESSIBILITY_LABEL = "분석할 영어 문장";
 export const ANALYSIS_INPUT_PLACEHOLDER_TEXT =
   "영어 한 문장 또는 짧은 문단을 입력해 주세요.";
 export const ANALYSIS_PRIVACY_HELPER_TEXT =
   "입력한 문장은 AI 분석을 위해 전송되며, 단어장에는 원문 문장을 저장하지 않습니다.";
 
 export const mobileTabs = [
-  { key: "analysis", label: "분석" },
-  { key: "vocabulary", label: "단어장" },
-  { key: "review", label: "복습" },
+  { disabled: false, key: "analysis", label: "분석" },
+  { disabled: true, key: "vocabulary", label: "단어장" },
+  { disabled: true, key: "review", label: "복습" },
 ] as const;
 
 export function getAnalysisComposerState(text: string) {

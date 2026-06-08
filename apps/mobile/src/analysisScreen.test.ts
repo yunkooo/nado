@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
 import {
   ANALYSIS_INPUT_PLACEHOLDER_TEXT,
+  ANALYSIS_INPUT_ACCESSIBILITY_LABEL,
   ANALYSIS_PRIVACY_HELPER_TEXT,
+  INITIAL_ANALYSIS_TEXT,
   getAnalysisComposerState,
   mobileTabs,
   shouldShowAnalysisResult,
@@ -15,6 +17,22 @@ describe("mobile analysis screen state", () => {
       "단어장",
       "복습",
     ]);
+  });
+
+  it("starts without a seeded analysis text", () => {
+    expect(INITIAL_ANALYSIS_TEXT).toBe("");
+  });
+
+  it("marks unavailable tabs as disabled", () => {
+    expect(mobileTabs).toEqual([
+      { disabled: false, key: "analysis", label: "분석" },
+      { disabled: true, key: "vocabulary", label: "단어장" },
+      { disabled: true, key: "review", label: "복습" },
+    ]);
+  });
+
+  it("exposes a stable input accessibility label", () => {
+    expect(ANALYSIS_INPUT_ACCESSIBILITY_LABEL).toBe("분석할 영어 문장");
   });
 
   it("disables analysis and keeps the AI transfer notice for blank input", () => {
