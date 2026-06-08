@@ -302,20 +302,7 @@ export default function HomePage() {
                 />
                 <AnalysisResult result={analysisFixture} />
               </>
-            ) : (
-              <section
-                aria-label="분석 결과 없음"
-                className="nado-empty-result"
-              >
-                <span className="nado-eyebrow">분석 결과 없음</span>
-                <h1>아직 분석 결과가 없어요</h1>
-                <p>
-                  영어 문장이나 짧은 문단을 입력하고 분석을 실행하면 자연스러운
-                  번역, 문장별 끊어읽기, 문법 포인트, 저장 추천을 이곳에
-                  보여줄게요.
-                </p>
-              </section>
-            )}
+            ) : null}
           </div>
         </section>
 

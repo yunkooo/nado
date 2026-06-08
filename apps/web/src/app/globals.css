@@ -141,31 +141,6 @@ a {
   max-width: 1080px;
 }
 
-.nado-empty-result {
-  align-content: center;
-  background: var(--nado-color-surface-muted);
-  border: 1px solid var(--nado-color-border);
-  border-radius: var(--nado-radius-md);
-  display: grid;
-  gap: 10px;
-  min-height: min(420px, calc(100dvh - 220px));
-  padding: 32px;
-}
-
-.nado-empty-result h1 {
-  font-size: 1.125rem;
-  line-height: 1.35;
-  margin: 0;
-}
-
-.nado-empty-result p {
-  color: var(--nado-color-ink-muted);
-  font-size: 0.875rem;
-  line-height: 1.65;
-  margin: 0;
-  max-width: 560px;
-}
-
 .nado-composer-wrap {
   background: rgba(255, 255, 255, 0.92);
   border-top: 1px solid var(--nado-color-border);
