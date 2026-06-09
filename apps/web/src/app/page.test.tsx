@@ -89,7 +89,11 @@ describe("HomePage", () => {
 
   it("defines floating save notification styles", () => {
     expect(styles).toContain(".nado-save-status");
+    expect(styles).toContain("justify-content: center");
+    expect(styles).toContain("min-height: 36px");
     expect(styles).toContain("position: fixed");
+    expect(styles).toContain("text-align: center");
+    expect(styles).toContain("width: fit-content");
     expect(styles).toContain("z-index: 90");
   });
 
