@@ -44,7 +44,9 @@ export default function ReviewPage() {
             <article className="nado-review-card">
               <span className="nado-eyebrow">Flashcard</span>
               <h2>wondering</h2>
-              <p>정답은 아직 숨겨져 있어요</p>
+              <p className="nado-review-card__answer" aria-hidden="true">
+                궁금해하다
+              </p>
             </article>
 
             <div className="nado-review-actions">

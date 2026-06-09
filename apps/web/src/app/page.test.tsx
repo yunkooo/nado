@@ -81,4 +81,9 @@ describe("HomePage", () => {
     expect(styles).toContain(".nado-analysis-status");
     expect(styles).toContain("min-height: 96px");
   });
+
+  it("defines blurred review answer styles", () => {
+    expect(styles).toContain(".nado-review-card__answer");
+    expect(styles).toContain("filter: blur(5px)");
+  });
 });

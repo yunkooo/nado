@@ -27,6 +27,9 @@ describe("navigation pages", () => {
     expect(markup).toContain("영어 → 한국어");
     expect(markup).toContain("복습할 단어가 없어요");
     expect(markup).toContain("nado-review-card");
+    expect(markup).toContain("nado-review-card__answer");
+    expect(markup).toContain("궁금해하다");
+    expect(markup).not.toContain("정답은 아직 숨겨져 있어요");
     expect(markup).not.toContain("nado-composer");
   });
 });
