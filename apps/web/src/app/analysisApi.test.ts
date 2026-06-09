@@ -144,6 +144,29 @@ describe("analyzeText", () => {
     });
   });
 
+  it("sends an authenticated bearer token when provided", async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json({
+        reason: "영어 문장으로 분석하기 어려운 입력입니다.",
+        status: "not_analyzable",
+      }),
+    );
+
+    await analyzeText("I was wondering if you could help me.", {
+      accessToken: "session-token",
+      fetcher,
+    });
+
+    expect(fetcher).toHaveBeenCalledWith("/api/analyze", {
+      body: JSON.stringify({ text: "I was wondering if you could help me." }),
+      headers: {
+        Authorization: "Bearer session-token",
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+  });
+
   it("returns an error message when the analyze request cannot be sent", async () => {
     const fetcher = vi.fn(async () => {
       throw new TypeError("fetch failed");

@@ -5,6 +5,7 @@ import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
 import { AnalysisResult, InputComposer, InputSample } from "@nado/ui";
 import { AppShell } from "./AppShell";
 import { analyzeText, type AnalyzeTextResult } from "./analysisApi";
+import { getCurrentAccessToken } from "./authClient";
 
 const inputDisclosure =
   "입력한 문장은 AI 분석을 위해 전송되며, 단어장에는 원문 문장을 저장하지 않습니다.";
@@ -29,7 +30,11 @@ export default function HomePage() {
     }
 
     setAnalysisState({ status: "loading" });
-    setAnalysisState(await analyzeText(nextText));
+    setAnalysisState(
+      await analyzeText(nextText, {
+        accessToken: await getCurrentAccessToken(),
+      }),
+    );
   };
 
   return (

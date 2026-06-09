@@ -8,6 +8,7 @@ export type AnalyzeTextResult =
   | { message: string; status: "error" | "not_analyzable" };
 
 export type AnalyzeTextOptions = {
+  accessToken?: string | null;
   fetcher?: Fetcher;
 };
 
@@ -26,7 +27,7 @@ export async function analyzeText(
   try {
     response = await fetcher("/api/analyze", {
       body: JSON.stringify({ text: trimmedText }),
-      headers: { "Content-Type": "application/json" },
+      headers: createAnalyzeHeaders(options.accessToken),
       method: "POST",
     });
   } catch {
@@ -134,6 +135,18 @@ function readErrorMessage(payload: unknown): string {
   }
 
   return ANALYZE_ERROR_MESSAGE;
+}
+
+function createAnalyzeHeaders(accessToken: string | null | undefined) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  return headers;
 }
 
 function isApiAnalysisResult(value: unknown): value is ApiAnalysisResult {

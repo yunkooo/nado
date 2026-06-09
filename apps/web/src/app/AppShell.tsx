@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { Button } from "@nado/ui";
+import { AuthControls } from "./AuthControls";
 
 type NavigationItem = {
   href: string;
@@ -103,9 +103,7 @@ export function AppShell({
           </nav>
         </div>
         <footer className="nado-sidebar__footer">
-          <Button className="nado-sidebar-login" variant="secondary">
-            Google 로그인
-          </Button>
+          <AuthControls />
         </footer>
       </aside>
 

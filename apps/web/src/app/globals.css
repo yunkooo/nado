@@ -74,6 +74,28 @@ a {
   width: 100%;
 }
 
+.nado-auth-controls {
+  display: grid;
+  gap: 8px;
+}
+
+.nado-auth-controls__user,
+.nado-auth-controls__message {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.nado-auth-controls__user {
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.nado-auth-controls__message {
+  margin: 0;
+}
+
 .nado-brand {
   align-items: center;
   display: flex;
