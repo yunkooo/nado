@@ -69,12 +69,37 @@ describe("analysis state store", () => {
     const store = createAnalysisStateStore({
       getStorage: () => storage,
     });
+    const unsubscribe = store.subscribe(() => {});
 
     expect(store.getSnapshot()).toMatchObject({
       analysisState: {
         status: "success",
       },
       text: "I leave home.",
+    });
+
+    unsubscribe();
+  });
+
+  it("starts from the server-safe initial snapshot before restoring persisted state", () => {
+    const persisted = {
+      snapshot: createSuccessSnapshot(),
+      version: 1,
+    };
+    const storage = createStorage({
+      "nado.analysis-state.v1": JSON.stringify(persisted),
+    });
+    const store = createAnalysisStateStore({
+      getStorage: () => storage,
+    });
+
+    expect(store.getSnapshot()).toEqual({
+      analysisState: {
+        status: "idle",
+      },
+      text: "",
+      vocabularySaveMessage: null,
+      vocabularySaveStates: {},
     });
   });
 

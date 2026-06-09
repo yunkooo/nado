@@ -40,7 +40,8 @@ export function createAnalysisStateStore(
 ) {
   const getStorage = options.getStorage ?? getSessionStorage;
   const listeners = new Set<() => void>();
-  let snapshot = readPersistedSnapshot(getStorage) ?? initialSnapshot;
+  let snapshot = initialSnapshot;
+  let hasRestoredPersistedSnapshot = false;
 
   const notify = () => {
     for (const listener of listeners) {
@@ -74,9 +75,30 @@ export function createAnalysisStateStore(
     notify();
   };
 
+  const restorePersistedSnapshot = () => {
+    if (hasRestoredPersistedSnapshot) {
+      return;
+    }
+
+    hasRestoredPersistedSnapshot = true;
+
+    const persistedSnapshot = readPersistedSnapshot(getStorage);
+
+    if (!persistedSnapshot) {
+      return;
+    }
+
+    snapshot = persistedSnapshot;
+    notify();
+  };
+
   return {
     getSnapshot() {
       return snapshot;
+    },
+
+    getServerSnapshot() {
+      return initialSnapshot;
     },
 
     reset() {
@@ -126,6 +148,7 @@ export function createAnalysisStateStore(
 
     subscribe(listener: () => void) {
       listeners.add(listener);
+      restorePersistedSnapshot();
 
       return () => {
         listeners.delete(listener);
@@ -140,7 +163,7 @@ export function useAnalysisPageState() {
   const snapshot = useSyncExternalStore(
     analysisStateStore.subscribe,
     analysisStateStore.getSnapshot,
-    analysisStateStore.getSnapshot,
+    analysisStateStore.getServerSnapshot,
   );
 
   return {
