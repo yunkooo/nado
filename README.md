@@ -40,7 +40,7 @@ pnpm dev:storybook
 
 `apps/api`는 Express 기반 Node API 서버입니다.
 
-- `POST /api/analyze`: 500자 이내 영어 입력을 검증하고 OpenAI Responses API의 구조화 응답을 반환합니다.
+- `POST /api/analyze`: 200자 이내 영어 입력을 정규화된 지원 문자 기준으로 검증하고 OpenAI Responses API의 구조화 응답을 반환합니다.
 - `GET /api/vocabulary`: 로그인한 사용자의 단어장 목록을 반환합니다.
 - `POST /api/vocabulary`: 단어/표현을 저장하고, 중복 항목은 뜻과 설명을 병합합니다.
 - `DELETE /api/vocabulary/:id`: 로그인한 사용자의 단어장 항목만 삭제합니다.

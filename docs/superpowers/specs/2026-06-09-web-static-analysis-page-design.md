@@ -20,7 +20,7 @@
 
 - `apps/web` 홈 화면을 Storybook의 `InputSample`, `AnalysisResult`, `InputComposer` 조합으로 구성한다.
 - 분석 화면은 로그인 없이 접근 가능한 첫 화면으로 둔다.
-- 하단 composer는 입력값, 500자 제한, 빈 입력 disabled 상태, AI 전송 안내 문구를 보여준다.
+- 하단 composer는 입력값, 200자 제한, 빈 입력 disabled 상태, AI 전송 안내 문구를 보여준다.
 - 결과 영역은 목업 데이터를 사용해 전체 번역, 번역 포인트, 문장별 분석, 우선 저장 추천 순서로 보여준다.
 - 웹 전용 레이아웃 CSS는 `apps/web/src/app/globals.css`에 둔다.
 - 웹 페이지 렌더링 테스트를 추가해 핵심 문구와 disabled 상태를 고정한다.

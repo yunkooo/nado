@@ -27,7 +27,7 @@
 - 기존 `Button`, `InputComposer`를 목업 톤에 맞게 확장한다.
 - 분석 화면에 재사용할 UI 컴포넌트를 `packages/ui`에 추가한다.
 - Storybook에 기본 UI, 분석 UI, 전체 목업 조합 story를 추가한다.
-- 입력 composer의 빈 입력, 긴 입력, 500자 근처 상태를 Storybook에서 확인한다.
+- 입력 composer의 빈 입력, 긴 입력, 200자 근처 상태를 Storybook에서 확인한다.
 - 문장별 chunk가 모바일 폭에서도 줄바꿈되는 상태를 Storybook에서 확인한다.
 
 ### 제외
@@ -161,7 +161,7 @@ Mock data는 `apps/storybook/src/analysisMock.ts`에 둔다. 실제 제품 타�
 ## Storybook 검증 기준
 
 - 목업 전체 조합이 Storybook에서 확인된다.
-- composer는 빈 입력, 기본 입력, 500자 근처 입력 상태를 보여준다.
+- composer는 빈 입력, 기본 입력, 200자 근처 입력 상태를 보여준다.
 - chunk line은 desktop과 narrow container story에서 모두 가로 스크롤 없이 줄바꿈된다.
 - 문법 포인트는 대상 표현과 문법 이름이 같은 label 영역에 붙어 보이고, 설명은 자연스럽게 줄바꿈된다.
 - 추천 단어 chip은 여러 개가 flex wrap으로 배치된다.

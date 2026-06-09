@@ -40,7 +40,7 @@
 ## 검증 기준
 
 - 빈 composer는 submit 버튼이 disabled로 렌더링된다.
-- 500자 근처 composer 상태가 Storybook에 있다.
+- 200자 근처 composer 상태가 Storybook에 있다.
 - `ReadingChunkLine`은 slash separator와 chunk label을 렌더링한다.
 - `AnalysisResult`는 번역, 번역 포인트, 문장별 분석, 우선 저장 추천을 모두 렌더링한다.
 - 전체 목업 story에서 sidebar, topbar, 입력 예시, 결과 카드, composer 조합이 확인된다.

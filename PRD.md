@@ -40,7 +40,7 @@
 - 로컬 개발: Supabase CLI + Docker
 - 운영 환경: Cloud Supabase
 - AI 분석: 서버에서 OpenAI API 호출
-- 입력 제한: MVP 초기 최대 500자
+- 입력 제한: MVP 초기 최대 200자, 정규화된 지원 문자 기준으로 검증
 - 분석 모드: 별도 모드 없이 단일 기본 분석
 
 ## 원본 설계 문서
