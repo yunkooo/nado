@@ -9,9 +9,39 @@ export const ANALYSIS_PRIVACY_HELPER_TEXT =
 
 export const mobileTabs = [
   { disabled: false, key: "analysis", label: "분석" },
-  { disabled: true, key: "vocabulary", label: "단어장" },
-  { disabled: true, key: "review", label: "복습" },
+  { disabled: false, key: "vocabulary", label: "단어장" },
+  { disabled: false, key: "review", label: "복습" },
 ] as const;
+
+export type MobileTabKey = (typeof mobileTabs)[number]["key"];
+
+export const mobileVocabularyItems = [
+  {
+    date: "2026.06.09",
+    id: "vocabulary-wondering",
+    meanings: ["궁금해하다", "정중하게 질문을 꺼내는 표현"],
+    term: "wondering",
+    typeLabel: "word",
+  },
+  {
+    date: "2026.06.09",
+    id: "vocabulary-help",
+    meanings: ["도와주다", "상대에게 도움을 요청할 때 쓰는 동사"],
+    term: "help",
+    typeLabel: "word",
+  },
+] as const;
+
+export const mobileReviewDirections = [
+  "영어 → 한국어",
+  "한국어 → 영어",
+] as const;
+
+export const mobileReviewFlashcard = {
+  answer: "궁금해하다",
+  eyebrow: "Flashcard",
+  term: "wondering",
+} as const;
 
 export function getAnalysisComposerState(text: string) {
   const hasInput = text.trim().length > 0;

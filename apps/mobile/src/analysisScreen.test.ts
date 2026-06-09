@@ -6,7 +6,10 @@ import {
   ANALYSIS_PRIVACY_HELPER_TEXT,
   INITIAL_ANALYSIS_TEXT,
   getAnalysisComposerState,
+  mobileReviewDirections,
+  mobileReviewFlashcard,
   mobileTabs,
+  mobileVocabularyItems,
   shouldShowAnalysisResult,
 } from "./analysisScreen";
 
@@ -23,12 +26,35 @@ describe("mobile analysis screen state", () => {
     expect(INITIAL_ANALYSIS_TEXT).toBe("");
   });
 
-  it("marks unavailable tabs as disabled", () => {
+  it("enables every primary tab for publishing navigation", () => {
     expect(mobileTabs).toEqual([
       { disabled: false, key: "analysis", label: "분석" },
-      { disabled: true, key: "vocabulary", label: "단어장" },
-      { disabled: true, key: "review", label: "복습" },
+      { disabled: false, key: "vocabulary", label: "단어장" },
+      { disabled: false, key: "review", label: "복습" },
     ]);
+  });
+
+  it("matches the website vocabulary preview content", () => {
+    expect(mobileVocabularyItems.map((item) => item.term)).toEqual([
+      "wondering",
+      "help",
+    ]);
+    expect(mobileVocabularyItems[0]).toEqual({
+      date: "2026.06.09",
+      id: "vocabulary-wondering",
+      meanings: ["궁금해하다", "정중하게 질문을 꺼내는 표현"],
+      term: "wondering",
+      typeLabel: "word",
+    });
+  });
+
+  it("matches the website review publishing content", () => {
+    expect(mobileReviewDirections).toEqual(["영어 → 한국어", "한국어 → 영어"]);
+    expect(mobileReviewFlashcard).toEqual({
+      answer: "궁금해하다",
+      eyebrow: "Flashcard",
+      term: "wondering",
+    });
   });
 
   it("exposes a stable input accessibility label", () => {
