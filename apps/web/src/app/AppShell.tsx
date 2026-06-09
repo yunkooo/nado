@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useState } from "react";
+import Link from "next/link";
 import { AuthControls } from "./AuthControls";
 
 type NavigationItem = {
@@ -84,7 +85,7 @@ export function AppShell({
               const isActive = item.key === activeItem;
 
               return (
-                <a
+                <Link
                   href={item.href}
                   aria-current={isActive ? "page" : undefined}
                   className={[
@@ -97,7 +98,7 @@ export function AppShell({
                   onClick={closeSidebar}
                 >
                   {item.label}
-                </a>
+                </Link>
               );
             })}
           </nav>

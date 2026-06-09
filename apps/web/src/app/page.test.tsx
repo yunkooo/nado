@@ -6,6 +6,10 @@ import HomePage from "./page";
 
 const styles = readFileSync(new URL("./globals.css", import.meta.url), "utf8");
 const pageSource = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
+const appShellSource = readFileSync(
+  new URL("./AppShell.tsx", import.meta.url),
+  "utf8",
+);
 
 describe("HomePage", () => {
   it("renders the initial analysis screen without a result placeholder", () => {
@@ -92,8 +96,25 @@ describe("HomePage", () => {
   it("clears vocabulary save notifications after a short delay", () => {
     expect(pageSource).toContain("VOCABULARY_SAVE_NOTICE_DISMISS_MS");
     expect(pageSource).toContain("window.setTimeout");
-    expect(pageSource).toContain("setVocabularySaveMessage(null)");
+    expect(pageSource).toContain("store.setVocabularySaveMessage(null)");
     expect(pageSource).toContain("window.clearTimeout");
+  });
+
+  it("keeps analysis page state outside the route component", () => {
+    expect(pageSource).toContain("useAnalysisPageState");
+    expect(pageSource).not.toContain("useState");
+  });
+
+  it("uses Next links for internal app navigation", () => {
+    expect(appShellSource).toContain('from "next/link"');
+    expect(appShellSource).toContain("<Link");
+    expect(appShellSource).not.toContain("<a ");
+  });
+
+  it("clears the composer only after a successful analysis", () => {
+    expect(pageSource).toContain("const nextAnalysisState = await analyzeText");
+    expect(pageSource).toContain('nextAnalysisState.status === "success"');
+    expect(pageSource).toContain('store.setText("");');
   });
 
   it("defines blurred review answer styles", () => {
