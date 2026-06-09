@@ -12,6 +12,7 @@ import {
   deleteVocabularyItem as deleteVocabularyItemFromApi,
   listVocabulary,
 } from "../vocabularyApi";
+import { getVocabularyPanelState } from "./vocabularyViewState";
 import type { VocabularyItem } from "@nado/shared";
 
 type VocabularySource = "account" | "mock";
@@ -25,9 +26,15 @@ export function VocabularyFlow() {
   const [message, setMessage] = useState<string | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const isLoading = status === "loading";
-  const summary = isLoading
-    ? { label: "저장 항목", value: "-" }
-    : getMockVocabularySummary(items);
+  const panelState = getVocabularyPanelState({
+    isLoading,
+    itemCount: items.length,
+    message,
+  });
+  const summary =
+    panelState === "loading" || panelState === "error"
+      ? { label: "저장 항목", value: "-" }
+      : getMockVocabularySummary(items);
 
   useEffect(() => {
     let isCurrent = true;
@@ -117,7 +124,7 @@ export function VocabularyFlow() {
       </section>
 
       <section className="nado-vocabulary-layout">
-        {isLoading ? (
+        {panelState === "loading" ? (
           <div
             className="nado-empty-panel nado-empty-panel--compact"
             role="status"
@@ -128,7 +135,7 @@ export function VocabularyFlow() {
           </div>
         ) : null}
 
-        {message ? (
+        {panelState === "error" ? (
           <div
             className="nado-empty-panel nado-empty-panel--compact"
             role="alert"
@@ -139,7 +146,7 @@ export function VocabularyFlow() {
           </div>
         ) : null}
 
-        {!isLoading && items.length === 0 ? (
+        {panelState === "empty" ? (
           <div className="nado-empty-panel nado-empty-panel--compact">
             <span className="nado-eyebrow">
               {isAccountSource ? "저장 전" : "비어 있음"}
@@ -157,7 +164,7 @@ export function VocabularyFlow() {
           </div>
         ) : null}
 
-        {!isLoading && items.length > 0 ? (
+        {panelState === "list" ? (
           <section
             className="nado-vocabulary-list-wrap"
             aria-label={isAccountSource ? "내 단어장 목록" : "목업 단어장 목록"}

@@ -460,6 +460,29 @@ describe("app", () => {
     expect(seenTokens).toEqual(["valid-token", "factory:valid-token"]);
   });
 
+  it("returns an empty vocabulary list for an authenticated user without saved items", async () => {
+    const app = createApp({
+      analyzeService: analysisService,
+      authService: {
+        getUser: async () => ({ id: "user_1" }),
+      },
+      vocabularyServiceFactory: () => ({
+        delete: async () => false,
+        list: async () => [],
+        save: async () => {
+          throw new Error("not used");
+        },
+      }),
+    });
+
+    const response = await request(app, "/api/vocabulary", {
+      headers: { Authorization: "Bearer valid-token" },
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ items: [] });
+  });
+
   it("saves vocabulary for the authenticated user", async () => {
     const app = createApp({
       analyzeService: analysisService,

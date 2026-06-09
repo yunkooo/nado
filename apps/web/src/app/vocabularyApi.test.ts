@@ -41,6 +41,21 @@ describe("vocabularyApi", () => {
     });
   });
 
+  it("treats an empty vocabulary response as a successful empty list", async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json({
+        items: [],
+      }),
+    );
+
+    await expect(listVocabulary("session-token", { fetcher })).resolves.toEqual(
+      {
+        data: [],
+        status: "success",
+      },
+    );
+  });
+
   it("deletes a vocabulary item with an authenticated bearer token", async () => {
     const fetcher = vi.fn(async () => new Response(null, { status: 204 }));
 

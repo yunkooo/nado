@@ -13,14 +13,6 @@ export default function ReviewPage() {
             </div>
           </header>
 
-          <section className="nado-page-notice" aria-label="복습 데이터 안내">
-            <strong>로그인하면 내 단어장으로 복습해요</strong>
-            <span>
-              로그인 전에는 목업 데이터로 정답을 열고 다음 카드로 넘어가는
-              흐름을 먼저 볼 수 있어요.
-            </span>
-          </section>
-
           <ReviewFlow />
         </div>
       </section>
