@@ -356,6 +356,13 @@ a {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.nado-analysis-page .nado-vocabulary-list {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .nado-vocabulary-item {
   display: grid;
   gap: 14px;
