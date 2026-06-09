@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   MAX_ANALYSIS_TEXT_LENGTH,
   countAnalysisTextCharacters,
@@ -26,6 +26,7 @@ import {
 
 const inputDisclosure =
   "입력한 문장은 AI 분석을 위해 전송되며, 단어장에는 원문 문장을 저장하지 않습니다.";
+const VOCABULARY_SAVE_NOTICE_DISMISS_MS = 2500;
 
 type AnalysisState = AnalyzeTextResult | { status: "idle" | "loading" };
 export default function HomePage() {
@@ -38,6 +39,20 @@ export default function HomePage() {
   >({});
   const [vocabularySaveMessage, setVocabularySaveMessage] =
     useState<VocabularySaveNotice | null>(null);
+
+  useEffect(() => {
+    if (!vocabularySaveMessage) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setVocabularySaveMessage(null);
+    }, VOCABULARY_SAVE_NOTICE_DISMISS_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [vocabularySaveMessage]);
 
   const handleSubmitAnalysis = async () => {
     const nextText = normalizeAnalysisText(text);

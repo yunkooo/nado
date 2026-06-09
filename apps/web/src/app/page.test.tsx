@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import HomePage from "./page";
 
 const styles = readFileSync(new URL("./globals.css", import.meta.url), "utf8");
+const pageSource = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
 
 describe("HomePage", () => {
   it("renders the initial analysis screen without a result placeholder", () => {
@@ -86,6 +87,13 @@ describe("HomePage", () => {
     expect(styles).toContain(".nado-save-status");
     expect(styles).toContain("position: fixed");
     expect(styles).toContain("z-index: 90");
+  });
+
+  it("clears vocabulary save notifications after a short delay", () => {
+    expect(pageSource).toContain("VOCABULARY_SAVE_NOTICE_DISMISS_MS");
+    expect(pageSource).toContain("window.setTimeout");
+    expect(pageSource).toContain("setVocabularySaveMessage(null)");
+    expect(pageSource).toContain("window.clearTimeout");
   });
 
   it("defines blurred review answer styles", () => {
