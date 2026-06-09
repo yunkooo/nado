@@ -43,4 +43,21 @@ describe("Supabase migrations", () => {
       "grant execute on function public.consume_analysis_usage",
     );
   });
+
+  it("includes Supabase advisor remediations for RLS and RPC configuration", () => {
+    const migrationSql = readdirSync(migrationsDir)
+      .filter((file) => file.endsWith(".sql"))
+      .sort()
+      .map((file) => readFileSync(join(migrationsDir, file), "utf8"))
+      .join("\n");
+
+    expect(migrationSql).toContain("(select auth.uid()) = user_id");
+    expect(migrationSql).toContain(
+      'create policy "Service role can manage analysis usage"',
+    );
+    expect(migrationSql).toContain(
+      "alter function public.consume_analysis_usage(uuid, text, date, integer)",
+    );
+    expect(migrationSql).toContain("set search_path = ''");
+  });
 });
