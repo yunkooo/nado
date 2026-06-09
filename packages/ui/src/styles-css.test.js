@@ -26,6 +26,13 @@ describe("analysis component styles", () => {
       "white-space: nowrap",
     );
   });
+
+  it("uses a strong active color for the composer send button", () => {
+    const sendButtonRule = readRule(".nado-button--send");
+
+    expect(sendButtonRule).toContain("background: var(--nado-color-primary)");
+    expect(sendButtonRule).toContain("color: var(--nado-color-primary-ink)");
+  });
 });
 
 function readRule(selector) {

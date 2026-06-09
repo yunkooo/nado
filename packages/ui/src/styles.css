@@ -107,7 +107,7 @@
 }
 
 .nado-button--send {
-  background: #8f8f8b;
+  background: var(--nado-color-primary);
   color: var(--nado-color-primary-ink);
 }
 
