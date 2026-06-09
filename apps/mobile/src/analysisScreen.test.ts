@@ -6,10 +6,12 @@ import {
   ANALYSIS_PRIVACY_HELPER_TEXT,
   INITIAL_ANALYSIS_TEXT,
   getAnalysisComposerState,
+  mobileReviewCards,
   mobileReviewDirections,
   mobileReviewFlashcard,
   mobileTabs,
   mobileVocabularyItems,
+  mobileVocabularySummary,
   shouldShowAnalysisResult,
 } from "./analysisScreen";
 
@@ -37,12 +39,26 @@ describe("mobile analysis screen state", () => {
   it("matches the website vocabulary preview content", () => {
     expect(mobileVocabularyItems.map((item) => item.term)).toEqual([
       "wondering",
-      "help",
+      "take a look",
+      "issue",
     ]);
+    expect(mobileVocabularySummary).toEqual({
+      label: "저장 항목",
+      value: "3",
+    });
     expect(mobileVocabularyItems[0]).toEqual({
       date: "2026.06.09",
-      id: "vocabulary-wondering",
-      meanings: ["궁금해하다", "정중하게 질문을 꺼내는 표현"],
+      id: "mock-wondering",
+      meanings: [
+        {
+          meaning: "궁금해하다",
+          note: "정중하게 질문을 꺼내는 표현",
+        },
+        {
+          meaning: "~인지 알고 싶다",
+          note: "if 절과 함께 부드럽게 요청할 때 자주 쓰입니다.",
+        },
+      ],
       term: "wondering",
       typeLabel: "word",
     });
@@ -50,9 +66,16 @@ describe("mobile analysis screen state", () => {
 
   it("matches the website review publishing content", () => {
     expect(mobileReviewDirections).toEqual(["영어 → 한국어", "한국어 → 영어"]);
+    expect(mobileReviewCards.map((card) => card.term)).toEqual([
+      "wondering",
+      "take a look",
+      "issue",
+    ]);
     expect(mobileReviewFlashcard).toEqual({
       answer: "궁금해하다",
       eyebrow: "Flashcard",
+      meta: "1 / 3",
+      note: "정중하게 질문을 꺼내는 표현",
       term: "wondering",
     });
   });

@@ -14,10 +14,12 @@ import {
   ANALYSIS_INPUT_ACCESSIBILITY_LABEL,
   INITIAL_ANALYSIS_TEXT,
   getAnalysisComposerState,
+  mobileReviewCards,
   mobileReviewDirections,
   mobileReviewFlashcard,
   mobileTabs,
   mobileVocabularyItems,
+  mobileVocabularySummary,
   shouldShowAnalysisResult,
 } from "./src/analysisScreen";
 import type { MobileTabKey } from "./src/analysisScreen";
@@ -193,54 +195,81 @@ function VocabularyPage() {
       </View>
 
       <View style={styles.noticePanel} accessibilityLabel="로그인 안내">
-        <Text style={styles.noticeTitle}>Google 로그인이 필요해요</Text>
+        <Text style={styles.noticeTitle}>
+          로그인하면 실제 단어장을 불러와요
+        </Text>
         <Text style={styles.noticeText}>
-          로그인하면 저장한 단어와 표현을 이 화면에서 볼 수 있어요.
+          로그인 전에는 목업 데이터로 흐름을 먼저 확인할 수 있어요.
         </Text>
       </View>
 
       <View style={styles.pageLayout}>
-        <View style={styles.emptyPanel}>
-          <Text style={styles.eyebrow}>비어 있음</Text>
-          <Text style={styles.emptyPanelTitle}>단어장 항목이 아직 없어요</Text>
-          <Text style={styles.panelText}>저장된 단어와 표현이 없습니다.</Text>
+        <View style={styles.summaryItem} accessibilityLabel="단어장 요약">
+          <Text style={styles.summaryLabel}>
+            {mobileVocabularySummary.label}
+          </Text>
+          <Text style={styles.summaryValue}>
+            {mobileVocabularySummary.value}
+          </Text>
         </View>
 
-        {mobileVocabularyItems.map((item) => (
-          <View key={item.id} style={styles.vocabularyItem}>
-            <View style={styles.cardHeader}>
-              <View style={styles.termGroup}>
-                <Text style={styles.termText}>{item.term}</Text>
-                <Text style={styles.itemMeta}>{item.typeLabel}</Text>
-              </View>
-              <Text style={styles.itemMeta}>{item.date}</Text>
+        <View style={styles.vocabularyListWrap}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleGroup}>
+              <Text style={styles.eyebrow}>Mock flow</Text>
+              <Text style={styles.sectionTitle}>저장된 단어처럼 확인해요</Text>
             </View>
-            <View style={styles.meaningList}>
-              {item.meanings.map((meaning) => (
-                <View key={meaning} style={styles.meaningRow}>
-                  <Text style={styles.bullet}>•</Text>
-                  <Text style={styles.meaningText}>{meaning}</Text>
-                </View>
-              ))}
-            </View>
-            <View style={styles.itemActionRow}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ disabled: true }}
-                disabled
-                style={[styles.secondaryButton, styles.disabledControl]}
-              >
-                <Text style={styles.secondaryButtonText}>삭제</Text>
-              </Pressable>
-            </View>
+            <Text style={styles.sectionMeta}>
+              삭제 버튼으로 상태 변화를 확인해요
+            </Text>
           </View>
-        ))}
+
+          {mobileVocabularyItems.map((item) => (
+            <View key={item.id} style={styles.vocabularyItem}>
+              <View style={styles.cardHeader}>
+                <View style={styles.termGroup}>
+                  <Text style={styles.termText}>{item.term}</Text>
+                  <Text style={styles.vocabularyType}>{item.typeLabel}</Text>
+                </View>
+              </View>
+              <View style={styles.meaningList}>
+                {item.meanings.map((meaning) => (
+                  <View key={meaning.meaning} style={styles.meaningCard}>
+                    <Text style={styles.meaningText}>{meaning.meaning}</Text>
+                    <Text style={styles.meaningNote}>{meaning.note}</Text>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.itemFooter}>
+                <Text style={styles.itemMeta}>{item.date}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: true }}
+                  disabled
+                  style={styles.secondaryButton}
+                >
+                  <Text style={styles.secondaryButtonText}>삭제</Text>
+                </Pressable>
+              </View>
+            </View>
+          ))}
+        </View>
       </View>
     </View>
   );
 }
 
 function ReviewPage() {
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
+  const currentCard =
+    mobileReviewCards[currentCardIndex] ?? mobileReviewFlashcard;
+
+  const handleNextReviewCard = () => {
+    setCurrentCardIndex((index) => (index + 1) % mobileReviewCards.length);
+    setIsAnswerRevealed(false);
+  };
+
   return (
     <View style={styles.pageStack}>
       <View style={styles.pageHeader}>
@@ -251,9 +280,12 @@ function ReviewPage() {
       </View>
 
       <View style={styles.noticePanel} accessibilityLabel="로그인 안내">
-        <Text style={styles.noticeTitle}>Google 로그인이 필요해요</Text>
+        <Text style={styles.noticeTitle}>
+          로그인하면 내 단어장으로 복습해요
+        </Text>
         <Text style={styles.noticeText}>
-          로그인하면 저장한 단어로 복습을 시작할 수 있어요.
+          로그인 전에는 목업 데이터로 정답을 열고 다음 카드로 넘어가는 흐름을
+          먼저 볼 수 있어요.
         </Text>
       </View>
 
@@ -286,44 +318,38 @@ function ReviewPage() {
         </View>
 
         <View style={styles.reviewCard}>
-          <Text style={styles.eyebrow}>{mobileReviewFlashcard.eyebrow}</Text>
-          <Text style={styles.reviewTerm}>{mobileReviewFlashcard.term}</Text>
-          <Text style={styles.reviewAnswer}>
-            {mobileReviewFlashcard.answer}
+          <Text style={styles.eyebrow}>{currentCard.eyebrow}</Text>
+          <Text style={styles.reviewMeta}>{currentCard.meta}</Text>
+          <Text style={styles.reviewTerm}>{currentCard.term}</Text>
+          <Text
+            style={[
+              styles.reviewAnswer,
+              isAnswerRevealed ? styles.reviewAnswerRevealed : null,
+            ]}
+          >
+            {currentCard.answer}
           </Text>
+          <Text style={styles.reviewNote}>{currentCard.note}</Text>
         </View>
 
         <View style={styles.reviewActions}>
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ disabled: true }}
-            disabled
-            style={[
-              styles.secondaryButton,
-              styles.reviewActionButton,
-              styles.disabledControl,
-            ]}
+            accessibilityState={{ selected: isAnswerRevealed }}
+            onPress={() => setIsAnswerRevealed((isRevealed) => !isRevealed)}
+            style={[styles.secondaryButton, styles.reviewActionButton]}
           >
-            <Text style={styles.secondaryButtonText}>끝내기</Text>
+            <Text style={styles.secondaryButtonText}>
+              {isAnswerRevealed ? "정답 가리기" : "정답 보기"}
+            </Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ disabled: true }}
-            disabled
-            style={[
-              styles.primaryButton,
-              styles.reviewActionButton,
-              styles.disabledControl,
-            ]}
+            onPress={handleNextReviewCard}
+            style={[styles.primaryButton, styles.reviewActionButton]}
           >
             <Text style={styles.primaryButtonText}>다음</Text>
           </Pressable>
-        </View>
-
-        <View style={styles.emptyPanel}>
-          <Text style={styles.eyebrow}>비어 있음</Text>
-          <Text style={styles.emptyPanelTitle}>복습할 단어가 없어요</Text>
-          <Text style={styles.panelText}>저장된 단어와 표현이 없습니다.</Text>
         </View>
       </View>
     </View>
@@ -352,25 +378,20 @@ const styles = StyleSheet.create({
     color: mobileColors.inkMuted,
   },
   bottomArea: {
-    backgroundColor: mobileColors.canvas,
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
     borderTopColor: mobileColors.border,
     borderTopWidth: 1,
     gap: 10,
     paddingHorizontal: 14,
-    paddingTop: 12,
+    paddingTop: 14,
   },
   brandGroup: {
-    gap: 2,
-  },
-  bullet: {
-    color: mobileColors.inkMuted,
-    fontSize: 14,
-    lineHeight: 22,
+    height: 38,
+    justifyContent: "center",
   },
   cardHeader: {
     alignItems: "stretch",
-    gap: 4,
-    justifyContent: "space-between",
+    gap: 6,
   },
   composer: {
     backgroundColor: mobileColors.surface,
@@ -393,8 +414,9 @@ const styles = StyleSheet.create({
   content: {
     alignItems: "stretch",
     gap: 20,
-    padding: 20,
-    paddingBottom: 28,
+    paddingHorizontal: 14,
+    paddingTop: 20,
+    paddingBottom: 24,
     width: "100%",
   },
   count: {
@@ -406,20 +428,6 @@ const styles = StyleSheet.create({
     color: mobileColors.inkMuted,
     fontSize: 15,
     lineHeight: 23,
-  },
-  emptyPanel: {
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 8,
-    padding: 24,
-  },
-  emptyPanelTitle: {
-    color: mobileColors.ink,
-    fontSize: 16,
-    fontWeight: "800",
-    lineHeight: 22,
   },
   eyebrow: {
     color: mobileColors.inkMuted,
@@ -441,16 +449,17 @@ const styles = StyleSheet.create({
     minHeight: 74,
     padding: 0,
   },
-  disabledControl: {
-    opacity: 0.55,
-  },
-  itemActionRow: {
-    alignItems: "flex-end",
+  itemFooter: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "space-between",
+    marginTop: "auto",
   },
   itemMeta: {
     color: mobileColors.inkMuted,
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "800",
     lineHeight: 16,
   },
   loginButton: {
@@ -472,23 +481,32 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   logo: {
-    color: mobileColors.primary,
-    fontSize: 18,
-    fontWeight: "900",
+    color: mobileColors.ink,
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  meaningCard: {
+    backgroundColor: mobileColors.surfaceMuted,
+    borderColor: "#eeeeea",
+    borderRadius: 7,
+    borderWidth: 1,
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  meaningNote: {
+    color: mobileColors.inkMuted,
+    fontSize: 12,
+    lineHeight: 18,
   },
   meaningText: {
-    color: mobileColors.inkMuted,
-    flex: 1,
+    color: mobileColors.ink,
     fontSize: 14,
-    lineHeight: 22,
+    fontWeight: "800",
+    lineHeight: 20,
   },
   meaningList: {
-    gap: 6,
-  },
-  meaningRow: {
-    flexDirection: "row",
     gap: 8,
-    paddingRight: 8,
   },
   noticePanel: {
     backgroundColor: mobileColors.surfaceMuted,
@@ -530,13 +548,8 @@ const styles = StyleSheet.create({
   pageTitle: {
     color: mobileColors.ink,
     fontSize: 24,
-    fontWeight: "900",
+    fontWeight: "800",
     lineHeight: 30,
-  },
-  panelText: {
-    color: mobileColors.inkMuted,
-    fontSize: 14,
-    lineHeight: 22,
   },
   pressed: {
     opacity: 0.72,
@@ -578,11 +591,14 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   reviewAnswer: {
-    color: mobileColors.inkMuted,
+    color: mobileColors.ink,
+    filter: "blur(5px)",
     fontSize: 14,
     fontWeight: "800",
     lineHeight: 22,
-    opacity: 0.28,
+  },
+  reviewAnswerRevealed: {
+    filter: "none",
   },
   reviewControls: {
     alignSelf: "stretch",
@@ -618,8 +634,21 @@ const styles = StyleSheet.create({
   reviewTerm: {
     color: mobileColors.ink,
     fontSize: 28,
-    fontWeight: "900",
+    fontWeight: "800",
     lineHeight: 36,
+  },
+  reviewMeta: {
+    color: mobileColors.inkMuted,
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 16,
+  },
+  reviewNote: {
+    color: mobileColors.inkMuted,
+    fontSize: 14,
+    lineHeight: 22,
+    maxWidth: 420,
+    textAlign: "center",
   },
   resultArea: {
     backgroundColor: mobileColors.surface,
@@ -636,11 +665,56 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   safeArea: {
-    backgroundColor: mobileColors.canvas,
+    backgroundColor: mobileColors.surface,
     flex: 1,
   },
   shell: {
+    backgroundColor: mobileColors.surface,
     flex: 1,
+  },
+  sectionHeader: {
+    alignItems: "stretch",
+    gap: 8,
+  },
+  sectionMeta: {
+    color: mobileColors.inkMuted,
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 18,
+  },
+  sectionTitle: {
+    color: mobileColors.ink,
+    fontSize: 15,
+    fontWeight: "800",
+    lineHeight: 21,
+  },
+  sectionTitleGroup: {
+    gap: 5,
+  },
+  summaryItem: {
+    alignItems: "center",
+    backgroundColor: mobileColors.surface,
+    borderColor: mobileColors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "space-between",
+    minHeight: 62,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  summaryLabel: {
+    color: mobileColors.inkMuted,
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 16,
+  },
+  summaryValue: {
+    color: mobileColors.ink,
+    fontSize: 20,
+    fontWeight: "800",
+    lineHeight: 20,
   },
   tabbar: {
     alignItems: "center",
@@ -691,7 +765,7 @@ const styles = StyleSheet.create({
   },
   topbar: {
     alignItems: "center",
-    backgroundColor: mobileColors.canvas,
+    backgroundColor: mobileColors.surface,
     borderBottomColor: mobileColors.border,
     borderBottomWidth: 1,
     flexDirection: "row",
@@ -704,8 +778,29 @@ const styles = StyleSheet.create({
     borderColor: mobileColors.border,
     borderRadius: 8,
     borderWidth: 1,
-    gap: 12,
-    padding: 16,
+    gap: 14,
+    minHeight: 220,
+    padding: 18,
+    shadowColor: mobileColors.ink,
+    shadowOffset: { height: 10, width: 0 },
+    shadowOpacity: 0.04,
+    shadowRadius: 24,
+  },
+  vocabularyListWrap: {
+    gap: 10,
+  },
+  vocabularyType: {
+    alignSelf: "flex-start",
+    backgroundColor: mobileColors.surfaceMuted,
+    borderColor: mobileColors.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    color: mobileColors.inkMuted,
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   secondaryButton: {
     alignItems: "center",
