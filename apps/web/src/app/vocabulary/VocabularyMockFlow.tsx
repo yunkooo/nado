@@ -53,10 +53,9 @@ export function VocabularyMockFlow() {
                 <article className="nado-vocabulary-item" key={item.id}>
                   <header>
                     <div>
-                      <span className="nado-vocabulary-type">{item.type}</span>
                       <h2>{item.term}</h2>
+                      <span className="nado-vocabulary-type">{item.type}</span>
                     </div>
-                    <time dateTime={item.updatedAt}>2026.06.09</time>
                   </header>
                   <div
                     className="nado-vocabulary-meaning-list"
@@ -73,7 +72,12 @@ export function VocabularyMockFlow() {
                     ))}
                   </div>
                   <footer className="nado-vocabulary-item__footer">
-                    <span>뜻 {item.meanings.length}개</span>
+                    <time
+                      className="nado-vocabulary-item__date"
+                      dateTime={item.updatedAt}
+                    >
+                      2026.06.09
+                    </time>
                     <Button
                       onClick={() => deleteItem(item.id)}
                       size="sm"

@@ -22,8 +22,14 @@ describe("navigation pages", () => {
     expect(markup).toContain("nado-vocabulary-flow");
     expect(markup).toContain("nado-vocabulary-item");
     expect(markup).toContain("nado-vocabulary-type");
+    expect(markup).toContain(
+      '<h2>wondering</h2><span class="nado-vocabulary-type">word</span>',
+    );
+    expect(markup).toContain("nado-vocabulary-item__date");
     expect(markup).toContain("nado-vocabulary-meaning");
     expect(markup).toContain("take a look");
+    expect(markup).not.toContain("뜻 1개");
+    expect(markup).not.toContain("뜻 2개");
     expect(markup).not.toContain("nado-composer");
   });
 

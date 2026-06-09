@@ -91,6 +91,7 @@ describe("HomePage", () => {
     expect(styles).toContain(".nado-vocabulary-summary");
     expect(styles).toContain(".nado-vocabulary-flow");
     expect(styles).toContain(".nado-vocabulary-type");
+    expect(styles).toContain(".nado-vocabulary-item__date");
     expect(styles).toContain(".nado-vocabulary-meaning");
     expect(styles).toContain(".nado-review-card__answer--revealed");
   });

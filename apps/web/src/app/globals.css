@@ -248,8 +248,7 @@ a {
 
 .nado-vocabulary-summary__item span,
 .nado-section-header > span,
-.nado-vocabulary-item time,
-.nado-vocabulary-item__footer span {
+.nado-vocabulary-item__date {
   color: var(--nado-color-ink-muted);
   font-size: 0.75rem;
   font-weight: 800;
@@ -338,15 +337,13 @@ a {
 }
 
 .nado-vocabulary-item header {
-  align-items: start;
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
+  display: grid;
+  gap: 6px;
 }
 
 .nado-vocabulary-item header > div {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .nado-vocabulary-type {
