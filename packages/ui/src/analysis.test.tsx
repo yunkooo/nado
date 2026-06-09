@@ -37,6 +37,16 @@ const analysisFixture: AnalysisResultData = {
       ],
       naturalTranslation:
         "우리는 읽기 습관을 만들려고 하고 있지만 준비 과정이 방해가 된다.",
+      tokens: [
+        { text: "We", vocabularyKey: "we" },
+        { text: "are", vocabularyKey: "be" },
+        { text: "trying", vocabularyKey: "try" },
+        { text: "to", vocabularyKey: "to" },
+        { text: "build", vocabularyKey: "build" },
+        { text: "a", vocabularyKey: "a" },
+        { text: "reading", vocabularyKey: "reading" },
+        { text: "habit", vocabularyKey: "habit" },
+      ],
       grammarPoints: [
         {
           target: "are trying to",
@@ -44,6 +54,17 @@ const analysisFixture: AnalysisResultData = {
           explanation: "지금 진행 중인 시도나 노력을 나타낸다.",
         },
       ],
+    },
+  ],
+  vocabularyItems: [
+    {
+      baseForm: "habit",
+      contextMeaning: "반복해서 이어가는 행동을 말합니다.",
+      key: "habit",
+      meaning: "습관",
+      partOfSpeech: "명사",
+      term: "habit",
+      type: "word",
     },
   ],
   vocabularySuggestions: [
@@ -132,7 +153,7 @@ describe("analysis design system components", () => {
     expect(markup).not.toContain('<button class="nado-chip"');
   });
 
-  it("renders vocabulary suggestions as save buttons when a handler is provided", () => {
+  it("keeps saved vocabulary suggestions as disabled plus buttons", () => {
     const markup = renderToStaticMarkup(
       <AnalysisResult
         getVocabularySuggestionState={() => "saved"}
@@ -143,7 +164,8 @@ describe("analysis design system components", () => {
 
     expect(markup).toContain('<button class="nado-chip"');
     expect(markup).toContain('aria-label="setup: 준비 과정 저장"');
-    expect(markup).toContain("저장됨");
+    expect(markup).toContain('<span class="nado-chip__prefix">+</span>');
+    expect(markup).not.toContain("저장됨");
     expect(markup).toContain("disabled");
   });
 
@@ -170,6 +192,25 @@ describe("analysis design system components", () => {
     expect(markup).toContain("We are trying to build");
     expect(markup).toContain("우리는 만들려고 하고 있다");
     expect(markup).toContain("nado-reading-line__slash");
+  });
+
+  it("renders vocabulary hover popovers for matched sentence words", () => {
+    const markup = renderToStaticMarkup(
+      <AnalysisResult
+        getVocabularySuggestionState={() => "idle"}
+        onSaveVocabularySuggestion={noop}
+        result={analysisFixture}
+      />,
+    );
+
+    expect(markup).toContain("nado-word-token");
+    expect(markup).toContain('aria-label="habit 뜻과 저장 액션 보기"');
+    expect(markup).toContain("nado-word-popover");
+    expect(markup).toContain("명사");
+    expect(markup).toContain("습관");
+    expect(markup).toContain("반복해서 이어가는 행동을 말합니다.");
+    expect(markup).toContain('aria-label="habit 저장"');
+    expect(markup).toContain("+ 저장");
   });
 
   it("renders the complete analysis result sections", () => {

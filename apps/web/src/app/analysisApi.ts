@@ -90,6 +90,10 @@ function mapAnalysisResult(
       })),
       indexLabel: `문장 ${index + 1}`,
       naturalTranslation: sentence.translation,
+      tokens: sentence.tokens.map((token) => ({
+        text: token.text,
+        vocabularyKey: token.vocabularyKey,
+      })),
     })),
     sourceText,
     translation: [result.translation],
@@ -103,6 +107,16 @@ function mapAnalysisResult(
         term: item.english,
       })),
     ],
+    vocabularyItems: result.vocabularyItems.map((item) => ({
+      baseForm: item.baseForm,
+      contextMeaning: item.contextMeaning,
+      key: item.key,
+      meaning: item.meaning,
+      note: item.contextMeaning,
+      partOfSpeech: item.partOfSpeech,
+      term: item.term,
+      type: item.type,
+    })),
     vocabularySuggestions: readVocabularySuggestions(result),
   };
 }

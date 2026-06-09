@@ -26,6 +26,7 @@ function createSuccessSnapshot(): AnalysisPageSnapshot {
         sourceText: "I leave home.",
         translation: ["나는 집을 나선다."],
         translationNotes: [],
+        vocabularyItems: [],
         vocabularySuggestions: [],
       },
       status: "success",

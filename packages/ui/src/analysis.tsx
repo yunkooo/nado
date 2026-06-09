@@ -24,6 +24,12 @@ export interface SentenceAnalysisItem {
   grammarPoints: GrammarPoint[];
   indexLabel: string;
   naturalTranslation: string;
+  tokens: SentenceToken[];
+}
+
+export interface SentenceToken {
+  text: string;
+  vocabularyKey: string | null;
 }
 
 export interface VocabularySuggestion {
@@ -33,6 +39,13 @@ export interface VocabularySuggestion {
   type: "phrase" | "word";
 }
 
+export interface VocabularyItem extends VocabularySuggestion {
+  baseForm: string;
+  contextMeaning: string;
+  key: string;
+  partOfSpeech: string | null;
+}
+
 export type VocabularySuggestionSaveState = "idle" | "saved" | "saving";
 
 export interface AnalysisResultData {
@@ -40,6 +53,7 @@ export interface AnalysisResultData {
   sourceText: string;
   translation: string[];
   translationNotes: TranslationNote[];
+  vocabularyItems: VocabularyItem[];
   vocabularySuggestions: VocabularySuggestion[];
 }
 
@@ -149,24 +163,55 @@ export function TranslationNotes({ notes }: TranslationNotesProps) {
 
 export interface ReadingChunkLineProps {
   chunks: ReadingChunk[];
+  getVocabularySuggestionState?: (
+    suggestion: VocabularySuggestion,
+  ) => VocabularySuggestionSaveState;
+  onSaveVocabularySuggestion?: (suggestion: VocabularySuggestion) => void;
+  tokens?: SentenceToken[];
+  vocabularyItems?: VocabularyItem[];
 }
 
-export function ReadingChunkLine({ chunks }: ReadingChunkLineProps) {
+export function ReadingChunkLine({
+  chunks,
+  getVocabularySuggestionState,
+  onSaveVocabularySuggestion,
+  tokens = [],
+  vocabularyItems = [],
+}: ReadingChunkLineProps) {
+  const vocabularyItemByKey = createVocabularyItemMap(vocabularyItems);
+  let tokenIndex = 0;
+
   return (
     <div className="nado-reading-line">
-      {chunks.map((chunk, index) => (
-        <Fragment key={`${chunk.english}-${chunk.korean}-${index}`}>
-          <span className="nado-reading-line__chunk">
-            <span className="nado-reading-line__english">{chunk.english}</span>
-            <span className="nado-reading-line__korean">{chunk.korean}</span>
-          </span>
-          {index < chunks.length - 1 ? (
-            <span className="nado-reading-line__slash" aria-hidden="true">
-              /
+      {chunks.map((chunk, index) => {
+        const renderedEnglish = renderVocabularyAwareText({
+          getVocabularySuggestionState,
+          onSaveVocabularySuggestion,
+          onTokenConsumed: (nextTokenIndex) => {
+            tokenIndex = nextTokenIndex;
+          },
+          startTokenIndex: tokenIndex,
+          text: chunk.english,
+          tokens,
+          vocabularyItemByKey,
+        });
+
+        return (
+          <Fragment key={`${chunk.english}-${chunk.korean}-${index}`}>
+            <span className="nado-reading-line__chunk">
+              <span className="nado-reading-line__english">
+                {renderedEnglish}
+              </span>
+              <span className="nado-reading-line__korean">{chunk.korean}</span>
             </span>
-          ) : null}
-        </Fragment>
-      ))}
+            {index < chunks.length - 1 ? (
+              <span className="nado-reading-line__slash" aria-hidden="true">
+                /
+              </span>
+            ) : null}
+          </Fragment>
+        );
+      })}
     </div>
   );
 }
@@ -195,15 +240,31 @@ export function GrammarPointList({ points }: GrammarPointListProps) {
 }
 
 export interface SentenceAnalysisProps {
+  getVocabularySuggestionState?: (
+    suggestion: VocabularySuggestion,
+  ) => VocabularySuggestionSaveState;
+  onSaveVocabularySuggestion?: (suggestion: VocabularySuggestion) => void;
   sentence: SentenceAnalysisItem;
+  vocabularyItems?: VocabularyItem[];
 }
 
-export function SentenceAnalysis({ sentence }: SentenceAnalysisProps) {
+export function SentenceAnalysis({
+  getVocabularySuggestionState,
+  onSaveVocabularySuggestion,
+  sentence,
+  vocabularyItems,
+}: SentenceAnalysisProps) {
   return (
     <article className="nado-sentence-analysis">
       <div className="nado-sentence-analysis__index">{sentence.indexLabel}</div>
       <div className="nado-sentence-analysis__content">
-        <ReadingChunkLine chunks={sentence.chunks} />
+        <ReadingChunkLine
+          chunks={sentence.chunks}
+          getVocabularySuggestionState={getVocabularySuggestionState}
+          onSaveVocabularySuggestion={onSaveVocabularySuggestion}
+          tokens={sentence.tokens}
+          vocabularyItems={vocabularyItems}
+        />
         <p className="nado-sentence-analysis__translation">
           {sentence.naturalTranslation}
         </p>
@@ -284,8 +345,11 @@ export function AnalysisResult({
         <div className="nado-sentence-list">
           {result.sentences.map((sentence) => (
             <SentenceAnalysis
+              getVocabularySuggestionState={getVocabularySuggestionState}
               key={`${sentence.indexLabel}-${sentence.naturalTranslation}`}
+              onSaveVocabularySuggestion={onSaveVocabularySuggestion}
               sentence={sentence}
+              vocabularyItems={result.vocabularyItems}
             />
           ))}
         </div>
@@ -302,13 +366,160 @@ export function AnalysisResult({
 }
 
 function getSavePrefix(state: VocabularySuggestionSaveState) {
-  if (state === "saved") {
-    return "저장됨";
-  }
-
   if (state === "saving") {
     return "저장 중";
   }
 
   return "+";
+}
+
+interface VocabularyAwareTextOptions {
+  getVocabularySuggestionState?: (
+    suggestion: VocabularySuggestion,
+  ) => VocabularySuggestionSaveState;
+  onSaveVocabularySuggestion?: (suggestion: VocabularySuggestion) => void;
+  onTokenConsumed: (nextTokenIndex: number) => void;
+  startTokenIndex: number;
+  text: string;
+  tokens: SentenceToken[];
+  vocabularyItemByKey: Map<string, VocabularyItem>;
+}
+
+const englishWordPattern = /[A-Za-z]+(?:['’-][A-Za-z]+)*/g;
+
+function renderVocabularyAwareText({
+  getVocabularySuggestionState,
+  onSaveVocabularySuggestion,
+  onTokenConsumed,
+  startTokenIndex,
+  text,
+  tokens,
+  vocabularyItemByKey,
+}: VocabularyAwareTextOptions) {
+  const parts: ReactNode[] = [];
+  let tokenIndex = startTokenIndex;
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(englishWordPattern)) {
+    const word = match[0];
+    const matchIndex = match.index ?? 0;
+
+    if (matchIndex > lastIndex) {
+      parts.push(text.slice(lastIndex, matchIndex));
+    }
+
+    const tokenMatch = findMatchingToken(tokens, tokenIndex, word);
+    tokenIndex = tokenMatch.nextTokenIndex;
+    const vocabularyKey = tokenMatch.token?.vocabularyKey;
+    const vocabularyItem = vocabularyKey
+      ? vocabularyItemByKey.get(vocabularyKey)
+      : undefined;
+
+    if (vocabularyItem) {
+      parts.push(
+        <VocabularyWordToken
+          getVocabularySuggestionState={getVocabularySuggestionState}
+          item={vocabularyItem}
+          key={`${word}-${matchIndex}`}
+          onSaveVocabularySuggestion={onSaveVocabularySuggestion}
+          text={word}
+        />,
+      );
+    } else {
+      parts.push(word);
+    }
+
+    lastIndex = matchIndex + word.length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  onTokenConsumed(tokenIndex);
+  return parts.length > 0 ? parts : text;
+}
+
+interface VocabularyWordTokenProps {
+  getVocabularySuggestionState?: (
+    suggestion: VocabularySuggestion,
+  ) => VocabularySuggestionSaveState;
+  item: VocabularyItem;
+  onSaveVocabularySuggestion?: (suggestion: VocabularySuggestion) => void;
+  text: string;
+}
+
+function VocabularyWordToken({
+  getVocabularySuggestionState,
+  item,
+  onSaveVocabularySuggestion,
+  text,
+}: VocabularyWordTokenProps) {
+  const state = getVocabularySuggestionState?.(item) ?? "idle";
+  const canSave = Boolean(onSaveVocabularySuggestion);
+
+  return (
+    <span className="nado-word-token-wrap">
+      <button
+        aria-label={`${text} 뜻과 저장 액션 보기`}
+        className="nado-word-token"
+        type="button"
+      >
+        {text}
+      </button>
+      <span className="nado-word-popover" role="tooltip">
+        <span className="nado-word-popover__header">
+          <strong>{item.term}</strong>
+          {item.partOfSpeech ? <span>{item.partOfSpeech}</span> : null}
+        </span>
+        <span className="nado-word-popover__meaning">{item.meaning}</span>
+        <span className="nado-word-popover__context">
+          {item.contextMeaning}
+        </span>
+        {canSave ? (
+          <button
+            aria-label={`${item.term} 저장`}
+            className="nado-word-popover__save"
+            disabled={state !== "idle"}
+            onClick={() => onSaveVocabularySuggestion?.(item)}
+            type="button"
+          >
+            {state === "saving" ? "저장 중" : "+ 저장"}
+          </button>
+        ) : null}
+      </span>
+    </span>
+  );
+}
+
+function createVocabularyItemMap(vocabularyItems: VocabularyItem[]) {
+  return new Map(vocabularyItems.map((item) => [item.key, item]));
+}
+
+function findMatchingToken(
+  tokens: SentenceToken[],
+  startIndex: number,
+  word: string,
+) {
+  const normalizedWord = normalizeVocabularyMatchText(word);
+
+  for (let index = startIndex; index < tokens.length; index += 1) {
+    if (
+      normalizeVocabularyMatchText(tokens[index]?.text ?? "") === normalizedWord
+    ) {
+      return {
+        nextTokenIndex: index + 1,
+        token: tokens[index],
+      };
+    }
+  }
+
+  return {
+    nextTokenIndex: startIndex,
+    token: undefined,
+  };
+}
+
+function normalizeVocabularyMatchText(text: string) {
+  return text.normalize("NFKC").toLocaleLowerCase("en-US");
 }

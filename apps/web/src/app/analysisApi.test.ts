@@ -26,7 +26,12 @@ describe("analyzeText", () => {
                 },
               ],
               source: "I was wondering if you could help me.",
-              tokens: [],
+              tokens: [
+                { text: "I", vocabularyKey: "i" },
+                { text: "was", vocabularyKey: "be" },
+                { text: "wondering", vocabularyKey: "wonder" },
+                { text: "if", vocabularyKey: "if" },
+              ],
               translation: "도와주실 수 있는지 궁금합니다.",
             },
           ],
@@ -39,7 +44,18 @@ describe("analyzeText", () => {
           ],
           translation: "도와주실 수 있는지 궁금합니다.",
           translationExplanation: "정중한 요청 표현입니다.",
-          vocabularyItems: [],
+          vocabularyItems: [
+            {
+              baseForm: "wonder",
+              contextMeaning: "무언가를 알고 싶어 하는 상태를 나타냅니다.",
+              key: "wonder",
+              meaning: "궁금해하다",
+              partOfSpeech: "동사",
+              saveLabel: "wondering",
+              term: "wondering",
+              type: "word",
+            },
+          ],
           vocabularySuggestions: [
             {
               key: "wonder",
@@ -84,6 +100,12 @@ describe("analyzeText", () => {
             ],
             indexLabel: "문장 1",
             naturalTranslation: "도와주실 수 있는지 궁금합니다.",
+            tokens: [
+              { text: "I", vocabularyKey: "i" },
+              { text: "was", vocabularyKey: "be" },
+              { text: "wondering", vocabularyKey: "wonder" },
+              { text: "if", vocabularyKey: "if" },
+            ],
           },
         ],
         sourceText: "I was wondering if you could help me.",
@@ -102,6 +124,17 @@ describe("analyzeText", () => {
           {
             meaning: "궁금해하다",
             note: "정중한 질문에서 자주 쓰입니다.",
+            term: "wondering",
+            type: "word",
+          },
+        ],
+        vocabularyItems: [
+          {
+            baseForm: "wonder",
+            contextMeaning: "무언가를 알고 싶어 하는 상태를 나타냅니다.",
+            key: "wonder",
+            meaning: "궁금해하다",
+            partOfSpeech: "동사",
             term: "wondering",
             type: "word",
           },
