@@ -332,13 +332,18 @@
   vertical-align: top;
 }
 
+.nado-reading-line__english,
+.nado-reading-line__korean {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 .nado-reading-line__english {
   color: #252521;
   font-size: 1.25rem;
   font-weight: 850;
   letter-spacing: 0;
   line-height: 1.38;
-  white-space: nowrap;
 }
 
 .nado-reading-line__korean {
@@ -346,7 +351,6 @@
   font-size: 0.8125rem;
   font-weight: 650;
   line-height: 1.45;
-  white-space: nowrap;
 }
 
 .nado-reading-line__slash {
@@ -492,14 +496,6 @@
 
   .nado-grammar-list__label {
     flex-wrap: wrap;
-    white-space: normal;
-  }
-}
-
-@container nado-reading-line (max-width: 420px) {
-  .nado-reading-line__english,
-  .nado-reading-line__korean {
-    overflow-wrap: anywhere;
     white-space: normal;
   }
 }

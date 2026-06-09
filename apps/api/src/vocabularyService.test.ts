@@ -115,6 +115,44 @@ describe("createVocabularyService", () => {
     ]);
   });
 
+  it("normalizes Postgres timestamp offsets before returning vocabulary items", async () => {
+    const service = createVocabularyService({
+      store: new MemoryVocabularyStore([
+        {
+          created_at: "2026-06-09T08:10:40+00:00",
+          id: "row_1",
+          meanings: [
+            {
+              createdAt: "2026-06-09T08:10:40.000Z",
+              meaning: "직접 저장",
+            },
+          ],
+          normalized_term: "nado-rest-save",
+          term: "nado-rest-save",
+          type: "word",
+          updated_at: "2026-06-09T08:10:40+00:00",
+          user_id: "user_1",
+        },
+      ]),
+    });
+
+    await expect(service.list("user_1")).resolves.toEqual([
+      {
+        createdAt: "2026-06-09T08:10:40.000Z",
+        id: "row_1",
+        meanings: [
+          {
+            createdAt: "2026-06-09T08:10:40.000Z",
+            meaning: "직접 저장",
+          },
+        ],
+        term: "nado-rest-save",
+        type: "word",
+        updatedAt: "2026-06-09T08:10:40.000Z",
+      },
+    ]);
+  });
+
   it("inserts a new vocabulary item for a new normalized term", async () => {
     const store = new MemoryVocabularyStore();
     const service = createVocabularyService({

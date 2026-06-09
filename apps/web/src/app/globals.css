@@ -181,13 +181,21 @@ a {
   background: var(--nado-color-surface-muted);
   border: 1px solid var(--nado-color-border);
   border-radius: var(--nado-radius-md);
+  bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 16px 42px rgba(32, 32, 29, 0.16);
   color: var(--nado-color-ink-muted);
   display: flex;
   font-size: 0.875rem;
   font-weight: 700;
+  left: 50%;
   line-height: 1.5;
+  max-width: 520px;
   min-height: 48px;
   padding: 12px 16px;
+  position: fixed;
+  transform: translateX(-50%);
+  width: calc(100vw - 32px);
+  z-index: 90;
 }
 
 .nado-save-status--error {

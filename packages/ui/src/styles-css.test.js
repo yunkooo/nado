@@ -8,4 +8,34 @@ describe("analysis component styles", () => {
     expect(styles).toContain("container: nado-result-card / inline-size");
     expect(styles).toContain("@container nado-result-card");
   });
+
+  it("wraps long reading chunks before they overflow the sentence card", () => {
+    const readingTextRule = readRule(
+      ".nado-reading-line__english,\n.nado-reading-line__korean",
+    );
+
+    expect(styles).toContain(
+      ".nado-reading-line__english,\n.nado-reading-line__korean",
+    );
+    expect(readingTextRule).toContain("overflow-wrap: anywhere");
+    expect(readingTextRule).toContain("white-space: normal");
+    expect(readRule(".nado-reading-line__english")).not.toContain(
+      "white-space: nowrap",
+    );
+    expect(readRule(".nado-reading-line__korean")).not.toContain(
+      "white-space: nowrap",
+    );
+  });
 });
+
+function readRule(selector) {
+  const startIndex = styles.indexOf(`${selector} {`);
+
+  if (startIndex === -1) {
+    return "";
+  }
+
+  const endIndex = styles.indexOf("}", startIndex);
+
+  return styles.slice(startIndex, endIndex);
+}

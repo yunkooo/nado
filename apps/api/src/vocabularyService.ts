@@ -140,11 +140,21 @@ function normalizeDisplayTerm(term: string): string {
 
 function toVocabularyItem(row: VocabularyRow): VocabularyItem {
   return vocabularyItemSchema.parse({
-    createdAt: row.created_at,
+    createdAt: toIsoDateTime(row.created_at),
     id: row.id,
     meanings: row.meanings,
     term: row.term,
     type: row.type,
-    updatedAt: row.updated_at,
+    updatedAt: toIsoDateTime(row.updated_at),
   });
+}
+
+function toIsoDateTime(value: string): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toISOString();
 }

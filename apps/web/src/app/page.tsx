@@ -18,16 +18,16 @@ import { AppShell } from "./AppShell";
 import { analyzeText, type AnalyzeTextResult } from "./analysisApi";
 import { getCurrentAccessToken } from "./authClient";
 import { saveVocabularyItem } from "./vocabularyApi";
+import {
+  createVocabularyLoginRequiredNotice,
+  createVocabularySaveSuccessNotice,
+  type VocabularySaveNotice,
+} from "./vocabularySaveNotice";
 
 const inputDisclosure =
   "입력한 문장은 AI 분석을 위해 전송되며, 단어장에는 원문 문장을 저장하지 않습니다.";
 
 type AnalysisState = AnalyzeTextResult | { status: "idle" | "loading" };
-type VocabularySaveMessage = {
-  tone: "error" | "success";
-  text: string;
-};
-
 export default function HomePage() {
   const [text, setText] = useState("");
   const [analysisState, setAnalysisState] = useState<AnalysisState>({
@@ -37,7 +37,7 @@ export default function HomePage() {
     Record<string, VocabularySuggestionSaveState>
   >({});
   const [vocabularySaveMessage, setVocabularySaveMessage] =
-    useState<VocabularySaveMessage | null>(null);
+    useState<VocabularySaveNotice | null>(null);
 
   const handleSubmitAnalysis = async () => {
     const nextText = normalizeAnalysisText(text);
@@ -75,10 +75,7 @@ export default function HomePage() {
     const accessToken = await getCurrentAccessToken();
 
     if (!accessToken) {
-      setVocabularySaveMessage({
-        text: "Google 로그인 후 단어장을 저장할 수 있어요.",
-        tone: "error",
-      });
+      setVocabularySaveMessage(createVocabularyLoginRequiredNotice());
       return;
     }
 
@@ -103,10 +100,9 @@ export default function HomePage() {
         ...currentStates,
         [key]: "saved",
       }));
-      setVocabularySaveMessage({
-        text: `${result.data.term}을 단어장에 저장했어요.`,
-        tone: "success",
-      });
+      setVocabularySaveMessage(
+        createVocabularySaveSuccessNotice(result.data.term),
+      );
       return;
     }
 

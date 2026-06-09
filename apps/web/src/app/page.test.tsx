@@ -82,6 +82,12 @@ describe("HomePage", () => {
     expect(styles).toContain("min-height: 96px");
   });
 
+  it("defines floating save notification styles", () => {
+    expect(styles).toContain(".nado-save-status");
+    expect(styles).toContain("position: fixed");
+    expect(styles).toContain("z-index: 90");
+  });
+
   it("defines blurred review answer styles", () => {
     expect(styles).toContain(".nado-review-card__answer");
     expect(styles).toContain("filter: blur(5px)");
