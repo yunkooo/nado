@@ -1,5 +1,58 @@
+import type { Server } from "node:http";
+import type { AddressInfo } from "node:net";
 import { describe, expect, it } from "vitest";
 import { app, createApp, parseAnalyzeInput } from "./app.js";
+
+type TestHttpApp = {
+  listen(port: number, hostname: string, callback: () => void): Server;
+};
+
+async function request(
+  app: TestHttpApp,
+  path: string,
+  init?: RequestInit,
+): Promise<Response> {
+  const server = await listen(app);
+
+  try {
+    const address = server.address();
+
+    if (!isAddressInfo(address)) {
+      throw new Error("Test server did not expose a TCP address.");
+    }
+
+    return await fetch(`http://127.0.0.1:${address.port}${path}`, init);
+  } finally {
+    await close(server);
+  }
+}
+
+function listen(app: TestHttpApp): Promise<Server> {
+  return new Promise((resolve, reject) => {
+    const server = app.listen(0, "127.0.0.1", () => resolve(server));
+
+    server.once("error", reject);
+  });
+}
+
+function close(server: Server): Promise<void> {
+  return new Promise((resolve, reject) => {
+    server.close((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
+function isAddressInfo(
+  value: string | AddressInfo | null,
+): value is AddressInfo {
+  return typeof value === "object" && value !== null;
+}
 
 describe("parseAnalyzeInput", () => {
   it("accepts a trimmed English input", () => {
@@ -35,7 +88,7 @@ describe("app", () => {
   };
 
   it("returns health status", async () => {
-    const response = await app.request("/health");
+    const response = await request(app, "/health");
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
@@ -45,13 +98,19 @@ describe("app", () => {
   });
 
   it("rejects invalid analyze JSON", async () => {
-    const response = await app.request("/api/analyze", {
+    const response = await request(app, "/api/analyze", {
       body: "{",
       headers: { "Content-Type": "application/json" },
       method: "POST",
     });
 
     expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "invalid_json",
+        message: "Invalid JSON body.",
+      },
+    });
   });
 
   it("returns a structured analyze response for valid input", async () => {
@@ -107,7 +166,7 @@ describe("app", () => {
       analysisUsageService,
     });
 
-    const response = await app.request("/api/analyze", {
+    const response = await request(app, "/api/analyze", {
       body: JSON.stringify({
         text: "  I was wondering if you could help me.  ",
       }),
@@ -140,7 +199,7 @@ describe("app", () => {
       },
     });
 
-    const response = await app.request("/api/analyze", {
+    const response = await request(app, "/api/analyze", {
       body: JSON.stringify({ text: "1234567890 !!!" }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
@@ -164,7 +223,7 @@ describe("app", () => {
       analysisUsageService,
     });
 
-    const response = await app.request("/api/analyze", {
+    const response = await request(app, "/api/analyze", {
       body: JSON.stringify({ text: "I was wondering if you could help me." }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
@@ -202,7 +261,7 @@ describe("app", () => {
       },
     });
 
-    const response = await app.request("/api/analyze", {
+    const response = await request(app, "/api/analyze", {
       body: JSON.stringify({ text: "I was wondering if you could help me." }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
@@ -240,7 +299,7 @@ describe("app", () => {
       },
     });
 
-    const response = await app.request("/api/analyze", {
+    const response = await request(app, "/api/analyze", {
       body: JSON.stringify({ text: "I was wondering if you could help me." }),
       headers: {
         Authorization: "Bearer valid-token",
@@ -272,7 +331,7 @@ describe("app", () => {
       },
     });
 
-    const response = await app.request("/api/analyze", {
+    const response = await request(app, "/api/analyze", {
       body: JSON.stringify({ text: "I was wondering if you could help me." }),
       headers: {
         "Content-Type": "application/json",
@@ -290,7 +349,7 @@ describe("app", () => {
   it("rejects vocabulary requests without a bearer token", async () => {
     const app = createApp({ analyzeService: analysisService });
 
-    const response = await app.request("/api/vocabulary");
+    const response = await request(app, "/api/vocabulary");
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
@@ -339,7 +398,7 @@ describe("app", () => {
       },
     });
 
-    const response = await app.request("/api/vocabulary", {
+    const response = await request(app, "/api/vocabulary", {
       headers: { Authorization: "Bearer valid-token" },
     });
 
@@ -390,7 +449,7 @@ describe("app", () => {
       }),
     });
 
-    const response = await app.request("/api/vocabulary", {
+    const response = await request(app, "/api/vocabulary", {
       body: JSON.stringify({
         meaning: "~인지 궁금하다",
         note: "정중한 질문에서 자주 쓰입니다.",
@@ -429,7 +488,7 @@ describe("app", () => {
       }),
     });
 
-    const response = await app.request("/api/vocabulary/row_1", {
+    const response = await request(app, "/api/vocabulary/row_1", {
       headers: { Authorization: "Bearer valid-token" },
       method: "DELETE",
     });
@@ -453,7 +512,7 @@ describe("app", () => {
       }),
     });
 
-    const response = await app.request("/api/vocabulary/missing", {
+    const response = await request(app, "/api/vocabulary/missing", {
       headers: { Authorization: "Bearer valid-token" },
       method: "DELETE",
     });

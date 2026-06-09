@@ -1,5 +1,13 @@
 import { createHash } from "node:crypto";
-import { Hono } from "hono";
+import express from "express";
+import type {
+  ErrorRequestHandler,
+  Express,
+  NextFunction,
+  Request,
+  RequestHandler,
+  Response,
+} from "express";
 import {
   analyzeResponseSchema,
   analyzeRequestSchema,
@@ -77,8 +85,8 @@ export type AppDependencies = {
   vocabularyServiceFactory?: VocabularyServiceFactory;
 };
 
-export function createApp(dependencies: AppDependencies = {}): Hono {
-  const app = new Hono();
+export function createApp(dependencies: AppDependencies = {}): Express {
+  const app = express();
   const analyzeService =
     dependencies.analyzeService ?? createOpenAIAnalysisService();
   const analysisUsageService =
@@ -91,178 +99,148 @@ export function createApp(dependencies: AppDependencies = {}): Hono {
   const vocabularyServiceFactory =
     dependencies.vocabularyServiceFactory ?? createSupabaseVocabularyService;
 
-  app.get("/health", (context) =>
-    context.json({
+  app.use(express.json());
+  app.use(invalidJsonHandler);
+
+  app.get("/health", (_request, response) =>
+    response.json({
       service: "nado-api",
       status: "ok",
     }),
   );
 
-  app.post("/api/analyze", async (context) => {
-    let body: unknown;
+  app.post(
+    "/api/analyze",
+    asyncRoute(async (request, response) => {
+      const input = parseAnalyzeInput(request.body as unknown);
 
-    try {
-      body = await context.req.json();
-    } catch {
-      return context.json(
-        {
-          error: {
-            code: "invalid_json",
-            message: "Invalid JSON body.",
-          },
-        },
-        400,
-      );
-    }
-
-    const input = parseAnalyzeInput(body);
-
-    if (!input.ok) {
-      return context.json(
-        {
+      if (!input.ok) {
+        return response.status(400).json({
           error: {
             code: input.code,
             issues: input.issues,
             message:
               "Text must be a non-empty English sentence up to 500 characters.",
           },
-        },
-        400,
+        });
+      }
+
+      if (!isLikelyEnglishLearningText(input.text)) {
+        return response.json({
+          reason: "영어 문장으로 분석하기 어려운 입력입니다.",
+          status: "not_analyzable",
+        });
+      }
+
+      const usageIdentity = await resolveAnalyzeUsageIdentity(
+        request.header("Authorization"),
+        request.header("X-Forwarded-For"),
+        request.header("X-Real-IP"),
       );
-    }
+      const usageDecision = await analysisUsageService.consume(usageIdentity);
 
-    if (!isLikelyEnglishLearningText(input.text)) {
-      return context.json({
-        reason: "영어 문장으로 분석하기 어려운 입력입니다.",
-        status: "not_analyzable",
-      });
-    }
+      if (!usageDecision.ok) {
+        return response
+          .set("Retry-After", String(usageDecision.retryAfterSeconds))
+          .status(429)
+          .json({
+            error: {
+              code: "rate_limited",
+              message: "오늘 사용할 수 있는 분석 횟수를 모두 사용했어요.",
+            },
+          });
+      }
 
-    const usageIdentity = await resolveAnalyzeUsageIdentity(
-      context.req.header("Authorization"),
-      context.req.header("X-Forwarded-For"),
-      context.req.header("X-Real-IP"),
-    );
-    const usageDecision = await analysisUsageService.consume(usageIdentity);
+      try {
+        const analysis = analyzeResponseSchema.parse(
+          await analyzeService.analyze(input.text),
+        );
 
-    if (!usageDecision.ok) {
-      return context.json(
-        {
-          error: {
-            code: "rate_limited",
-            message: "오늘 사용할 수 있는 분석 횟수를 모두 사용했어요.",
-          },
-        },
-        429,
-        {
-          "Retry-After": String(usageDecision.retryAfterSeconds),
-        },
-      );
-    }
-
-    try {
-      const analysis = analyzeResponseSchema.parse(
-        await analyzeService.analyze(input.text),
-      );
-
-      return context.json(analysis);
-    } catch {
-      return context.json(
-        {
+        return response.json(analysis);
+      } catch {
+        return response.status(502).json({
           error: {
             code: "analysis_failed",
             message: "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
           },
-        },
-        502,
+        });
+      }
+    }),
+  );
+
+  app.get(
+    "/api/vocabulary",
+    asyncRoute(async (request, response) => {
+      const auth = await authenticate(request.header("Authorization"));
+
+      if (!auth.ok) {
+        return response.status(401).json(notAuthenticatedError());
+      }
+
+      const vocabularyService = vocabularyServiceFactory(auth.accessToken);
+      const items = await vocabularyService.list(auth.user.id);
+
+      return response.json({ items });
+    }),
+  );
+
+  app.post(
+    "/api/vocabulary",
+    asyncRoute(async (request, response) => {
+      const auth = await authenticate(request.header("Authorization"));
+
+      if (!auth.ok) {
+        return response.status(401).json(notAuthenticatedError());
+      }
+
+      const parsed = saveVocabularyRequestSchema.safeParse(
+        request.body as unknown,
       );
-    }
-  });
 
-  app.get("/api/vocabulary", async (context) => {
-    const auth = await authenticate(context.req.header("Authorization"));
-
-    if (!auth.ok) {
-      return context.json(notAuthenticatedError(), 401);
-    }
-
-    const vocabularyService = vocabularyServiceFactory(auth.accessToken);
-    const items = await vocabularyService.list(auth.user.id);
-
-    return context.json({ items });
-  });
-
-  app.post("/api/vocabulary", async (context) => {
-    const auth = await authenticate(context.req.header("Authorization"));
-
-    if (!auth.ok) {
-      return context.json(notAuthenticatedError(), 401);
-    }
-
-    let body: unknown;
-
-    try {
-      body = await context.req.json();
-    } catch {
-      return context.json(
-        {
-          error: {
-            code: "invalid_json",
-            message: "Invalid JSON body.",
-          },
-        },
-        400,
-      );
-    }
-
-    const parsed = saveVocabularyRequestSchema.safeParse(body);
-
-    if (!parsed.success) {
-      return context.json(
-        {
+      if (!parsed.success) {
+        return response.status(400).json({
           error: {
             code: "invalid_input",
             issues: parsed.error.issues.map((issue) => issue.message),
             message: "Vocabulary term, type, and meaning are required.",
           },
-        },
-        400,
+        });
+      }
+
+      const vocabularyService = vocabularyServiceFactory(auth.accessToken);
+      const item = await vocabularyService.save(auth.user.id, parsed.data);
+
+      return response.json({ item });
+    }),
+  );
+
+  app.delete(
+    "/api/vocabulary/:id",
+    asyncRoute(async (request, response) => {
+      const auth = await authenticate(request.header("Authorization"));
+
+      if (!auth.ok) {
+        return response.status(401).json(notAuthenticatedError());
+      }
+
+      const vocabularyService = vocabularyServiceFactory(auth.accessToken);
+      const deleted = await vocabularyService.delete(
+        auth.user.id,
+        readRouteParam(request.params.id),
       );
-    }
 
-    const vocabularyService = vocabularyServiceFactory(auth.accessToken);
-    const item = await vocabularyService.save(auth.user.id, parsed.data);
-
-    return context.json({ item });
-  });
-
-  app.delete("/api/vocabulary/:id", async (context) => {
-    const auth = await authenticate(context.req.header("Authorization"));
-
-    if (!auth.ok) {
-      return context.json(notAuthenticatedError(), 401);
-    }
-
-    const vocabularyService = vocabularyServiceFactory(auth.accessToken);
-    const deleted = await vocabularyService.delete(
-      auth.user.id,
-      context.req.param("id"),
-    );
-
-    if (!deleted) {
-      return context.json(
-        {
+      if (!deleted) {
+        return response.status(404).json({
           error: {
             code: "not_found",
             message: "단어장 항목을 찾을 수 없습니다.",
           },
-        },
-        404,
-      );
-    }
+        });
+      }
 
-    return context.body(null, 204);
-  });
+      return response.status(204).send();
+    }),
+  );
 
   return app;
 
@@ -311,7 +289,45 @@ export function createApp(dependencies: AppDependencies = {}): Hono {
   }
 }
 
-export const app = createApp();
+type AsyncRequestHandler = (
+  request: Request,
+  response: Response,
+  next: NextFunction,
+) => Promise<unknown> | unknown;
+
+function asyncRoute(handler: AsyncRequestHandler): RequestHandler {
+  return (request, response, next) => {
+    Promise.resolve(handler(request, response, next)).catch(next);
+  };
+}
+
+const invalidJsonHandler: ErrorRequestHandler = (
+  error,
+  _request,
+  response,
+  next,
+) => {
+  if (isJsonParseError(error)) {
+    response.status(400).json({
+      error: {
+        code: "invalid_json",
+        message: "Invalid JSON body.",
+      },
+    });
+    return;
+  }
+
+  next(error);
+};
+
+function isJsonParseError(error: unknown): boolean {
+  return (
+    error instanceof SyntaxError &&
+    typeof error === "object" &&
+    error !== null &&
+    "body" in error
+  );
+}
 
 function parseBearerToken(authorization: string | undefined): string | null {
   if (!authorization) {
@@ -325,6 +341,10 @@ function parseBearerToken(authorization: string | undefined): string | null {
   }
 
   return token;
+}
+
+function readRouteParam(value: string | string[] | undefined): string {
+  return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
 }
 
 function notAuthenticatedError() {
@@ -360,3 +380,5 @@ function lazySupabaseAnalysisUsageService(): AnalysisUsageService {
       createSupabaseAnalysisUsageService().consume(identity),
   };
 }
+
+export const app = createApp();
