@@ -133,7 +133,7 @@ export default function HomePage() {
         return nextStates;
       });
       analysisStore.setVocabularySaveMessage(
-        createVocabularySaveSuccessNotice(result.data.term),
+        createVocabularySaveSuccessNotice(),
       );
       return;
     }

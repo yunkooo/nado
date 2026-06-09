@@ -13,8 +13,8 @@ describe("vocabulary save notice", () => {
   });
 
   it("confirms when an authenticated save succeeds", () => {
-    expect(createVocabularySaveSuccessNotice("for feedback")).toEqual({
-      text: "for feedback을 단어장에 저장했어요.",
+    expect(createVocabularySaveSuccessNotice()).toEqual({
+      text: "단어장에 저장했어요.",
       tone: "success",
     });
   });

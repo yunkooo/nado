@@ -10,11 +10,9 @@ export function createVocabularyLoginRequiredNotice(): VocabularySaveNotice {
   };
 }
 
-export function createVocabularySaveSuccessNotice(
-  term: string,
-): VocabularySaveNotice {
+export function createVocabularySaveSuccessNotice(): VocabularySaveNotice {
   return {
-    text: `${term}을 단어장에 저장했어요.`,
+    text: "단어장에 저장했어요.",
     tone: "success",
   };
 }
