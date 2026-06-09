@@ -18,7 +18,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; connect-src 'self' http://localhost:* http://127.0.0.1:* https://*.supabase.co https://*.supabase.com https://nadoapi-production.up.railway.app; img-src 'self' asset: http://asset.localhost data: https://*.googleusercontent.com; style-src 'self' 'unsafe-inline'; script-src 'self'"
     }
   },
   "bundle": {
