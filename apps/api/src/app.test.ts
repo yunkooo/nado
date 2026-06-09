@@ -105,6 +105,28 @@ describe("app", () => {
     });
   });
 
+  it("allows Expo mobile web clients to call API routes", async () => {
+    const response = await request(app, "/api/analyze", {
+      headers: {
+        "Access-Control-Request-Headers": "content-type",
+        "Access-Control-Request-Method": "POST",
+        Origin: "http://localhost:8081",
+      },
+      method: "OPTIONS",
+    });
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
+      "http://localhost:8081",
+    );
+    expect(response.headers.get("Access-Control-Allow-Headers")).toContain(
+      "Content-Type",
+    );
+    expect(response.headers.get("Access-Control-Allow-Methods")).toContain(
+      "POST",
+    );
+  });
+
   it("rejects invalid analyze JSON", async () => {
     const response = await request(app, "/api/analyze", {
       body: "{",

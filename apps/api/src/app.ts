@@ -109,6 +109,7 @@ export function createApp(dependencies: AppDependencies = {}): Express {
     app.set("trust proxy", trustProxy);
   }
 
+  app.use(createCorsMiddleware());
   app.use(express.json());
   app.use(invalidJsonHandler);
 
@@ -309,6 +310,54 @@ function asyncRoute(handler: AsyncRequestHandler): RequestHandler {
   return (request, response, next) => {
     Promise.resolve(handler(request, response, next)).catch(next);
   };
+}
+
+function createCorsMiddleware(): RequestHandler {
+  return (request, response, next) => {
+    const origin = request.header("Origin");
+    const allowOrigin = origin ? isAllowedCorsOrigin(origin) : false;
+
+    if (origin && allowOrigin) {
+      response.set("Access-Control-Allow-Origin", origin);
+      response.set("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
+      response.set(
+        "Access-Control-Allow-Headers",
+        "Authorization, Content-Type",
+      );
+      response.set("Vary", "Origin");
+    }
+
+    if (request.method === "OPTIONS" && allowOrigin) {
+      response.status(204).send();
+      return;
+    }
+
+    next();
+  };
+}
+
+function isAllowedCorsOrigin(origin: string): boolean {
+  if (readConfiguredCorsOrigins().includes(origin)) {
+    return true;
+  }
+
+  try {
+    const url = new URL(origin);
+
+    return (
+      (url.protocol === "http:" || url.protocol === "https:") &&
+      ["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function readConfiguredCorsOrigins(): string[] {
+  return (process.env.NADO_CORS_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
 }
 
 const invalidJsonHandler: ErrorRequestHandler = (
