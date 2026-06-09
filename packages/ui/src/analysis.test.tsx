@@ -164,7 +164,8 @@ describe("analysis design system components", () => {
 
     expect(markup).toContain('<button class="nado-chip"');
     expect(markup).toContain('aria-label="setup: 준비 과정 저장"');
-    expect(markup).toContain('<span class="nado-chip__prefix">저장됨</span>');
+    expect(markup).toContain('<span class="nado-chip__prefix">+</span>');
+    expect(markup).not.toContain("저장됨");
     expect(markup).toContain("disabled");
   });
 
