@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@nado/ui";
-import { getCurrentAccessToken } from "../authClient";
+import { useAuthState } from "../authState";
 import {
   getNextReviewIndex,
   getReviewCard,
@@ -17,15 +17,17 @@ type ReviewSource = "account" | "mock";
 type ReviewStatus = "loading" | "ready";
 
 export function ReviewFlow() {
+  const authState = useAuthState();
   const [direction, setDirection] =
     useState<ReviewDirection>("english-to-korean");
-  const [items, setItems] = useState<VocabularyItem[]>(mockVocabularyItems);
+  const [items, setItems] = useState<VocabularyItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
   const [source, setSource] = useState<ReviewSource>("mock");
-  const [status, setStatus] = useState<ReviewStatus>("ready");
+  const [status, setStatus] = useState<ReviewStatus>("loading");
   const [message, setMessage] = useState<string | null>(null);
   const currentItem = items[currentIndex];
+  const isLoading = status === "loading";
 
   useEffect(() => {
     let isCurrent = true;
@@ -33,13 +35,15 @@ export function ReviewFlow() {
     async function loadVocabularyForSession() {
       setStatus("loading");
 
-      const token = await getCurrentAccessToken();
-
-      if (!isCurrent) {
+      if (authState.status === "loading") {
+        setItems([]);
+        setCurrentIndex(0);
+        setIsAnswerRevealed(false);
+        setMessage(null);
         return;
       }
 
-      if (!token) {
+      if (authState.status !== "authenticated" || !authState.accessToken) {
         setItems(mockVocabularyItems);
         setCurrentIndex(0);
         setIsAnswerRevealed(false);
@@ -51,7 +55,7 @@ export function ReviewFlow() {
 
       setSource("account");
 
-      const result = await listVocabulary(token);
+      const result = await listVocabulary(authState.accessToken);
 
       if (!isCurrent) {
         return;
@@ -75,7 +79,17 @@ export function ReviewFlow() {
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [authState.accessToken, authState.status]);
+
+  if (isLoading) {
+    return (
+      <div className="nado-empty-panel" role="status">
+        <span className="nado-eyebrow">확인 중</span>
+        <h2>로그인 세션을 확인하고 있어요</h2>
+        <p>복습 카드를 불러오기 전에 계정 상태를 먼저 확인합니다.</p>
+      </div>
+    );
+  }
 
   if (message) {
     return (
@@ -149,9 +163,7 @@ export function ReviewFlow() {
           {isAccountSource ? "My flashcard" : "Flashcard"}
         </span>
         <span className="nado-review-card__meta">
-          {status === "loading"
-            ? "로그인 세션 확인 중"
-            : `${currentIndex + 1} / ${items.length}`}
+          {currentIndex + 1} / {items.length}
         </span>
         <h2>{card.prompt}</h2>
         <p

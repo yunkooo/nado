@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@nado/ui";
-import { getCurrentAccessToken } from "../authClient";
+import { useAuthState } from "../authState";
 import {
   deleteMockVocabularyItem,
   getMockVocabularySummary,
@@ -18,13 +18,16 @@ type VocabularySource = "account" | "mock";
 type VocabularyStatus = "loading" | "ready";
 
 export function VocabularyFlow() {
-  const [items, setItems] = useState<VocabularyItem[]>(mockVocabularyItems);
+  const authState = useAuthState();
+  const [items, setItems] = useState<VocabularyItem[]>([]);
   const [source, setSource] = useState<VocabularySource>("mock");
-  const [status, setStatus] = useState<VocabularyStatus>("ready");
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [status, setStatus] = useState<VocabularyStatus>("loading");
   const [message, setMessage] = useState<string | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
-  const summary = getMockVocabularySummary(items);
+  const isLoading = status === "loading";
+  const summary = isLoading
+    ? { label: "저장 항목", value: "-" }
+    : getMockVocabularySummary(items);
 
   useEffect(() => {
     let isCurrent = true;
@@ -32,25 +35,25 @@ export function VocabularyFlow() {
     async function loadVocabularyForSession() {
       setStatus("loading");
 
-      const token = await getCurrentAccessToken();
-
-      if (!isCurrent) {
+      if (authState.status === "loading") {
+        setItems([]);
+        setMessage(null);
+        setDeletingItemId(null);
         return;
       }
 
-      if (!token) {
-        setAccessToken(null);
+      if (authState.status !== "authenticated" || !authState.accessToken) {
         setItems(mockVocabularyItems);
         setMessage(null);
         setSource("mock");
         setStatus("ready");
+        setDeletingItemId(null);
         return;
       }
 
-      setAccessToken(token);
       setSource("account");
 
-      const result = await listVocabulary(token);
+      const result = await listVocabulary(authState.accessToken);
 
       if (!isCurrent) {
         return;
@@ -72,10 +75,10 @@ export function VocabularyFlow() {
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [authState.accessToken, authState.status]);
 
   const deleteItem = async (itemId: string) => {
-    if (!accessToken || source === "mock") {
+    if (!authState.accessToken || source === "mock") {
       setItems((currentItems) =>
         deleteMockVocabularyItem(currentItems, itemId),
       );
@@ -84,7 +87,10 @@ export function VocabularyFlow() {
 
     setDeletingItemId(itemId);
 
-    const result = await deleteVocabularyItemFromApi(itemId, accessToken);
+    const result = await deleteVocabularyItemFromApi(
+      itemId,
+      authState.accessToken,
+    );
 
     setDeletingItemId(null);
 
@@ -100,7 +106,6 @@ export function VocabularyFlow() {
   };
 
   const isAccountSource = source === "account";
-  const isLoading = status === "loading";
 
   return (
     <section className="nado-vocabulary-flow">
@@ -112,6 +117,17 @@ export function VocabularyFlow() {
       </section>
 
       <section className="nado-vocabulary-layout">
+        {isLoading ? (
+          <div
+            className="nado-empty-panel nado-empty-panel--compact"
+            role="status"
+          >
+            <span className="nado-eyebrow">확인 중</span>
+            <h2>로그인 세션을 확인하고 있어요</h2>
+            <p>단어장 데이터를 불러오기 전에 계정 상태를 먼저 확인합니다.</p>
+          </div>
+        ) : null}
+
         {message ? (
           <div
             className="nado-empty-panel nado-empty-panel--compact"
@@ -123,7 +139,7 @@ export function VocabularyFlow() {
           </div>
         ) : null}
 
-        {items.length === 0 ? (
+        {!isLoading && items.length === 0 ? (
           <div className="nado-empty-panel nado-empty-panel--compact">
             <span className="nado-eyebrow">
               {isAccountSource ? "저장 전" : "비어 있음"}
@@ -141,7 +157,7 @@ export function VocabularyFlow() {
           </div>
         ) : null}
 
-        {items.length > 0 ? (
+        {!isLoading && items.length > 0 ? (
           <section
             className="nado-vocabulary-list-wrap"
             aria-label={isAccountSource ? "내 단어장 목록" : "목업 단어장 목록"}
