@@ -24,6 +24,7 @@ describe("auth state store", () => {
               session: authenticatedSession,
             },
           }),
+          setSession: vi.fn(),
           onAuthStateChange: (handler) => {
             handleAuthStateChange = handler;
 
@@ -87,6 +88,8 @@ describe("auth state store", () => {
 });
 
 async function flushPromises() {
+  await Promise.resolve();
+  await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
 }

@@ -2,7 +2,10 @@
 
 import { useSyncExternalStore } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { getSupabaseBrowserClient } from "./authClient";
+import {
+  completeAuthFromCurrentUrl,
+  getSupabaseBrowserClient,
+} from "./authClient";
 
 export type AuthStateStatus =
   | "anonymous"
@@ -25,6 +28,10 @@ export type AuthStateClient = {
         session: Session | null;
       };
     }>;
+    setSession(session: {
+      access_token: string;
+      refresh_token: string;
+    }): Promise<{ error: unknown }>;
     onAuthStateChange(handler: AuthStateChangeHandler): {
       data: {
         subscription: {
@@ -91,10 +98,26 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
 
     subscription = data.subscription;
 
-    client.auth
-      .getSession()
-      .then(({ data: sessionData }) => {
-        setSnapshot(toAuthStateSnapshot(sessionData.session));
+    const authCallbackResult =
+      typeof window === "undefined"
+        ? Promise.resolve("ignored" as const)
+        : completeAuthFromCurrentUrl(new URL(window.location.href), client);
+
+    authCallbackResult
+      .then((result) => {
+        if (result === "error") {
+          setSnapshot(errorSnapshot);
+          return null;
+        }
+
+        return client.auth.getSession();
+      })
+      .then((sessionResult) => {
+        if (!sessionResult) {
+          return;
+        }
+
+        setSnapshot(toAuthStateSnapshot(sessionResult.data.session));
       })
       .catch(() => {
         setSnapshot(errorSnapshot);
