@@ -207,6 +207,36 @@ a {
   line-height: 1.6;
 }
 
+.nado-vocabulary-summary {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.nado-vocabulary-summary__item {
+  background: var(--nado-color-surface);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  display: grid;
+  gap: 8px;
+  min-height: 84px;
+  padding: 16px;
+}
+
+.nado-vocabulary-summary__item span,
+.nado-section-header > span,
+.nado-vocabulary-item time,
+.nado-vocabulary-item__footer span {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.nado-vocabulary-summary__item strong {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
 .nado-vocabulary-layout,
 .nado-review-layout {
   display: grid;
@@ -227,12 +257,16 @@ a {
   padding: 24px;
 }
 
+.nado-empty-panel--compact {
+  padding: 18px 20px;
+}
+
 .nado-empty-panel h2,
 .nado-empty-panel p,
 .nado-review-card h2,
 .nado-review-card p,
 .nado-vocabulary-item h2,
-.nado-vocabulary-item ul {
+.nado-section-header h2 {
   margin: 0;
 }
 
@@ -243,15 +277,40 @@ a {
   line-height: 1.35;
 }
 
-.nado-vocabulary-list {
+.nado-section-header {
+  align-items: end;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.nado-section-header > div {
+  display: grid;
+  gap: 5px;
+}
+
+.nado-section-header h2 {
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.nado-vocabulary-preview {
   display: grid;
   gap: 10px;
 }
 
+.nado-vocabulary-list {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .nado-vocabulary-item {
   display: grid;
-  gap: 12px;
-  padding: 16px;
+  gap: 14px;
+  min-height: 220px;
+  padding: 18px;
+  box-shadow: 0 10px 24px rgba(32, 32, 29, 0.04);
 }
 
 .nado-vocabulary-item header {
@@ -263,27 +322,43 @@ a {
 
 .nado-vocabulary-item header > div {
   display: grid;
-  gap: 4px;
+  gap: 8px;
 }
 
-.nado-vocabulary-item span,
-.nado-vocabulary-item time {
+.nado-vocabulary-type {
+  align-self: start;
+  background: var(--nado-color-surface-muted);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-pill);
   color: var(--nado-color-ink-muted);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 800;
+  justify-self: start;
+  line-height: 1;
+  padding: 5px 8px;
 }
 
-.nado-vocabulary-item ul {
-  color: var(--nado-color-ink-muted);
+.nado-vocabulary-meaning-list {
   display: grid;
-  font-size: 0.875rem;
-  gap: 6px;
-  line-height: 1.55;
-  padding-left: 18px;
+  gap: 8px;
 }
 
-.nado-vocabulary-item .nado-button {
-  justify-self: end;
+.nado-vocabulary-meaning {
+  background: var(--nado-color-surface-muted);
+  border: 1px solid #eeeeea;
+  border-radius: 7px;
+  color: var(--nado-color-ink);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  padding: 10px 12px;
+}
+
+.nado-vocabulary-item__footer {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: auto;
 }
 
 .nado-review-controls,
@@ -457,9 +532,15 @@ a {
 
   .nado-page-header,
   .nado-page-notice,
+  .nado-section-header,
   .nado-vocabulary-item header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .nado-vocabulary-summary,
+  .nado-vocabulary-list {
+    grid-template-columns: 1fr;
   }
 
   .nado-review-actions {

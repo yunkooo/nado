@@ -4,16 +4,24 @@ import { AppShell } from "../AppShell";
 const vocabularyPreviewItems = [
   {
     date: "2026.06.09",
+    detail: "뜻 2개",
     meanings: ["궁금해하다", "정중하게 질문을 꺼내는 표현"],
     term: "wondering",
     type: "word",
   },
   {
     date: "2026.06.09",
+    detail: "뜻 2개",
     meanings: ["도와주다", "상대에게 도움을 요청할 때 쓰는 동사"],
     term: "help",
     type: "word",
   },
+];
+
+const vocabularySummaryItems = [
+  { label: "저장 항목", value: "0" },
+  { label: "복습 대기", value: "0" },
+  { label: "최근 저장", value: "없음" },
 ];
 
 export default function VocabularyPage() {
@@ -26,7 +34,6 @@ export default function VocabularyPage() {
               <p className="nado-eyebrow">Vocabulary</p>
               <h1 className="nado-page-title">단어장</h1>
             </div>
-            <Button variant="secondary">Google 로그인</Button>
           </header>
 
           <section className="nado-page-notice" aria-label="로그인 안내">
@@ -36,34 +43,69 @@ export default function VocabularyPage() {
             </span>
           </section>
 
+          <section className="nado-vocabulary-summary" aria-label="단어장 요약">
+            {vocabularySummaryItems.map((item) => (
+              <article
+                className="nado-vocabulary-summary__item"
+                key={item.label}
+              >
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+              </article>
+            ))}
+          </section>
+
           <section className="nado-vocabulary-layout">
-            <div className="nado-empty-panel">
+            <div className="nado-empty-panel nado-empty-panel--compact">
               <span className="nado-eyebrow">비어 있음</span>
               <h2>단어장 항목이 아직 없어요</h2>
-              <p>저장된 단어와 표현이 없습니다.</p>
+              <p>분석 결과에서 저장한 단어와 표현이 이곳에 쌓입니다.</p>
             </div>
 
-            <div className="nado-vocabulary-list" aria-label="단어장 미리보기">
-              {vocabularyPreviewItems.map((item) => (
-                <article className="nado-vocabulary-item" key={item.term}>
-                  <header>
-                    <div>
-                      <h2>{item.term}</h2>
-                      <span>{item.type}</span>
+            <section
+              className="nado-vocabulary-preview"
+              aria-label="단어장 미리보기"
+            >
+              <header className="nado-section-header">
+                <div>
+                  <span className="nado-eyebrow">Preview</span>
+                  <h2>저장 후 이렇게 정리돼요</h2>
+                </div>
+                <span>로그인 전 미리보기</span>
+              </header>
+
+              <div className="nado-vocabulary-list">
+                {vocabularyPreviewItems.map((item) => (
+                  <article className="nado-vocabulary-item" key={item.term}>
+                    <header>
+                      <div>
+                        <span className="nado-vocabulary-type">
+                          {item.type}
+                        </span>
+                        <h2>{item.term}</h2>
+                      </div>
+                      <time>{item.date}</time>
+                    </header>
+                    <div
+                      className="nado-vocabulary-meaning-list"
+                      aria-label={`${item.term} 뜻`}
+                    >
+                      {item.meanings.map((meaning) => (
+                        <span className="nado-vocabulary-meaning" key={meaning}>
+                          {meaning}
+                        </span>
+                      ))}
                     </div>
-                    <time>{item.date}</time>
-                  </header>
-                  <ul>
-                    {item.meanings.map((meaning) => (
-                      <li key={meaning}>{meaning}</li>
-                    ))}
-                  </ul>
-                  <Button disabled size="sm" variant="secondary">
-                    삭제
-                  </Button>
-                </article>
-              ))}
-            </div>
+                    <footer className="nado-vocabulary-item__footer">
+                      <span>{item.detail}</span>
+                      <Button disabled size="sm" variant="secondary">
+                        삭제
+                      </Button>
+                    </footer>
+                  </article>
+                ))}
+              </div>
+            </section>
           </section>
         </div>
       </section>
