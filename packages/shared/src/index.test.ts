@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   MAX_ANALYSIS_TEXT_LENGTH,
+  analyzeResponseJsonSchema,
   analyzeResponseSchema,
   isLikelyEnglishLearningText,
   normalizeVocabularyTerm,
@@ -146,6 +147,16 @@ describe("analyzeResponseSchema", () => {
       status: "not_analyzable",
       reason: "영어 문장으로 분석하기 어려운 입력입니다.",
     });
+  });
+});
+
+describe("analyzeResponseJsonSchema", () => {
+  it("uses an OpenAI structured-output compatible root object", () => {
+    expect(analyzeResponseJsonSchema).toMatchObject({
+      additionalProperties: false,
+      type: "object",
+    });
+    expect(analyzeResponseJsonSchema).not.toHaveProperty("oneOf");
   });
 });
 

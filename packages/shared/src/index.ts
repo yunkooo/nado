@@ -129,12 +129,171 @@ export const analyzeResponseSchema = z.discriminatedUnion("status", [
   }),
 ]);
 
-const generatedAnalyzeResponseJsonSchema = z.toJSONSchema(
-  analyzeResponseSchema,
-) as Record<string, unknown>;
-delete generatedAnalyzeResponseJsonSchema.$schema;
+const nullableStringJsonSchema = {
+  anyOf: [{ type: "string" }, { type: "null" }],
+};
 
-export const analyzeResponseJsonSchema = generatedAnalyzeResponseJsonSchema;
+const vocabularyTypeJsonSchema = {
+  enum: ["word", "phrase"],
+  type: "string",
+};
+
+const analysisGrammarPointJsonSchema = {
+  additionalProperties: false,
+  properties: {
+    explanation: { minLength: 1, type: "string" },
+    title: { minLength: 1, type: "string" },
+  },
+  required: ["title", "explanation"],
+  type: "object",
+};
+
+export const analyzeResponseJsonSchema = {
+  additionalProperties: false,
+  properties: {
+    reason: nullableStringJsonSchema,
+    result: {
+      anyOf: [
+        {
+          additionalProperties: false,
+          properties: {
+            grammarPoints: {
+              items: analysisGrammarPointJsonSchema,
+              type: "array",
+            },
+            sentences: {
+              items: {
+                additionalProperties: false,
+                properties: {
+                  chunks: {
+                    items: {
+                      additionalProperties: false,
+                      properties: {
+                        english: { minLength: 1, type: "string" },
+                        literalTranslation: {
+                          minLength: 1,
+                          type: "string",
+                        },
+                        role: { minLength: 1, type: "string" },
+                      },
+                      required: ["english", "literalTranslation", "role"],
+                      type: "object",
+                    },
+                    minItems: 1,
+                    type: "array",
+                  },
+                  explanation: { minLength: 1, type: "string" },
+                  grammarPoints: {
+                    items: analysisGrammarPointJsonSchema,
+                    type: "array",
+                  },
+                  source: { minLength: 1, type: "string" },
+                  tokens: {
+                    items: {
+                      additionalProperties: false,
+                      properties: {
+                        text: { type: "string" },
+                        vocabularyKey: nullableStringJsonSchema,
+                      },
+                      required: ["text", "vocabularyKey"],
+                      type: "object",
+                    },
+                    type: "array",
+                  },
+                  translation: { minLength: 1, type: "string" },
+                },
+                required: [
+                  "source",
+                  "translation",
+                  "explanation",
+                  "tokens",
+                  "chunks",
+                  "grammarPoints",
+                ],
+                type: "object",
+              },
+              minItems: 1,
+              type: "array",
+            },
+            structure: {
+              items: {
+                additionalProperties: false,
+                properties: {
+                  english: { minLength: 1, type: "string" },
+                  korean: { minLength: 1, type: "string" },
+                  note: { minLength: 1, type: "string" },
+                },
+                required: ["english", "korean", "note"],
+                type: "object",
+              },
+              type: "array",
+            },
+            translation: { minLength: 1, type: "string" },
+            translationExplanation: { minLength: 1, type: "string" },
+            vocabularyItems: {
+              items: {
+                additionalProperties: false,
+                properties: {
+                  baseForm: { minLength: 1, type: "string" },
+                  contextMeaning: { minLength: 1, type: "string" },
+                  key: { minLength: 1, type: "string" },
+                  meaning: { minLength: 1, type: "string" },
+                  partOfSpeech: nullableStringJsonSchema,
+                  saveLabel: { minLength: 1, type: "string" },
+                  term: { minLength: 1, type: "string" },
+                  type: vocabularyTypeJsonSchema,
+                },
+                required: [
+                  "key",
+                  "term",
+                  "baseForm",
+                  "type",
+                  "partOfSpeech",
+                  "meaning",
+                  "contextMeaning",
+                  "saveLabel",
+                ],
+                type: "object",
+              },
+              type: "array",
+            },
+            vocabularySuggestions: {
+              items: {
+                additionalProperties: false,
+                properties: {
+                  key: { minLength: 1, type: "string" },
+                  meaning: { minLength: 1, type: "string" },
+                  term: { minLength: 1, type: "string" },
+                  type: vocabularyTypeJsonSchema,
+                },
+                required: ["key", "term", "type", "meaning"],
+                type: "object",
+              },
+              type: "array",
+            },
+          },
+          required: [
+            "translation",
+            "translationExplanation",
+            "sentences",
+            "structure",
+            "grammarPoints",
+            "vocabularyItems",
+            "vocabularySuggestions",
+          ],
+          type: "object",
+        },
+        { type: "null" },
+      ],
+    },
+    status: {
+      enum: ["analyzable", "not_analyzable"],
+      type: "string",
+    },
+  },
+  required: ["status", "result", "reason"],
+  type: "object",
+} as const;
 
 export const vocabularyListResponseSchema = z.object({
   items: z.array(vocabularyItemSchema),
