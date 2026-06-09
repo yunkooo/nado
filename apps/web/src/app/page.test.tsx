@@ -96,7 +96,9 @@ describe("HomePage", () => {
   it("clears vocabulary save notifications after a short delay", () => {
     expect(pageSource).toContain("VOCABULARY_SAVE_NOTICE_DISMISS_MS");
     expect(pageSource).toContain("window.setTimeout");
-    expect(pageSource).toContain("store.setVocabularySaveMessage(null)");
+    expect(pageSource).toContain(
+      "analysisStore.setVocabularySaveMessage(null)",
+    );
     expect(pageSource).toContain("window.clearTimeout");
   });
 
@@ -114,7 +116,7 @@ describe("HomePage", () => {
   it("clears the composer only after a successful analysis", () => {
     expect(pageSource).toContain("const nextAnalysisState = await analyzeText");
     expect(pageSource).toContain('nextAnalysisState.status === "success"');
-    expect(pageSource).toContain('store.setText("");');
+    expect(pageSource).toContain('analysisStore.setText("");');
   });
 
   it("defines blurred review answer styles", () => {

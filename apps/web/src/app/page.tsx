@@ -16,8 +16,15 @@ import {
 import { AppShell } from "./AppShell";
 import { analyzeText } from "./analysisApi";
 import { useAnalysisPageState } from "./analysisState";
+import { useAuthState } from "./authState";
 import { getCurrentAccessToken } from "./authClient";
 import { saveVocabularyItem } from "./vocabularyApi";
+import {
+  isVocabularySuggestionSaved,
+  useSyncVocabularyForAuth,
+  useVocabularyState,
+  vocabularyStateStore,
+} from "./vocabularyState";
 import {
   createVocabularyLoginRequiredNotice,
   createVocabularySaveSuccessNotice,
@@ -35,8 +42,12 @@ export default function HomePage() {
       vocabularySaveMessage,
       vocabularySaveStates,
     },
-    store,
+    store: analysisStore,
   } = useAnalysisPageState();
+  const authState = useAuthState();
+  const vocabularyState = useVocabularyState();
+
+  useSyncVocabularyForAuth(authState);
 
   useEffect(() => {
     if (!vocabularySaveMessage) {
@@ -44,13 +55,13 @@ export default function HomePage() {
     }
 
     const timeoutId = window.setTimeout(() => {
-      store.setVocabularySaveMessage(null);
+      analysisStore.setVocabularySaveMessage(null);
     }, VOCABULARY_SAVE_NOTICE_DISMISS_MS);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [store, vocabularySaveMessage]);
+  }, [analysisStore, vocabularySaveMessage]);
 
   const handleSubmitAnalysis = async () => {
     const nextText = normalizeAnalysisText(text);
@@ -65,25 +76,25 @@ export default function HomePage() {
       return;
     }
 
-    store.setAnalysisState({ status: "loading" });
-    store.setVocabularySaveMessage(null);
-    store.setVocabularySaveStates({});
+    analysisStore.setAnalysisState({ status: "loading" });
+    analysisStore.setVocabularySaveMessage(null);
+    analysisStore.setVocabularySaveStates({});
     const nextAnalysisState = await analyzeText(nextText, {
       accessToken: await getCurrentAccessToken(),
     });
 
     if (nextAnalysisState.status === "success") {
-      store.setText("");
+      analysisStore.setText("");
     }
 
-    store.setAnalysisState(nextAnalysisState);
+    analysisStore.setAnalysisState(nextAnalysisState);
   };
 
   const handleSaveVocabularySuggestion = async (
     suggestion: VocabularySuggestion,
   ) => {
     const key = createVocabularySuggestionKey(suggestion);
-    const currentState = vocabularySaveStates[key] ?? "idle";
+    const currentState = getVocabularySuggestionState(suggestion);
 
     if (currentState !== "idle") {
       return;
@@ -92,12 +103,14 @@ export default function HomePage() {
     const accessToken = await getCurrentAccessToken();
 
     if (!accessToken) {
-      store.setVocabularySaveMessage(createVocabularyLoginRequiredNotice());
+      analysisStore.setVocabularySaveMessage(
+        createVocabularyLoginRequiredNotice(),
+      );
       return;
     }
 
-    store.setVocabularySaveMessage(null);
-    store.setVocabularySaveStates((currentStates) => ({
+    analysisStore.setVocabularySaveMessage(null);
+    analysisStore.setVocabularySaveStates((currentStates) => ({
       ...currentStates,
       [key]: "saving",
     }));
@@ -113,29 +126,43 @@ export default function HomePage() {
     );
 
     if (result.status === "success") {
-      store.setVocabularySaveStates((currentStates) => ({
-        ...currentStates,
-        [key]: "saved",
-      }));
-      store.setVocabularySaveMessage(
+      vocabularyStateStore.upsertItem(result.data);
+      analysisStore.setVocabularySaveStates((currentStates) => {
+        const nextStates = { ...currentStates };
+        delete nextStates[key];
+        return nextStates;
+      });
+      analysisStore.setVocabularySaveMessage(
         createVocabularySaveSuccessNotice(result.data.term),
       );
       return;
     }
 
-    store.setVocabularySaveStates((currentStates) => {
+    analysisStore.setVocabularySaveStates((currentStates) => {
       const nextStates = { ...currentStates };
       delete nextStates[key];
       return nextStates;
     });
-    store.setVocabularySaveMessage({
+    analysisStore.setVocabularySaveMessage({
       text: result.message,
       tone: "error",
     });
   };
 
-  const getVocabularySuggestionState = (suggestion: VocabularySuggestion) =>
-    vocabularySaveStates[createVocabularySuggestionKey(suggestion)] ?? "idle";
+  const getVocabularySuggestionState = (suggestion: VocabularySuggestion) => {
+    const pendingState =
+      vocabularySaveStates[createVocabularySuggestionKey(suggestion)];
+
+    if (pendingState === "saving") {
+      return "saving";
+    }
+
+    if (isVocabularySuggestionSaved(vocabularyState.items, suggestion)) {
+      return "saved";
+    }
+
+    return "idle";
+  };
 
   return (
     <AppShell activeItem="analysis" workspaceLabel="분석 화면">
@@ -193,7 +220,7 @@ export default function HomePage() {
         <InputComposer
           maxLength={MAX_ANALYSIS_TEXT_LENGTH}
           onSubmit={handleSubmitAnalysis}
-          onValueChange={store.setText}
+          onValueChange={analysisStore.setText}
           placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
           submitAriaLabel="분석 요청"
           value={text}

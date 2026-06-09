@@ -1,23 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@nado/ui";
 import { useAuthState } from "../authState";
+import { deleteVocabularyItem as deleteVocabularyItemFromApi } from "../vocabularyApi";
 import {
-  deleteVocabularyItem as deleteVocabularyItemFromApi,
-  listVocabulary,
-} from "../vocabularyApi";
+  useSyncVocabularyForAuth,
+  useVocabularyState,
+  vocabularyStateStore,
+} from "../vocabularyState";
 import { getVocabularyPanelState } from "./vocabularyViewState";
-import type { VocabularyItem } from "@nado/shared";
 
 type VocabularyStatus = "loading" | "ready";
 
 export function VocabularyFlow() {
   const authState = useAuthState();
-  const [items, setItems] = useState<VocabularyItem[]>([]);
-  const [status, setStatus] = useState<VocabularyStatus>("loading");
-  const [message, setMessage] = useState<string | null>(null);
+  const vocabularyState = useVocabularyState();
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const items = vocabularyState.items;
+  const status: VocabularyStatus =
+    authState.status === "loading" || vocabularyState.status === "loading"
+      ? "loading"
+      : "ready";
+  const message = deleteMessage ?? vocabularyState.message;
   const isLoading = status === "loading";
   const panelState = getVocabularyPanelState({
     authStatus: authState.status,
@@ -32,50 +38,7 @@ export function VocabularyFlow() {
       ? { label: "저장 항목", value: "-" }
       : { label: "저장 항목", value: String(items.length) };
 
-  useEffect(() => {
-    let isCurrent = true;
-
-    async function loadVocabularyForSession() {
-      setStatus("loading");
-
-      if (authState.status === "loading") {
-        setItems([]);
-        setMessage(null);
-        setDeletingItemId(null);
-        return;
-      }
-
-      if (authState.status !== "authenticated" || !authState.accessToken) {
-        setItems([]);
-        setMessage(null);
-        setStatus("ready");
-        setDeletingItemId(null);
-        return;
-      }
-
-      const result = await listVocabulary(authState.accessToken);
-
-      if (!isCurrent) {
-        return;
-      }
-
-      if (result.status === "success") {
-        setItems(result.data);
-        setMessage(null);
-      } else {
-        setItems([]);
-        setMessage(result.message);
-      }
-
-      setStatus("ready");
-    }
-
-    void loadVocabularyForSession();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [authState.accessToken, authState.status]);
+  useSyncVocabularyForAuth(authState);
 
   const deleteItem = async (itemId: string) => {
     if (!authState.accessToken) {
@@ -92,14 +55,12 @@ export function VocabularyFlow() {
     setDeletingItemId(null);
 
     if (result.status === "success") {
-      setItems((currentItems) =>
-        currentItems.filter((item) => item.id !== itemId),
-      );
-      setMessage(null);
+      vocabularyStateStore.removeItem(itemId);
+      setDeleteMessage(null);
       return;
     }
 
-    setMessage(result.message);
+    setDeleteMessage(result.message);
   };
 
   return (

@@ -9,21 +9,27 @@ import {
   reviewDirectionOptions,
 } from "../mockVocabularyFlow";
 import { getVocabularyPanelState } from "../vocabulary/vocabularyViewState";
-import { listVocabulary } from "../vocabularyApi";
+import {
+  useSyncVocabularyForAuth,
+  useVocabularyState,
+} from "../vocabularyState";
 import type { ReviewDirection } from "../mockVocabularyFlow";
-import type { VocabularyItem } from "@nado/shared";
 
 type ReviewStatus = "loading" | "ready";
 
 export function ReviewFlow() {
   const authState = useAuthState();
+  const vocabularyState = useVocabularyState();
   const [direction, setDirection] =
     useState<ReviewDirection>("english-to-korean");
-  const [items, setItems] = useState<VocabularyItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
-  const [status, setStatus] = useState<ReviewStatus>("loading");
-  const [message, setMessage] = useState<string | null>(null);
+  const items = vocabularyState.items;
+  const status: ReviewStatus =
+    authState.status === "loading" || vocabularyState.status === "loading"
+      ? "loading"
+      : "ready";
+  const message = vocabularyState.message;
   const currentItem = items[currentIndex];
   const isLoading = status === "loading";
   const panelState = getVocabularyPanelState({
@@ -33,54 +39,21 @@ export function ReviewFlow() {
     message,
   });
 
+  useSyncVocabularyForAuth(authState);
+
   useEffect(() => {
-    let isCurrent = true;
+    setCurrentIndex((index) =>
+      items.length === 0 ? 0 : Math.min(index, items.length - 1),
+    );
+    setIsAnswerRevealed(false);
+  }, [items.length]);
 
-    async function loadVocabularyForSession() {
-      setStatus("loading");
-
-      if (authState.status === "loading") {
-        setItems([]);
-        setCurrentIndex(0);
-        setIsAnswerRevealed(false);
-        setMessage(null);
-        return;
-      }
-
-      if (authState.status !== "authenticated" || !authState.accessToken) {
-        setItems([]);
-        setCurrentIndex(0);
-        setIsAnswerRevealed(false);
-        setMessage(null);
-        setStatus("ready");
-        return;
-      }
-
-      const result = await listVocabulary(authState.accessToken);
-
-      if (!isCurrent) {
-        return;
-      }
-
-      if (result.status === "success") {
-        setItems(result.data);
-        setMessage(null);
-      } else {
-        setItems([]);
-        setMessage(result.message);
-      }
-
+  useEffect(() => {
+    if (authState.status !== "authenticated") {
       setCurrentIndex(0);
       setIsAnswerRevealed(false);
-      setStatus("ready");
     }
-
-    void loadVocabularyForSession();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [authState.accessToken, authState.status]);
+  }, [authState.status]);
 
   if (panelState === "loading") {
     return (
