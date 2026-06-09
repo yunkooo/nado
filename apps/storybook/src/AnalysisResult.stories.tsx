@@ -26,3 +26,26 @@ export const Narrow: Story = {
     </div>
   ),
 };
+
+export const WordPopoverOpen: Story = {
+  args: {
+    activeVocabularyKey: "framework",
+    getVocabularySuggestionState: () => "idle",
+    onSaveVocabularySuggestion: () => undefined,
+    result: analysisMock,
+  },
+};
+
+export const NarrowTapOpen: Story = {
+  args: {
+    activeVocabularyKey: "setup",
+    getVocabularySuggestionState: () => "idle",
+    onSaveVocabularySuggestion: () => undefined,
+    result: analysisMock,
+  },
+  render: (args) => (
+    <div className="storybook-analysis-narrow">
+      <AnalysisResult {...args} />
+    </div>
+  ),
+};

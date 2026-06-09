@@ -357,11 +357,11 @@
 .nado-word-token-wrap::after {
   bottom: 100%;
   content: "";
-  height: 10px;
+  height: 6px;
   left: 50%;
   position: absolute;
   transform: translateX(-50%);
-  width: max(100%, 220px);
+  width: 100%;
 }
 
 .nado-word-token {
@@ -387,7 +387,7 @@
   background: var(--nado-color-surface);
   border: 1px solid #d8d8d2;
   border-radius: 7px;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 4px);
   box-shadow: 0 16px 42px rgba(32, 32, 29, 0.16);
   color: var(--nado-color-ink);
   display: grid;
@@ -407,7 +407,8 @@
 }
 
 .nado-word-token-wrap:hover .nado-word-popover,
-.nado-word-token-wrap:focus-within .nado-word-popover {
+.nado-word-token-wrap:focus-within .nado-word-popover,
+.nado-word-token-wrap--open .nado-word-popover {
   opacity: 1;
   pointer-events: auto;
   transform: translate(-50%, 0);
@@ -557,6 +558,133 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.nado-vocabulary-item {
+  background: var(--nado-color-surface);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.nado-vocabulary-item__main {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.nado-vocabulary-item__term {
+  color: var(--nado-color-ink);
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.nado-vocabulary-item__meaning {
+  color: var(--nado-color-primary);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.nado-vocabulary-item__meta {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.nado-vocabulary-item__context {
+  color: #55554f;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.nado-state-card {
+  background: var(--nado-color-surface);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.nado-state-card--empty {
+  background: #fbfbf8;
+}
+
+.nado-state-card--error {
+  background: #fff8f7;
+  border-color: #ead5d2;
+}
+
+.nado-state-card__title {
+  color: var(--nado-color-ink);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.nado-state-card__description {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.nado-review-card {
+  background: var(--nado-color-surface);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  display: grid;
+  gap: 14px;
+  max-width: 420px;
+  padding: 20px;
+}
+
+.nado-review-card--revealed {
+  border-color: #d5dbea;
+}
+
+.nado-review-card__prompt {
+  color: var(--nado-color-ink);
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.nado-review-card__placeholder {
+  align-items: center;
+  background: var(--nado-color-surface-muted);
+  border: 1px dashed #d8d8d2;
+  border-radius: 7px;
+  color: var(--nado-color-ink-muted);
+  display: flex;
+  font-size: 0.875rem;
+  font-weight: 800;
+  min-height: 56px;
+  padding: 0 14px;
+}
+
+.nado-review-card__answer {
+  background: #f6f8ff;
+  border: 1px solid #d5dbea;
+  border-radius: 7px;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.nado-review-card__answer span {
+  color: var(--nado-color-primary);
+  font-size: 1.125rem;
+  font-weight: 900;
+}
+
+.nado-review-card__answer p {
+  color: #55554f;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0;
 }
 
 @media (max-width: 560px) {

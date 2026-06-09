@@ -162,6 +162,7 @@ export function TranslationNotes({ notes }: TranslationNotesProps) {
 }
 
 export interface ReadingChunkLineProps {
+  activeVocabularyKey?: string;
   chunks: ReadingChunk[];
   getVocabularySuggestionState?: (
     suggestion: VocabularySuggestion,
@@ -172,6 +173,7 @@ export interface ReadingChunkLineProps {
 }
 
 export function ReadingChunkLine({
+  activeVocabularyKey,
   chunks,
   getVocabularySuggestionState,
   onSaveVocabularySuggestion,
@@ -185,6 +187,7 @@ export function ReadingChunkLine({
     <div className="nado-reading-line">
       {chunks.map((chunk, index) => {
         const renderedEnglish = renderVocabularyAwareText({
+          activeVocabularyKey,
           getVocabularySuggestionState,
           onSaveVocabularySuggestion,
           onTokenConsumed: (nextTokenIndex) => {
@@ -240,6 +243,7 @@ export function GrammarPointList({ points }: GrammarPointListProps) {
 }
 
 export interface SentenceAnalysisProps {
+  activeVocabularyKey?: string;
   getVocabularySuggestionState?: (
     suggestion: VocabularySuggestion,
   ) => VocabularySuggestionSaveState;
@@ -249,6 +253,7 @@ export interface SentenceAnalysisProps {
 }
 
 export function SentenceAnalysis({
+  activeVocabularyKey,
   getVocabularySuggestionState,
   onSaveVocabularySuggestion,
   sentence,
@@ -259,6 +264,7 @@ export function SentenceAnalysis({
       <div className="nado-sentence-analysis__index">{sentence.indexLabel}</div>
       <div className="nado-sentence-analysis__content">
         <ReadingChunkLine
+          activeVocabularyKey={activeVocabularyKey}
           chunks={sentence.chunks}
           getVocabularySuggestionState={getVocabularySuggestionState}
           onSaveVocabularySuggestion={onSaveVocabularySuggestion}
@@ -317,6 +323,7 @@ export function VocabularySuggestionList({
 }
 
 export interface AnalysisResultProps {
+  activeVocabularyKey?: string;
   getVocabularySuggestionState?: (
     suggestion: VocabularySuggestion,
   ) => VocabularySuggestionSaveState;
@@ -325,6 +332,7 @@ export interface AnalysisResultProps {
 }
 
 export function AnalysisResult({
+  activeVocabularyKey,
   getVocabularySuggestionState,
   onSaveVocabularySuggestion,
   result,
@@ -345,6 +353,7 @@ export function AnalysisResult({
         <div className="nado-sentence-list">
           {result.sentences.map((sentence) => (
             <SentenceAnalysis
+              activeVocabularyKey={activeVocabularyKey}
               getVocabularySuggestionState={getVocabularySuggestionState}
               key={`${sentence.indexLabel}-${sentence.naturalTranslation}`}
               onSaveVocabularySuggestion={onSaveVocabularySuggestion}
@@ -370,10 +379,15 @@ function getSavePrefix(state: VocabularySuggestionSaveState) {
     return "저장 중";
   }
 
+  if (state === "saved") {
+    return "저장됨";
+  }
+
   return "+";
 }
 
 interface VocabularyAwareTextOptions {
+  activeVocabularyKey?: string;
   getVocabularySuggestionState?: (
     suggestion: VocabularySuggestion,
   ) => VocabularySuggestionSaveState;
@@ -388,6 +402,7 @@ interface VocabularyAwareTextOptions {
 const englishWordPattern = /[A-Za-z]+(?:['’-][A-Za-z]+)*/g;
 
 function renderVocabularyAwareText({
+  activeVocabularyKey,
   getVocabularySuggestionState,
   onSaveVocabularySuggestion,
   onTokenConsumed,
@@ -419,6 +434,7 @@ function renderVocabularyAwareText({
       parts.push(
         <VocabularyWordToken
           getVocabularySuggestionState={getVocabularySuggestionState}
+          isOpen={vocabularyItem.key === activeVocabularyKey}
           item={vocabularyItem}
           key={`${word}-${matchIndex}`}
           onSaveVocabularySuggestion={onSaveVocabularySuggestion}
@@ -444,6 +460,7 @@ interface VocabularyWordTokenProps {
   getVocabularySuggestionState?: (
     suggestion: VocabularySuggestion,
   ) => VocabularySuggestionSaveState;
+  isOpen?: boolean;
   item: VocabularyItem;
   onSaveVocabularySuggestion?: (suggestion: VocabularySuggestion) => void;
   text: string;
@@ -451,6 +468,7 @@ interface VocabularyWordTokenProps {
 
 function VocabularyWordToken({
   getVocabularySuggestionState,
+  isOpen = false,
   item,
   onSaveVocabularySuggestion,
   text,
@@ -459,8 +477,16 @@ function VocabularyWordToken({
   const canSave = Boolean(onSaveVocabularySuggestion);
 
   return (
-    <span className="nado-word-token-wrap">
+    <span
+      className={[
+        "nado-word-token-wrap",
+        isOpen ? "nado-word-token-wrap--open" : undefined,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <button
+        aria-expanded={isOpen ? true : undefined}
         aria-label={`${text} 뜻과 저장 액션 보기`}
         className="nado-word-token"
         type="button"
@@ -484,7 +510,11 @@ function VocabularyWordToken({
             onClick={() => onSaveVocabularySuggestion?.(item)}
             type="button"
           >
-            {state === "saving" ? "저장 중" : "+ 저장"}
+            {state === "saving"
+              ? "저장 중"
+              : state === "saved"
+                ? "저장됨"
+                : "+ 저장"}
           </button>
         ) : null}
       </span>

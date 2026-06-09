@@ -1,0 +1,50 @@
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { VocabularySuggestionList } from "@nado/ui";
+import { analysisMock } from "./analysisMock";
+
+const meta = {
+  component: VocabularySuggestionList,
+  title: "Analysis/VocabularySuggestionList",
+} satisfies Meta<typeof VocabularySuggestionList>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Idle: Story = {
+  args: {
+    getSuggestionState: () => "idle",
+    onSaveSuggestion: () => undefined,
+    suggestions: analysisMock.vocabularySuggestions,
+  },
+  render: (args) => (
+    <div className="storybook-chip-row">
+      <VocabularySuggestionList {...args} />
+    </div>
+  ),
+};
+
+export const Saving: Story = {
+  args: {
+    getSuggestionState: () => "saving",
+    onSaveSuggestion: () => undefined,
+    suggestions: analysisMock.vocabularySuggestions.slice(0, 3),
+  },
+  render: (args) => (
+    <div className="storybook-chip-row">
+      <VocabularySuggestionList {...args} />
+    </div>
+  ),
+};
+
+export const SavedDisabled: Story = {
+  args: {
+    getSuggestionState: () => "saved",
+    onSaveSuggestion: () => undefined,
+    suggestions: analysisMock.vocabularySuggestions.slice(0, 3),
+  },
+  render: (args) => (
+    <div className="storybook-chip-row">
+      <VocabularySuggestionList {...args} />
+    </div>
+  ),
+};

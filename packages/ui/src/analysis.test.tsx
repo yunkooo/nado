@@ -164,8 +164,20 @@ describe("analysis design system components", () => {
 
     expect(markup).toContain('<button class="nado-chip"');
     expect(markup).toContain('aria-label="setup: 준비 과정 저장"');
-    expect(markup).toContain('<span class="nado-chip__prefix">+</span>');
-    expect(markup).not.toContain("저장됨");
+    expect(markup).toContain('<span class="nado-chip__prefix">저장됨</span>');
+    expect(markup).toContain("disabled");
+  });
+
+  it("keeps saving vocabulary suggestions disabled while showing progress", () => {
+    const markup = renderToStaticMarkup(
+      <AnalysisResult
+        getVocabularySuggestionState={() => "saving"}
+        onSaveVocabularySuggestion={noop}
+        result={analysisFixture}
+      />,
+    );
+
+    expect(markup).toContain('<span class="nado-chip__prefix">저장 중</span>');
     expect(markup).toContain("disabled");
   });
 
@@ -197,14 +209,16 @@ describe("analysis design system components", () => {
   it("renders vocabulary hover popovers for matched sentence words", () => {
     const markup = renderToStaticMarkup(
       <AnalysisResult
+        activeVocabularyKey="habit"
         getVocabularySuggestionState={() => "idle"}
         onSaveVocabularySuggestion={noop}
         result={analysisFixture}
       />,
     );
 
-    expect(markup).toContain("nado-word-token");
+    expect(markup).toContain("nado-word-token-wrap--open");
     expect(markup).toContain('aria-label="habit 뜻과 저장 액션 보기"');
+    expect(markup).toContain('aria-expanded="true"');
     expect(markup).toContain("nado-word-popover");
     expect(markup).toContain("명사");
     expect(markup).toContain("습관");

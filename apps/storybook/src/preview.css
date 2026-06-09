@@ -115,6 +115,13 @@ body {
   padding: 16px;
 }
 
+.storybook-vocabulary-surface {
+  display: grid;
+  gap: 14px;
+  max-width: 520px;
+  padding: 24px;
+}
+
 .storybook-analysis-shell {
   background: var(--nado-color-surface);
   color: var(--nado-color-ink);
