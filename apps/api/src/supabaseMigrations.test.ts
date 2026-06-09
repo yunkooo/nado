@@ -28,4 +28,19 @@ describe("Supabase migrations", () => {
     expect(createTableIndex).toBeGreaterThanOrEqual(0);
     expect(accessRulesIndex).toBeGreaterThan(createTableIndex);
   });
+
+  it("defines an atomic analysis usage consume function", () => {
+    const migrationSql = readdirSync(migrationsDir)
+      .filter((file) => file.endsWith(".sql"))
+      .sort()
+      .map((file) => readFileSync(join(migrationsDir, file), "utf8"))
+      .join("\n");
+
+    expect(migrationSql).toContain(
+      "create or replace function public.consume_analysis_usage",
+    );
+    expect(migrationSql).toContain(
+      "grant execute on function public.consume_analysis_usage",
+    );
+  });
 });

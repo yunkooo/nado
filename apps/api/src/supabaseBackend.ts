@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { vocabularyMeaningSchema } from "@nado/shared";
 import {
   createAnalysisUsageService,
-  type AnalysisUsageRecord,
+  type AnalysisUsageConsumeResult,
   type AnalysisUsageStore,
   type UsageIdentity,
 } from "./analysisUsageService.js";
@@ -21,7 +21,6 @@ export type SupabaseBackendOptions = {
 
 const VOCABULARY_COLUMNS =
   "id,user_id,term,normalized_term,type,meanings,created_at,updated_at";
-const ANALYSIS_USAGE_COLUMNS = "id,user_id,ip_hash,period_start,request_count";
 
 export function createSupabaseAuthService(
   options: SupabaseBackendOptions = {},
@@ -113,72 +112,28 @@ function createServiceRoleSupabaseClient(
 }
 
 function createSupabaseAnalysisUsageStore(
-  client: Pick<SupabaseClient, "from">,
+  client: Pick<SupabaseClient, "rpc">,
 ): AnalysisUsageStore {
   return {
-    async findUsage(
+    async consumeUsage(
       identity: UsageIdentity,
       periodStart: string,
-    ): Promise<AnalysisUsageRecord | null> {
-      let query = client
-        .from("analysis_usage_limits")
-        .select(ANALYSIS_USAGE_COLUMNS)
-        .eq("period_start", periodStart);
-
-      query = identity.userId
-        ? query.eq("user_id", identity.userId)
-        : query.eq("ip_hash", identity.ipHash);
-
-      const { data, error } = await query.maybeSingle();
-
-      if (error) {
-        throw new Error(`Supabase usage lookup failed: ${error.message}`);
-      }
-
-      return data ? toAnalysisUsageRecord(data) : null;
-    },
-
-    async insertUsage(
-      identity: UsageIdentity,
-      periodStart: string,
-    ): Promise<AnalysisUsageRecord> {
+      limit: number,
+    ): Promise<AnalysisUsageConsumeResult> {
       const { data, error } = await client
-        .from("analysis_usage_limits")
-        .insert({
-          ip_hash: identity.ipHash,
-          period_start: periodStart,
-          request_count: 1,
-          user_id: identity.userId,
+        .rpc("consume_analysis_usage", {
+          p_ip_hash: identity.ipHash,
+          p_limit: limit,
+          p_period_start: periodStart,
+          p_user_id: identity.userId,
         })
-        .select(ANALYSIS_USAGE_COLUMNS)
         .single();
 
       if (error) {
-        throw new Error(`Supabase usage insert failed: ${error.message}`);
+        throw new Error(`Supabase usage consume failed: ${error.message}`);
       }
 
-      return toAnalysisUsageRecord(data);
-    },
-
-    async updateUsageCount(
-      id: string,
-      requestCount: number,
-    ): Promise<AnalysisUsageRecord> {
-      const { data, error } = await client
-        .from("analysis_usage_limits")
-        .update({
-          request_count: requestCount,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", id)
-        .select(ANALYSIS_USAGE_COLUMNS)
-        .single();
-
-      if (error) {
-        throw new Error(`Supabase usage update failed: ${error.message}`);
-      }
-
-      return toAnalysisUsageRecord(data);
+      return toAnalysisUsageConsumeResult(data);
     },
   };
 }
@@ -307,17 +262,16 @@ function toVocabularyRow(value: unknown): VocabularyRow {
   };
 }
 
-function toAnalysisUsageRecord(value: unknown): AnalysisUsageRecord {
+function toAnalysisUsageConsumeResult(
+  value: unknown,
+): AnalysisUsageConsumeResult {
   if (!isRecord(value)) {
     throw new Error("Supabase usage row was not an object.");
   }
 
   return {
-    id: readString(value, "id"),
-    ipHash: readNullableString(value, "ip_hash"),
-    periodStart: readString(value, "period_start"),
+    consumed: readBoolean(value, "consumed"),
     requestCount: readNumber(value, "request_count"),
-    userId: readNullableString(value, "user_id"),
   };
 }
 
@@ -341,28 +295,21 @@ function readString(value: Record<string, unknown>, key: string): string {
   return field;
 }
 
-function readNullableString(
-  value: Record<string, unknown>,
-  key: string,
-): string | null {
-  const field = value[key];
-
-  if (field === null) {
-    return null;
-  }
-
-  if (typeof field !== "string") {
-    throw new Error(`Supabase row field ${key} was not a nullable string.`);
-  }
-
-  return field;
-}
-
 function readNumber(value: Record<string, unknown>, key: string): number {
   const field = value[key];
 
   if (typeof field !== "number") {
     throw new Error(`Supabase row field ${key} was not a number.`);
+  }
+
+  return field;
+}
+
+function readBoolean(value: Record<string, unknown>, key: string): boolean {
+  const field = value[key];
+
+  if (typeof field !== "boolean") {
+    throw new Error(`Supabase row field ${key} was not a boolean.`);
   }
 
   return field;

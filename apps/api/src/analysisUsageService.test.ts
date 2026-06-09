@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createAnalysisUsageService,
+  type AnalysisUsageConsumeResult,
   type AnalysisUsageRecord,
   type AnalysisUsageStore,
   type UsageIdentity,
@@ -8,26 +9,43 @@ import {
 
 class MemoryAnalysisUsageStore implements AnalysisUsageStore {
   records: AnalysisUsageRecord[] = [];
+  consumptions: Array<{
+    identity: UsageIdentity;
+    limit: number;
+    periodStart: string;
+  }> = [];
 
-  async findUsage(
+  async consumeUsage(
     identity: UsageIdentity,
     periodStart: string,
-  ): Promise<AnalysisUsageRecord | null> {
-    return (
-      this.records.find(
-        (record) =>
-          record.periodStart === periodStart &&
-          record.userId === identity.userId &&
-          record.ipHash === identity.ipHash,
-      ) ?? null
+    limit: number,
+  ): Promise<AnalysisUsageConsumeResult> {
+    this.consumptions.push({ identity, limit, periodStart });
+
+    const record = this.records.find(
+      (candidate) =>
+        candidate.periodStart === periodStart &&
+        candidate.userId === identity.userId &&
+        candidate.ipHash === identity.ipHash,
     );
-  }
 
-  async insertUsage(
-    identity: UsageIdentity,
-    periodStart: string,
-  ): Promise<AnalysisUsageRecord> {
-    const record = {
+    if (record) {
+      if (limit > 0 && record.requestCount >= limit) {
+        return {
+          consumed: false,
+          requestCount: record.requestCount,
+        };
+      }
+
+      record.requestCount += 1;
+
+      return {
+        consumed: true,
+        requestCount: record.requestCount,
+      };
+    }
+
+    const inserted = {
       id: `usage_${this.records.length + 1}`,
       ipHash: identity.ipHash,
       periodStart,
@@ -35,24 +53,12 @@ class MemoryAnalysisUsageStore implements AnalysisUsageStore {
       userId: identity.userId,
     };
 
-    this.records.push(record);
+    this.records.push(inserted);
 
-    return record;
-  }
-
-  async updateUsageCount(
-    id: string,
-    requestCount: number,
-  ): Promise<AnalysisUsageRecord> {
-    const record = this.records.find((candidate) => candidate.id === id);
-
-    if (!record) {
-      throw new Error("usage record not found");
-    }
-
-    record.requestCount = requestCount;
-
-    return record;
+    return {
+      consumed: true,
+      requestCount: inserted.requestCount,
+    };
   }
 }
 
@@ -82,6 +88,7 @@ describe("createAnalysisUsageService", () => {
         userId: null,
       },
     ]);
+    expect(store.consumptions[0]?.limit).toBe(0);
   });
 
   it("increments existing authenticated usage and reports remaining allowance", async () => {
@@ -107,6 +114,7 @@ describe("createAnalysisUsageService", () => {
       remaining: 1,
       used: 2,
     });
+    expect(store.consumptions[0]?.limit).toBe(3);
   });
 
   it("blocks anonymous usage after the configured daily limit", async () => {

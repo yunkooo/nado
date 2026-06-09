@@ -11,19 +11,17 @@ export type AnalysisUsageRecord = {
   userId: string | null;
 };
 
+export type AnalysisUsageConsumeResult = {
+  consumed: boolean;
+  requestCount: number;
+};
+
 export type AnalysisUsageStore = {
-  findUsage(
+  consumeUsage(
     identity: UsageIdentity,
     periodStart: string,
-  ): Promise<AnalysisUsageRecord | null>;
-  insertUsage(
-    identity: UsageIdentity,
-    periodStart: string,
-  ): Promise<AnalysisUsageRecord>;
-  updateUsageCount(
-    id: string,
-    requestCount: number,
-  ): Promise<AnalysisUsageRecord>;
+    limit: number,
+  ): Promise<AnalysisUsageConsumeResult>;
 };
 
 export type AnalysisUsageServiceOptions = {
@@ -66,31 +64,22 @@ export function createAnalysisUsageService(
       const limit = identity.userId
         ? authenticatedDailyLimit
         : anonymousDailyLimit;
-      const existing = await store.findUsage(identity, periodStart);
-      const currentCount = existing?.requestCount ?? 0;
+      const usage = await store.consumeUsage(identity, periodStart, limit);
 
-      if (limit > 0 && currentCount >= limit) {
+      if (!usage.consumed) {
         return {
           limit,
           ok: false,
           retryAfterSeconds: secondsUntilNextUtcDay(currentTime),
-          used: currentCount,
+          used: usage.requestCount,
         };
-      }
-
-      const nextCount = currentCount + 1;
-
-      if (existing) {
-        await store.updateUsageCount(existing.id, nextCount);
-      } else {
-        await store.insertUsage(identity, periodStart);
       }
 
       return {
         limit: limit > 0 ? limit : null,
         ok: true,
-        remaining: limit > 0 ? Math.max(limit - nextCount, 0) : null,
-        used: nextCount,
+        remaining: limit > 0 ? Math.max(limit - usage.requestCount, 0) : null,
+        used: usage.requestCount,
       };
     },
   };
