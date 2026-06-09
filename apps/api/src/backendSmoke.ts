@@ -1,4 +1,7 @@
 import { pathToFileURL } from "node:url";
+import { loadRootEnv } from "./rootEnv.js";
+
+loadRootEnv();
 
 type FetchLike = (
   input: RequestInfo | URL,

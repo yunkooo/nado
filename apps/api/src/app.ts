@@ -29,6 +29,9 @@ import {
   createSupabaseAuthService,
   createSupabaseVocabularyService,
 } from "./supabaseBackend.js";
+import { loadRootEnv } from "./rootEnv.js";
+
+loadRootEnv();
 
 export type AnalyzeInputResult =
   | { ok: true; text: string }
