@@ -6,14 +6,13 @@ import { useAuthState } from "../authState";
 import {
   getNextReviewIndex,
   getReviewCard,
-  mockVocabularyItems,
   reviewDirectionOptions,
 } from "../mockVocabularyFlow";
+import { getVocabularyPanelState } from "../vocabulary/vocabularyViewState";
 import { listVocabulary } from "../vocabularyApi";
 import type { ReviewDirection } from "../mockVocabularyFlow";
 import type { VocabularyItem } from "@nado/shared";
 
-type ReviewSource = "account" | "mock";
 type ReviewStatus = "loading" | "ready";
 
 export function ReviewFlow() {
@@ -23,11 +22,16 @@ export function ReviewFlow() {
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
-  const [source, setSource] = useState<ReviewSource>("mock");
   const [status, setStatus] = useState<ReviewStatus>("loading");
   const [message, setMessage] = useState<string | null>(null);
   const currentItem = items[currentIndex];
   const isLoading = status === "loading";
+  const panelState = getVocabularyPanelState({
+    authStatus: authState.status,
+    isLoading,
+    itemCount: items.length,
+    message,
+  });
 
   useEffect(() => {
     let isCurrent = true;
@@ -44,16 +48,13 @@ export function ReviewFlow() {
       }
 
       if (authState.status !== "authenticated" || !authState.accessToken) {
-        setItems(mockVocabularyItems);
+        setItems([]);
         setCurrentIndex(0);
         setIsAnswerRevealed(false);
         setMessage(null);
-        setSource("mock");
         setStatus("ready");
         return;
       }
-
-      setSource("account");
 
       const result = await listVocabulary(authState.accessToken);
 
@@ -81,7 +82,7 @@ export function ReviewFlow() {
     };
   }, [authState.accessToken, authState.status]);
 
-  if (isLoading) {
+  if (panelState === "loading") {
     return (
       <div className="nado-empty-panel" role="status">
         <span className="nado-eyebrow">확인 중</span>
@@ -91,7 +92,17 @@ export function ReviewFlow() {
     );
   }
 
-  if (message) {
+  if (panelState === "auth_required") {
+    return (
+      <div className="nado-empty-panel">
+        <span className="nado-eyebrow">로그인 필요</span>
+        <h2>로그인 후 복습을 이용할 수 있어요</h2>
+        <p>Google 로그인 후 단어장에 저장한 항목으로 복습을 이어가 주세요.</p>
+      </div>
+    );
+  }
+
+  if (panelState === "error") {
     return (
       <div className="nado-empty-panel" role="alert">
         <span className="nado-eyebrow">연결 오류</span>
@@ -101,20 +112,12 @@ export function ReviewFlow() {
     );
   }
 
-  if (!currentItem) {
-    const isAccountSource = source === "account";
-
+  if (panelState === "empty" || !currentItem) {
     return (
       <div className="nado-empty-panel">
-        <span className="nado-eyebrow">
-          {isAccountSource ? "저장 전" : "비어 있음"}
-        </span>
+        <span className="nado-eyebrow">저장 전</span>
         <h2>복습할 단어가 없어요</h2>
-        <p>
-          {isAccountSource
-            ? "분석 결과에서 단어를 저장하면 바로 복습 카드로 이어집니다."
-            : "단어장에 저장된 목업 항목이 없습니다."}
-        </p>
+        <p>분석 결과에서 단어를 저장하면 바로 복습 카드로 이어집니다.</p>
       </div>
     );
   }
@@ -130,8 +133,6 @@ export function ReviewFlow() {
     setCurrentIndex((index) => getNextReviewIndex(index, items.length));
     setIsAnswerRevealed(false);
   };
-
-  const isAccountSource = source === "account";
 
   return (
     <section className="nado-review-layout">
@@ -159,9 +160,7 @@ export function ReviewFlow() {
       </div>
 
       <article className="nado-review-card">
-        <span className="nado-eyebrow">
-          {isAccountSource ? "My flashcard" : "Flashcard"}
-        </span>
+        <span className="nado-eyebrow">My flashcard</span>
         <span className="nado-review-card__meta">
           {currentIndex + 1} / {items.length}
         </span>

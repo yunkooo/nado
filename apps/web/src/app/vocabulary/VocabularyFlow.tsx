@@ -4,37 +4,33 @@ import { useEffect, useState } from "react";
 import { Button } from "@nado/ui";
 import { useAuthState } from "../authState";
 import {
-  deleteMockVocabularyItem,
-  getMockVocabularySummary,
-  mockVocabularyItems,
-} from "../mockVocabularyFlow";
-import {
   deleteVocabularyItem as deleteVocabularyItemFromApi,
   listVocabulary,
 } from "../vocabularyApi";
 import { getVocabularyPanelState } from "./vocabularyViewState";
 import type { VocabularyItem } from "@nado/shared";
 
-type VocabularySource = "account" | "mock";
 type VocabularyStatus = "loading" | "ready";
 
 export function VocabularyFlow() {
   const authState = useAuthState();
   const [items, setItems] = useState<VocabularyItem[]>([]);
-  const [source, setSource] = useState<VocabularySource>("mock");
   const [status, setStatus] = useState<VocabularyStatus>("loading");
   const [message, setMessage] = useState<string | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const isLoading = status === "loading";
   const panelState = getVocabularyPanelState({
+    authStatus: authState.status,
     isLoading,
     itemCount: items.length,
     message,
   });
   const summary =
-    panelState === "loading" || panelState === "error"
+    panelState === "loading" ||
+    panelState === "auth_required" ||
+    panelState === "error"
       ? { label: "저장 항목", value: "-" }
-      : getMockVocabularySummary(items);
+      : { label: "저장 항목", value: String(items.length) };
 
   useEffect(() => {
     let isCurrent = true;
@@ -50,15 +46,12 @@ export function VocabularyFlow() {
       }
 
       if (authState.status !== "authenticated" || !authState.accessToken) {
-        setItems(mockVocabularyItems);
+        setItems([]);
         setMessage(null);
-        setSource("mock");
         setStatus("ready");
         setDeletingItemId(null);
         return;
       }
-
-      setSource("account");
 
       const result = await listVocabulary(authState.accessToken);
 
@@ -85,10 +78,7 @@ export function VocabularyFlow() {
   }, [authState.accessToken, authState.status]);
 
   const deleteItem = async (itemId: string) => {
-    if (!authState.accessToken || source === "mock") {
-      setItems((currentItems) =>
-        deleteMockVocabularyItem(currentItems, itemId),
-      );
+    if (!authState.accessToken) {
       return;
     }
 
@@ -103,7 +93,7 @@ export function VocabularyFlow() {
 
     if (result.status === "success") {
       setItems((currentItems) =>
-        deleteMockVocabularyItem(currentItems, itemId),
+        currentItems.filter((item) => item.id !== itemId),
       );
       setMessage(null);
       return;
@@ -111,8 +101,6 @@ export function VocabularyFlow() {
 
     setMessage(result.message);
   };
-
-  const isAccountSource = source === "account";
 
   return (
     <section className="nado-vocabulary-flow">
@@ -135,6 +123,14 @@ export function VocabularyFlow() {
           </div>
         ) : null}
 
+        {panelState === "auth_required" ? (
+          <div className="nado-empty-panel nado-empty-panel--compact">
+            <span className="nado-eyebrow">로그인 필요</span>
+            <h2>로그인 후 단어장을 이용할 수 있어요</h2>
+            <p>Google 로그인 후 저장한 단어와 표현을 이곳에서 확인해 주세요.</p>
+          </div>
+        ) : null}
+
         {panelState === "error" ? (
           <div
             className="nado-empty-panel nado-empty-panel--compact"
@@ -148,44 +144,26 @@ export function VocabularyFlow() {
 
         {panelState === "empty" ? (
           <div className="nado-empty-panel nado-empty-panel--compact">
-            <span className="nado-eyebrow">
-              {isAccountSource ? "저장 전" : "비어 있음"}
-            </span>
-            <h2>
-              {isAccountSource
-                ? "저장된 단어가 아직 없어요"
-                : "단어장 항목이 아직 없어요"}
-            </h2>
-            <p>
-              {isAccountSource
-                ? "분석 결과에서 단어와 표현을 저장하면 이곳에 모을게요."
-                : "목업 항목을 모두 삭제했어요. 새로고침하면 다시 시작합니다."}
-            </p>
+            <span className="nado-eyebrow">저장 전</span>
+            <h2>저장된 단어가 아직 없어요</h2>
+            <p>분석 결과에서 단어와 표현을 저장하면 이곳에 모을게요.</p>
           </div>
         ) : null}
 
         {panelState === "list" ? (
           <section
             className="nado-vocabulary-list-wrap"
-            aria-label={isAccountSource ? "내 단어장 목록" : "목업 단어장 목록"}
+            aria-label="내 단어장 목록"
           >
             <header className="nado-section-header">
               <div>
-                <span className="nado-eyebrow">
-                  {isAccountSource ? "My vocabulary" : "Mock flow"}
-                </span>
-                <h2>
-                  {isAccountSource
-                    ? "저장한 단어를 확인해요"
-                    : "저장된 단어처럼 확인해요"}
-                </h2>
+                <span className="nado-eyebrow">My vocabulary</span>
+                <h2>저장한 단어를 확인해요</h2>
               </div>
               <span>
                 {isLoading
                   ? "로그인 세션을 확인하고 있어요"
-                  : isAccountSource
-                    ? "분석에서 저장한 항목이에요"
-                    : "삭제 버튼으로 상태 변화를 확인해요"}
+                  : "분석에서 저장한 항목이에요"}
               </span>
             </header>
 
