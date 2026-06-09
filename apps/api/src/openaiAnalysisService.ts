@@ -14,7 +14,7 @@ export type OpenAIAnalysisServiceOptions = {
 };
 
 const DEFAULT_OPENAI_ENDPOINT = "https://api.openai.com/v1/responses";
-const DEFAULT_OPENAI_MODEL = "gpt-5.5";
+const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
 
 const ANALYSIS_INSTRUCTIONS = [
   "당신은 한국인 영어 학습자를 돕는 영어 독해 분석기입니다.",

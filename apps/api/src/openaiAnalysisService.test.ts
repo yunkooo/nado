@@ -102,6 +102,31 @@ describe("createOpenAIAnalysisService", () => {
     expect(body.text.format.schema).toBeTruthy();
   });
 
+  it("uses gpt-5.4-mini as the default analysis model", async () => {
+    let request: { init?: RequestInit } | undefined;
+    const fetchMock = async (_input: RequestInfo | URL, init?: RequestInit) => {
+      request = { init };
+
+      return new Response(
+        JSON.stringify({
+          output_text: JSON.stringify(sampleAnalyzeResponse),
+        }),
+        { status: 200 },
+      );
+    };
+
+    const service = createOpenAIAnalysisService({
+      apiKey: "test-api-key",
+      fetch: fetchMock,
+    });
+
+    await service.analyze("I was wondering if you could help me.");
+
+    const body = JSON.parse(String(request?.init?.body));
+
+    expect(body.model).toBe("gpt-5.4-mini");
+  });
+
   it("requires an OpenAI API key before making a request", async () => {
     let calls = 0;
     const service = createOpenAIAnalysisService({
