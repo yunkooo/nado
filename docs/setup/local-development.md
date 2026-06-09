@@ -37,7 +37,7 @@ pnpm supabase:status
 
 `supabase:status` 출력의 local anon key와 service role key를 `.env`에 채운다. 실제 운영 key나 OpenAI key는 커밋하지 않는다.
 
-웹 앱의 Google 로그인은 브라우저에서 Supabase Auth OAuth를 시작한다. `.env`에는 서버용 `SUPABASE_URL`, `SUPABASE_ANON_KEY`와 별도로 브라우저에 공개 가능한 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`를 같은 local Supabase 값으로 채운다.
+웹 앱의 Google 로그인은 브라우저에서 Supabase Auth OAuth를 시작한다. `.env`에는 서버용 `SUPABASE_URL`, `SUPABASE_ANON_KEY`와 별도로 브라우저에 공개 가능한 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`를 같은 local Supabase 값으로 채운다. 웹 앱은 저장소 루트의 `.env`를 읽으므로 `apps/web` 아래에 별도 env 파일을 복사하지 않는다. 값을 수정했다면 `pnpm dev:web`을 재시작한다.
 
 Google OAuth를 로컬에서 실제로 테스트하려면 Google Cloud OAuth 클라이언트의 승인된 redirect URI에 아래 값을 추가하고, 발급받은 값을 `.env`에 채운다.
 
