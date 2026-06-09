@@ -1,6 +1,10 @@
 import type { VocabularyItem } from "@nado/shared";
 import { describe, expect, it, vi } from "vitest";
-import { deleteVocabularyItem, listVocabulary } from "./vocabularyApi";
+import {
+  deleteVocabularyItem,
+  listVocabulary,
+  saveVocabularyItem,
+} from "./vocabularyApi";
 
 const vocabularyItem: VocabularyItem = {
   createdAt: "2026-06-09T00:00:00.000Z",
@@ -49,6 +53,43 @@ describe("vocabularyApi", () => {
       method: "DELETE",
     });
     expect(result).toEqual({ status: "success" });
+  });
+
+  it("saves a vocabulary item with an authenticated bearer token", async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json({
+        item: vocabularyItem,
+      }),
+    );
+
+    const result = await saveVocabularyItem(
+      {
+        meaning: "궁금해하다",
+        note: "정중하게 질문을 꺼내는 표현",
+        term: "wondering",
+        type: "word",
+      },
+      "session-token",
+      { fetcher },
+    );
+
+    expect(fetcher).toHaveBeenCalledWith("/api/vocabulary", {
+      body: JSON.stringify({
+        meaning: "궁금해하다",
+        note: "정중하게 질문을 꺼내는 표현",
+        term: "wondering",
+        type: "word",
+      }),
+      headers: {
+        Authorization: "Bearer session-token",
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+    expect(result).toEqual({
+      data: vocabularyItem,
+      status: "success",
+    });
   });
 
   it("returns the API error message when loading vocabulary fails", async () => {

@@ -160,26 +160,32 @@ export const analysisMock: AnalysisResultData = {
     {
       term: "framework",
       meaning: "프레임워크",
+      type: "word",
     },
     {
       term: "shipping",
       meaning: "출시/배포",
+      type: "word",
     },
     {
       term: "setup",
       meaning: "구성",
+      type: "word",
     },
     {
       term: "acceptable",
       meaning: "감수 가능한",
+      type: "word",
     },
     {
       term: "lighter process",
       meaning: "더 가벼운 절차",
+      type: "phrase",
     },
     {
       term: "maintain",
       meaning: "유지보수하다",
+      type: "word",
     },
   ],
 };

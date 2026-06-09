@@ -1,5 +1,7 @@
 import {
+  saveVocabularyResponseSchema,
   vocabularyListResponseSchema,
+  type SaveVocabularyRequest,
   type VocabularyItem,
 } from "@nado/shared";
 
@@ -15,6 +17,10 @@ export type VocabularyListResult =
 
 export type DeleteVocabularyResult =
   | { status: "success" }
+  | { message: string; status: "error" };
+
+export type SaveVocabularyResult =
+  | { data: VocabularyItem; status: "success" }
   | { message: string; status: "error" };
 
 const VOCABULARY_ERROR_MESSAGE =
@@ -93,6 +99,55 @@ export async function deleteVocabularyItem(
   }
 
   return { status: "success" };
+}
+
+export async function saveVocabularyItem(
+  request: SaveVocabularyRequest,
+  accessToken: string,
+  options: VocabularyApiOptions = {},
+): Promise<SaveVocabularyResult> {
+  const fetcher = options.fetcher ?? globalThis.fetch;
+
+  let response: Response;
+
+  try {
+    response = await fetcher("/api/vocabulary", {
+      body: JSON.stringify(request),
+      headers: {
+        ...createAuthHeaders(accessToken),
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+  } catch {
+    return {
+      message: VOCABULARY_ERROR_MESSAGE,
+      status: "error",
+    };
+  }
+
+  const payload = await readJson(response);
+
+  if (!response.ok) {
+    return {
+      message: readErrorMessage(payload),
+      status: "error",
+    };
+  }
+
+  const parsed = saveVocabularyResponseSchema.safeParse(payload);
+
+  if (!parsed.success) {
+    return {
+      message: VOCABULARY_ERROR_MESSAGE,
+      status: "error",
+    };
+  }
+
+  return {
+    data: parsed.data.item,
+    status: "success",
+  };
 }
 
 function createAuthHeaders(accessToken: string) {

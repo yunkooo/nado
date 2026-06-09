@@ -27,8 +27,12 @@ export interface SentenceAnalysisItem {
 
 export interface VocabularySuggestion {
   meaning: string;
+  note?: string;
   term: string;
+  type: "phrase" | "word";
 }
+
+export type VocabularySuggestionSaveState = "idle" | "saved" | "saving";
 
 export interface AnalysisResultData {
   sentences: SentenceAnalysisItem[];
@@ -209,32 +213,60 @@ export function SentenceAnalysis({ sentence }: SentenceAnalysisProps) {
 }
 
 export interface VocabularySuggestionListProps {
+  getSuggestionState?: (
+    suggestion: VocabularySuggestion,
+  ) => VocabularySuggestionSaveState;
+  onSaveSuggestion?: (suggestion: VocabularySuggestion) => void;
   suggestions: VocabularySuggestion[];
 }
 
 export function VocabularySuggestionList({
+  getSuggestionState,
+  onSaveSuggestion,
   suggestions,
 }: VocabularySuggestionListProps) {
+  const isInteractive = Boolean(onSaveSuggestion);
+
   return (
     <div className="nado-vocabulary-list">
-      {suggestions.map((suggestion) => (
-        <Chip
-          aria-label={`${suggestion.term}: ${suggestion.meaning}`}
-          as="span"
-          key={`${suggestion.term}-${suggestion.meaning}`}
-          label={`${suggestion.term} · ${suggestion.meaning}`}
-          prefix="+"
-        />
-      ))}
+      {suggestions.map((suggestion) => {
+        const state = getSuggestionState?.(suggestion) ?? "idle";
+
+        return (
+          <Chip
+            aria-label={
+              isInteractive
+                ? `${suggestion.term}: ${suggestion.meaning} 저장`
+                : `${suggestion.term}: ${suggestion.meaning}`
+            }
+            as={isInteractive ? "button" : "span"}
+            disabled={isInteractive ? state !== "idle" : undefined}
+            key={`${suggestion.term}-${suggestion.meaning}`}
+            label={`${suggestion.term} · ${suggestion.meaning}`}
+            onClick={
+              onSaveSuggestion ? () => onSaveSuggestion(suggestion) : undefined
+            }
+            prefix={isInteractive ? getSavePrefix(state) : "+"}
+          />
+        );
+      })}
     </div>
   );
 }
 
 export interface AnalysisResultProps {
+  getVocabularySuggestionState?: (
+    suggestion: VocabularySuggestion,
+  ) => VocabularySuggestionSaveState;
+  onSaveVocabularySuggestion?: (suggestion: VocabularySuggestion) => void;
   result: AnalysisResultData;
 }
 
-export function AnalysisResult({ result }: AnalysisResultProps) {
+export function AnalysisResult({
+  getVocabularySuggestionState,
+  onSaveVocabularySuggestion,
+  result,
+}: AnalysisResultProps) {
   return (
     <ResultCard
       description="자연스러운 번역, 문장별 끊어읽기 직역, 문법 포인트, 단어 추천을 한 번에 제공합니다."
@@ -258,8 +290,24 @@ export function AnalysisResult({ result }: AnalysisResultProps) {
         </div>
       </Section>
       <Section title="우선 저장 추천">
-        <VocabularySuggestionList suggestions={result.vocabularySuggestions} />
+        <VocabularySuggestionList
+          getSuggestionState={getVocabularySuggestionState}
+          onSaveSuggestion={onSaveVocabularySuggestion}
+          suggestions={result.vocabularySuggestions}
+        />
       </Section>
     </ResultCard>
   );
+}
+
+function getSavePrefix(state: VocabularySuggestionSaveState) {
+  if (state === "saved") {
+    return "저장됨";
+  }
+
+  if (state === "saving") {
+    return "저장 중";
+  }
+
+  return "저장";
 }

@@ -50,6 +50,8 @@ const analysisFixture: AnalysisResultData = {
     {
       term: "setup",
       meaning: "준비 과정",
+      note: "환경이나 준비 흐름을 뜻합니다.",
+      type: "word",
     },
   ],
 };
@@ -112,6 +114,21 @@ describe("analysis design system components", () => {
 
     expect(markup).toContain('<span class="nado-chip"');
     expect(markup).not.toContain('<button class="nado-chip"');
+  });
+
+  it("renders vocabulary suggestions as save buttons when a handler is provided", () => {
+    const markup = renderToStaticMarkup(
+      <AnalysisResult
+        getVocabularySuggestionState={() => "saved"}
+        onSaveVocabularySuggestion={noop}
+        result={analysisFixture}
+      />,
+    );
+
+    expect(markup).toContain('<button class="nado-chip"');
+    expect(markup).toContain('aria-label="setup: 준비 과정 저장"');
+    expect(markup).toContain("저장됨");
+    expect(markup).toContain("disabled");
   });
 
   it("renders reading chunks with slash separators", () => {

@@ -101,7 +101,68 @@ describe("analyzeText", () => {
         vocabularySuggestions: [
           {
             meaning: "궁금해하다",
+            note: "정중한 질문에서 자주 쓰입니다.",
             term: "wondering",
+            type: "word",
+          },
+        ],
+      },
+      status: "success",
+    });
+  });
+
+  it("uses vocabulary items as save suggestions when no priority suggestions are returned", async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json({
+        status: "analyzable",
+        result: {
+          grammarPoints: [],
+          sentences: [
+            {
+              chunks: [
+                {
+                  english: "take a look",
+                  literalTranslation: "살펴보다",
+                  role: "확인을 요청합니다.",
+                },
+              ],
+              explanation: "확인을 부탁하는 문장입니다.",
+              grammarPoints: [],
+              source: "Could you take a look?",
+              tokens: [],
+              translation: "한번 봐주실 수 있나요?",
+            },
+          ],
+          structure: [],
+          translation: "한번 봐주실 수 있나요?",
+          translationExplanation: "부드러운 요청 표현입니다.",
+          vocabularyItems: [
+            {
+              baseForm: "take a look",
+              contextMeaning: "가볍게 확인해 달라고 요청할 때 씁니다.",
+              key: "take-a-look",
+              meaning: "살펴보다",
+              partOfSpeech: null,
+              saveLabel: "take a look",
+              term: "take a look",
+              type: "phrase",
+            },
+          ],
+          vocabularySuggestions: [],
+        },
+      }),
+    );
+
+    const result = await analyzeText("Could you take a look?", { fetcher });
+
+    expect(result).toMatchObject({
+      data: {
+        vocabularySuggestions: [
+          {
+            meaning: "살펴보다",
+            note: "가볍게 확인해 달라고 요청할 때 씁니다.",
+            term: "take a look",
+            type: "phrase",
           },
         ],
       },

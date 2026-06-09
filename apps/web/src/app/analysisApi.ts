@@ -108,14 +108,20 @@ function mapAnalysisResult(
 }
 
 function readVocabularySuggestions(result: ApiAnalysisResult) {
-  const candidates =
-    result.vocabularySuggestions.length > 0
-      ? result.vocabularySuggestions
-      : result.vocabularyItems;
+  if (result.vocabularySuggestions.length > 0) {
+    return result.vocabularySuggestions.map((item) => ({
+      meaning: item.meaning,
+      note: item.note,
+      term: item.term,
+      type: item.type,
+    }));
+  }
 
-  return candidates.map((item) => ({
+  return result.vocabularyItems.map((item) => ({
     meaning: item.meaning,
+    note: item.contextMeaning,
     term: item.term,
+    type: item.type,
   }));
 }
 
