@@ -1,0 +1,31 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
+
+const migrationsDir = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../../supabase/migrations",
+);
+
+describe("Supabase migrations", () => {
+  it("creates the analysis usage table before altering its access rules", () => {
+    const migrations = readdirSync(migrationsDir)
+      .filter((file) => file.endsWith(".sql"))
+      .sort()
+      .map((file) => ({
+        file,
+        sql: readFileSync(join(migrationsDir, file), "utf8"),
+      }));
+
+    const createTableIndex = migrations.findIndex((migration) =>
+      migration.sql.includes("create table public.analysis_usage_limits"),
+    );
+    const accessRulesIndex = migrations.findIndex((migration) =>
+      migration.sql.includes("analysis_usage_limits_single_identity"),
+    );
+
+    expect(createTableIndex).toBeGreaterThanOrEqual(0);
+    expect(accessRulesIndex).toBeGreaterThan(createTableIndex);
+  });
+});
