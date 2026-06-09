@@ -130,7 +130,7 @@ export function createApp(dependencies: AppDependencies = {}): Express {
             code: input.code,
             issues: input.issues,
             message:
-              "Text must be a non-empty English sentence up to 500 characters.",
+              "Text must be a non-empty English sentence up to 200 supported characters.",
           },
         });
       }

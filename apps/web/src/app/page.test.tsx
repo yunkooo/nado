@@ -23,7 +23,7 @@ describe("HomePage", () => {
   it("keeps the submit button disabled when the composer is empty", () => {
     const markup = renderToStaticMarkup(createElement(HomePage));
 
-    expect(markup).toContain("0 / 500");
+    expect(markup).toContain("0 / 200");
     expect(markup).toContain("disabled");
   });
 

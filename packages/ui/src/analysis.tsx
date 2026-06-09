@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Fragment } from "react";
 import { Chip } from "./Chip";
+import { countVisibleTextCharacters } from "./text";
 
 export interface ReadingChunk {
   english: string;
@@ -55,7 +56,7 @@ export function InputSample({
   maxLength,
   text,
 }: InputSampleProps) {
-  const visibleCount = count ?? text.length;
+  const visibleCount = count ?? countVisibleTextCharacters(text);
 
   return (
     <section className="nado-input-sample" aria-label={label}>
@@ -270,7 +271,7 @@ export function AnalysisResult({
   return (
     <ResultCard
       description="자연스러운 번역, 문장별 끊어읽기 직역, 문법 포인트, 단어 추천을 한 번에 제공합니다."
-      meta="500자 이내 기본 분석"
+      meta="200자 이내 기본 분석"
       title="분석 결과"
     >
       <Section title="전체 자연스러운 번역">

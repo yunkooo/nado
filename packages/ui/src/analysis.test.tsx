@@ -63,7 +63,7 @@ describe("analysis design system components", () => {
     const markup = renderToStaticMarkup(
       <InputComposer
         label="기본 분석"
-        maxLength={500}
+        maxLength={200}
         onSubmit={noop}
         onValueChange={noop}
         placeholder="영어 문장을 붙여넣으세요"
@@ -73,9 +73,25 @@ describe("analysis design system components", () => {
     );
 
     expect(markup).toContain("기본 분석");
-    expect(markup).toContain("0 / 500");
+    expect(markup).toContain("0 / 200");
     expect(markup).toContain("disabled");
     expect(markup).toContain('aria-label="분석 요청"');
+  });
+
+  it("counts normalized code points for the composer display", () => {
+    const markup = renderToStaticMarkup(
+      <InputComposer
+        label="기본 분석"
+        maxLength={1}
+        onSubmit={noop}
+        onValueChange={noop}
+        placeholder="영어 문장을 붙여넣으세요"
+        value="  𝐀  "
+      />,
+    );
+
+    expect(markup).toContain("1 / 1");
+    expect(markup).not.toContain("disabled");
   });
 
   it("renders text submit button when action label is a word", () => {
@@ -83,7 +99,7 @@ describe("analysis design system components", () => {
       <InputComposer
         actionLabel="분석"
         label="기본 분석"
-        maxLength={500}
+        maxLength={200}
         onSubmit={noop}
         onValueChange={noop}
         placeholder="영어 문장을 붙여넣으세요"

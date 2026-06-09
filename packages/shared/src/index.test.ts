@@ -3,13 +3,20 @@ import {
   MAX_ANALYSIS_TEXT_LENGTH,
   analyzeResponseJsonSchema,
   analyzeResponseSchema,
+  countAnalysisTextCharacters,
+  hasUnsupportedAnalysisTextCharacters,
   isLikelyEnglishLearningText,
+  normalizeAnalysisText,
   normalizeVocabularyTerm,
   parseAnalyzeRequest,
   saveVocabularyRequestSchema,
 } from "./index";
 
 describe("parseAnalyzeRequest", () => {
+  it("keeps the MVP analysis input limit at 200 characters", () => {
+    expect(MAX_ANALYSIS_TEXT_LENGTH).toBe(200);
+  });
+
   it("trims valid analysis text", () => {
     expect(
       parseAnalyzeRequest({ text: "  I was wondering if you could help.  " }),
@@ -28,6 +35,42 @@ describe("parseAnalyzeRequest", () => {
     expect(() =>
       parseAnalyzeRequest({ text: "a".repeat(MAX_ANALYSIS_TEXT_LENGTH + 1) }),
     ).toThrow("analysis.text.too_long");
+  });
+
+  it("normalizes compatible unicode before validating text", () => {
+    expect(parseAnalyzeRequest({ text: "  Ｉ leave home．  " })).toEqual({
+      text: "I leave home.",
+    });
+  });
+
+  it("rejects invisible format characters", () => {
+    expect(() => parseAnalyzeRequest({ text: "I\u200B leave home." })).toThrow(
+      "analysis.text.unsupported_characters",
+    );
+  });
+
+  it("rejects unsupported symbols even when the text is short", () => {
+    expect(() => parseAnalyzeRequest({ text: "I leave home 💣" })).toThrow(
+      "analysis.text.unsupported_characters",
+    );
+  });
+});
+
+describe("analysis text helpers", () => {
+  it("counts normalized Unicode code points instead of UTF-16 units", () => {
+    const normalized = normalizeAnalysisText("  Ｉ leave home．  ");
+
+    expect(normalized).toBe("I leave home.");
+    expect(countAnalysisTextCharacters("  Ｉ leave home．  ")).toBe(
+      Array.from(normalized).length,
+    );
+  });
+
+  it("detects control and format characters as unsupported", () => {
+    expect(hasUnsupportedAnalysisTextCharacters("I\u202E leave home.")).toBe(
+      true,
+    );
+    expect(hasUnsupportedAnalysisTextCharacters("I leave home.")).toBe(false);
   });
 });
 
@@ -187,5 +230,9 @@ describe("isLikelyEnglishLearningText", () => {
 
   it("rejects mostly numeric or symbolic input", () => {
     expect(isLikelyEnglishLearningText("1234567890 !!!")).toBe(false);
+  });
+
+  it("rejects English-looking text with unsupported hidden characters", () => {
+    expect(isLikelyEnglishLearningText("I\u200B leave home.")).toBe(false);
   });
 });

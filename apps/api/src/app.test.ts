@@ -69,6 +69,14 @@ describe("parseAnalyzeInput", () => {
       ok: false,
     });
   });
+
+  it("rejects unsupported hidden characters", () => {
+    expect(parseAnalyzeInput({ text: "I\u200B leave home." })).toEqual({
+      code: "invalid_input",
+      issues: ["analysis.text.unsupported_characters"],
+      ok: false,
+    });
+  });
 });
 
 describe("app", () => {

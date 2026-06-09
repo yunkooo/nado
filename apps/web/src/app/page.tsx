@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
+import {
+  MAX_ANALYSIS_TEXT_LENGTH,
+  countAnalysisTextCharacters,
+  hasUnsupportedAnalysisTextCharacters,
+  normalizeAnalysisText,
+} from "@nado/shared";
 import {
   AnalysisResult,
   InputComposer,
@@ -35,12 +40,14 @@ export default function HomePage() {
     useState<VocabularySaveMessage | null>(null);
 
   const handleSubmitAnalysis = async () => {
-    const nextText = text.trim();
+    const nextText = normalizeAnalysisText(text);
+    const nextTextLength = countAnalysisTextCharacters(nextText);
 
     if (
       analysisState.status === "loading" ||
-      nextText.length === 0 ||
-      text.length > MAX_ANALYSIS_TEXT_LENGTH
+      nextTextLength === 0 ||
+      nextTextLength > MAX_ANALYSIS_TEXT_LENGTH ||
+      hasUnsupportedAnalysisTextCharacters(nextText)
     ) {
       return;
     }
@@ -124,7 +131,9 @@ export default function HomePage() {
           {analysisState.status === "success" ? (
             <>
               <InputSample
-                count={analysisState.data.sourceText.length}
+                count={countAnalysisTextCharacters(
+                  analysisState.data.sourceText,
+                )}
                 maxLength={MAX_ANALYSIS_TEXT_LENGTH}
                 text={analysisState.data.sourceText}
               />

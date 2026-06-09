@@ -1,15 +1,70 @@
 import { z } from "zod";
 
-export const MAX_ANALYSIS_TEXT_LENGTH = 500;
+export const MAX_ANALYSIS_TEXT_LENGTH = 200;
+
+const allowedAnalysisTextPattern = /^[A-Za-z0-9 \t\n\r.,!?'"’“”()\[\]\-:;]+$/u;
+const allowedControlCharactersPattern = /[\t\n\r]/g;
+const controlOrFormatCharactersPattern = /[\p{Cc}\p{Cf}]/u;
+
+export function normalizeAnalysisText(text: string): string {
+  return text.normalize("NFKC").trim();
+}
+
+export function countAnalysisTextCharacters(text: string): number {
+  return Array.from(normalizeAnalysisText(text)).length;
+}
+
+export function hasUnsupportedAnalysisTextCharacters(text: string): boolean {
+  const normalized = normalizeAnalysisText(text);
+
+  if (countAnalysisTextCharacters(normalized) === 0) {
+    return false;
+  }
+
+  const textWithoutAllowedControls = normalized.replace(
+    allowedControlCharactersPattern,
+    "",
+  );
+
+  return (
+    controlOrFormatCharactersPattern.test(textWithoutAllowedControls) ||
+    !allowedAnalysisTextPattern.test(normalized)
+  );
+}
+
+const analysisTextSchema = z
+  .string()
+  .transform(normalizeAnalysisText)
+  .superRefine((text, context) => {
+    const characterCount = countAnalysisTextCharacters(text);
+
+    if (characterCount === 0) {
+      context.addIssue({
+        code: "custom",
+        message: "analysis.text.required",
+      });
+      return;
+    }
+
+    if (hasUnsupportedAnalysisTextCharacters(text)) {
+      context.addIssue({
+        code: "custom",
+        message: "analysis.text.unsupported_characters",
+      });
+    }
+
+    if (characterCount > MAX_ANALYSIS_TEXT_LENGTH) {
+      context.addIssue({
+        code: "custom",
+        message: "analysis.text.too_long",
+      });
+    }
+  });
 
 export const vocabularyTypeSchema = z.enum(["word", "phrase"]);
 
 export const analyzeRequestSchema = z.object({
-  text: z
-    .string()
-    .trim()
-    .min(1, "analysis.text.required")
-    .max(MAX_ANALYSIS_TEXT_LENGTH, "analysis.text.too_long"),
+  text: analysisTextSchema,
 });
 
 export const vocabularyMeaningSchema = z.object({
@@ -347,21 +402,25 @@ export function normalizeVocabularyTerm(term: string): string {
 }
 
 export function isLikelyEnglishLearningText(text: string): boolean {
-  const trimmed = text.trim();
+  const normalized = normalizeAnalysisText(text);
 
-  if (trimmed.length === 0 || trimmed.length > MAX_ANALYSIS_TEXT_LENGTH) {
+  if (
+    countAnalysisTextCharacters(normalized) === 0 ||
+    countAnalysisTextCharacters(normalized) > MAX_ANALYSIS_TEXT_LENGTH ||
+    hasUnsupportedAnalysisTextCharacters(normalized)
+  ) {
     return false;
   }
 
-  const letters = trimmed.match(/[A-Za-z]/g)?.length ?? 0;
-  const visibleChars = trimmed.replace(/\s/g, "").length;
+  const letters = normalized.match(/[A-Za-z]/g)?.length ?? 0;
+  const visibleChars = Array.from(normalized.replace(/\s/g, "")).length;
   const letterRatio = visibleChars === 0 ? 0 : letters / visibleChars;
 
   if (letterRatio < 0.45) {
     return false;
   }
 
-  if (/^(.)\1{9,}$/.test(trimmed)) {
+  if (/^(.)\1{9,}$/.test(normalized)) {
     return false;
   }
 

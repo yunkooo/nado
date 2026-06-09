@@ -1,5 +1,6 @@
 import type { TextareaHTMLAttributes } from "react";
 import { Button } from "./Button";
+import { countVisibleTextCharacters } from "./text";
 
 export interface InputComposerProps extends Omit<
   TextareaHTMLAttributes<HTMLTextAreaElement>,
@@ -27,8 +28,8 @@ export function InputComposer({
   value,
   ...props
 }: InputComposerProps) {
-  const trimmedLength = value.trim().length;
-  const isSubmitDisabled = trimmedLength === 0 || value.length > maxLength;
+  const visibleLength = countVisibleTextCharacters(value);
+  const isSubmitDisabled = visibleLength === 0 || visibleLength > maxLength;
   const isIconButton =
     submitButtonKind === "icon" ||
     (submitButtonKind === "auto" && actionLabel.trim() === "↑");
@@ -37,7 +38,6 @@ export function InputComposer({
     <div className="nado-composer">
       <textarea
         className="nado-composer__input"
-        maxLength={maxLength}
         onChange={(event) => onValueChange(event.target.value)}
         placeholder={placeholder}
         value={value}
@@ -47,7 +47,7 @@ export function InputComposer({
         <div className="nado-composer__meta">
           <span className="nado-composer__label">{label}</span>
           <span className="nado-composer__count">
-            {value.length} / {maxLength}
+            {visibleLength} / {maxLength}
           </span>
         </div>
         <Button

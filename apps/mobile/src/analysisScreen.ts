@@ -1,4 +1,8 @@
-import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
+import {
+  MAX_ANALYSIS_TEXT_LENGTH,
+  countAnalysisTextCharacters,
+  normalizeAnalysisText,
+} from "@nado/shared";
 
 export const INITIAL_ANALYSIS_TEXT = "";
 export const ANALYSIS_INPUT_ACCESSIBILITY_LABEL = "분석할 영어 문장";
@@ -95,10 +99,11 @@ export const mobileReviewCards = [
 export const mobileReviewFlashcard = mobileReviewCards[0];
 
 export function getAnalysisComposerState(text: string) {
-  const hasInput = text.trim().length > 0;
+  const inputLength = countAnalysisTextCharacters(text);
+  const hasInput = inputLength > 0;
 
   return {
-    countLabel: `${text.length} / ${MAX_ANALYSIS_TEXT_LENGTH}`,
+    countLabel: `${inputLength} / ${MAX_ANALYSIS_TEXT_LENGTH}`,
     hasInput,
     helperText: ANALYSIS_PRIVACY_HELPER_TEXT,
     placeholderText: ANALYSIS_INPUT_PLACEHOLDER_TEXT,
@@ -110,7 +115,10 @@ export function shouldShowAnalysisResult(
   text: string,
   submittedText: string | null,
 ) {
-  const currentText = text.trim();
+  const currentText = normalizeAnalysisText(text);
 
-  return currentText.length > 0 && currentText === submittedText;
+  return (
+    countAnalysisTextCharacters(currentText) > 0 &&
+    currentText === submittedText
+  );
 }

@@ -86,7 +86,7 @@ describe("mobile analysis screen state", () => {
 
   it("disables analysis and keeps the AI transfer notice for blank input", () => {
     expect(getAnalysisComposerState("   ")).toEqual({
-      countLabel: `3 / ${MAX_ANALYSIS_TEXT_LENGTH}`,
+      countLabel: `0 / ${MAX_ANALYSIS_TEXT_LENGTH}`,
       hasInput: false,
       helperText: ANALYSIS_PRIVACY_HELPER_TEXT,
       placeholderText: ANALYSIS_INPUT_PLACEHOLDER_TEXT,
@@ -100,6 +100,14 @@ describe("mobile analysis screen state", () => {
       hasInput: true,
       helperText: ANALYSIS_PRIVACY_HELPER_TEXT,
       placeholderText: ANALYSIS_INPUT_PLACEHOLDER_TEXT,
+      isSubmitDisabled: false,
+    });
+  });
+
+  it("counts normalized code points for compatible Unicode text", () => {
+    expect(getAnalysisComposerState("  𝐀  ")).toMatchObject({
+      countLabel: `1 / ${MAX_ANALYSIS_TEXT_LENGTH}`,
+      hasInput: true,
       isSubmitDisabled: false,
     });
   });
