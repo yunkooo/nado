@@ -2,6 +2,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const appSource = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const apiConfigSource = readFileSync(
+  new URL("./apiConfig.ts", import.meta.url),
+  "utf8",
+);
 const styles = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
 
 describe("Desktop App source", () => {
@@ -24,6 +28,25 @@ describe("Desktop App source", () => {
     expect(appSource).toContain("desktop-sidebar--open");
   });
 
+  it("renders web-style sidebar navigation and auth controls", () => {
+    expect(appSource).toContain("navigationItems");
+    expect(appSource).toContain("activeItem");
+    expect(appSource).toContain("setActiveItem");
+    expect(appSource).toContain("desktop-nav");
+    expect(appSource).toContain("분석");
+    expect(appSource).toContain("단어장");
+    expect(appSource).toContain("복습");
+    expect(appSource).toContain("AuthControls");
+  });
+
+  it("switches between analysis, vocabulary, and review views", () => {
+    expect(appSource).toContain("VocabularyFlow");
+    expect(appSource).toContain("ReviewFlow");
+    expect(appSource).toContain('activeItem === "analysis"');
+    expect(appSource).toContain('activeItem === "vocabulary"');
+    expect(appSource).toContain('activeItem === "review"');
+  });
+
   it("validates analysis input before submitting to the API", () => {
     expect(appSource).toContain("normalizeAnalysisText");
     expect(appSource).toContain("countAnalysisTextCharacters");
@@ -32,13 +55,19 @@ describe("Desktop App source", () => {
   });
 
   it("uses the root Vite API base URL variable configured for deployed backends", () => {
-    expect(appSource).toContain("VITE_API_BASE_URL");
-    expect(appSource).toContain("VITE_NADO_API_BASE_URL");
+    expect(apiConfigSource).toContain("VITE_API_BASE_URL");
+    expect(apiConfigSource).toContain("VITE_NADO_API_BASE_URL");
+  });
+
+  it("uses the Vite API proxy during local development to avoid browser CORS blocks", () => {
+    expect(apiConfigSource).toContain("import.meta.env.DEV");
+    expect(apiConfigSource).toContain("undefined");
+    expect(apiConfigSource).toContain("configuredApiBaseUrl");
   });
 
   it("keeps vocabulary saving behind a login-needed desktop notice", () => {
     expect(appSource).toContain(
-      "단어 저장은 로그인 기능 연결 후 사용할 수 있어요.",
+      "로그인이 필요해요. Google 로그인 후 단어장에 저장할 수 있어요.",
     );
     expect(appSource).toContain("setVocabularySaveMessage");
     expect(appSource).toContain("getVocabularySuggestionState");
@@ -72,6 +101,16 @@ describe("Desktop App source", () => {
     expect(styles).toContain(".desktop-composer-wrap");
     expect(styles).toContain(".desktop-analysis-status");
     expect(styles).toContain(".desktop-save-status");
+  });
+
+  it("defines desktop vocabulary and review page styles copied from the web rhythm", () => {
+    expect(styles).toContain(".desktop-sidebar__footer");
+    expect(styles).toContain(".desktop-auth-controls");
+    expect(styles).toContain(".desktop-nav__item--active");
+    expect(styles).toContain(".desktop-content-workspace");
+    expect(styles).toContain(".desktop-page");
+    expect(styles).toContain(".nado-vocabulary-summary");
+    expect(styles).toContain(".nado-review-layout");
   });
 
   it("uses a drawer sidebar instead of stacking the sidebar on narrow screens", () => {

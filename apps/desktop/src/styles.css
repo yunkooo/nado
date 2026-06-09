@@ -78,6 +78,65 @@ textarea {
   font-weight: 800;
 }
 
+.desktop-nav {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.desktop-nav__item {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  color: #66665f;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.8125rem;
+  height: 34px;
+  padding: 0 10px;
+  text-align: left;
+}
+
+.desktop-nav__item--active {
+  background: var(--nado-color-sidebar-active);
+  color: var(--nado-color-ink);
+  font-weight: 700;
+}
+
+.desktop-sidebar__footer {
+  border-top: 1px solid #d8d8d0;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.desktop-sidebar-login {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.desktop-auth-controls {
+  display: grid;
+  gap: 8px;
+}
+
+.desktop-auth-controls__user,
+.desktop-auth-controls__message {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.desktop-auth-controls__user {
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.desktop-auth-controls__message {
+  margin: 0;
+}
+
 .desktop-workspace {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
@@ -90,12 +149,42 @@ textarea {
   padding: 28px 28px 150px;
 }
 
+.desktop-content-workspace {
+  overflow: auto;
+  padding: 28px;
+}
+
 .desktop-analysis-page {
   display: grid;
   gap: 24px;
   margin: 0 auto;
   max-width: 1080px;
   min-width: 0;
+}
+
+.desktop-page {
+  display: grid;
+  gap: 18px;
+  margin: 0 auto;
+  max-width: 1080px;
+}
+
+.desktop-page-header {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.desktop-page-header > div {
+  display: grid;
+  gap: 6px;
+}
+
+.desktop-page-title {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  margin: 0;
 }
 
 .desktop-analysis-status {
@@ -168,6 +257,232 @@ textarea {
   line-height: 1.5;
   margin-bottom: 0;
   margin-top: 0;
+}
+
+.nado-vocabulary-summary {
+  display: grid;
+  gap: 10px;
+}
+
+.nado-vocabulary-summary__item {
+  align-items: center;
+  background: var(--nado-color-surface);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-height: 62px;
+  padding: 14px 16px;
+}
+
+.nado-vocabulary-summary__item span,
+.nado-section-header > span,
+.nado-vocabulary-item__date {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.nado-vocabulary-summary__item strong {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.nado-vocabulary-flow,
+.nado-vocabulary-layout,
+.nado-review-layout {
+  display: grid;
+  gap: 14px;
+}
+
+.nado-empty-panel,
+.nado-review-card,
+.nado-vocabulary-item {
+  background: var(--nado-color-surface);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+}
+
+.nado-empty-panel {
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+}
+
+.nado-empty-panel--compact {
+  padding: 18px 20px;
+}
+
+.nado-empty-panel h2,
+.nado-empty-panel p,
+.nado-review-card h2,
+.nado-review-card p,
+.nado-vocabulary-item h2,
+.nado-section-header h2 {
+  margin: 0;
+}
+
+.nado-empty-panel h2,
+.nado-review-card h2,
+.nado-vocabulary-item h2 {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.nado-empty-panel p,
+.nado-review-card p {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.nado-section-header {
+  align-items: end;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.nado-section-header > div {
+  display: grid;
+  gap: 5px;
+}
+
+.nado-section-header h2 {
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.nado-vocabulary-list-wrap {
+  display: grid;
+  gap: 10px;
+}
+
+.nado-vocabulary-list {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.nado-vocabulary-item {
+  box-shadow: 0 10px 24px rgba(32, 32, 29, 0.04);
+  display: grid;
+  gap: 14px;
+  min-height: 220px;
+  padding: 18px;
+}
+
+.nado-vocabulary-item header,
+.nado-vocabulary-item header > div {
+  display: grid;
+  gap: 7px;
+}
+
+.nado-vocabulary-type {
+  align-self: start;
+  background: var(--nado-color-surface-muted);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-pill);
+  color: var(--nado-color-ink-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  justify-self: start;
+  line-height: 1;
+  padding: 5px 8px;
+}
+
+.nado-vocabulary-meaning-list {
+  display: grid;
+  gap: 8px;
+}
+
+.nado-vocabulary-meaning {
+  background: var(--nado-color-surface-muted);
+  border: 1px solid #eeeeea;
+  border-radius: 7px;
+  color: var(--nado-color-ink);
+  display: grid;
+  font-size: 0.875rem;
+  gap: 4px;
+  line-height: 1.45;
+  padding: 10px 12px;
+}
+
+.nado-vocabulary-meaning small {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.nado-vocabulary-item__footer {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.nado-review-controls,
+.nado-review-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.nado-review-direction {
+  background: var(--nado-color-surface);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  color: var(--nado-color-ink-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.nado-review-direction--active {
+  background: var(--nado-color-sidebar-active);
+  color: var(--nado-color-ink);
+}
+
+.nado-review-card {
+  display: grid;
+  gap: 10px;
+  min-height: 220px;
+  padding: 28px;
+  place-content: center;
+  text-align: center;
+}
+
+.nado-review-card h2 {
+  font-size: 1.75rem;
+}
+
+.nado-review-card__meta {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.nado-review-card__answer {
+  filter: blur(5px);
+  font-weight: 800;
+  user-select: none;
+}
+
+.nado-review-card__answer--revealed {
+  filter: none;
+  user-select: auto;
+}
+
+.nado-review-card__note {
+  max-width: 420px;
+}
+
+.nado-review-actions {
+  justify-content: flex-end;
 }
 
 @media (max-width: 820px) {
@@ -269,6 +584,29 @@ textarea {
 
   .desktop-analysis-workspace {
     padding: 72px 14px 140px;
+  }
+
+  .desktop-content-workspace {
+    padding: 72px 14px 24px;
+  }
+
+  .desktop-page-header,
+  .nado-section-header,
+  .nado-vocabulary-item header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .nado-vocabulary-list {
+    grid-template-columns: 1fr;
+  }
+
+  .nado-review-actions {
+    justify-content: stretch;
+  }
+
+  .nado-review-actions .nado-button {
+    flex: 1;
   }
 
   .desktop-composer-wrap {

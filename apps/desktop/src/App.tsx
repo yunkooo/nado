@@ -11,21 +11,44 @@ import {
   InputSample,
   type VocabularySuggestion,
 } from "@nado/ui";
+import { AuthControls } from "./AuthControls";
+import { ReviewFlow } from "./ReviewFlow";
+import { VocabularyFlow } from "./VocabularyFlow";
+import { apiBaseUrl } from "./apiConfig";
 import { analyzeText } from "./analysisApi";
+import { getCurrentAccessToken } from "./authClient";
 import { useAnalysisPageState } from "./analysisState";
+import { saveVocabularyItem } from "./vocabularyApi";
+import {
+  isVocabularySuggestionSaved,
+  useSyncVocabularyForAuth,
+  useVocabularyState,
+  vocabularyStateStore,
+} from "./vocabularyState";
+import { useAuthState } from "./authState";
 
 const inputDisclosure =
   "입력한 문장은 AI 분석을 위해 전송되며, 단어장에는 원문 문장을 저장하지 않습니다.";
-const desktopSaveNotice = "단어 저장은 로그인 기능 연결 후 사용할 수 있어요.";
 const VOCABULARY_SAVE_NOTICE_DISMISS_MS = 2500;
 
-const apiBaseUrl =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-  (import.meta.env.VITE_NADO_API_BASE_URL as string | undefined);
+type NavigationItem = {
+  key: "analysis" | "review" | "vocabulary";
+  label: string;
+};
+
+const navigationItems: NavigationItem[] = [
+  { key: "analysis", label: "분석" },
+  { key: "vocabulary", label: "단어장" },
+  { key: "review", label: "복습" },
+];
 
 export function App() {
+  const [activeItem, setActiveItem] =
+    useState<NavigationItem["key"]>("analysis");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const closeSidebar = () => setIsSidebarOpen(false);
+  const authState = useAuthState();
+  const vocabularyState = useVocabularyState();
   const {
     snapshot: {
       analysisState,
@@ -35,6 +58,8 @@ export function App() {
     },
     store: analysisStore,
   } = useAnalysisPageState();
+
+  useSyncVocabularyForAuth(authState);
 
   useEffect(() => {
     if (!vocabularySaveMessage) {
@@ -77,6 +102,7 @@ export function App() {
     analysisStore.setVocabularySaveStates({});
 
     const nextAnalysisState = await analyzeText(nextText, {
+      accessToken: await getCurrentAccessToken(),
       apiBaseUrl,
     });
 
@@ -88,19 +114,88 @@ export function App() {
   };
 
   const handleSaveVocabularySuggestion = (suggestion: VocabularySuggestion) => {
+    const key = createVocabularySuggestionKey(suggestion);
+    const currentState = getVocabularySuggestionState(suggestion);
+
+    if (currentState !== "idle") {
+      return;
+    }
+
+    void saveVocabularySuggestion(key, suggestion);
+  };
+
+  const saveVocabularySuggestion = async (
+    key: string,
+    suggestion: VocabularySuggestion,
+  ) => {
+    const accessToken = await getCurrentAccessToken();
+
+    if (!accessToken) {
+      analysisStore.setVocabularySaveMessage({
+        text: "로그인이 필요해요. Google 로그인 후 단어장에 저장할 수 있어요.",
+        tone: "error",
+      });
+      return;
+    }
+
+    analysisStore.setVocabularySaveMessage(null);
     analysisStore.setVocabularySaveStates({
-      [createVocabularySuggestionKey(suggestion)]: "idle",
+      [key]: "saving",
+    });
+
+    const result = await saveVocabularyItem(
+      {
+        meaning: suggestion.meaning,
+        note: suggestion.note,
+        term: suggestion.term,
+        type: suggestion.type,
+      },
+      accessToken,
+    );
+
+    if (result.status === "success") {
+      vocabularyStateStore.upsertItem(result.data);
+      analysisStore.setVocabularySaveStates((currentStates) => {
+        const nextStates = { ...currentStates };
+        delete nextStates[key];
+        return nextStates;
+      });
+      analysisStore.setVocabularySaveMessage({
+        text: "단어장에 저장했어요.",
+        tone: "success",
+      });
+      return;
+    }
+
+    analysisStore.setVocabularySaveStates((currentStates) => {
+      const nextStates = { ...currentStates };
+      delete nextStates[key];
+      return nextStates;
     });
     analysisStore.setVocabularySaveMessage({
-      text: desktopSaveNotice,
+      text: result.message,
       tone: "error",
     });
   };
 
   const getVocabularySuggestionState = (suggestion: VocabularySuggestion) => {
-    return (
-      vocabularySaveStates[createVocabularySuggestionKey(suggestion)] ?? "idle"
-    );
+    const pendingState =
+      vocabularySaveStates[createVocabularySuggestionKey(suggestion)];
+
+    if (pendingState === "saving") {
+      return "saving";
+    }
+
+    if (isVocabularySuggestionSaved(vocabularyState.items, suggestion)) {
+      return "saved";
+    }
+
+    return "idle";
+  };
+
+  const selectNavigationItem = (nextItem: NavigationItem["key"]) => {
+    setActiveItem(nextItem);
+    closeSidebar();
   };
 
   return (
@@ -152,73 +247,133 @@ export function App() {
             <span className="desktop-sidebar-close__bar" />
           </button>
         </div>
+        <nav className="desktop-nav" aria-label="주요 메뉴">
+          {navigationItems.map((item) => {
+            const isActive = item.key === activeItem;
+
+            return (
+              <button
+                aria-current={isActive ? "page" : undefined}
+                className={[
+                  "desktop-nav__item",
+                  isActive ? "desktop-nav__item--active" : null,
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                key={item.key}
+                onClick={() => selectNavigationItem(item.key)}
+                type="button"
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+        <footer className="desktop-sidebar__footer">
+          <AuthControls />
+        </footer>
       </aside>
 
       <section className="desktop-workspace" aria-label="분석 화면">
-        <div className="desktop-analysis-workspace">
-          <div className="desktop-analysis-page">
-            {analysisState.status === "success" ? (
-              <>
-                <InputSample
-                  count={countAnalysisTextCharacters(
-                    analysisState.data.sourceText,
-                  )}
-                  maxLength={MAX_ANALYSIS_TEXT_LENGTH}
-                  text={analysisState.data.sourceText}
-                />
-                {vocabularySaveMessage ? (
-                  <section
-                    className={[
-                      "desktop-save-status",
-                      vocabularySaveMessage.tone === "error"
-                        ? "desktop-save-status--error"
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    role={
-                      vocabularySaveMessage.tone === "error"
-                        ? "alert"
-                        : "status"
-                    }
-                  >
-                    {vocabularySaveMessage.text}
+        {activeItem === "analysis" ? (
+          <>
+            <div className="desktop-analysis-workspace">
+              <div className="desktop-analysis-page">
+                {analysisState.status === "success" ? (
+                  <>
+                    <InputSample
+                      count={countAnalysisTextCharacters(
+                        analysisState.data.sourceText,
+                      )}
+                      maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+                      text={analysisState.data.sourceText}
+                    />
+                    {vocabularySaveMessage ? (
+                      <section
+                        className={[
+                          "desktop-save-status",
+                          vocabularySaveMessage.tone === "error"
+                            ? "desktop-save-status--error"
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        role={
+                          vocabularySaveMessage.tone === "error"
+                            ? "alert"
+                            : "status"
+                        }
+                      >
+                        {vocabularySaveMessage.text}
+                      </section>
+                    ) : null}
+                    <AnalysisResult
+                      getVocabularySuggestionState={
+                        getVocabularySuggestionState
+                      }
+                      onSaveVocabularySuggestion={
+                        handleSaveVocabularySuggestion
+                      }
+                      result={analysisState.data}
+                    />
+                  </>
+                ) : null}
+
+                {analysisState.status === "loading" ? (
+                  <section className="desktop-analysis-status" role="status">
+                    분석 중이에요.
                   </section>
                 ) : null}
-                <AnalysisResult
-                  getVocabularySuggestionState={getVocabularySuggestionState}
-                  onSaveVocabularySuggestion={handleSaveVocabularySuggestion}
-                  result={analysisState.data}
-                />
-              </>
-            ) : null}
 
-            {analysisState.status === "loading" ? (
-              <section className="desktop-analysis-status" role="status">
-                분석 중이에요.
-              </section>
-            ) : null}
+                {analysisState.status === "error" ||
+                analysisState.status === "not_analyzable" ? (
+                  <section className="desktop-analysis-status" role="alert">
+                    {analysisState.message}
+                  </section>
+                ) : null}
+              </div>
+            </div>
+            <footer className="desktop-composer-wrap">
+              <p className="desktop-input-disclosure">{inputDisclosure}</p>
+              <InputComposer
+                maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+                onSubmit={handleSubmitAnalysis}
+                onValueChange={analysisStore.setText}
+                placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
+                submitAriaLabel="분석 요청"
+                value={text}
+              />
+            </footer>
+          </>
+        ) : null}
 
-            {analysisState.status === "error" ||
-            analysisState.status === "not_analyzable" ? (
-              <section className="desktop-analysis-status" role="alert">
-                {analysisState.message}
-              </section>
-            ) : null}
-          </div>
-        </div>
+        {activeItem === "vocabulary" ? (
+          <section className="desktop-content-workspace">
+            <div className="desktop-page">
+              <header className="desktop-page-header">
+                <div>
+                  <p className="nado-eyebrow">Vocabulary</p>
+                  <h1 className="desktop-page-title">단어장</h1>
+                </div>
+              </header>
+              <VocabularyFlow />
+            </div>
+          </section>
+        ) : null}
 
-        <footer className="desktop-composer-wrap">
-          <p className="desktop-input-disclosure">{inputDisclosure}</p>
-          <InputComposer
-            maxLength={MAX_ANALYSIS_TEXT_LENGTH}
-            onSubmit={handleSubmitAnalysis}
-            onValueChange={analysisStore.setText}
-            placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
-            submitAriaLabel="분석 요청"
-            value={text}
-          />
-        </footer>
+        {activeItem === "review" ? (
+          <section className="desktop-content-workspace">
+            <div className="desktop-page">
+              <header className="desktop-page-header">
+                <div>
+                  <p className="nado-eyebrow">Review</p>
+                  <h1 className="desktop-page-title">복습</h1>
+                </div>
+              </header>
+              <ReviewFlow />
+            </div>
+          </section>
+        ) : null}
       </section>
     </main>
   );

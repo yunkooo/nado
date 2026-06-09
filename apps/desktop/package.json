@@ -10,12 +10,15 @@
     "tauri:build": "tauri build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests --config ../../vitest.config.ts",
-    "lint": "prettier --check index.html src src-tauri vite.config.ts tsconfig.json package.json"
+    "lint": "prettier --check index.html src vite.config.ts tsconfig.json package.json src-tauri/tauri.conf.json src-tauri/capabilities/default.json"
   },
   "dependencies": {
     "@nado/shared": "workspace:*",
     "@nado/ui": "workspace:*",
+    "@supabase/supabase-js": "^2.107.0",
     "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/plugin-deep-link": "^2.4.9",
+    "@tauri-apps/plugin-opener": "^2.5.4",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },

@@ -1,4 +1,7 @@
-import type { AnalysisResult as ApiAnalysisResult } from "@nado/shared";
+import {
+  analyzeResponseSchema,
+  type AnalysisResult as ApiAnalysisResult,
+} from "@nado/shared";
 import type { AnalysisResultData } from "@nado/ui";
 
 type Fetcher = typeof fetch;
@@ -8,6 +11,7 @@ export type AnalyzeTextResult =
   | { message: string; status: "error" | "not_analyzable" };
 
 export type AnalyzeTextOptions = {
+  accessToken?: string | null;
   apiBaseUrl?: string;
   fetcher?: Fetcher;
 };
@@ -29,9 +33,7 @@ export async function analyzeText(
   try {
     response = await fetcher(resolveAnalyzeApiUrl(options.apiBaseUrl), {
       body: JSON.stringify({ text: trimmedText }),
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: createAnalyzeHeaders(options.accessToken),
       method: "POST",
     });
   } catch {
@@ -50,30 +52,25 @@ export async function analyzeText(
     };
   }
 
-  if (isRecord(payload) && payload.status === "not_analyzable") {
+  const parsed = analyzeResponseSchema.safeParse(payload);
+
+  if (!parsed.success) {
     return {
-      message:
-        typeof payload.reason === "string"
-          ? payload.reason
-          : "영어 문장으로 분석하기 어려워요. 한 문장 또는 짧은 문단을 입력해 주세요.",
+      message: ANALYZE_ERROR_MESSAGE,
+      status: "error",
+    };
+  }
+
+  if (parsed.data.status === "not_analyzable") {
+    return {
+      message: parsed.data.reason,
       status: "not_analyzable",
     };
   }
 
-  if (
-    isRecord(payload) &&
-    payload.status === "analyzable" &&
-    isApiAnalysisResult(payload.result)
-  ) {
-    return {
-      data: mapAnalysisResult(trimmedText, payload.result),
-      status: "success",
-    };
-  }
-
   return {
-    message: ANALYZE_ERROR_MESSAGE,
-    status: "error",
+    data: mapAnalysisResult(trimmedText, parsed.data.result),
+    status: "success",
   };
 }
 
@@ -171,18 +168,18 @@ function readErrorMessage(payload: unknown): string {
   return ANALYZE_ERROR_MESSAGE;
 }
 
-function isApiAnalysisResult(value: unknown): value is ApiAnalysisResult {
-  return (
-    isRecord(value) &&
-    typeof value.translation === "string" &&
-    typeof value.translationExplanation === "string" &&
-    Array.isArray(value.sentences) &&
-    Array.isArray(value.structure) &&
-    Array.isArray(value.vocabularyItems) &&
-    Array.isArray(value.vocabularySuggestions)
-  );
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function createAnalyzeHeaders(accessToken: string | null | undefined) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  return headers;
 }
