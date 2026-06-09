@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   completeAuthFromCallbackUrl,
+  createSupabaseAuthOptions,
   createGoogleOAuthRedirectTo,
   getAuthCallbackUrlKind,
   isTauriRuntime,
   NADO_DESKTOP_AUTH_CALLBACK_URL,
+  NADO_DESKTOP_OAUTH_REDIRECT_URL,
 } from "./authClient";
 
 describe("desktop auth client helpers", () => {
@@ -19,12 +21,21 @@ describe("desktop auth client helpers", () => {
     ).toBe("http://localhost:5174");
   });
 
-  it("uses the nado deep link callback for packaged Tauri OAuth redirects", () => {
+  it("uses a desktop loopback callback for packaged Tauri OAuth redirects", () => {
     expect(
       createGoogleOAuthRedirectTo("tauri://localhost", {
         isTauri: true,
       }),
-    ).toBe(NADO_DESKTOP_AUTH_CALLBACK_URL);
+    ).toBe(NADO_DESKTOP_OAUTH_REDIRECT_URL);
+  });
+
+  it("keeps Supabase URL session detection for browser dev only", () => {
+    expect(createSupabaseAuthOptions({ isTauri: false }).auth).toMatchObject({
+      detectSessionInUrl: true,
+    });
+    expect(createSupabaseAuthOptions({ isTauri: true }).auth).toMatchObject({
+      detectSessionInUrl: false,
+    });
   });
 
   it("detects the Tauri runtime from the official global flag", () => {
@@ -95,5 +106,19 @@ describe("desktop auth client helpers", () => {
       access_token: "access",
       refresh_token: "refresh",
     });
+  });
+
+  it("reports OAuth callback errors instead of ignoring them", async () => {
+    const result = await completeAuthFromCallbackUrl(
+      "nado://auth/callback?error=invalid_request&error_code=bad_oauth_state",
+      {
+        auth: {
+          exchangeCodeForSession: vi.fn(),
+          setSession: vi.fn(),
+        },
+      },
+    );
+
+    expect(result).toBe("error");
   });
 });

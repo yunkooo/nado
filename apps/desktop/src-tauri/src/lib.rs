@@ -1,32 +1,54 @@
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    start_oauth_loopback_redirect_server();
-
     tauri::Builder::default()
+        .setup(|app| {
+            start_oauth_loopback_redirect_server(app.handle().clone());
+            Ok(())
+        })
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_opener::init())
         .run(tauri::generate_context!())
         .expect("error while running nado desktop app");
 }
 
-fn start_oauth_loopback_redirect_server() {
-    std::thread::spawn(|| {
-        let listener = match std::net::TcpListener::bind("127.0.0.1:3000") {
+fn start_oauth_loopback_redirect_server(app_handle: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        let listener = match std::net::TcpListener::bind("127.0.0.1:17654") {
             Ok(listener) => listener,
             Err(_) => return,
         };
 
         for stream in listener.incoming().flatten() {
-            handle_oauth_loopback_request(stream);
+            handle_oauth_loopback_request(stream, &app_handle);
         }
     });
 }
 
-fn handle_oauth_loopback_request(mut stream: std::net::TcpStream) {
-    use std::io::{Read, Write};
+fn handle_oauth_loopback_request(mut stream: std::net::TcpStream, app_handle: &tauri::AppHandle) {
+    use std::time::Duration;
+    use tauri::Emitter;
 
-    let mut buffer = [0_u8; 1024];
-    let _ = stream.read(&mut buffer);
+    let _ = stream.set_read_timeout(Some(Duration::from_secs(2)));
+    let request = read_http_request(&mut stream);
+    let (method, path) = request_line_parts(&request);
+
+    if method == "POST" && path == "/desktop-auth-callback" {
+        let payload = request_body(&request);
+
+        if payload.starts_with('?') || payload.starts_with('#') {
+            let _ = app_handle.emit(
+                "desktop-oauth-callback",
+                format!("nado://auth/callback{payload}"),
+            );
+        }
+
+        write_http_response(
+            &mut stream,
+            r#"{"ok":true}"#,
+            "application/json; charset=utf-8",
+        );
+        return;
+    }
 
     let body = r#"<!doctype html>
 <html lang="ko">
@@ -54,18 +76,124 @@ fn handle_oauth_loopback_request(mut stream: std::net::TcpStream) {
   </head>
   <body>
     <h1>nado app login is finishing.</h1>
-    <p>If the app does not open automatically, click the button below.</p>
+    <p id="status">Sending login result to the desktop app.</p>
     <a id="return-to-app" href="nado://auth/callback">Return to nado app</a>
     <script>
       const callbackUrl = "nado://auth/callback" + window.location.search + window.location.hash;
       const link = document.getElementById("return-to-app");
+      const status = document.getElementById("status");
       link.href = callbackUrl;
-      window.location.href = callbackUrl;
+
+      async function finishLogin() {
+        try {
+          const payload = window.location.search + window.location.hash;
+
+          if (payload) {
+            await fetch("/desktop-auth-callback", {
+              body: payload,
+              cache: "no-store",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              method: "POST"
+            });
+            status.textContent = "You can return to the nado app now.";
+            return;
+          }
+        } catch {
+          status.textContent = "The app did not receive the login result automatically.";
+        }
+
+        window.location.href = callbackUrl;
+      }
+
+      finishLogin();
     </script>
   </body>
 </html>"#;
+    write_http_response(&mut stream, body, "text/html; charset=utf-8");
+}
+
+fn read_http_request(stream: &mut std::net::TcpStream) -> Vec<u8> {
+    use std::io::{ErrorKind, Read};
+
+    let mut request = Vec::new();
+    let mut buffer = [0_u8; 4096];
+
+    loop {
+        match stream.read(&mut buffer) {
+            Ok(0) => break,
+            Ok(bytes_read) => {
+                request.extend_from_slice(&buffer[..bytes_read]);
+
+                if request.len() > 131_072 || has_complete_http_request(&request) {
+                    break;
+                }
+            }
+            Err(error)
+                if error.kind() == ErrorKind::WouldBlock || error.kind() == ErrorKind::TimedOut =>
+            {
+                break;
+            }
+            Err(_) => break,
+        }
+    }
+
+    request
+}
+
+fn has_complete_http_request(request: &[u8]) -> bool {
+    let Some(header_end) = find_header_end(request) else {
+        return false;
+    };
+
+    let headers = String::from_utf8_lossy(&request[..header_end]);
+    let content_length = headers
+        .lines()
+        .find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+
+            if name.eq_ignore_ascii_case("content-length") {
+                Some(value)
+            } else {
+                None
+            }
+        })
+        .and_then(|value| value.trim().parse::<usize>().ok())
+        .unwrap_or(0);
+
+    request.len() >= header_end + 4 + content_length
+}
+
+fn request_line_parts(request: &[u8]) -> (String, String) {
+    let request_text = String::from_utf8_lossy(request);
+    let mut parts = request_text
+        .lines()
+        .next()
+        .unwrap_or_default()
+        .split_whitespace();
+
+    (
+        parts.next().unwrap_or_default().to_string(),
+        parts.next().unwrap_or_default().to_string(),
+    )
+}
+
+fn request_body(request: &[u8]) -> String {
+    let Some(header_end) = find_header_end(request) else {
+        return String::new();
+    };
+
+    String::from_utf8_lossy(&request[header_end + 4..]).to_string()
+}
+
+fn find_header_end(request: &[u8]) -> Option<usize> {
+    request.windows(4).position(|window| window == b"\r\n\r\n")
+}
+
+fn write_http_response(stream: &mut std::net::TcpStream, body: &str, content_type: &str) {
+    use std::io::Write;
+
     let response = format!(
-        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+        "HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
         body.len(),
         body
     );

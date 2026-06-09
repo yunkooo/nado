@@ -8,6 +8,7 @@ export type SupabaseAuthConfig = {
 
 let browserClient: SupabaseClient | null = null;
 export const NADO_DESKTOP_AUTH_CALLBACK_URL = "nado://auth/callback";
+export const NADO_DESKTOP_OAUTH_REDIRECT_URL = "http://127.0.0.1:3000";
 
 type OAuthRedirectOptions = {
   desktopRedirectUrl?: string;
@@ -49,11 +50,21 @@ export function createGoogleOAuthRedirectTo(
     return (
       options.desktopRedirectUrl ??
       (import.meta.env.VITE_DESKTOP_AUTH_REDIRECT_URL as string | undefined) ??
-      NADO_DESKTOP_AUTH_CALLBACK_URL
+      NADO_DESKTOP_OAUTH_REDIRECT_URL
     );
   }
 
   return new URL(currentHref).origin;
+}
+
+export function createSupabaseAuthOptions(options: { isTauri?: boolean } = {}) {
+  return {
+    auth: {
+      autoRefreshToken: true,
+      detectSessionInUrl: !(options.isTauri ?? isTauriRuntime()),
+      persistSession: true,
+    },
+  };
 }
 
 export function getSupabaseBrowserClient(): SupabaseClient | null {
@@ -65,13 +76,7 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
   }
 
   if (!browserClient) {
-    browserClient = createClient(url, anonKey, {
-      auth: {
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        persistSession: true,
-      },
-    });
+    browserClient = createClient(url, anonKey, createSupabaseAuthOptions());
   }
 
   return browserClient;
@@ -114,6 +119,14 @@ export async function completeAuthFromCallbackUrl(
   }
 
   const parsed = new URL(url);
+
+  if (
+    parsed.searchParams.has("error") ||
+    parsed.searchParams.has("error_code")
+  ) {
+    return "error";
+  }
+
   const code = parsed.searchParams.get("code");
 
   if (code) {

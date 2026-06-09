@@ -28,6 +28,15 @@ describe("Desktop App source", () => {
     expect(appSource).toContain("desktop-sidebar--open");
   });
 
+  it("keeps desktop drawer keyboard behavior aligned with the web shell", () => {
+    expect(appSource).toContain("menuButtonRef");
+    expect(appSource).toContain("closeButtonRef");
+    expect(appSource).toContain("shouldRestoreMenuFocusRef");
+    expect(appSource).toContain('event.key === "Escape"');
+    expect(appSource).toContain("closeButtonRef.current?.focus()");
+    expect(appSource).toContain("menuButtonRef.current?.focus()");
+  });
+
   it("renders web-style sidebar navigation and auth controls", () => {
     expect(appSource).toContain("navigationItems");
     expect(appSource).toContain("activeItem");

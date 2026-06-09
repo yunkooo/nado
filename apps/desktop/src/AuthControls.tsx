@@ -19,6 +19,12 @@ export function AuthControls() {
     setMessage(null);
   }, [authState.status]);
 
+  useEffect(() => {
+    if (deepLinkState.status !== "idle") {
+      setIsSubmitting(false);
+    }
+  }, [deepLinkState.status]);
+
   const handleSignIn = async () => {
     const supabase = getSupabaseBrowserClient();
 
@@ -48,10 +54,18 @@ export function AuthControls() {
       try {
         const { openUrl } = await import("@tauri-apps/plugin-opener");
         await openUrl(data.url);
+        setIsSubmitting(false);
+        setMessage("브라우저에서 Google 로그인을 완료해 주세요.");
       } catch {
         setIsSubmitting(false);
         setMessage("Google 로그인 페이지를 열지 못했어요.");
       }
+      return;
+    }
+
+    if (isTauriRuntime()) {
+      setIsSubmitting(false);
+      setMessage("Google 로그인 URL을 받지 못했어요.");
     }
   };
 

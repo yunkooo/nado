@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MAX_ANALYSIS_TEXT_LENGTH,
   countAnalysisTextCharacters,
@@ -46,7 +46,13 @@ export function App() {
   const [activeItem, setActiveItem] =
     useState<NavigationItem["key"]>("analysis");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const closeSidebar = () => setIsSidebarOpen(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const shouldRestoreMenuFocusRef = useRef(false);
+  const closeSidebar = () => {
+    shouldRestoreMenuFocusRef.current = true;
+    setIsSidebarOpen(false);
+  };
   const authState = useAuthState();
   const vocabularyState = useVocabularyState();
   const {
@@ -74,6 +80,30 @@ export function App() {
       window.clearTimeout(timeoutId);
     };
   }, [analysisStore, vocabularySaveMessage]);
+
+  useEffect(() => {
+    if (!isSidebarOpen) {
+      if (shouldRestoreMenuFocusRef.current) {
+        shouldRestoreMenuFocusRef.current = false;
+        menuButtonRef.current?.focus();
+      }
+      return;
+    }
+
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeSidebar();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isSidebarOpen]);
 
   const handleSubmitAnalysis = async () => {
     const nextText = normalizeAnalysisText(text);
@@ -207,6 +237,7 @@ export function App() {
           aria-label="사이드바 열기"
           className="desktop-mobile-menu-button"
           onClick={() => setIsSidebarOpen(true)}
+          ref={menuButtonRef}
           type="button"
         >
           <span className="desktop-mobile-menu-button__bar" />
@@ -241,6 +272,7 @@ export function App() {
             aria-label="사이드바 닫기"
             className="desktop-sidebar-close"
             onClick={closeSidebar}
+            ref={closeButtonRef}
             type="button"
           >
             <span className="desktop-sidebar-close__bar" />
