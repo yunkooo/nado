@@ -50,7 +50,15 @@ SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID="<Google OAuth client id>"
 SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET="<Google OAuth client secret>"
 ```
 
-원격 Supabase 프로젝트도 Dashboard의 Authentication provider에서 Google을 켜고 같은 redirect URI 계열을 등록해야 한다. 웹 앱은 로그인 완료 후 현재 origin으로 돌아오므로, Supabase Auth의 Site URL 또는 Redirect URLs에 배포 origin을 함께 허용한다.
+원격 Supabase 프로젝트도 Dashboard의 Authentication provider에서 Google을 켜고 같은 redirect URI 계열을 등록해야 한다. 웹 앱은 로그인 완료 후 현재 origin으로 돌아오므로, Supabase Auth의 Site URL 또는 Redirect URLs에 배포 origin을 함께 허용한다. 현재 배포된 웹 origin은 `https://nado-web.vercel.app`이다.
+
+데스크톱 앱은 Google 로그인 완료 후 브라우저가 앱 내부 loopback callback으로 돌아오도록 `VITE_DESKTOP_AUTH_REDIRECT_URL=http://127.0.0.1:3000`를 사용한다. 이 값도 Supabase Auth Redirect URLs에 추가해야 한다.
+
+Railway API를 배포해서 웹 배포본에서 호출할 때는 API 서버 환경변수에 아래 origin을 허용한다.
+
+```bash
+NADO_CORS_ORIGINS=https://nado-web.vercel.app
+```
 
 API 서버는 단어장 API에서 `Authorization: Bearer <Supabase access token>` 헤더를 읽어 `supabase.auth.getUser(token)`으로 사용자를 검증한다. 단어장 조회, 저장, 삭제는 사용자 토큰이 붙은 Supabase client로 실행해서 `vocabulary_items`의 RLS 정책을 그대로 적용한다.
 
