@@ -353,9 +353,9 @@ function AnalysisResultPanel({
 
   if (analysisState.status === "loading") {
     return (
-      <View style={styles.resultArea}>
-        <Text style={styles.resultTitle}>분석 중이에요.</Text>
-        <Text style={styles.emptyText}>
+      <View style={styles.statusCard}>
+        <Text style={styles.statusTitle}>분석 중이에요</Text>
+        <Text style={styles.statusText}>
           입력한 문장을 분석 서버로 전송하고 있어요.
         </Text>
       </View>
@@ -367,9 +367,9 @@ function AnalysisResultPanel({
     analysisState.status === "not_analyzable"
   ) {
     return (
-      <View style={styles.resultArea}>
-        <Text style={styles.resultTitle}>분석 결과</Text>
-        <Text style={styles.emptyText}>{analysisState.message}</Text>
+      <View style={styles.statusCard} accessibilityRole="alert">
+        <Text style={styles.statusTitle}>분석 결과</Text>
+        <Text style={styles.statusText}>{analysisState.message}</Text>
       </View>
     );
   }
@@ -1299,6 +1299,31 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "800",
     lineHeight: 28,
+  },
+  statusCard: {
+    backgroundColor: mobileColors.surface,
+    borderColor: mobileColors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+    marginTop: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    shadowColor: mobileColors.ink,
+    shadowOffset: { height: 8, width: 0 },
+    shadowOpacity: 0.04,
+    shadowRadius: 18,
+  },
+  statusText: {
+    color: mobileColors.inkMuted,
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  statusTitle: {
+    color: mobileColors.ink,
+    fontSize: 18,
+    fontWeight: "800",
+    lineHeight: 24,
   },
   sentenceCard: {
     backgroundColor: mobileColors.surfaceMuted,
