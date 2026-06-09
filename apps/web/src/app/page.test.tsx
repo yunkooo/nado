@@ -89,8 +89,9 @@ describe("HomePage", () => {
 
   it("defines polished vocabulary page styles", () => {
     expect(styles).toContain(".nado-vocabulary-summary");
-    expect(styles).toContain(".nado-vocabulary-preview");
+    expect(styles).toContain(".nado-vocabulary-flow");
     expect(styles).toContain(".nado-vocabulary-type");
     expect(styles).toContain(".nado-vocabulary-meaning");
+    expect(styles).toContain(".nado-review-card__answer--revealed");
   });
 });
