@@ -310,5 +310,5 @@ function getSavePrefix(state: VocabularySuggestionSaveState) {
     return "저장 중";
   }
 
-  return "저장";
+  return "+";
 }

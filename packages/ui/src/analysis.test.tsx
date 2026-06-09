@@ -147,6 +147,19 @@ describe("analysis design system components", () => {
     expect(markup).toContain("disabled");
   });
 
+  it("renders idle vocabulary save buttons with a plus prefix", () => {
+    const markup = renderToStaticMarkup(
+      <AnalysisResult
+        getVocabularySuggestionState={() => "idle"}
+        onSaveVocabularySuggestion={noop}
+        result={analysisFixture}
+      />,
+    );
+
+    expect(markup).toContain('<span class="nado-chip__prefix">+</span>');
+    expect(markup).toContain('aria-label="setup: 준비 과정 저장"');
+  });
+
   it("renders reading chunks with slash separators", () => {
     expect(firstSentence).toBeDefined();
 
