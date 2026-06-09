@@ -11,8 +11,8 @@ describe("navigation pages", () => {
     expect(markup).toContain("nado-app-shell");
     expect(markup).toContain('href="/vocabulary" aria-current="page"');
     expect(markup).toContain("단어장");
-    expect(markup).toContain("Google 로그인 연결 전이에요");
-    expect(markup).toContain("목업 데이터로 체험 중");
+    expect(markup).toContain("로그인하면 실제 단어장을 불러와요");
+    expect(markup).toContain("로그인 전에는 목업 데이터로 흐름");
     expect(markup).toContain("nado-vocabulary-summary");
     expect(markup).toContain("저장 항목");
     expect(markup).toContain(">3</strong>");
@@ -39,8 +39,8 @@ describe("navigation pages", () => {
     expect(markup).toContain("nado-app-shell");
     expect(markup).toContain('href="/review" aria-current="page"');
     expect(markup).toContain("복습");
-    expect(markup).toContain("Google 로그인 연결 전이에요");
-    expect(markup).toContain("목업 데이터로 복습 flow를 확인해요");
+    expect(markup).toContain("로그인하면 내 단어장으로 복습해요");
+    expect(markup).toContain("로그인 전에는 목업 데이터로 정답");
     expect(markup).toContain("영어 → 한국어");
     expect(markup).toContain("한국어 → 영어");
     expect(markup).not.toContain("복습할 단어가 없어요");
