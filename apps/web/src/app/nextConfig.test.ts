@@ -1,11 +1,27 @@
 import { describe, expect, it } from "vitest";
-import nextConfig from "../../next.config.mjs";
+import nextConfig, { resolveApiBaseUrl } from "../../next.config.mjs";
 
 describe("nextConfig", () => {
-  it("proxies API requests to the nado API server", async () => {
+  it("uses the deployed Railway API as the safe fallback when env is missing", () => {
+    expect(resolveApiBaseUrl({})).toBe(
+      "https://nadoapi-production.up.railway.app",
+    );
+  });
+
+  it("allows an explicit API base URL override", () => {
+    expect(
+      resolveApiBaseUrl({
+        NADO_API_BASE_URL: "http://localhost:4000",
+      }),
+    ).toBe("http://localhost:4000");
+  });
+
+  it("proxies API requests to the configured API server", async () => {
+    const apiBaseUrl = resolveApiBaseUrl();
+
     await expect(nextConfig.rewrites?.()).resolves.toEqual([
       {
-        destination: "http://localhost:4000/api/:path*",
+        destination: `${apiBaseUrl}/api/:path*`,
         source: "/api/:path*",
       },
     ]);

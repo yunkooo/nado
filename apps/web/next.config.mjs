@@ -10,7 +10,18 @@ if (existsSync(rootEnvPath)) {
   process.loadEnvFile(rootEnvPath);
 }
 
-const apiBaseUrl = process.env.NADO_API_BASE_URL ?? "http://localhost:4000";
+/**
+ * @param {Record<string, string | undefined>} env
+ */
+export function resolveApiBaseUrl(env = process.env) {
+  return (
+    env.NADO_API_BASE_URL ??
+    env.NEXT_PUBLIC_API_BASE_URL ??
+    "https://nadoapi-production.up.railway.app"
+  );
+}
+
+const apiBaseUrl = resolveApiBaseUrl();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
