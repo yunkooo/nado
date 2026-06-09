@@ -82,6 +82,44 @@ describe("analysis state store", () => {
     unsubscribe();
   });
 
+  it("drops persisted success snapshots with malformed analysis result data", () => {
+    const storage = createStorage({
+      "nado.analysis-state.v1": JSON.stringify({
+        snapshot: {
+          ...createSuccessSnapshot(),
+          analysisState: {
+            data: {
+              sourceText: "I leave home.",
+              translation: "나는 집을 나선다.",
+            },
+            status: "success",
+          },
+          vocabularySaveStates: {
+            "after::~한 후에": "saved",
+          },
+        },
+        version: 1,
+      }),
+    });
+    const store = createAnalysisStateStore({
+      getStorage: () => storage,
+    });
+
+    const unsubscribe = store.subscribe(() => {});
+
+    expect(store.getSnapshot()).toEqual({
+      analysisState: {
+        status: "idle",
+      },
+      text: "",
+      vocabularySaveMessage: null,
+      vocabularySaveStates: {},
+    });
+    expect(storage.removeItem).toHaveBeenCalledWith("nado.analysis-state.v1");
+
+    unsubscribe();
+  });
+
   it("starts from the server-safe initial snapshot before restoring persisted state", () => {
     const persisted = {
       snapshot: createSuccessSnapshot(),

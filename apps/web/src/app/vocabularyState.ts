@@ -155,10 +155,7 @@ export function useSyncVocabularyForAuth(authState: AuthStateSnapshot) {
     const vocabularyState = vocabularyStateStore.getSnapshot();
 
     if (
-      vocabularyState.accessToken === authState.accessToken &&
-      (vocabularyState.status === "loading" ||
-        vocabularyState.status === "ready" ||
-        vocabularyState.status === "error")
+      !shouldLoadVocabularyForSession(vocabularyState, authState.accessToken)
     ) {
       return () => {
         isCurrent = false;
@@ -171,6 +168,19 @@ export function useSyncVocabularyForAuth(authState: AuthStateSnapshot) {
       isCurrent = false;
     };
   }, [authState.accessToken, authState.status]);
+}
+
+export function shouldLoadVocabularyForSession(
+  vocabularyState: VocabularyStateSnapshot,
+  accessToken: string,
+) {
+  if (vocabularyState.accessToken !== accessToken) {
+    return true;
+  }
+
+  return (
+    vocabularyState.status !== "loading" && vocabularyState.status !== "ready"
+  );
 }
 
 export function isVocabularySuggestionSaved(

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createVocabularyStateStore,
   isVocabularySuggestionSaved,
+  shouldLoadVocabularyForSession,
 } from "./vocabularyState";
 
 const vocabularyItem: VocabularyItem = {
@@ -58,5 +59,45 @@ describe("vocabulary state store", () => {
         type: "phrase",
       }),
     ).toBe(true);
+  });
+
+  it("allows a same-token reload after a vocabulary load error", () => {
+    expect(
+      shouldLoadVocabularyForSession(
+        {
+          accessToken: "session-token",
+          items: [],
+          message: "단어장을 불러오지 못했어요.",
+          status: "error",
+        },
+        "session-token",
+      ),
+    ).toBe(true);
+  });
+
+  it("skips same-token reloads while vocabulary is already loading or ready", () => {
+    expect(
+      shouldLoadVocabularyForSession(
+        {
+          accessToken: "session-token",
+          items: [],
+          message: null,
+          status: "loading",
+        },
+        "session-token",
+      ),
+    ).toBe(false);
+
+    expect(
+      shouldLoadVocabularyForSession(
+        {
+          accessToken: "session-token",
+          items: [vocabularyItem],
+          message: null,
+          status: "ready",
+        },
+        "session-token",
+      ),
+    ).toBe(false);
   });
 });

@@ -238,6 +238,44 @@ describe("analyzeText", () => {
     });
   });
 
+  it("returns an error when an analyzable response has malformed nested data", async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json({
+        status: "analyzable",
+        result: {
+          grammarPoints: [],
+          sentences: [
+            {
+              chunks: [
+                {
+                  english: "I was wondering if",
+                  role: "정중하게 질문을 시작합니다.",
+                },
+              ],
+              explanation: "도움을 정중하게 요청하는 문장입니다.",
+              grammarPoints: [],
+              source: "I was wondering if you could help me.",
+              tokens: [],
+              translation: "도와주실 수 있는지 궁금합니다.",
+            },
+          ],
+          structure: [],
+          translation: "도와주실 수 있는지 궁금합니다.",
+          translationExplanation: "정중한 요청 표현입니다.",
+          vocabularyItems: [],
+          vocabularySuggestions: [],
+        },
+      }),
+    );
+
+    await expect(
+      analyzeText("I was wondering if you could help me.", { fetcher }),
+    ).resolves.toEqual({
+      message: "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+      status: "error",
+    });
+  });
+
   it("sends an authenticated bearer token when provided", async () => {
     const fetcher = vi.fn(async () =>
       Response.json({
