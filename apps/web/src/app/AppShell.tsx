@@ -1,9 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AuthControls } from "./AuthControls";
+import { useAuthState } from "./authState";
+import { useSyncVocabularyForAuth } from "./vocabularyState";
 
 type NavigationItem = {
   href: string;
@@ -29,7 +31,40 @@ export function AppShell({
   workspaceLabel,
 }: AppShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const closeSidebar = () => setIsSidebarOpen(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const shouldRestoreMenuFocusRef = useRef(false);
+  const authState = useAuthState();
+  const closeSidebar = () => {
+    shouldRestoreMenuFocusRef.current = true;
+    setIsSidebarOpen(false);
+  };
+
+  useSyncVocabularyForAuth(authState);
+
+  useEffect(() => {
+    if (!isSidebarOpen) {
+      if (shouldRestoreMenuFocusRef.current) {
+        shouldRestoreMenuFocusRef.current = false;
+        menuButtonRef.current?.focus();
+      }
+      return;
+    }
+
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeSidebar();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isSidebarOpen]);
 
   return (
     <main className="nado-app-shell">
@@ -40,6 +75,7 @@ export function AppShell({
           aria-label="사이드바 열기"
           className="nado-mobile-menu-button"
           onClick={() => setIsSidebarOpen(true)}
+          ref={menuButtonRef}
           type="button"
         >
           <span className="nado-mobile-menu-button__bar" />
@@ -74,6 +110,7 @@ export function AppShell({
               aria-label="사이드바 닫기"
               className="nado-sidebar-close"
               onClick={closeSidebar}
+              ref={closeButtonRef}
               type="button"
             >
               <span className="nado-sidebar-close__bar" />

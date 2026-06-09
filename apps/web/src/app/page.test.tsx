@@ -10,6 +10,14 @@ const appShellSource = readFileSync(
   new URL("./AppShell.tsx", import.meta.url),
   "utf8",
 );
+const useAnalysisSubmissionSource = readFileSync(
+  new URL("./useAnalysisSubmission.ts", import.meta.url),
+  "utf8",
+);
+const useVocabularySaveNoticeDismissSource = readFileSync(
+  new URL("./useVocabularySaveNoticeDismiss.ts", import.meta.url),
+  "utf8",
+);
 
 describe("HomePage", () => {
   it("renders the initial analysis screen without a result placeholder", () => {
@@ -98,12 +106,19 @@ describe("HomePage", () => {
   });
 
   it("clears vocabulary save notifications after a short delay", () => {
-    expect(pageSource).toContain("VOCABULARY_SAVE_NOTICE_DISMISS_MS");
-    expect(pageSource).toContain("window.setTimeout");
-    expect(pageSource).toContain(
-      "analysisStore.setVocabularySaveMessage(null)",
+    expect(useVocabularySaveNoticeDismissSource).toContain(
+      "VOCABULARY_SAVE_NOTICE_DISMISS_MS",
     );
-    expect(pageSource).toContain("window.clearTimeout");
+    expect(useVocabularySaveNoticeDismissSource).toContain("window.setTimeout");
+    expect(useVocabularySaveNoticeDismissSource).toContain(
+      "store.setVocabularySaveMessage(null)",
+    );
+    expect(pageSource).toContain(
+      "useVocabularySaveNoticeDismiss(vocabularySaveMessage, analysisStore)",
+    );
+    expect(useVocabularySaveNoticeDismissSource).toContain(
+      "window.clearTimeout",
+    );
   });
 
   it("keeps analysis page state outside the route component", () => {
@@ -118,9 +133,13 @@ describe("HomePage", () => {
   });
 
   it("clears the composer only after a successful analysis", () => {
-    expect(pageSource).toContain("const nextAnalysisState = await analyzeText");
-    expect(pageSource).toContain('nextAnalysisState.status === "success"');
-    expect(pageSource).toContain('analysisStore.setText("");');
+    expect(useAnalysisSubmissionSource).toContain(
+      "const nextAnalysisState = await analyzeText",
+    );
+    expect(useAnalysisSubmissionSource).toContain(
+      'nextAnalysisState.status === "success"',
+    );
+    expect(useAnalysisSubmissionSource).toContain('store.setText("");');
   });
 
   it("defines blurred review answer styles", () => {

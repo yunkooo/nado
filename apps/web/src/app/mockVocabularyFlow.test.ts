@@ -2,10 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   deleteMockVocabularyItem,
   getMockVocabularySummary,
-  getNextReviewIndex,
-  getReviewCard,
   mockVocabularyItems,
 } from "./mockVocabularyFlow";
+import { getNextReviewIndex, getReviewCard } from "./review/reviewSession";
 
 describe("mock vocabulary flow", () => {
   it("summarizes the mock vocabulary item count", () => {

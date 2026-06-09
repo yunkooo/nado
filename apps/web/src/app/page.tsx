@@ -1,38 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
 import {
   MAX_ANALYSIS_TEXT_LENGTH,
   countAnalysisTextCharacters,
-  hasUnsupportedAnalysisTextCharacters,
-  normalizeAnalysisText,
 } from "@nado/shared";
-import {
-  AnalysisResult,
-  InputComposer,
-  InputSample,
-  type VocabularySuggestion,
-} from "@nado/ui";
+import { AnalysisResult, InputComposer, InputSample } from "@nado/ui";
 import { AppShell } from "./AppShell";
-import { analyzeText } from "./analysisApi";
 import { useAnalysisPageState } from "./analysisState";
-import { useAuthState } from "./authState";
-import { getCurrentAccessToken } from "./authClient";
-import { saveVocabularyItem } from "./vocabularyApi";
-import {
-  isVocabularySuggestionSaved,
-  useSyncVocabularyForAuth,
-  useVocabularyState,
-  vocabularyStateStore,
-} from "./vocabularyState";
-import {
-  createVocabularyLoginRequiredNotice,
-  createVocabularySaveSuccessNotice,
-} from "./vocabularySaveNotice";
+import { useAnalysisSubmission } from "./useAnalysisSubmission";
+import { useVocabularySaveNoticeDismiss } from "./useVocabularySaveNoticeDismiss";
+import { useVocabularySuggestionSaver } from "./useVocabularySuggestionSaver";
+import { VocabularySaveStatus } from "./VocabularySaveStatus";
+import { useVocabularyState } from "./vocabularyState";
 
 const inputDisclosure =
   "입력한 문장은 AI 분석을 위해 전송되며, 단어장에는 원문 문장을 저장하지 않습니다.";
-const VOCABULARY_SAVE_NOTICE_DISMISS_MS = 2500;
 
 export default function HomePage() {
   const {
@@ -44,125 +26,22 @@ export default function HomePage() {
     },
     store: analysisStore,
   } = useAnalysisPageState();
-  const authState = useAuthState();
   const vocabularyState = useVocabularyState();
+  const handleSubmitAnalysis = useAnalysisSubmission({
+    analysisState,
+    store: analysisStore,
+    text,
+  });
+  const {
+    getSuggestionState: getVocabularySuggestionState,
+    saveSuggestion: handleSaveVocabularySuggestion,
+  } = useVocabularySuggestionSaver({
+    store: analysisStore,
+    vocabularySaveStates,
+    vocabularyState,
+  });
 
-  useSyncVocabularyForAuth(authState);
-
-  useEffect(() => {
-    if (!vocabularySaveMessage) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      analysisStore.setVocabularySaveMessage(null);
-    }, VOCABULARY_SAVE_NOTICE_DISMISS_MS);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [analysisStore, vocabularySaveMessage]);
-
-  const handleSubmitAnalysis = async () => {
-    const nextText = normalizeAnalysisText(text);
-    const nextTextLength = countAnalysisTextCharacters(nextText);
-
-    if (
-      analysisState.status === "loading" ||
-      nextTextLength === 0 ||
-      nextTextLength > MAX_ANALYSIS_TEXT_LENGTH ||
-      hasUnsupportedAnalysisTextCharacters(nextText)
-    ) {
-      return;
-    }
-
-    analysisStore.setAnalysisState({ status: "loading" });
-    analysisStore.setVocabularySaveMessage(null);
-    analysisStore.setVocabularySaveStates({});
-    const nextAnalysisState = await analyzeText(nextText, {
-      accessToken: await getCurrentAccessToken(),
-    });
-
-    if (nextAnalysisState.status === "success") {
-      analysisStore.setText("");
-    }
-
-    analysisStore.setAnalysisState(nextAnalysisState);
-  };
-
-  const handleSaveVocabularySuggestion = async (
-    suggestion: VocabularySuggestion,
-  ) => {
-    const key = createVocabularySuggestionKey(suggestion);
-    const currentState = getVocabularySuggestionState(suggestion);
-
-    if (currentState !== "idle") {
-      return;
-    }
-
-    const accessToken = await getCurrentAccessToken();
-
-    if (!accessToken) {
-      analysisStore.setVocabularySaveMessage(
-        createVocabularyLoginRequiredNotice(),
-      );
-      return;
-    }
-
-    analysisStore.setVocabularySaveMessage(null);
-    analysisStore.setVocabularySaveStates((currentStates) => ({
-      ...currentStates,
-      [key]: "saving",
-    }));
-
-    const result = await saveVocabularyItem(
-      {
-        meaning: suggestion.meaning,
-        note: suggestion.note,
-        term: suggestion.term,
-        type: suggestion.type,
-      },
-      accessToken,
-    );
-
-    if (result.status === "success") {
-      vocabularyStateStore.upsertItem(result.data);
-      analysisStore.setVocabularySaveStates((currentStates) => {
-        const nextStates = { ...currentStates };
-        delete nextStates[key];
-        return nextStates;
-      });
-      analysisStore.setVocabularySaveMessage(
-        createVocabularySaveSuccessNotice(),
-      );
-      return;
-    }
-
-    analysisStore.setVocabularySaveStates((currentStates) => {
-      const nextStates = { ...currentStates };
-      delete nextStates[key];
-      return nextStates;
-    });
-    analysisStore.setVocabularySaveMessage({
-      text: result.message,
-      tone: "error",
-    });
-  };
-
-  const getVocabularySuggestionState = (suggestion: VocabularySuggestion) => {
-    const pendingState =
-      vocabularySaveStates[createVocabularySuggestionKey(suggestion)];
-
-    if (pendingState === "saving") {
-      return "saving";
-    }
-
-    if (isVocabularySuggestionSaved(vocabularyState.items, suggestion)) {
-      return "saved";
-    }
-
-    return "idle";
-  };
+  useVocabularySaveNoticeDismiss(vocabularySaveMessage, analysisStore);
 
   return (
     <AppShell activeItem="analysis" workspaceLabel="분석 화면">
@@ -177,23 +56,7 @@ export default function HomePage() {
                 maxLength={MAX_ANALYSIS_TEXT_LENGTH}
                 text={analysisState.data.sourceText}
               />
-              {vocabularySaveMessage ? (
-                <section
-                  className={[
-                    "nado-save-status",
-                    vocabularySaveMessage.tone === "error"
-                      ? "nado-save-status--error"
-                      : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  role={
-                    vocabularySaveMessage.tone === "error" ? "alert" : "status"
-                  }
-                >
-                  {vocabularySaveMessage.text}
-                </section>
-              ) : null}
+              <VocabularySaveStatus message={vocabularySaveMessage} />
               <AnalysisResult
                 getVocabularySuggestionState={getVocabularySuggestionState}
                 onSaveVocabularySuggestion={handleSaveVocabularySuggestion}
@@ -228,8 +91,4 @@ export default function HomePage() {
       </footer>
     </AppShell>
   );
-}
-
-function createVocabularySuggestionKey(suggestion: VocabularySuggestion) {
-  return `${suggestion.type}:${suggestion.term}:${suggestion.meaning}`;
 }
