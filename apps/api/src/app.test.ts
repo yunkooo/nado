@@ -346,6 +346,43 @@ describe("app", () => {
     expect(identities[0]?.ipHash).toMatch(/^[a-f0-9]{64}$/);
   });
 
+  it("does not trust spoofed forwarded IP headers by default", async () => {
+    const identities: Array<{ ipHash: string | null; userId: string | null }> =
+      [];
+    const app = createApp({
+      analyzeService: analysisService,
+      analysisUsageService: {
+        consume: async (identity) => {
+          identities.push(identity);
+
+          return {
+            limit: null,
+            ok: true,
+            remaining: null,
+            used: identities.length,
+          };
+        },
+      },
+      usageIpHashSalt: "test-salt",
+    });
+
+    for (const forwardedFor of ["203.0.113.10", "198.51.100.20"]) {
+      const response = await request(app, "/api/analyze", {
+        body: JSON.stringify({ text: "I was wondering if you could help me." }),
+        headers: {
+          "Content-Type": "application/json",
+          "X-Forwarded-For": forwardedFor,
+        },
+        method: "POST",
+      });
+
+      expect(response.status).toBe(200);
+    }
+
+    expect(identities).toHaveLength(2);
+    expect(identities[0]?.ipHash).toBe(identities[1]?.ipHash);
+  });
+
   it("rejects vocabulary requests without a bearer token", async () => {
     const app = createApp({ analyzeService: analysisService });
 
@@ -522,6 +559,36 @@ describe("app", () => {
       error: {
         code: "not_found",
         message: "단어장 항목을 찾을 수 없습니다.",
+      },
+    });
+  });
+
+  it("returns a JSON internal error for unexpected route failures", async () => {
+    const app = createApp({
+      analyzeService: analysisService,
+      authService: {
+        getUser: async () => ({ id: "user_1" }),
+      },
+      vocabularyServiceFactory: () => ({
+        delete: async () => false,
+        list: async () => {
+          throw new Error("database unavailable");
+        },
+        save: async () => {
+          throw new Error("not used");
+        },
+      }),
+    });
+
+    const response = await request(app, "/api/vocabulary", {
+      headers: { Authorization: "Bearer valid-token" },
+    });
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "internal_error",
+        message: "요청 처리 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
       },
     });
   });

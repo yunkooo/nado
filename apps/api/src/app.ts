@@ -81,6 +81,7 @@ export type AppDependencies = {
   analyzeService?: AnalyzeService;
   analysisUsageService?: AnalysisUsageService;
   authService?: AuthService;
+  trustProxy?: boolean | number | string;
   usageIpHashSalt?: string;
   vocabularyServiceFactory?: VocabularyServiceFactory;
 };
@@ -98,6 +99,12 @@ export function createApp(dependencies: AppDependencies = {}): Express {
     "nado-local-dev";
   const vocabularyServiceFactory =
     dependencies.vocabularyServiceFactory ?? createSupabaseVocabularyService;
+  const trustProxy =
+    dependencies.trustProxy ?? readTrustProxy(process.env.NADO_TRUST_PROXY);
+
+  if (trustProxy !== false) {
+    app.set("trust proxy", trustProxy);
+  }
 
   app.use(express.json());
   app.use(invalidJsonHandler);
@@ -134,8 +141,7 @@ export function createApp(dependencies: AppDependencies = {}): Express {
 
       const usageIdentity = await resolveAnalyzeUsageIdentity(
         request.header("Authorization"),
-        request.header("X-Forwarded-For"),
-        request.header("X-Real-IP"),
+        readRequestIp(request),
       );
       const usageDecision = await analysisUsageService.consume(usageIdentity);
 
@@ -242,6 +248,8 @@ export function createApp(dependencies: AppDependencies = {}): Express {
     }),
   );
 
+  app.use(internalErrorHandler);
+
   return app;
 
   async function authenticate(authorization: string | undefined) {
@@ -266,8 +274,7 @@ export function createApp(dependencies: AppDependencies = {}): Express {
 
   async function resolveAnalyzeUsageIdentity(
     authorization: string | undefined,
-    forwardedFor: string | undefined,
-    realIp: string | undefined,
+    clientIp: string,
   ): Promise<UsageIdentity> {
     const accessToken = parseBearerToken(authorization);
 
@@ -283,7 +290,7 @@ export function createApp(dependencies: AppDependencies = {}): Express {
     }
 
     return {
-      ipHash: hashClientIp(readClientIp(forwardedFor, realIp), usageIpHashSalt),
+      ipHash: hashClientIp(clientIp, usageIpHashSalt),
       userId: null,
     };
   }
@@ -320,6 +327,25 @@ const invalidJsonHandler: ErrorRequestHandler = (
   next(error);
 };
 
+const internalErrorHandler: ErrorRequestHandler = (
+  _error,
+  _request,
+  response,
+  next,
+) => {
+  if (response.headersSent) {
+    next(_error);
+    return;
+  }
+
+  response.status(500).json({
+    error: {
+      code: "internal_error",
+      message: "요청 처리 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+    },
+  });
+};
+
 function isJsonParseError(error: unknown): boolean {
   return (
     error instanceof SyntaxError &&
@@ -347,6 +373,28 @@ function readRouteParam(value: string | string[] | undefined): string {
   return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
 }
 
+function readRequestIp(request: Request): string {
+  return request.ip ?? request.socket.remoteAddress ?? "unknown";
+}
+
+function readTrustProxy(value: string | undefined): boolean | number | string {
+  if (!value || value === "0" || value.toLowerCase() === "false") {
+    return false;
+  }
+
+  if (value === "1" || value.toLowerCase() === "true") {
+    return true;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+
+  if (Number.isFinite(parsed) && String(parsed) === value) {
+    return parsed;
+  }
+
+  return value;
+}
+
 function notAuthenticatedError() {
   return {
     error: {
@@ -354,20 +402,6 @@ function notAuthenticatedError() {
       message: "Google 로그인이 필요합니다.",
     },
   };
-}
-
-function readClientIp(
-  forwardedFor: string | undefined,
-  realIp: string | undefined,
-): string {
-  return (
-    forwardedFor
-      ?.split(",")
-      .map((part) => part.trim())
-      .find(Boolean) ??
-    realIp?.trim() ??
-    "unknown"
-  );
 }
 
 function hashClientIp(ipAddress: string, salt: string): string {

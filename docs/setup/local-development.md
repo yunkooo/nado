@@ -41,7 +41,9 @@ API 서버는 단어장 API에서 `Authorization: Bearer <Supabase access token>
 
 분석 API는 서버 환경변수의 `OPENAI_API_KEY`를 사용한다. `OPENAI_MODEL`은 기본 예시값을 제공하지만, 비용과 품질을 비교한 뒤 Railway 환경변수에서 조정할 수 있다.
 
-분석 API는 사용량 추적을 위해 `analysis_usage_limits`를 `SUPABASE_SERVICE_ROLE_KEY`로 읽고 쓴다. 이 key는 서버 전용이며 웹, 모바일, 데스크톱 클라이언트에 노출하면 안 된다. 익명 사용자는 `X-Forwarded-For`의 첫 IP를 `NADO_USAGE_IP_HASH_SALT`와 함께 SHA-256으로 해시해서 하루 단위로 추적하고, 로그인 사용자는 Supabase user id로 추적한다.
+분석 API는 사용량 추적을 위해 `analysis_usage_limits`를 `SUPABASE_SERVICE_ROLE_KEY`로 읽고 쓴다. 이 key는 서버 전용이며 웹, 모바일, 데스크톱 클라이언트에 노출하면 안 된다. 익명 사용자는 Express가 확인한 요청 IP를 `NADO_USAGE_IP_HASH_SALT`와 함께 SHA-256으로 해시해서 하루 단위로 추적하고, 로그인 사용자는 Supabase user id로 추적한다.
+
+API 서버가 신뢰할 수 있는 reverse proxy 뒤에서 실행되고 그 proxy가 `X-Forwarded-For`를 덮어쓴다는 점이 확인된 경우에만 `NADO_TRUST_PROXY`를 설정한다. 로컬 기본값은 `0`이다. Railway 배포에서 실제 클라이언트 IP 기반 익명 제한이 필요하면 플랫폼의 proxy 동작을 확인한 뒤 `1` 또는 Express `trust proxy`가 지원하는 값을 설정한다.
 
 일일 분석 제한은 아래 환경변수로 조정한다.
 
