@@ -18,11 +18,7 @@ const vocabularyPreviewItems = [
   },
 ];
 
-const vocabularySummaryItems = [
-  { label: "저장 항목", value: "0" },
-  { label: "복습 대기", value: "0" },
-  { label: "최근 저장", value: "없음" },
-];
+const vocabularySummary = { label: "저장 항목", value: "0" };
 
 export default function VocabularyPage() {
   return (
@@ -44,15 +40,10 @@ export default function VocabularyPage() {
           </section>
 
           <section className="nado-vocabulary-summary" aria-label="단어장 요약">
-            {vocabularySummaryItems.map((item) => (
-              <article
-                className="nado-vocabulary-summary__item"
-                key={item.label}
-              >
-                <span>{item.label}</span>
-                <strong>{item.value}</strong>
-              </article>
-            ))}
+            <article className="nado-vocabulary-summary__item">
+              <span>{vocabularySummary.label}</span>
+              <strong>{vocabularySummary.value}</strong>
+            </article>
           </section>
 
           <section className="nado-vocabulary-layout">

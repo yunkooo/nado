@@ -14,7 +14,8 @@ describe("navigation pages", () => {
     expect(markup).toContain("Google 로그인이 필요해요");
     expect(markup).toContain("nado-vocabulary-summary");
     expect(markup).toContain("저장 항목");
-    expect(markup).toContain("복습 대기");
+    expect(markup).not.toContain("복습 대기");
+    expect(markup).not.toContain("최근 저장");
     expect(markup).toContain("단어장 항목이 아직 없어요");
     expect(markup).toContain("nado-vocabulary-preview");
     expect(markup).toContain("nado-vocabulary-item");
