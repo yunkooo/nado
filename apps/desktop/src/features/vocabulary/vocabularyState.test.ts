@@ -83,6 +83,32 @@ describe("vocabulary state store", () => {
     });
   });
 
+  it("settles thrown vocabulary sync failures as an error state", async () => {
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => {
+      throw new Error("network lost");
+    });
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+
+    sync.sync({
+      accessToken: "session-token",
+      session: null,
+      status: "authenticated",
+    });
+
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [],
+      message: "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+      status: "error",
+    });
+  });
+
   it("ignores stale vocabulary responses after the auth session changes", async () => {
     let resolveListVocabulary: (result: VocabularyListResult) => void = () =>
       undefined;
@@ -180,7 +206,7 @@ describe("vocabulary state store", () => {
     });
 
     store.setReady("session-token", [vocabularyItem]);
-    sync.refresh({
+    const resultPromise = sync.refresh({
       accessToken: "session-token",
       session: null,
       status: "authenticated",
@@ -192,6 +218,7 @@ describe("vocabulary state store", () => {
       status: "ready",
     });
 
+    await expect(resultPromise).resolves.toBe("refreshed");
     await flushPromises();
 
     expect(listVocabulary).toHaveBeenCalledTimes(1);
@@ -200,6 +227,56 @@ describe("vocabulary state store", () => {
       items: [refreshedItem],
       status: "ready",
     });
+  });
+
+  it("keeps a ready snapshot when a background vocabulary refresh fails", async () => {
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => {
+      throw new Error("network lost");
+    });
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+
+    store.setReady("session-token", [vocabularyItem]);
+    const resultPromise = sync.refresh({
+      accessToken: "session-token",
+      session: null,
+      status: "authenticated",
+    });
+
+    await expect(resultPromise).resolves.toBe("failed");
+    await flushPromises();
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [vocabularyItem],
+      message: null,
+      status: "ready",
+    });
+  });
+
+  it("skips manual refreshes when the user is not authenticated", async () => {
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => ({
+      data: [vocabularyItem],
+      status: "success" as const,
+    }));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+
+    await expect(
+      sync.refresh({
+        accessToken: null,
+        session: null,
+        status: "anonymous",
+      }),
+    ).resolves.toBe("ignored");
+    expect(listVocabulary).not.toHaveBeenCalled();
   });
 });
 

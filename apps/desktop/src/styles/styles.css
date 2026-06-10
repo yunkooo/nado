@@ -187,6 +187,45 @@ textarea {
   margin: 0;
 }
 
+.nado-vocabulary-refresh {
+  align-items: end;
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
+.nado-vocabulary-refresh__button {
+  appearance: none;
+  background: var(--nado-color-surface);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-sm);
+  color: var(--nado-color-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  min-height: 36px;
+  padding: 0 14px;
+}
+
+.nado-vocabulary-refresh__button:hover:not(:disabled) {
+  background: var(--nado-color-surface-muted);
+}
+
+.nado-vocabulary-refresh__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.nado-vocabulary-refresh__message {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  margin: 0;
+  text-align: right;
+}
+
 .desktop-analysis-status {
   background: var(--nado-color-surface-muted);
   border: 1px solid var(--nado-color-border);
@@ -640,6 +679,15 @@ textarea {
   .nado-vocabulary-item header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .nado-vocabulary-refresh {
+    align-items: stretch;
+    justify-items: stretch;
+  }
+
+  .nado-vocabulary-refresh__message {
+    text-align: left;
   }
 
   .nado-vocabulary-list {

@@ -3,6 +3,8 @@ import { AnalysisFlow } from "../features/analysis/AnalysisFlow";
 import { AuthControls } from "../auth/AuthControls";
 import { ReviewFlow } from "../features/review/ReviewFlow";
 import { VocabularyFlow } from "../features/vocabulary/VocabularyFlow";
+import { VocabularyRefreshButton } from "../features/vocabulary/VocabularyRefreshButton";
+import { useVocabularyManualRefresh } from "../features/vocabulary/useVocabularyManualRefresh";
 import {
   useRefreshVocabularyForActiveStudySurface,
   useSyncVocabularyForAuth,
@@ -34,6 +36,7 @@ export function App() {
   const authState = useAuthState();
   const isStudySurfaceActive =
     activeItem === "vocabulary" || activeItem === "review";
+  const vocabularyRefresh = useVocabularyManualRefresh(authState);
 
   useSyncVocabularyForAuth(authState);
   useRefreshVocabularyForActiveStudySurface(
@@ -160,6 +163,12 @@ export function App() {
                   <p className="nado-eyebrow">Vocabulary</p>
                   <h1 className="desktop-page-title">단어장</h1>
                 </div>
+                <VocabularyRefreshButton
+                  isDisabled={vocabularyRefresh.isDisabled}
+                  isRefreshing={vocabularyRefresh.isRefreshing}
+                  message={vocabularyRefresh.message}
+                  onRefresh={vocabularyRefresh.refreshVocabulary}
+                />
               </header>
               <VocabularyFlow />
             </div>
@@ -174,6 +183,12 @@ export function App() {
                   <p className="nado-eyebrow">Review</p>
                   <h1 className="desktop-page-title">복습</h1>
                 </div>
+                <VocabularyRefreshButton
+                  isDisabled={vocabularyRefresh.isDisabled}
+                  isRefreshing={vocabularyRefresh.isRefreshing}
+                  message={vocabularyRefresh.message}
+                  onRefresh={vocabularyRefresh.refreshVocabulary}
+                />
               </header>
               <ReviewFlow />
             </div>

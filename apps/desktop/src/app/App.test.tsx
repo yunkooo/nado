@@ -89,6 +89,14 @@ describe("Desktop App source", () => {
     );
   });
 
+  it("renders a manual vocabulary refresh button on study views", () => {
+    expect(appSource).toContain("useVocabularyManualRefresh");
+    expect(appSource).toContain("VocabularyRefreshButton");
+    expect(appSource).toContain("vocabularyRefresh.refreshVocabulary");
+    expect(appSource).toContain("vocabularyRefresh.isRefreshing");
+    expect(styles).toContain(".nado-vocabulary-refresh");
+  });
+
   it("resets scroll position when desktop vocabulary pagination changes page", () => {
     expect(vocabularyFlowSource).toContain("VocabularyList");
     expect(vocabularyListSource).toContain("scrollIntoView");

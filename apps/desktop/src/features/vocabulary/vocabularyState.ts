@@ -3,10 +3,12 @@ import { normalizeVocabularyTerm, type VocabularyItem } from "@nado/shared";
 import type { AuthStateSnapshot } from "../../auth/authState";
 import {
   listVocabulary,
+  VOCABULARY_ERROR_MESSAGE,
   type VocabularyListResult,
 } from "../../api/vocabularyApi";
 
 export type VocabularyStateStatus = "idle" | "loading" | "ready" | "error";
+export type VocabularyRefreshResult = "failed" | "ignored" | "refreshed";
 
 export type VocabularyStateSnapshot = {
   accessToken: string | null;
@@ -136,7 +138,7 @@ export function createVocabularyAuthSync({
   async function loadVocabularyForSession(
     accessToken: string,
     { showLoading = true }: { showLoading?: boolean } = {},
-  ) {
+  ): Promise<VocabularyRefreshResult> {
     requestSequence += 1;
     const requestId = requestSequence;
 
@@ -144,7 +146,12 @@ export function createVocabularyAuthSync({
       store.setLoading(accessToken);
     }
 
-    const result = await loadVocabulary(accessToken);
+    const result = await loadVocabulary(accessToken).catch(
+      (): VocabularyListResult => ({
+        message: VOCABULARY_ERROR_MESSAGE,
+        status: "error",
+      }),
+    );
     const currentState = store.getSnapshot();
 
     if (
@@ -152,23 +159,25 @@ export function createVocabularyAuthSync({
       currentState.accessToken !== accessToken ||
       (showLoading && currentState.status !== "loading")
     ) {
-      return;
+      return "ignored";
     }
 
     if (result.status === "success") {
       store.setReady(accessToken, result.data);
-      return;
+      return "refreshed";
     }
 
     if (showLoading) {
       store.setError(accessToken, result.message);
     }
+
+    return "failed";
   }
 
   return {
-    refresh(authState: AuthStateSnapshot) {
+    refresh(authState: AuthStateSnapshot): Promise<VocabularyRefreshResult> {
       if (authState.status !== "authenticated" || !authState.accessToken) {
-        return;
+        return Promise.resolve("ignored");
       }
 
       const vocabularyState = store.getSnapshot();
@@ -177,10 +186,10 @@ export function createVocabularyAuthSync({
         vocabularyState.accessToken === authState.accessToken &&
         vocabularyState.status === "loading"
       ) {
-        return;
+        return Promise.resolve("ignored");
       }
 
-      void loadVocabularyForSession(authState.accessToken, {
+      return loadVocabularyForSession(authState.accessToken, {
         showLoading:
           vocabularyState.accessToken !== authState.accessToken ||
           vocabularyState.status !== "ready",
@@ -213,6 +222,10 @@ export function createVocabularyAuthSync({
 
 const vocabularyAuthSync = createVocabularyAuthSync();
 
+export function refreshVocabularyForAuth(authState: AuthStateSnapshot) {
+  return vocabularyAuthSync.refresh(authState);
+}
+
 export function useSyncVocabularyForAuth(authState: AuthStateSnapshot) {
   useEffect(() => {
     vocabularyAuthSync.sync(authState);
@@ -232,7 +245,7 @@ export function useRefreshVocabularyForActiveStudySurface(
       return;
     }
 
-    vocabularyAuthSync.refresh(authState);
+    void vocabularyAuthSync.refresh(authState);
   }, [
     authState.accessToken,
     authState.status,
@@ -246,7 +259,7 @@ export function useRefreshVocabularyForActiveStudySurface(
     }
 
     const refreshVocabulary = () => {
-      vocabularyAuthSync.refresh(latestAuthStateRef.current);
+      void vocabularyAuthSync.refresh(latestAuthStateRef.current);
     };
     const refreshVisibleVocabulary = () => {
       if (document.visibilityState === "visible") {
