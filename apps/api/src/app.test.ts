@@ -127,6 +127,32 @@ describe("app", () => {
     );
   });
 
+  it("allows Tauri desktop clients to call API routes", async () => {
+    for (const origin of [
+      "tauri://localhost",
+      "http://tauri.localhost",
+      "https://tauri.localhost",
+    ]) {
+      const response = await request(app, "/api/vocabulary", {
+        headers: {
+          "Access-Control-Request-Headers": "authorization",
+          "Access-Control-Request-Method": "GET",
+          Origin: origin,
+        },
+        method: "OPTIONS",
+      });
+
+      expect(response.status).toBe(204);
+      expect(response.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+      expect(response.headers.get("Access-Control-Allow-Headers")).toContain(
+        "Authorization",
+      );
+      expect(response.headers.get("Access-Control-Allow-Methods")).toContain(
+        "GET",
+      );
+    }
+  });
+
   it("rejects invalid analyze JSON", async () => {
     const response = await request(app, "/api/analyze", {
       body: "{",
