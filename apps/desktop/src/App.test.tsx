@@ -6,6 +6,10 @@ const apiConfigSource = readFileSync(
   new URL("./apiConfig.ts", import.meta.url),
   "utf8",
 );
+const vocabularyFlowSource = readFileSync(
+  new URL("./VocabularyFlow.tsx", import.meta.url),
+  "utf8",
+);
 const styles = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
 
 describe("Desktop App source", () => {
@@ -54,6 +58,16 @@ describe("Desktop App source", () => {
     expect(appSource).toContain('activeItem === "analysis"');
     expect(appSource).toContain('activeItem === "vocabulary"');
     expect(appSource).toContain('activeItem === "review"');
+  });
+
+  it("resets scroll position when desktop vocabulary pagination changes page", () => {
+    expect(vocabularyFlowSource).toContain("moveVocabularyPage");
+    expect(vocabularyFlowSource).toContain(
+      "moveVocabularyPage(pagination.currentPage - 1, setPage)",
+    );
+    expect(vocabularyFlowSource).toContain(
+      "moveVocabularyPage(pagination.currentPage + 1, setPage)",
+    );
   });
 
   it("validates analysis input before submitting to the API", () => {

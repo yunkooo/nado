@@ -112,6 +112,29 @@ export function paginateVocabularyItems<T>(
   };
 }
 
+type ScrollToTopFunction = (options: { behavior: "auto"; top: number }) => void;
+
+export function resetVocabularyPaginationScroll(
+  scrollTo?: ScrollToTopFunction,
+) {
+  const scrollToTop =
+    scrollTo ??
+    (typeof globalThis.scrollTo === "function"
+      ? globalThis.scrollTo.bind(globalThis)
+      : undefined);
+
+  scrollToTop?.({ behavior: "auto", top: 0 });
+}
+
+export function moveVocabularyPage(
+  nextPage: number,
+  setPage: (page: number) => void,
+  scrollToTop: () => void = resetVocabularyPaginationScroll,
+) {
+  setPage(nextPage);
+  scrollToTop();
+}
+
 export const saveVocabularyRequestSchema = z.object({
   term: z.string().trim().min(1, "vocabulary.term.required"),
   type: vocabularyTypeSchema,

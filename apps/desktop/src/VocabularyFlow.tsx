@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@nado/ui";
-import { paginateVocabularyItems } from "@nado/shared";
+import { moveVocabularyPage, paginateVocabularyItems } from "@nado/shared";
 import { useAuthState } from "./authState";
 import { deleteVocabularyItem as deleteVocabularyItemFromApi } from "./vocabularyApi";
 import {
@@ -191,7 +191,9 @@ export function VocabularyFlow() {
                 <div>
                   <Button
                     disabled={pagination.currentPage === 1}
-                    onClick={() => setPage(pagination.currentPage - 1)}
+                    onClick={() =>
+                      moveVocabularyPage(pagination.currentPage - 1, setPage)
+                    }
                     size="sm"
                     variant="secondary"
                   >
@@ -202,7 +204,9 @@ export function VocabularyFlow() {
                   </strong>
                   <Button
                     disabled={pagination.currentPage === pagination.totalPages}
-                    onClick={() => setPage(pagination.currentPage + 1)}
+                    onClick={() =>
+                      moveVocabularyPage(pagination.currentPage + 1, setPage)
+                    }
                     size="sm"
                     variant="secondary"
                   >
