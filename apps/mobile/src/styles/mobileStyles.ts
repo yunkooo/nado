@@ -370,8 +370,31 @@ export const styles = StyleSheet.create({
     lineHeight: 28,
     minHeight: 30,
   },
-  reviewAnswerHidden: {
-    color: mobileColors.inkMuted,
+  reviewAnswerBlur: {
+    alignItems: "center",
+    backgroundColor: mobileColors.surfaceMuted,
+    borderColor: mobileColors.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    gap: 7,
+    minHeight: 48,
+    minWidth: 180,
+    paddingHorizontal: 26,
+    paddingVertical: 11,
+  },
+  reviewAnswerBlurLineNarrow: {
+    backgroundColor: mobileColors.sidebarActive,
+    borderRadius: 999,
+    height: 8,
+    opacity: 0.72,
+    width: 88,
+  },
+  reviewAnswerBlurLineWide: {
+    backgroundColor: mobileColors.sidebarActive,
+    borderRadius: 999,
+    height: 9,
+    opacity: 0.9,
+    width: 128,
   },
   reviewControls: {
     alignSelf: "stretch",
@@ -561,6 +584,14 @@ export const styles = StyleSheet.create({
     gap: 6,
     minHeight: 34,
     paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  suggestionChipSaved: {
+    backgroundColor: mobileColors.sidebar,
+    borderColor: mobileColors.sidebarActive,
+  },
+  suggestionChipSaving: {
+    opacity: 0.64,
   },
   suggestionList: {
     alignItems: "flex-start",
@@ -590,6 +621,7 @@ export const styles = StyleSheet.create({
   shell: {
     backgroundColor: mobileColors.surface,
     flex: 1,
+    position: "relative",
   },
   sectionHeader: {
     alignItems: "stretch",
@@ -691,6 +723,32 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 12,
+  },
+  toast: {
+    alignSelf: "center",
+    backgroundColor: mobileColors.ink,
+    borderRadius: 999,
+    maxWidth: 420,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    shadowColor: mobileColors.ink,
+    shadowOffset: { height: 8, width: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+  },
+  toastOverlay: {
+    left: 14,
+    position: "absolute",
+    right: 14,
+    top: 76,
+    zIndex: 20,
+  },
+  toastText: {
+    color: mobileColors.primaryInk,
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 18,
+    textAlign: "center",
   },
   vocabularyItem: {
     backgroundColor: mobileColors.surface,

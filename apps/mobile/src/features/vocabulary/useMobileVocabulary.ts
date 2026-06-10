@@ -1,18 +1,32 @@
-import { useEffect, useState } from "react";
-import { Platform } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AppState, Platform } from "react-native";
 import { readMobileApiBaseUrl } from "../../api/apiConfig";
 import type { MobileAuthStateSnapshot } from "../../auth/authState";
 import {
   applyDeleteVocabularyError,
+  createMobileVocabularySuggestionKey,
+  isMobileVocabularySuggestionSaved,
+  upsertMobileVocabularyItem,
   type MobileVocabularyState,
 } from "./mobileVocabularyState";
-import { deleteVocabularyItem, listVocabulary } from "../../api/vocabularyApi";
+import type { MobileVocabularySuggestion } from "../../api/analysisApi";
+import {
+  deleteVocabularyItem,
+  listVocabulary,
+  saveVocabularyItem,
+} from "../../api/vocabularyApi";
 
 export type { MobileVocabularyState } from "./mobileVocabularyState";
 
 export type MobileVocabularyActions = {
+  clearSaveMessage(): void;
   deleteItem(itemId: string): Promise<void>;
   deletingItemId: string | null;
+  getSuggestionState(
+    suggestion: MobileVocabularySuggestion,
+  ): "idle" | "saved" | "saving";
+  saveMessage: string | null;
+  saveSuggestion(suggestion: MobileVocabularySuggestion): Promise<void>;
 };
 
 const configuredMobileApiBaseUrl = readMobileApiBaseUrl();
@@ -26,66 +40,181 @@ const initialVocabularyState: MobileVocabularyState = {
 
 export function useMobileVocabulary(
   authState: MobileAuthStateSnapshot,
+  isStudySurfaceActive = false,
+  refreshKey: unknown = isStudySurfaceActive,
 ): [MobileVocabularyState, MobileVocabularyActions] {
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [savingSuggestionKey, setSavingSuggestionKey] = useState<string | null>(
+    null,
+  );
   const [vocabularyState, setVocabularyState] = useState<MobileVocabularyState>(
     initialVocabularyState,
   );
+  const accessTokenRef = useRef<string | null>(null);
+  const latestAuthStateRef = useRef(authState);
+  const requestSequenceRef = useRef(0);
+  const statusRef = useRef<MobileVocabularyState["status"]>(
+    initialVocabularyState.status,
+  );
+  latestAuthStateRef.current = authState;
 
-  useEffect(() => {
-    let isCurrent = true;
+  const setTrackedVocabularyState = useCallback(
+    (
+      resolveState: (
+        currentState: MobileVocabularyState,
+      ) => MobileVocabularyState,
+    ) => {
+      setVocabularyState((currentState) => {
+        const nextState = resolveState(currentState);
+        statusRef.current = nextState.status;
+        return nextState;
+      });
+    },
+    [],
+  );
 
-    async function loadVocabulary(accessToken: string) {
-      setVocabularyState((currentState) => ({
-        items: currentState.items,
-        message: null,
-        status: "loading",
-      }));
+  const loadVocabulary = useCallback(
+    async (
+      accessToken: string,
+      options: { preserveCurrentOnError: boolean; showLoading: boolean },
+    ) => {
+      const { preserveCurrentOnError, showLoading } = options;
+
+      if (
+        !showLoading &&
+        accessTokenRef.current === accessToken &&
+        statusRef.current === "loading"
+      ) {
+        return;
+      }
+
+      requestSequenceRef.current += 1;
+      const requestId = requestSequenceRef.current;
+      accessTokenRef.current = accessToken;
+
+      if (showLoading) {
+        setTrackedVocabularyState((currentState) => ({
+          items: currentState.items,
+          message: null,
+          status: "loading",
+        }));
+      }
 
       const result = await listVocabulary(accessToken, {
         apiBaseUrl: configuredMobileApiBaseUrl,
         apiPlatform: configuredMobileApiPlatform,
       });
 
-      if (!isCurrent) {
+      if (
+        requestId !== requestSequenceRef.current ||
+        accessTokenRef.current !== accessToken
+      ) {
         return;
       }
 
       if (result.status === "success") {
-        setVocabularyState({
+        setTrackedVocabularyState(() => ({
           items: result.data,
           message: null,
           status: "ready",
-        });
+        }));
         return;
       }
 
-      setVocabularyState({
-        items: [],
-        message: result.message,
-        status: "error",
-      });
-    }
+      setTrackedVocabularyState((currentState) => {
+        if (preserveCurrentOnError && currentState.items.length > 0) {
+          return {
+            ...currentState,
+            message: result.message,
+            status: "ready",
+          };
+        }
 
+        return {
+          items: [],
+          message: result.message,
+          status: "error",
+        };
+      });
+    },
+    [setTrackedVocabularyState],
+  );
+
+  useEffect(() => {
     if (authState.status === "loading") {
-      return () => {
-        isCurrent = false;
-      };
+      return;
     }
 
     if (authState.status !== "authenticated" || !authState.accessToken) {
-      setVocabularyState(initialVocabularyState);
-      return () => {
-        isCurrent = false;
-      };
+      requestSequenceRef.current += 1;
+      accessTokenRef.current = null;
+      setTrackedVocabularyState(() => initialVocabularyState);
+      return;
     }
 
-    void loadVocabulary(authState.accessToken);
+    void loadVocabulary(authState.accessToken, {
+      preserveCurrentOnError: false,
+      showLoading: true,
+    });
+  }, [
+    authState.accessToken,
+    authState.status,
+    loadVocabulary,
+    setTrackedVocabularyState,
+  ]);
+
+  useEffect(() => {
+    if (
+      !isStudySurfaceActive ||
+      authState.status !== "authenticated" ||
+      !authState.accessToken
+    ) {
+      return;
+    }
+
+    void loadVocabulary(authState.accessToken, {
+      preserveCurrentOnError: true,
+      showLoading: false,
+    });
+  }, [
+    authState.accessToken,
+    authState.status,
+    isStudySurfaceActive,
+    loadVocabulary,
+    refreshKey,
+  ]);
+
+  useEffect(() => {
+    if (!isStudySurfaceActive) {
+      return;
+    }
+
+    const refreshVocabulary = () => {
+      const latestAuthState = latestAuthStateRef.current;
+
+      if (
+        latestAuthState.status !== "authenticated" ||
+        !latestAuthState.accessToken
+      ) {
+        return;
+      }
+
+      void loadVocabulary(latestAuthState.accessToken, {
+        preserveCurrentOnError: true,
+        showLoading: false,
+      });
+    };
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        refreshVocabulary();
+      }
+    });
 
     return () => {
-      isCurrent = false;
+      subscription.remove();
     };
-  }, [authState.accessToken, authState.status]);
+  }, [isStudySurfaceActive, loadVocabulary]);
 
   const deleteItem = async (itemId: string) => {
     if (authState.status !== "authenticated" || !authState.accessToken) {
@@ -100,13 +229,13 @@ export function useMobileVocabulary(
     setDeletingItemId(null);
 
     if (result.status !== "success") {
-      setVocabularyState((currentState) =>
+      setTrackedVocabularyState((currentState) =>
         applyDeleteVocabularyError(currentState, result.message),
       );
       return;
     }
 
-    setVocabularyState((currentState) => ({
+    setTrackedVocabularyState((currentState) => ({
       ...currentState,
       items: currentState.items.filter((item) => item.id !== itemId),
       message: null,
@@ -114,11 +243,72 @@ export function useMobileVocabulary(
     }));
   };
 
+  const getSuggestionState = (suggestion: MobileVocabularySuggestion) => {
+    if (
+      savingSuggestionKey === createMobileVocabularySuggestionKey(suggestion)
+    ) {
+      return "saving" as const;
+    }
+
+    if (isMobileVocabularySuggestionSaved(vocabularyState.items, suggestion)) {
+      return "saved" as const;
+    }
+
+    return "idle" as const;
+  };
+
+  const saveSuggestion = async (suggestion: MobileVocabularySuggestion) => {
+    if (getSuggestionState(suggestion) !== "idle") {
+      return;
+    }
+
+    if (authState.status !== "authenticated" || !authState.accessToken) {
+      setSaveMessage(
+        "로그인이 필요해요. Google 로그인 후 단어장에 저장할 수 있어요.",
+      );
+      return;
+    }
+
+    const suggestionKey = createMobileVocabularySuggestionKey(suggestion);
+    setSaveMessage(null);
+    setSavingSuggestionKey(suggestionKey);
+
+    const result = await saveVocabularyItem(
+      {
+        meaning: suggestion.meaning,
+        note: suggestion.note,
+        term: suggestion.term,
+        type: suggestion.type,
+      },
+      authState.accessToken,
+      {
+        apiBaseUrl: configuredMobileApiBaseUrl,
+        apiPlatform: configuredMobileApiPlatform,
+      },
+    );
+
+    setSavingSuggestionKey(null);
+
+    if (result.status === "success") {
+      setTrackedVocabularyState((currentState) =>
+        upsertMobileVocabularyItem(currentState, result.data),
+      );
+      setSaveMessage("단어장에 저장했어요.");
+      return;
+    }
+
+    setSaveMessage(result.message);
+  };
+
   return [
     vocabularyState,
     {
+      clearSaveMessage: () => setSaveMessage(null),
       deleteItem,
       deletingItemId,
+      getSuggestionState,
+      saveMessage,
+      saveSuggestion,
     },
   ];
 }

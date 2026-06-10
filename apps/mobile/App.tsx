@@ -10,7 +10,10 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
+import {
+  MAX_ANALYSIS_TEXT_LENGTH,
+  getDistinctVocabularyNote,
+} from "@nado/shared";
 import {
   ANALYSIS_INPUT_ACCESSIBILITY_LABEL,
   INITIAL_ANALYSIS_TEXT,
@@ -39,6 +42,7 @@ import {
 } from "./src/components/mobilePanelState";
 import {
   useMobileVocabulary,
+  type MobileVocabularyActions,
   type MobileVocabularyState,
 } from "./src/features/vocabulary/useMobileVocabulary";
 
@@ -57,10 +61,27 @@ export default function App() {
     null,
   );
   const authState = useMobileAuthState();
-  const [vocabularyState, vocabularyActions] = useMobileVocabulary(authState);
+  const isStudyTabActive = activeTab === "vocabulary" || activeTab === "review";
+  const [vocabularyState, vocabularyActions] = useMobileVocabulary(
+    authState,
+    isStudyTabActive,
+    activeTab,
+  );
   const composerState = getAnalysisComposerState(text);
   const isAnalysisLoading = analysisState.status === "loading";
   const isAnalyzeDisabled = composerState.isSubmitDisabled || isAnalysisLoading;
+
+  useEffect(() => {
+    if (!vocabularyActions.saveMessage) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      vocabularyActions.clearSaveMessage();
+    }, 2400);
+
+    return () => clearTimeout(timeoutId);
+  }, [vocabularyActions.saveMessage]);
 
   const handleAuthPress = async () => {
     if (authState.status === "authenticated") {
@@ -146,7 +167,11 @@ export default function App() {
             />
           ) : null}
           {activeTab === "analysis" ? (
-            <AnalysisResultPanel analysisState={analysisState} />
+            <AnalysisResultPanel
+              analysisState={analysisState}
+              getSuggestionState={vocabularyActions.getSuggestionState}
+              onSaveSuggestion={vocabularyActions.saveSuggestion}
+            />
           ) : null}
           {activeTab === "vocabulary" ? (
             <VocabularyPage
@@ -245,6 +270,16 @@ export default function App() {
             })}
           </View>
         </View>
+
+        {vocabularyActions.saveMessage ? (
+          <View pointerEvents="none" style={styles.toastOverlay}>
+            <View accessibilityRole="alert" style={styles.toast}>
+              <Text style={styles.toastText}>
+                {vocabularyActions.saveMessage}
+              </Text>
+            </View>
+          </View>
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -252,8 +287,12 @@ export default function App() {
 
 function AnalysisResultPanel({
   analysisState,
+  getSuggestionState,
+  onSaveSuggestion,
 }: {
   analysisState: AnalysisState;
+  getSuggestionState: MobileVocabularyActions["getSuggestionState"];
+  onSaveSuggestion: MobileVocabularyActions["saveSuggestion"];
 }) {
   if (analysisState.status === "idle") {
     return null;
@@ -368,21 +407,55 @@ function AnalysisResultPanel({
 
       <ResultSection title="우선 저장 추천">
         <View style={styles.suggestionList}>
-          {result.vocabularySuggestions.map((suggestion) => (
-            <View
-              key={`${suggestion.term}-${suggestion.meaning}`}
-              style={styles.suggestionChip}
-            >
-              <Text style={styles.suggestionPrefix}>+</Text>
-              <Text style={styles.suggestionText}>
-                {suggestion.term} · {suggestion.meaning}
-              </Text>
-            </View>
-          ))}
+          {result.vocabularySuggestions.map((suggestion) => {
+            const suggestionState = getSuggestionState(suggestion);
+            const isSavingDisabled = suggestionState !== "idle";
+
+            return (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ disabled: isSavingDisabled }}
+                disabled={isSavingDisabled}
+                key={`${suggestion.term}-${suggestion.meaning}`}
+                onPress={() => {
+                  void onSaveSuggestion(suggestion);
+                }}
+                style={({ pressed }) => [
+                  styles.suggestionChip,
+                  suggestionState === "saved"
+                    ? styles.suggestionChipSaved
+                    : null,
+                  suggestionState === "saving"
+                    ? styles.suggestionChipSaving
+                    : null,
+                  pressed && !isSavingDisabled ? styles.pressed : null,
+                ]}
+              >
+                <Text style={styles.suggestionPrefix}>
+                  {readSuggestionSavePrefix(suggestionState)}
+                </Text>
+                <Text style={styles.suggestionText}>
+                  {suggestion.term} · {suggestion.meaning}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       </ResultSection>
     </View>
   );
+}
+
+function readSuggestionSavePrefix(state: "idle" | "saved" | "saving") {
+  if (state === "saving") {
+    return "저장 중";
+  }
+
+  if (state === "saved") {
+    return "저장됨";
+  }
+
+  return "+";
 }
 
 function ResultSection({
@@ -474,16 +547,25 @@ function VocabularyPage({
                     </View>
                   </View>
                   <View style={styles.meaningList}>
-                    {item.meanings.map((meaning) => (
-                      <View key={meaning.meaning} style={styles.meaningCard}>
-                        <Text style={styles.meaningText}>
-                          {meaning.meaning}
-                        </Text>
-                        {meaning.note ? (
-                          <Text style={styles.meaningNote}>{meaning.note}</Text>
-                        ) : null}
-                      </View>
-                    ))}
+                    {item.meanings.map((meaning) => {
+                      const meaningDisplayNote = getDistinctVocabularyNote(
+                        meaning.note,
+                        [meaning.meaning],
+                      );
+
+                      return (
+                        <View key={meaning.meaning} style={styles.meaningCard}>
+                          <Text style={styles.meaningText}>
+                            {meaning.meaning}
+                          </Text>
+                          {meaningDisplayNote ? (
+                            <Text style={styles.meaningNote}>
+                              {meaningDisplayNote}
+                            </Text>
+                          ) : null}
+                        </View>
+                      );
+                    })}
                   </View>
                   <View style={styles.itemFooter}>
                     <Text style={styles.itemMeta}>
@@ -556,12 +638,8 @@ function ReviewPage({
     <View style={styles.pageStack}>
       <View style={styles.pageHeader}>
         <View style={styles.pageTitleGroup}>
-          <Text style={styles.eyebrow}>My flashcard</Text>
-          <Text style={styles.pageTitle}>저장한 단어로 복습해요</Text>
+          <Text style={styles.pageTitle}>복습</Text>
         </View>
-        <Text style={styles.pageDescription}>
-          단어장 항목을 카드로 넘기며 뜻과 표현을 확인합니다.
-        </Text>
       </View>
 
       <View style={styles.pageLayout}>
@@ -604,15 +682,17 @@ function ReviewPage({
               </Text>
               <Text style={styles.eyebrow}>My flashcard</Text>
               <Text style={styles.reviewTerm}>{currentCard.prompt}</Text>
-              <Text
-                style={[
-                  styles.reviewAnswer,
-                  isAnswerRevealed ? null : styles.reviewAnswerHidden,
-                ]}
-              >
-                {isAnswerRevealed ? currentCard.answer : "정답 숨김"}
-              </Text>
-              <Text style={styles.reviewNote}>{currentCard.note}</Text>
+              {isAnswerRevealed ? (
+                <Text style={styles.reviewAnswer}>{currentCard.answer}</Text>
+              ) : (
+                <View
+                  accessibilityLabel="정답이 가려져 있습니다"
+                  style={styles.reviewAnswerBlur}
+                >
+                  <View style={styles.reviewAnswerBlurLineWide} />
+                  <View style={styles.reviewAnswerBlurLineNarrow} />
+                </View>
+              )}
             </View>
 
             <View style={styles.reviewActions}>
