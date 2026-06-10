@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Button } from "@nado/ui";
-import type { VocabularyItem } from "@nado/shared";
+import { paginateVocabularyItems, type VocabularyItem } from "@nado/shared";
 
 type VocabularyListProps = {
   deletingItemId: string | null;
@@ -14,6 +15,17 @@ export function VocabularyList({
   items,
   onDeleteItem,
 }: VocabularyListProps) {
+  const [page, setPage] = useState(1);
+  const pagination = paginateVocabularyItems(items, page);
+  const firstVisibleItem =
+    pagination.totalItems === 0
+      ? 0
+      : (pagination.currentPage - 1) * pagination.pageSize + 1;
+  const lastVisibleItem = Math.min(
+    pagination.currentPage * pagination.pageSize,
+    pagination.totalItems,
+  );
+
   return (
     <section className="nado-vocabulary-list-wrap" aria-label="내 단어장 목록">
       <header className="nado-section-header">
@@ -29,7 +41,7 @@ export function VocabularyList({
       </header>
 
       <div className="nado-vocabulary-list">
-        {items.map((item) => (
+        {pagination.items.map((item) => (
           <VocabularyListItem
             isDeleting={deletingItemId === item.id}
             item={item}
@@ -38,6 +50,35 @@ export function VocabularyList({
           />
         ))}
       </div>
+
+      {pagination.totalPages > 1 ? (
+        <nav className="nado-vocabulary-pagination" aria-label="단어장 페이지">
+          <span>
+            {firstVisibleItem}-{lastVisibleItem} / {pagination.totalItems}
+          </span>
+          <div>
+            <Button
+              disabled={pagination.currentPage === 1}
+              onClick={() => setPage(pagination.currentPage - 1)}
+              size="sm"
+              variant="secondary"
+            >
+              이전
+            </Button>
+            <strong>
+              {pagination.currentPage} / {pagination.totalPages}
+            </strong>
+            <Button
+              disabled={pagination.currentPage === pagination.totalPages}
+              onClick={() => setPage(pagination.currentPage + 1)}
+              size="sm"
+              variant="secondary"
+            >
+              다음
+            </Button>
+          </div>
+        </nav>
+      ) : null}
     </section>
   );
 }

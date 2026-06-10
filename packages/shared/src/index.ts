@@ -82,6 +82,36 @@ export const vocabularyItemSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
+export const VOCABULARY_PAGE_SIZE = 10;
+
+export type VocabularyPaginationResult<T> = {
+  currentPage: number;
+  items: T[];
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+};
+
+export function paginateVocabularyItems<T>(
+  items: T[],
+  page: number,
+): VocabularyPaginationResult<T> {
+  const totalPages = Math.max(
+    1,
+    Math.ceil(items.length / VOCABULARY_PAGE_SIZE),
+  );
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+  const startIndex = (currentPage - 1) * VOCABULARY_PAGE_SIZE;
+
+  return {
+    currentPage,
+    items: items.slice(startIndex, startIndex + VOCABULARY_PAGE_SIZE),
+    pageSize: VOCABULARY_PAGE_SIZE,
+    totalItems: items.length,
+    totalPages,
+  };
+}
+
 export const saveVocabularyRequestSchema = z.object({
   term: z.string().trim().min(1, "vocabulary.term.required"),
   type: vocabularyTypeSchema,
