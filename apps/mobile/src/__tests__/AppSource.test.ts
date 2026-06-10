@@ -1,13 +1,16 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const appSource = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
+const appSource = readFileSync(
+  new URL("../../App.tsx", import.meta.url),
+  "utf8",
+);
 const authClientSource = readFileSync(
-  new URL("./authClient.ts", import.meta.url),
+  new URL("../auth/authClient.ts", import.meta.url),
   "utf8",
 );
 const authStateSource = readFileSync(
-  new URL("./authState.ts", import.meta.url),
+  new URL("../auth/authState.ts", import.meta.url),
   "utf8",
 );
 

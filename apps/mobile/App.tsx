@@ -16,30 +16,30 @@ import {
   INITIAL_ANALYSIS_TEXT,
   getAnalysisComposerState,
   mobileTabs,
-} from "./src/analysisScreen";
-import { signInWithGoogle, signOut } from "./src/authClient";
-import { useMobileAuthState } from "./src/authState";
-import { analyzeText } from "./src/analysisApi";
-import { readMobileApiBaseUrl } from "./src/apiConfig";
+} from "./src/features/analysis/analysisScreen";
+import { signInWithGoogle, signOut } from "./src/auth/authClient";
+import { useMobileAuthState } from "./src/auth/authState";
+import { analyzeText } from "./src/api/analysisApi";
+import { readMobileApiBaseUrl } from "./src/api/apiConfig";
 import {
   getNextReviewIndex,
   getReviewCard,
   mobileReviewDirectionOptions,
   type ReviewDirection,
-} from "./src/reviewHelpers";
-import type { MobileTabKey } from "./src/analysisScreen";
-import type { AnalyzeTextResult } from "./src/analysisApi";
-import { mobileColors, styles } from "./src/mobileStyles";
+} from "./src/features/review/reviewHelpers";
+import type { MobileTabKey } from "./src/features/analysis/analysisScreen";
+import type { AnalyzeTextResult } from "./src/api/analysisApi";
+import { mobileColors, styles } from "./src/styles/mobileStyles";
 import {
   getMobileStatePanelCopy,
   getMobileVocabularyPanelState,
   type MobilePanelState,
   type MobilePanelType,
-} from "./src/mobilePanelState";
+} from "./src/components/mobilePanelState";
 import {
   useMobileVocabulary,
   type MobileVocabularyState,
-} from "./src/useMobileVocabulary";
+} from "./src/features/vocabulary/useMobileVocabulary";
 
 type AnalysisState = AnalyzeTextResult | { status: "idle" | "loading" };
 

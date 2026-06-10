@@ -1,5 +1,5 @@
-import type { MobileAuthStateStatus } from "./authState";
-import type { MobileVocabularyState } from "./mobileVocabularyState";
+import type { MobileAuthStateStatus } from "../auth/authState";
+import type { MobileVocabularyState } from "../features/vocabulary/mobileVocabularyState";
 
 export type MobilePanelState =
   | "auth_required"

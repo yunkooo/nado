@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
-import { readMobileApiBaseUrl } from "./apiConfig";
-import type { MobileAuthStateSnapshot } from "./authState";
+import { readMobileApiBaseUrl } from "../../api/apiConfig";
+import type { MobileAuthStateSnapshot } from "../../auth/authState";
 import {
   applyDeleteVocabularyError,
   type MobileVocabularyState,
 } from "./mobileVocabularyState";
-import { deleteVocabularyItem, listVocabulary } from "./vocabularyApi";
+import { deleteVocabularyItem, listVocabulary } from "../../api/vocabularyApi";
 
 export type { MobileVocabularyState } from "./mobileVocabularyState";
 

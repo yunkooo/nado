@@ -3,7 +3,7 @@ import {
   getMobileStatePanelCopy,
   getMobileVocabularyPanelState,
 } from "./mobilePanelState";
-import type { MobileVocabularyState } from "./mobileVocabularyState";
+import type { MobileVocabularyState } from "../features/vocabulary/mobileVocabularyState";
 
 const readyVocabularyState: MobileVocabularyState = {
   items: [
