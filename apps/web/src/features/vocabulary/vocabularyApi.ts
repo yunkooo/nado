@@ -9,7 +9,7 @@ import {
   readApiErrorMessage,
   readJson,
   type ApiRequestOptions,
-} from "./apiClient";
+} from "../../lib/apiClient";
 
 export type VocabularyApiOptions = ApiRequestOptions;
 

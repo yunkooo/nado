@@ -8,7 +8,7 @@ import {
   readApiErrorMessage,
   readJson,
   type ApiRequestOptions,
-} from "./apiClient";
+} from "../../lib/apiClient";
 
 export type AnalyzeTextResult =
   | { data: AnalysisResultData; status: "success" }

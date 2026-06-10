@@ -1,5 +1,5 @@
-import { AppShell } from "../AppShell";
-import { ReviewFlow } from "./ReviewFlow";
+import { AppShell } from "../../components/AppShell";
+import { ReviewFlow } from "../../features/review/ReviewFlow";
 
 export default function ReviewPage() {
   return (

@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AuthControls } from "./AuthControls";
-import { useAuthState } from "./authState";
-import { useSyncVocabularyForAuth } from "./vocabularyState";
+import { useAuthState } from "../features/auth/authState";
+import { useSyncVocabularyForAuth } from "../features/vocabulary/vocabularyState";
 
 type NavigationItem = {
   href: string;

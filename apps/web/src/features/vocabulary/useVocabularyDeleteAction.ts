@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { AuthStateSnapshot } from "../authState";
-import { deleteVocabularyItem as deleteVocabularyItemFromApi } from "../vocabularyApi";
-import { vocabularyStateStore } from "../vocabularyState";
+import type { AuthStateSnapshot } from "../auth/authState";
+import { deleteVocabularyItem as deleteVocabularyItemFromApi } from "./vocabularyApi";
+import { vocabularyStateStore } from "./vocabularyState";
 
 type VocabularyDeleteRequestSnapshot = {
   accessToken: string | null;

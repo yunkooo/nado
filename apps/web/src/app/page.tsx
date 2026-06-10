@@ -5,13 +5,13 @@ import {
   countAnalysisTextCharacters,
 } from "@nado/shared";
 import { AnalysisResult, InputComposer, InputSample } from "@nado/ui";
-import { AppShell } from "./AppShell";
-import { useAnalysisPageState } from "./analysisState";
-import { useAnalysisSubmission } from "./useAnalysisSubmission";
-import { useVocabularySaveNoticeDismiss } from "./useVocabularySaveNoticeDismiss";
-import { useVocabularySuggestionSaver } from "./useVocabularySuggestionSaver";
-import { VocabularySaveStatus } from "./VocabularySaveStatus";
-import { useVocabularyState } from "./vocabularyState";
+import { AppShell } from "../components/AppShell";
+import { useAnalysisPageState } from "../features/analysis/analysisState";
+import { useAnalysisSubmission } from "../features/analysis/useAnalysisSubmission";
+import { useVocabularySaveNoticeDismiss } from "../features/analysis/useVocabularySaveNoticeDismiss";
+import { useVocabularySuggestionSaver } from "../features/analysis/useVocabularySuggestionSaver";
+import { VocabularySaveStatus } from "../features/analysis/VocabularySaveStatus";
+import { useVocabularyState } from "../features/vocabulary/vocabularyState";
 
 const inputDisclosure =
   "입력한 문장은 AI 분석을 위해 전송되며, 단어장에는 원문 문장을 저장하지 않습니다.";

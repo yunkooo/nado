@@ -5,13 +5,13 @@ import type {
   VocabularySuggestionSaveState,
 } from "@nado/ui";
 import type { AnalysisStateStore } from "./analysisState";
-import { getCurrentAccessToken } from "./authClient";
-import { saveVocabularyItem } from "./vocabularyApi";
+import { getCurrentAccessToken } from "../auth/authClient";
+import { saveVocabularyItem } from "../vocabulary/vocabularyApi";
 import {
   isVocabularySuggestionSaved,
   vocabularyStateStore,
   type VocabularyStateSnapshot,
-} from "./vocabularyState";
+} from "../vocabulary/vocabularyState";
 import {
   createVocabularyLoginRequiredNotice,
   createVocabularySaveSuccessNotice,

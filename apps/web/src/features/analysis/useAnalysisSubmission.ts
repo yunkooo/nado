@@ -8,7 +8,7 @@ import {
 } from "@nado/shared";
 import { analyzeText } from "./analysisApi";
 import type { AnalysisState, AnalysisStateStore } from "./analysisState";
-import { getCurrentAccessToken } from "./authClient";
+import { getCurrentAccessToken } from "../auth/authClient";
 
 type UseAnalysisSubmissionOptions = {
   analysisState: AnalysisState;

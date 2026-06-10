@@ -3,8 +3,11 @@ import {
   deleteMockVocabularyItem,
   getMockVocabularySummary,
   mockVocabularyItems,
-} from "../test-fixtures/mockVocabularyFlow";
-import { getNextReviewIndex, getReviewCard } from "./review/reviewSession";
+} from "./mockVocabularyFlow";
+import {
+  getNextReviewIndex,
+  getReviewCard,
+} from "../features/review/reviewSession";
 
 describe("mock vocabulary flow", () => {
   it("summarizes the mock vocabulary item count", () => {

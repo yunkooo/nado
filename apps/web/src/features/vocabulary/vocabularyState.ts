@@ -2,7 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { normalizeVocabularyTerm, type VocabularyItem } from "@nado/shared";
-import type { AuthStateSnapshot } from "./authState";
+import type { AuthStateSnapshot } from "../auth/authState";
 import {
   listVocabulary,
   VOCABULARY_ERROR_MESSAGE,

@@ -5,8 +5,8 @@ import { Button } from "@nado/ui";
 import {
   createGoogleOAuthRedirectTo,
   getSupabaseBrowserClient,
-} from "./authClient";
-import { useAuthState } from "./authState";
+} from "../features/auth/authClient";
+import { useAuthState } from "../features/auth/authState";
 
 export function AuthControls() {
   const authState = useAuthState();

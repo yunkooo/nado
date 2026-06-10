@@ -1,4 +1,4 @@
-import type { AuthStateStatus } from "../authState";
+import type { AuthStateStatus } from "../auth/authState";
 
 export type VocabularyPanelState =
   | "auth_required"

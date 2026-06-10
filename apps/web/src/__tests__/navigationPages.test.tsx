@@ -1,8 +1,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import ReviewPage from "./review/page";
-import VocabularyPage from "./vocabulary/page";
+import ReviewPage from "../app/review/page";
+import VocabularyPage from "../app/vocabulary/page";
 
 describe("navigation pages", () => {
   it("renders the vocabulary page in the current app shell design", () => {

@@ -1,5 +1,5 @@
-import { AppShell } from "../AppShell";
-import { VocabularyFlow } from "./VocabularyFlow";
+import { AppShell } from "../../components/AppShell";
+import { VocabularyFlow } from "../../features/vocabulary/VocabularyFlow";
 
 export default function VocabularyPage() {
   return (

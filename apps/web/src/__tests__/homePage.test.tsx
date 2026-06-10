@@ -2,28 +2,34 @@ import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import HomePage from "./page";
+import HomePage from "../app/page";
 
 const styles = [
-  "./globals.css",
-  "./styles/base.css",
-  "./styles/shell.css",
-  "./styles/analysis.css",
-  "./styles/study.css",
+  "../app/globals.css",
+  "../app/styles/base.css",
+  "../app/styles/shell.css",
+  "../app/styles/analysis.css",
+  "../app/styles/study.css",
 ]
   .map((stylePath) => readFileSync(new URL(stylePath, import.meta.url), "utf8"))
   .join("\n");
-const pageSource = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
+const pageSource = readFileSync(
+  new URL("../app/page.tsx", import.meta.url),
+  "utf8",
+);
 const appShellSource = readFileSync(
-  new URL("./AppShell.tsx", import.meta.url),
+  new URL("../components/AppShell.tsx", import.meta.url),
   "utf8",
 );
 const useAnalysisSubmissionSource = readFileSync(
-  new URL("./useAnalysisSubmission.ts", import.meta.url),
+  new URL("../features/analysis/useAnalysisSubmission.ts", import.meta.url),
   "utf8",
 );
 const useVocabularySaveNoticeDismissSource = readFileSync(
-  new URL("./useVocabularySaveNoticeDismiss.ts", import.meta.url),
+  new URL(
+    "../features/analysis/useVocabularySaveNoticeDismiss.ts",
+    import.meta.url,
+  ),
   "utf8",
 );
 
