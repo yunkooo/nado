@@ -23,6 +23,12 @@ export type AuthStateClient = {
         session: Session | null;
       };
     }>;
+    refreshSession(currentSession?: Session): Promise<{
+      data: {
+        session: Session | null;
+      };
+      error: unknown;
+    }>;
     onAuthStateChange(handler: AuthStateChangeHandler): {
       data: {
         subscription: {
@@ -57,6 +63,7 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
   let snapshot = loadingSnapshot;
   let subscription: { unsubscribe(): void } | null = null;
   let hasStarted = false;
+  let isResolvingInitialSession = false;
 
   const notify = () => {
     for (const listener of listeners) {
@@ -83,18 +90,25 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
       return;
     }
 
-    const { data } = client.auth.onAuthStateChange((_event, nextSession) => {
+    isResolvingInitialSession = true;
+
+    const { data } = client.auth.onAuthStateChange((event, nextSession) => {
+      if (isResolvingInitialSession && event === "INITIAL_SESSION") {
+        return;
+      }
+
       setSnapshot(toAuthStateSnapshot(nextSession));
     });
 
     subscription = data.subscription;
 
-    client.auth
-      .getSession()
-      .then(({ data: sessionData }) => {
-        setSnapshot(toAuthStateSnapshot(sessionData.session));
+    resolveStartupSession(client)
+      .then((session) => {
+        isResolvingInitialSession = false;
+        setSnapshot(toAuthStateSnapshot(session));
       })
       .catch(() => {
+        isResolvingInitialSession = false;
         setSnapshot(errorSnapshot);
       });
   };
@@ -107,6 +121,7 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
     subscription?.unsubscribe();
     subscription = null;
     hasStarted = false;
+    isResolvingInitialSession = false;
   };
 
   return {
@@ -134,6 +149,25 @@ export function useAuthState(): AuthStateSnapshot {
     authStateStore.getSnapshot,
     authStateStore.getSnapshot,
   );
+}
+
+async function resolveStartupSession(
+  client: AuthStateClient,
+): Promise<Session | null> {
+  const { data } = await client.auth.getSession();
+  const session = data.session;
+
+  if (!session) {
+    return null;
+  }
+
+  const refreshed = await client.auth.refreshSession(session);
+
+  if (refreshed.error) {
+    return null;
+  }
+
+  return refreshed.data.session;
 }
 
 function toAuthStateSnapshot(session: Session | null): AuthStateSnapshot {
