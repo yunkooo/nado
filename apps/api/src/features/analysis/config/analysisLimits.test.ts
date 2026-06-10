@@ -6,28 +6,28 @@ import {
 } from "./analysisLimits.js";
 
 describe("analysis limit config", () => {
-  it("uses conservative defaults when daily limit env values are absent", () => {
+  it("keeps analysis limits disabled when daily limit env values are absent", () => {
     expect(
       readAnalysisDailyLimit(undefined, {
         defaultValue: DEFAULT_ANONYMOUS_DAILY_ANALYSIS_LIMIT,
         name: "NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT",
       }),
-    ).toBe(DEFAULT_ANONYMOUS_DAILY_ANALYSIS_LIMIT);
+    ).toBe(0);
     expect(
       readAnalysisDailyLimit(undefined, {
         defaultValue: DEFAULT_AUTHENTICATED_DAILY_ANALYSIS_LIMIT,
         name: "NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT",
       }),
-    ).toBe(DEFAULT_AUTHENTICATED_DAILY_ANALYSIS_LIMIT);
+    ).toBe(0);
   });
 
-  it("allows an explicit zero limit only when it is configured intentionally", () => {
+  it("allows an explicit positive limit when it is configured intentionally", () => {
     expect(
-      readAnalysisDailyLimit("0", {
+      readAnalysisDailyLimit("3", {
         defaultValue: DEFAULT_ANONYMOUS_DAILY_ANALYSIS_LIMIT,
         name: "NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT",
       }),
-    ).toBe(0);
+    ).toBe(3);
   });
 
   it("rejects malformed daily limit env values", () => {

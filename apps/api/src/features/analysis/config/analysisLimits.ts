@@ -1,5 +1,5 @@
-export const DEFAULT_ANONYMOUS_DAILY_ANALYSIS_LIMIT = 3;
-export const DEFAULT_AUTHENTICATED_DAILY_ANALYSIS_LIMIT = 20;
+export const DEFAULT_ANONYMOUS_DAILY_ANALYSIS_LIMIT = 0;
+export const DEFAULT_AUTHENTICATED_DAILY_ANALYSIS_LIMIT = 0;
 
 export type AnalysisDailyLimitOptions = {
   defaultValue: number;
