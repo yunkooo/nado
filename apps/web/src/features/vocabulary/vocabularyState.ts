@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { normalizeVocabularyTerm, type VocabularyItem } from "@nado/shared";
 import type { AuthStateSnapshot } from "../auth/authState";
 import {
@@ -167,6 +167,23 @@ export function createVocabularyAuthSync({
   }
 
   return {
+    refresh(authState: AuthStateSnapshot) {
+      if (authState.status !== "authenticated" || !authState.accessToken) {
+        return;
+      }
+
+      const vocabularyState = store.getSnapshot();
+
+      if (
+        vocabularyState.accessToken === authState.accessToken &&
+        vocabularyState.status === "loading"
+      ) {
+        return;
+      }
+
+      void loadVocabularyForSession(authState.accessToken);
+    },
+
     sync(authState: AuthStateSnapshot) {
       if (authState.status === "loading") {
         return;
@@ -197,6 +214,54 @@ export function useSyncVocabularyForAuth(authState: AuthStateSnapshot) {
   useEffect(() => {
     vocabularyAuthSync.sync(authState);
   }, [authState.accessToken, authState.status]);
+}
+
+export function useRefreshVocabularyForActiveStudySurface(
+  authState: AuthStateSnapshot,
+  isStudySurfaceActive: boolean,
+  refreshKey: unknown = isStudySurfaceActive,
+) {
+  const latestAuthStateRef = useRef(authState);
+  latestAuthStateRef.current = authState;
+
+  useEffect(() => {
+    if (!isStudySurfaceActive) {
+      return;
+    }
+
+    vocabularyAuthSync.refresh(authState);
+  }, [
+    authState.accessToken,
+    authState.status,
+    isStudySurfaceActive,
+    refreshKey,
+  ]);
+
+  useEffect(() => {
+    if (!isStudySurfaceActive) {
+      return;
+    }
+
+    const refreshVocabulary = () => {
+      vocabularyAuthSync.refresh(latestAuthStateRef.current);
+    };
+    const refreshVisibleVocabulary = () => {
+      if (document.visibilityState === "visible") {
+        refreshVocabulary();
+      }
+    };
+
+    window.addEventListener("focus", refreshVocabulary);
+    document.addEventListener("visibilitychange", refreshVisibleVocabulary);
+
+    return () => {
+      window.removeEventListener("focus", refreshVocabulary);
+      document.removeEventListener(
+        "visibilitychange",
+        refreshVisibleVocabulary,
+      );
+    };
+  }, [isStudySurfaceActive]);
 }
 
 export function shouldLoadVocabularyForSession(

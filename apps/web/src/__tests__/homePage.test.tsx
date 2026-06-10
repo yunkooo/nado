@@ -32,6 +32,10 @@ const useVocabularySaveNoticeDismissSource = readFileSync(
   ),
   "utf8",
 );
+const vocabularyStateSource = readFileSync(
+  new URL("../features/vocabulary/vocabularyState.ts", import.meta.url),
+  "utf8",
+);
 
 describe("HomePage", () => {
   it("renders the initial analysis screen without a result placeholder", () => {
@@ -144,6 +148,21 @@ describe("HomePage", () => {
     expect(appShellSource).toContain('from "next/link"');
     expect(appShellSource).toContain("<Link");
     expect(appShellSource).not.toContain("<a ");
+  });
+
+  it("refreshes vocabulary data when entering study pages or returning focus", () => {
+    expect(appShellSource).toContain(
+      "useRefreshVocabularyForActiveStudySurface",
+    );
+    expect(appShellSource).toContain('activeItem === "vocabulary"');
+    expect(appShellSource).toContain('activeItem === "review"');
+    expect(appShellSource).toMatch(
+      /useRefreshVocabularyForActiveStudySurface\(\s*authState,\s*isStudySurfaceActive,\s*activeItem,?\s*\)/,
+    );
+    expect(vocabularyStateSource).toContain('window.addEventListener("focus"');
+    expect(vocabularyStateSource).toContain(
+      'document.addEventListener("visibilitychange"',
+    );
   });
 
   it("clears the composer only after a successful analysis", () => {

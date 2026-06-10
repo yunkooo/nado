@@ -220,6 +220,45 @@ describe("vocabulary state store", () => {
       ),
     ).toBe(false);
   });
+
+  it("refreshes a ready same-token vocabulary snapshot on demand", async () => {
+    const store = createVocabularyStateStore();
+    const refreshedItem = {
+      ...vocabularyItem,
+      id: "row_2",
+      term: "before",
+    };
+    const listVocabulary = vi.fn(async () => ({
+      data: [refreshedItem],
+      status: "success" as const,
+    }));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+
+    store.setReady("session-token", [vocabularyItem]);
+    sync.refresh({
+      accessToken: "session-token",
+      session: null,
+      status: "authenticated",
+    });
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [vocabularyItem],
+      status: "loading",
+    });
+
+    await flushPromises();
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [refreshedItem],
+      status: "ready",
+    });
+  });
 });
 
 async function flushPromises() {

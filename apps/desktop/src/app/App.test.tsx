@@ -22,6 +22,10 @@ const vocabularyListSource = readFileSync(
   new URL("../features/vocabulary/VocabularyList.tsx", import.meta.url),
   "utf8",
 );
+const vocabularyStateSource = readFileSync(
+  new URL("../features/vocabulary/vocabularyState.ts", import.meta.url),
+  "utf8",
+);
 
 describe("Desktop App source", () => {
   it("renders the desktop analysis MVP with shared UI components", () => {
@@ -70,6 +74,19 @@ describe("Desktop App source", () => {
     expect(appSource).toContain('activeItem === "analysis"');
     expect(appSource).toContain('activeItem === "vocabulary"');
     expect(appSource).toContain('activeItem === "review"');
+  });
+
+  it("refreshes vocabulary data when entering study views or returning focus", () => {
+    expect(appSource).toContain("useRefreshVocabularyForActiveStudySurface");
+    expect(appSource).toContain('activeItem === "vocabulary"');
+    expect(appSource).toContain('activeItem === "review"');
+    expect(appSource).toMatch(
+      /useRefreshVocabularyForActiveStudySurface\(\s*authState,\s*isStudySurfaceActive,\s*activeItem,?\s*\)/,
+    );
+    expect(vocabularyStateSource).toContain('window.addEventListener("focus"');
+    expect(vocabularyStateSource).toContain(
+      'document.addEventListener("visibilitychange"',
+    );
   });
 
   it("resets scroll position when desktop vocabulary pagination changes page", () => {

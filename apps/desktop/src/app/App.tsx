@@ -3,7 +3,10 @@ import { AnalysisFlow } from "../features/analysis/AnalysisFlow";
 import { AuthControls } from "../auth/AuthControls";
 import { ReviewFlow } from "../features/review/ReviewFlow";
 import { VocabularyFlow } from "../features/vocabulary/VocabularyFlow";
-import { useSyncVocabularyForAuth } from "../features/vocabulary/vocabularyState";
+import {
+  useRefreshVocabularyForActiveStudySurface,
+  useSyncVocabularyForAuth,
+} from "../features/vocabulary/vocabularyState";
 import { useAuthState } from "../auth/authState";
 
 type NavigationItem = {
@@ -29,8 +32,15 @@ export function App() {
     setIsSidebarOpen(false);
   };
   const authState = useAuthState();
+  const isStudySurfaceActive =
+    activeItem === "vocabulary" || activeItem === "review";
 
   useSyncVocabularyForAuth(authState);
+  useRefreshVocabularyForActiveStudySurface(
+    authState,
+    isStudySurfaceActive,
+    activeItem,
+  );
 
   useEffect(() => {
     if (!isSidebarOpen) {

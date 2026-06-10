@@ -5,7 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AuthControls } from "./AuthControls";
 import { useAuthState } from "../features/auth/authState";
-import { useSyncVocabularyForAuth } from "../features/vocabulary/vocabularyState";
+import {
+  useRefreshVocabularyForActiveStudySurface,
+  useSyncVocabularyForAuth,
+} from "../features/vocabulary/vocabularyState";
 
 type NavigationItem = {
   href: string;
@@ -35,12 +38,19 @@ export function AppShell({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const shouldRestoreMenuFocusRef = useRef(false);
   const authState = useAuthState();
+  const isStudySurfaceActive =
+    activeItem === "vocabulary" || activeItem === "review";
   const closeSidebar = () => {
     shouldRestoreMenuFocusRef.current = true;
     setIsSidebarOpen(false);
   };
 
   useSyncVocabularyForAuth(authState);
+  useRefreshVocabularyForActiveStudySurface(
+    authState,
+    isStudySurfaceActive,
+    activeItem,
+  );
 
   useEffect(() => {
     if (!isSidebarOpen) {
