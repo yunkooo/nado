@@ -193,12 +193,20 @@ export function AnalysisFlow() {
 
     return "idle";
   };
+  const hasAnalysisResult = analysisState.status === "success";
 
   return (
     <>
-      <div className="desktop-analysis-workspace">
+      <div
+        className={[
+          "desktop-analysis-workspace",
+          hasAnalysisResult ? "desktop-analysis-workspace--has-result" : null,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
         <div className="desktop-analysis-page">
-          {analysisState.status === "success" ? (
+          {hasAnalysisResult ? (
             <>
               <InputSample
                 count={countAnalysisTextCharacters(

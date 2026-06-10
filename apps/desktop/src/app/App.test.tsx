@@ -168,6 +168,16 @@ describe("Desktop App source", () => {
     expect(styles).toContain(".desktop-save-status");
   });
 
+  it("compresses the desktop composer gap after analysis results", () => {
+    expect(analysisFlowSource).toContain(
+      "desktop-analysis-workspace--has-result",
+    );
+    expect(styles).toContain(
+      ".desktop-workspace:has(.desktop-analysis-workspace--has-result)",
+    );
+    expect(styles).toContain("grid-template-rows: auto auto");
+  });
+
   it("defines desktop vocabulary and review page styles copied from the web rhythm", () => {
     expect(styles).toContain(".desktop-sidebar__footer");
     expect(styles).toContain(".desktop-auth-controls");

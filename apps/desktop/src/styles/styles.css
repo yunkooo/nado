@@ -149,6 +149,15 @@ textarea {
   padding: 28px 28px 150px;
 }
 
+.desktop-workspace:has(.desktop-analysis-workspace--has-result) {
+  align-content: start;
+  grid-template-rows: auto auto;
+}
+
+.desktop-analysis-workspace--has-result {
+  padding-bottom: 28px;
+}
+
 .desktop-content-workspace {
   overflow: auto;
   padding: 28px;
@@ -668,6 +677,10 @@ textarea {
 
   .desktop-analysis-workspace {
     padding: 72px 14px 140px;
+  }
+
+  .desktop-analysis-workspace--has-result {
+    padding-bottom: 24px;
   }
 
   .desktop-content-workspace {

@@ -3,6 +3,15 @@
   padding: 28px 28px 150px;
 }
 
+.nado-workspace:has(.nado-analysis-workspace--has-result) {
+  align-content: start;
+  grid-template-rows: auto auto;
+}
+
+.nado-analysis-workspace--has-result {
+  padding-bottom: 28px;
+}
+
 .nado-analysis-page {
   display: grid;
   gap: 24px;
@@ -87,6 +96,10 @@
 @media (max-width: 820px) {
   .nado-analysis-workspace {
     padding: 72px 14px 140px;
+  }
+
+  .nado-analysis-workspace--has-result {
+    padding-bottom: 24px;
   }
 
   .nado-composer-wrap {

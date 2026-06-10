@@ -42,12 +42,20 @@ export default function HomePage() {
   });
 
   useVocabularySaveNoticeDismiss(vocabularySaveMessage, analysisStore);
+  const hasAnalysisResult = analysisState.status === "success";
 
   return (
     <AppShell activeItem="analysis" workspaceLabel="분석 화면">
-      <section className="nado-analysis-workspace">
+      <section
+        className={[
+          "nado-analysis-workspace",
+          hasAnalysisResult ? "nado-analysis-workspace--has-result" : null,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
         <div className="nado-analysis-page">
-          {analysisState.status === "success" ? (
+          {hasAnalysisResult ? (
             <>
               <InputSample
                 count={countAnalysisTextCharacters(

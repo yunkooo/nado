@@ -113,6 +113,14 @@ describe("HomePage", () => {
     expect(styles).toContain("min-height: 96px");
   });
 
+  it("compresses the composer gap after analysis results", () => {
+    expect(pageSource).toContain("nado-analysis-workspace--has-result");
+    expect(styles).toContain(
+      ".nado-workspace:has(.nado-analysis-workspace--has-result)",
+    );
+    expect(styles).toContain("grid-template-rows: auto auto");
+  });
+
   it("defines floating save notification styles", () => {
     expect(styles).toContain(".nado-save-status");
     expect(styles).toContain("justify-content: center");
