@@ -10,11 +10,6 @@ const authenticatedSession = {
   },
 } as Session;
 
-const refreshedSession = {
-  ...authenticatedSession,
-  access_token: "fresh-token",
-} as Session;
-
 describe("auth state store", () => {
   it("notifies subscribers when the Supabase session changes", async () => {
     let handleAuthStateChange: (
@@ -80,10 +75,13 @@ describe("auth state store", () => {
     expect(unsubscribe).toHaveBeenCalledOnce();
   });
 
-  it("waits for a refreshed startup session before authenticating restored users", async () => {
+  it("uses the restored startup session without forcing an extra refresh", async () => {
     const refreshSession = vi.fn(async () => ({
       data: {
-        session: refreshedSession,
+        session: {
+          ...authenticatedSession,
+          access_token: "fresh-token",
+        },
       },
       error: null,
     }));
@@ -125,29 +123,30 @@ describe("auth state store", () => {
 
     await flushPromises();
 
-    expect(refreshSession).toHaveBeenCalledWith(authenticatedSession);
+    expect(refreshSession).not.toHaveBeenCalled();
     expect(store.getSnapshot()).toMatchObject({
-      accessToken: "fresh-token",
+      accessToken: "session-token",
       status: "authenticated",
     });
-    expect(snapshots).not.toContain("authenticated:session-token");
+    expect(snapshots).toContain("authenticated:session-token");
   });
 
-  it("falls back to anonymous when a restored session cannot refresh", async () => {
+  it("falls back to anonymous when no restored session is available", async () => {
+    const refreshSession = vi.fn(async () => ({
+      data: {
+        session: authenticatedSession,
+      },
+      error: null,
+    }));
     const store = createAuthStateStore({
       getClient: () => ({
         auth: {
           getSession: async () => ({
             data: {
-              session: authenticatedSession,
-            },
-          }),
-          refreshSession: vi.fn(async () => ({
-            data: {
               session: null,
             },
-            error: new Error("Invalid Refresh Token"),
-          })),
+          }),
+          refreshSession,
           setSession: vi.fn(),
           onAuthStateChange: () => ({
             data: {
@@ -168,6 +167,7 @@ describe("auth state store", () => {
       session: null,
       status: "anonymous",
     });
+    expect(refreshSession).not.toHaveBeenCalled();
   });
 
   it("exposes an error snapshot when Supabase auth is not configured", () => {

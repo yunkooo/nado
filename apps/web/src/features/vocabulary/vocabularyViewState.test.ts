@@ -2,6 +2,26 @@ import { describe, expect, it } from "vitest";
 import { getVocabularyPanelState } from "./vocabularyViewState";
 
 describe("getVocabularyPanelState", () => {
+  it("separates auth loading from vocabulary loading", () => {
+    expect(
+      getVocabularyPanelState({
+        authStatus: "loading",
+        isLoading: false,
+        itemCount: 0,
+        message: null,
+      }),
+    ).toBe("auth_loading");
+
+    expect(
+      getVocabularyPanelState({
+        authStatus: "authenticated",
+        isLoading: true,
+        itemCount: 0,
+        message: null,
+      }),
+    ).toBe("loading");
+  });
+
   it("asks anonymous users to log in before showing vocabulary data", () => {
     expect(
       getVocabularyPanelState({

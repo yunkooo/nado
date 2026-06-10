@@ -6,6 +6,11 @@ type ReviewPanelProps = {
 };
 
 const panelCopy = {
+  auth_loading: {
+    eyebrow: "확인 중",
+    message: "복습 카드를 불러오기 전에 로그인 상태를 먼저 확인합니다.",
+    title: "로그인 상태를 확인하고 있어요",
+  },
   auth_required: {
     eyebrow: "로그인 필요",
     message: "Google 로그인 후 단어장에 저장한 항목으로 복습을 이어가 주세요.",
@@ -17,9 +22,9 @@ const panelCopy = {
     title: "복습할 단어가 없어요",
   },
   loading: {
-    eyebrow: "확인 중",
-    message: "복습 카드를 불러오기 전에 계정 상태를 먼저 확인합니다.",
-    title: "로그인 세션을 확인하고 있어요",
+    eyebrow: "불러오는 중",
+    message: "저장한 단어로 복습 카드를 준비하고 있어요.",
+    title: "복습 카드를 불러오고 있어요",
   },
 };
 

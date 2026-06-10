@@ -35,6 +35,9 @@ type AccessTokenProvider = () => Promise<string | null>;
 type VocabularyListLoader = (
   accessToken: string,
 ) => Promise<VocabularyListResult>;
+type TimestampProvider = () => number;
+
+const VOCABULARY_REFRESH_STALE_MS = 60_000;
 
 const initialSnapshot: VocabularyStateSnapshot = {
   accessToken: null,
@@ -136,13 +139,18 @@ export function useVocabularyState(): VocabularyStateSnapshot {
 export function createVocabularyAuthSync({
   getAccessToken = getCurrentAccessToken,
   listVocabulary: loadVocabulary = listVocabulary,
+  now = () => Date.now(),
+  refreshStaleMs = VOCABULARY_REFRESH_STALE_MS,
   store = vocabularyStateStore,
 }: {
   getAccessToken?: AccessTokenProvider;
   listVocabulary?: VocabularyListLoader;
+  now?: TimestampProvider;
+  refreshStaleMs?: number;
   store?: VocabularyStateStore;
 } = {}) {
   let requestSequence = 0;
+  const loadedAtByAccessToken = new Map<string, number>();
 
   async function loadVocabularyForSession(
     accessToken: string,
@@ -193,6 +201,7 @@ export function createVocabularyAuthSync({
     }
 
     if (result.status === "success") {
+      loadedAtByAccessToken.set(currentAccessToken, now());
       store.setReady(currentAccessToken, result.data);
       return;
     }
@@ -213,6 +222,18 @@ export function createVocabularyAuthSync({
       if (
         vocabularyState.accessToken === authState.accessToken &&
         vocabularyState.status === "loading"
+      ) {
+        return;
+      }
+
+      if (
+        vocabularyState.accessToken === authState.accessToken &&
+        vocabularyState.status === "ready" &&
+        isVocabularySnapshotFresh(
+          loadedAtByAccessToken.get(authState.accessToken),
+          now(),
+          refreshStaleMs,
+        )
       ) {
         return;
       }
@@ -247,6 +268,18 @@ export function createVocabularyAuthSync({
       void loadVocabularyForSession(authState.accessToken);
     },
   };
+}
+
+function isVocabularySnapshotFresh(
+  loadedAt: number | undefined,
+  currentTime: number,
+  staleMs: number,
+) {
+  if (loadedAt === undefined) {
+    return false;
+  }
+
+  return currentTime - loadedAt < staleMs;
 }
 
 const vocabularyAuthSync = createVocabularyAuthSync();

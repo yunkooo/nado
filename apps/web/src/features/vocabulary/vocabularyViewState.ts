@@ -2,6 +2,7 @@ import type { AuthStateStatus } from "../auth/authState";
 
 export type VocabularyPanelState =
   | "auth_required"
+  | "auth_loading"
   | "empty"
   | "error"
   | "list"
@@ -20,7 +21,11 @@ export function getVocabularyPanelState({
   itemCount,
   message,
 }: VocabularyPanelStateInput): VocabularyPanelState {
-  if (isLoading || authStatus === "loading") {
+  if (authStatus === "loading") {
+    return "auth_loading";
+  }
+
+  if (isLoading) {
     return "loading";
   }
 

@@ -310,6 +310,41 @@ describe("vocabulary state store", () => {
     });
   });
 
+  it("skips active surface refreshes while the loaded vocabulary is fresh", async () => {
+    let currentTime = 1_000;
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => ({
+      data: [vocabularyItem],
+      status: "success" as const,
+    }));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      now: () => currentTime,
+      store,
+    });
+    const authState = {
+      accessToken: "session-token",
+      session: null,
+      status: "authenticated" as const,
+    };
+
+    sync.sync(authState);
+    await flushPromises();
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    sync.refresh(authState);
+    await flushPromises();
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    currentTime += 60_001;
+    sync.refresh(authState);
+    await flushPromises();
+
+    expect(listVocabulary).toHaveBeenCalledTimes(2);
+  });
+
   it("keeps a ready snapshot when a background vocabulary refresh fails", async () => {
     const store = createVocabularyStateStore();
     const listVocabulary = vi.fn(async () => {

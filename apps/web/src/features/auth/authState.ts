@@ -182,19 +182,7 @@ async function resolveStartupSession(
   client: AuthStateClient,
 ): Promise<Session | null> {
   const { data } = await client.auth.getSession();
-  const session = data.session;
-
-  if (!session) {
-    return null;
-  }
-
-  const refreshed = await client.auth.refreshSession(session);
-
-  if (refreshed.error) {
-    return null;
-  }
-
-  return refreshed.data.session;
+  return data.session;
 }
 
 function toAuthStateSnapshot(session: Session | null): AuthStateSnapshot {
