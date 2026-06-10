@@ -133,8 +133,12 @@ export async function completeAuthFromCallbackUrl(
   const code = parsed.searchParams.get("code");
 
   if (code) {
-    const { error } = await client.auth.exchangeCodeForSession(code);
-    return error ? "error" : "handled";
+    try {
+      const { error } = await client.auth.exchangeCodeForSession(code);
+      return error ? "error" : "handled";
+    } catch {
+      return "error";
+    }
   }
 
   const hashParams = new URLSearchParams(parsed.hash.replace(/^#/, ""));
@@ -145,12 +149,16 @@ export async function completeAuthFromCallbackUrl(
     return "ignored";
   }
 
-  const { error } = await client.auth.setSession({
-    access_token: accessToken,
-    refresh_token: refreshToken,
-  });
+  try {
+    const { error } = await client.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
 
-  return error ? "error" : "handled";
+    return error ? "error" : "handled";
+  } catch {
+    return "error";
+  }
 }
 
 export function isTauriRuntime() {

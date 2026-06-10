@@ -16,13 +16,22 @@ fn start_oauth_loopback_redirect_server(app_handle: tauri::AppHandle) {
     std::thread::spawn(move || {
         let listener = match std::net::TcpListener::bind("127.0.0.1:17654") {
             Ok(listener) => listener,
-            Err(_) => return,
+            Err(error) => {
+                emit_desktop_oauth_loopback_error(&app_handle, &error.to_string());
+                return;
+            }
         };
 
         for stream in listener.incoming().flatten() {
             handle_oauth_loopback_request(stream, &app_handle);
         }
     });
+}
+
+fn emit_desktop_oauth_loopback_error(app_handle: &tauri::AppHandle, message: &str) {
+    use tauri::Emitter;
+
+    let _ = app_handle.emit("desktop-oauth-loopback-error", message);
 }
 
 fn handle_oauth_loopback_request(mut stream: std::net::TcpStream, app_handle: &tauri::AppHandle) {

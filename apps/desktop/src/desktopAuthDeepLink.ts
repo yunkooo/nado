@@ -73,8 +73,20 @@ export function useDesktopAuthDeepLink(): DesktopAuthDeepLinkState {
             void handleUrls([payload]);
           },
         );
+        const unlistenLoopbackError = await listen<string>(
+          "desktop-oauth-loopback-error",
+          () => {
+            if (isMounted) {
+              setMessage(
+                "데스크탑 로그인 콜백 서버를 시작하지 못했어요. nado 앱을 모두 종료한 뒤 다시 열어 주세요.",
+              );
+              setStatus("error");
+            }
+          },
+        );
 
         unlistenCallbacks.push(unlisten);
+        unlistenCallbacks.push(unlistenLoopbackError);
       })
       .catch(() => {
         if (isMounted) {

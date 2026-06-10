@@ -90,6 +90,22 @@ describe("desktop auth client helpers", () => {
     expect(exchangeCodeForSession).toHaveBeenCalledWith("abc");
   });
 
+  it("reports thrown auth code exchange errors", async () => {
+    const result = await completeAuthFromCallbackUrl(
+      "nado://auth/callback?code=abc",
+      {
+        auth: {
+          exchangeCodeForSession: vi.fn(async () => {
+            throw new Error("missing code verifier");
+          }),
+          setSession: vi.fn(),
+        },
+      },
+    );
+
+    expect(result).toBe("error");
+  });
+
   it("sets a session from hash-based desktop OAuth callbacks", async () => {
     const setSession = vi.fn(async () => ({ error: null }));
 
@@ -108,6 +124,22 @@ describe("desktop auth client helpers", () => {
       access_token: "access",
       refresh_token: "refresh",
     });
+  });
+
+  it("reports thrown session restore errors", async () => {
+    const result = await completeAuthFromCallbackUrl(
+      "nado://auth/callback#access_token=access&refresh_token=refresh",
+      {
+        auth: {
+          exchangeCodeForSession: vi.fn(),
+          setSession: vi.fn(async () => {
+            throw new Error("storage unavailable");
+          }),
+        },
+      },
+    );
+
+    expect(result).toBe("error");
   });
 
   it("reports OAuth callback errors instead of ignoring them", async () => {

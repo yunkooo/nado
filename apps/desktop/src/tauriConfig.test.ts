@@ -27,6 +27,10 @@ const defaultCapability = JSON.parse(
       }
   >;
 };
+const tauriLibSource = readFileSync(
+  new URL("../src-tauri/src/lib.rs", import.meta.url),
+  "utf8",
+);
 
 describe("desktop Tauri config", () => {
   it("uses an explicit content security policy for the desktop shell", () => {
@@ -56,5 +60,10 @@ describe("desktop Tauri config", () => {
       ]),
       identifier: "http:default",
     });
+  });
+
+  it("emits a visible event when the OAuth loopback callback server cannot start", () => {
+    expect(tauriLibSource).toContain("desktop-oauth-loopback-error");
+    expect(tauriLibSource).toContain("TcpListener::bind");
   });
 });
