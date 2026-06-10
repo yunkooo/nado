@@ -32,6 +32,40 @@ class MemoryVocabularyStore implements VocabularyStore {
     );
   }
 
+  async save(row: NewVocabularyRow): Promise<VocabularyRow> {
+    const normalizedTerm = normalizeTerm(row.term);
+    const existing = this.rows.find(
+      (candidate) =>
+        candidate.user_id === row.user_id &&
+        candidate.normalized_term === normalizedTerm &&
+        candidate.type === row.type,
+    );
+    const [meaning] = row.meanings;
+
+    if (!meaning) {
+      throw new Error("Memory vocabulary save requires a meaning.");
+    }
+
+    if (!existing) {
+      const inserted = {
+        ...row,
+        id: `row_${this.rows.length + 1}`,
+        normalized_term: normalizedTerm,
+      };
+
+      this.rows.push(inserted);
+
+      return inserted;
+    }
+
+    if (!hasMeaning(existing.meanings, meaning)) {
+      existing.meanings = [...existing.meanings, meaning];
+      existing.updated_at = row.updated_at;
+    }
+
+    return existing;
+  }
+
   async insert(row: NewVocabularyRow): Promise<VocabularyRow> {
     const inserted = {
       ...row,
@@ -273,3 +307,18 @@ describe("createVocabularyService", () => {
     await expect(service.delete("user_1", "row_1")).resolves.toBe(true);
   });
 });
+
+function normalizeTerm(term: string): string {
+  return term.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function hasMeaning(
+  meanings: VocabularyRow["meanings"],
+  meaning: VocabularyRow["meanings"][number],
+): boolean {
+  return meanings.some(
+    (candidate) =>
+      candidate.meaning.trim() === meaning.meaning.trim() &&
+      (candidate.note?.trim() ?? "") === (meaning.note?.trim() ?? ""),
+  );
+}

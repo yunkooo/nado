@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createOpenAIAnalysisService } from "./openaiAnalysisService.js";
 
 const sampleAnalyzeResponse = {
@@ -44,6 +44,10 @@ const sampleAnalyzeResponse = {
 } as const;
 
 describe("createOpenAIAnalysisService", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("sends a structured Responses API request and parses output text", async () => {
     let request: { input: RequestInfo | URL; init?: RequestInit } | undefined;
     const fetchMock = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -142,6 +146,33 @@ describe("createOpenAIAnalysisService", () => {
       "OPENAI_API_KEY is required.",
     );
     expect(calls).toBe(0);
+  });
+
+  it("aborts OpenAI requests after the configured timeout", async () => {
+    vi.useFakeTimers();
+    const service = createOpenAIAnalysisService({
+      apiKey: "test-api-key",
+      fetch: async (_input, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          const signal = init?.signal;
+
+          if (signal instanceof AbortSignal) {
+            signal.addEventListener("abort", () => {
+              reject(new DOMException("Request aborted", "AbortError"));
+            });
+          }
+        }),
+      timeoutMs: 10,
+    });
+
+    const resultPromise = service.analyze("Hello.");
+    const assertion = expect(resultPromise).rejects.toMatchObject({
+      code: "analysis_timeout",
+      status: 504,
+    });
+    await vi.advanceTimersByTimeAsync(11);
+
+    await assertion;
   });
 
   it("retries once when structured output is malformed", async () => {

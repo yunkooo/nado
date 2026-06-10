@@ -1,4 +1,4 @@
-import { normalizeVocabularyTerm, vocabularyItemSchema } from "@nado/shared";
+import { vocabularyItemSchema } from "@nado/shared";
 import type {
   SaveVocabularyRequest,
   VocabularyItem,
@@ -28,19 +28,8 @@ export type NewVocabularyRow = {
 
 export type VocabularyStore = {
   deleteByUserId(id: string, userId: string): Promise<boolean>;
-  findByUserTerm(
-    userId: string,
-    normalizedTerm: string,
-    type: VocabularyType,
-  ): Promise<VocabularyRow | null>;
-  insert(row: NewVocabularyRow): Promise<VocabularyRow>;
   listByUser(userId: string): Promise<VocabularyRow[]>;
-  updateMeanings(
-    id: string,
-    userId: string,
-    meanings: VocabularyMeaning[],
-    updatedAt: string,
-  ): Promise<VocabularyRow | null>;
+  save(row: NewVocabularyRow): Promise<VocabularyRow>;
 };
 
 export type VocabularyServiceOptions = {
@@ -69,43 +58,17 @@ export function createVocabularyService(options: VocabularyServiceOptions) {
     ): Promise<VocabularyItem> {
       const timestamp = now();
       const term = normalizeDisplayTerm(request.term);
-      const normalizedTerm = normalizeVocabularyTerm(term);
       const meaning = createMeaning(request, timestamp);
-      const existing = await store.findByUserTerm(
-        userId,
-        normalizedTerm,
-        request.type,
-      );
+      const saved = await store.save({
+        created_at: timestamp,
+        meanings: [meaning],
+        term,
+        type: request.type,
+        updated_at: timestamp,
+        user_id: userId,
+      });
 
-      if (!existing) {
-        const inserted = await store.insert({
-          created_at: timestamp,
-          meanings: [meaning],
-          term,
-          type: request.type,
-          updated_at: timestamp,
-          user_id: userId,
-        });
-
-        return toVocabularyItem(inserted);
-      }
-
-      if (hasMeaning(existing.meanings, meaning)) {
-        return toVocabularyItem(existing);
-      }
-
-      const updated = await store.updateMeanings(
-        existing.id,
-        userId,
-        [...existing.meanings, meaning],
-        timestamp,
-      );
-
-      if (!updated) {
-        throw new Error("Vocabulary item was not found for update.");
-      }
-
-      return toVocabularyItem(updated);
+      return toVocabularyItem(saved);
     },
   };
 }
@@ -121,17 +84,6 @@ function createMeaning(
     meaning: request.meaning.trim(),
     ...(note ? { note } : {}),
   };
-}
-
-function hasMeaning(
-  meanings: VocabularyMeaning[],
-  meaning: VocabularyMeaning,
-): boolean {
-  return meanings.some(
-    (candidate) =>
-      candidate.meaning.trim() === meaning.meaning &&
-      (candidate.note?.trim() ?? "") === (meaning.note ?? ""),
-  );
 }
 
 function normalizeDisplayTerm(term: string): string {

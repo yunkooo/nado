@@ -60,4 +60,22 @@ describe("Supabase migrations", () => {
     );
     expect(migrationSql).toContain("set search_path = ''");
   });
+
+  it("defines an atomic vocabulary save function for concurrent saves", () => {
+    const migrationSql = readdirSync(migrationsDir)
+      .filter((file) => file.endsWith(".sql"))
+      .sort()
+      .map((file) => readFileSync(join(migrationsDir, file), "utf8"))
+      .join("\n");
+
+    expect(migrationSql).toContain(
+      "create or replace function public.save_vocabulary_item",
+    );
+    expect(migrationSql).toContain(
+      "on conflict (user_id, normalized_term, type)",
+    );
+    expect(migrationSql).toContain(
+      "grant execute on function public.save_vocabulary_item",
+    );
+  });
 });

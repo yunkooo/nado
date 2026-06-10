@@ -7,6 +7,11 @@ import {
   type UsageIdentity,
 } from "./analysisUsageService.js";
 import {
+  DEFAULT_ANONYMOUS_DAILY_ANALYSIS_LIMIT,
+  DEFAULT_AUTHENTICATED_DAILY_ANALYSIS_LIMIT,
+  readAnalysisDailyLimit,
+} from "./config/analysisLimits.js";
+import {
   createVocabularyService,
   type NewVocabularyRow,
   type VocabularyRow,
@@ -30,7 +35,15 @@ export function createSupabaseAuthService(
       const client = createServerSupabaseClient(undefined, options);
       const { data, error } = await client.auth.getUser(accessToken);
 
-      if (error || !data.user) {
+      if (error) {
+        if (isUnauthenticatedAuthError(error)) {
+          return null;
+        }
+
+        throw new Error(`Supabase auth user lookup failed: ${error.message}`);
+      }
+
+      if (!data.user) {
         return null;
       }
 
@@ -54,11 +67,19 @@ export function createSupabaseAnalysisUsageService(
   options: SupabaseBackendOptions = {},
 ) {
   return createAnalysisUsageService({
-    anonymousDailyLimit: readIntegerEnv(
+    anonymousDailyLimit: readAnalysisDailyLimit(
       process.env.NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT,
+      {
+        defaultValue: DEFAULT_ANONYMOUS_DAILY_ANALYSIS_LIMIT,
+        name: "NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT",
+      },
     ),
-    authenticatedDailyLimit: readIntegerEnv(
+    authenticatedDailyLimit: readAnalysisDailyLimit(
       process.env.NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT,
+      {
+        defaultValue: DEFAULT_AUTHENTICATED_DAILY_ANALYSIS_LIMIT,
+        name: "NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT",
+      },
     ),
     store: createSupabaseAnalysisUsageStore(
       createServiceRoleSupabaseClient(options),
@@ -139,7 +160,7 @@ function createSupabaseAnalysisUsageStore(
 }
 
 function createSupabaseVocabularyStore(
-  client: Pick<SupabaseClient, "from">,
+  client: Pick<SupabaseClient, "from" | "rpc">,
 ): VocabularyStore {
   return {
     async deleteByUserId(id: string, userId: string): Promise<boolean> {
@@ -158,47 +179,6 @@ function createSupabaseVocabularyStore(
       return Boolean(data);
     },
 
-    async findByUserTerm(
-      userId: string,
-      normalizedTerm: string,
-      type: "word" | "phrase",
-    ): Promise<VocabularyRow | null> {
-      const { data, error } = await client
-        .from("vocabulary_items")
-        .select(VOCABULARY_COLUMNS)
-        .eq("user_id", userId)
-        .eq("normalized_term", normalizedTerm)
-        .eq("type", type)
-        .maybeSingle();
-
-      if (error) {
-        throw new Error(`Supabase vocabulary lookup failed: ${error.message}`);
-      }
-
-      return data ? toVocabularyRow(data) : null;
-    },
-
-    async insert(row: NewVocabularyRow): Promise<VocabularyRow> {
-      const { data, error } = await client
-        .from("vocabulary_items")
-        .insert({
-          created_at: row.created_at,
-          meanings: row.meanings,
-          term: row.term,
-          type: row.type,
-          updated_at: row.updated_at,
-          user_id: row.user_id,
-        })
-        .select(VOCABULARY_COLUMNS)
-        .single();
-
-      if (error) {
-        throw new Error(`Supabase vocabulary insert failed: ${error.message}`);
-      }
-
-      return toVocabularyRow(data);
-    },
-
     async listByUser(userId: string): Promise<VocabularyRow[]> {
       const { data, error } = await client
         .from("vocabulary_items")
@@ -213,28 +193,27 @@ function createSupabaseVocabularyStore(
       return (data ?? []).map(toVocabularyRow);
     },
 
-    async updateMeanings(
-      id: string,
-      userId: string,
-      meanings,
-      updatedAt: string,
-    ): Promise<VocabularyRow | null> {
-      const { data, error } = await client
-        .from("vocabulary_items")
-        .update({
-          meanings,
-          updated_at: updatedAt,
-        })
-        .eq("id", id)
-        .eq("user_id", userId)
-        .select(VOCABULARY_COLUMNS)
-        .maybeSingle();
+    async save(row: NewVocabularyRow): Promise<VocabularyRow> {
+      const [meaning] = row.meanings;
 
-      if (error) {
-        throw new Error(`Supabase vocabulary update failed: ${error.message}`);
+      if (!meaning) {
+        throw new Error("Supabase vocabulary save requires a meaning.");
       }
 
-      return data ? toVocabularyRow(data) : null;
+      const { data, error } = await client
+        .rpc("save_vocabulary_item", {
+          p_meaning: meaning,
+          p_term: row.term,
+          p_type: row.type,
+          p_user_id: row.user_id,
+        })
+        .single();
+
+      if (error) {
+        throw new Error(`Supabase vocabulary save failed: ${error.message}`);
+      }
+
+      return toVocabularyRow(data);
     },
   };
 }
@@ -275,16 +254,6 @@ function toAnalysisUsageConsumeResult(
   };
 }
 
-function readIntegerEnv(value: string | undefined): number {
-  if (!value) {
-    return 0;
-  }
-
-  const parsed = Number.parseInt(value, 10);
-
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-}
-
 function readString(value: Record<string, unknown>, key: string): string {
   const field = value[key];
 
@@ -317,4 +286,14 @@ function readBoolean(value: Record<string, unknown>, key: string): boolean {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function isUnauthenticatedAuthError(error: unknown): boolean {
+  if (!isRecord(error)) {
+    return false;
+  }
+
+  const status = error.status ?? error.statusCode;
+
+  return typeof status === "number" && [400, 401, 403].includes(status);
 }

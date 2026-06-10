@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import express from "express";
 import type {
-  ErrorRequestHandler,
   Express,
   NextFunction,
   Request,
@@ -30,6 +29,12 @@ import {
   createSupabaseVocabularyService,
 } from "./supabaseBackend.js";
 import { loadRootEnv } from "./rootEnv.js";
+import { isHttpError, ServiceUnavailableError } from "./httpErrors.js";
+import { createCorsMiddleware } from "./middleware/cors.js";
+import {
+  internalErrorHandler,
+  invalidJsonHandler,
+} from "./middleware/errorHandlers.js";
 
 loadRootEnv();
 
@@ -81,6 +86,7 @@ export type AnalysisUsageService = {
 };
 
 export type AppDependencies = {
+  allowLocalCors?: boolean;
   analyzeService?: AnalyzeService;
   analysisUsageService?: AnalysisUsageService;
   authService?: AuthService;
@@ -104,12 +110,14 @@ export function createApp(dependencies: AppDependencies = {}): Express {
     dependencies.vocabularyServiceFactory ?? createSupabaseVocabularyService;
   const trustProxy =
     dependencies.trustProxy ?? readTrustProxy(process.env.NADO_TRUST_PROXY);
+  const allowLocalCors =
+    dependencies.allowLocalCors ?? process.env.NODE_ENV !== "production";
 
   if (trustProxy !== false) {
     app.set("trust proxy", trustProxy);
   }
 
-  app.use(createCorsMiddleware());
+  app.use(createCorsMiddleware({ allowLocalCors }));
   app.use(express.json());
   app.use(invalidJsonHandler);
 
@@ -167,7 +175,11 @@ export function createApp(dependencies: AppDependencies = {}): Express {
         );
 
         return response.json(analysis);
-      } catch {
+      } catch (error) {
+        if (isHttpError(error)) {
+          throw error;
+        }
+
         return response.status(502).json({
           error: {
             code: "analysis_failed",
@@ -263,7 +275,16 @@ export function createApp(dependencies: AppDependencies = {}): Express {
       return { ok: false as const };
     }
 
-    const user = await authService.getUser(accessToken);
+    let user: AuthenticatedUser | null;
+
+    try {
+      user = await authService.getUser(accessToken);
+    } catch {
+      throw new ServiceUnavailableError(
+        "auth_unavailable",
+        "로그인 세션을 확인할 수 없어요. 잠시 후 다시 시도해 주세요.",
+      );
+    }
 
     if (!user) {
       return { ok: false as const };
@@ -283,7 +304,16 @@ export function createApp(dependencies: AppDependencies = {}): Express {
     const accessToken = parseBearerToken(authorization);
 
     if (accessToken) {
-      const user = await authService.getUser(accessToken);
+      let user: AuthenticatedUser | null;
+
+      try {
+        user = await authService.getUser(accessToken);
+      } catch {
+        throw new ServiceUnavailableError(
+          "auth_unavailable",
+          "로그인 세션을 확인할 수 없어요. 잠시 후 다시 시도해 주세요.",
+        );
+      }
 
       if (user) {
         return {
@@ -310,122 +340,6 @@ function asyncRoute(handler: AsyncRequestHandler): RequestHandler {
   return (request, response, next) => {
     Promise.resolve(handler(request, response, next)).catch(next);
   };
-}
-
-function createCorsMiddleware(): RequestHandler {
-  return (request, response, next) => {
-    const origin = request.header("Origin");
-    const allowOrigin = origin ? isAllowedCorsOrigin(origin) : false;
-
-    if (origin && allowOrigin) {
-      response.set("Access-Control-Allow-Origin", origin);
-      response.set("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
-      response.set(
-        "Access-Control-Allow-Headers",
-        "Authorization, Content-Type",
-      );
-      response.set("Vary", "Origin");
-    }
-
-    if (request.method === "OPTIONS" && allowOrigin) {
-      response.status(204).send();
-      return;
-    }
-
-    next();
-  };
-}
-
-function isAllowedCorsOrigin(origin: string): boolean {
-  if (readConfiguredCorsOrigins().includes(origin)) {
-    return true;
-  }
-
-  if (isTauriDesktopOrigin(origin)) {
-    return true;
-  }
-
-  try {
-    const url = new URL(origin);
-
-    return (
-      (url.protocol === "http:" || url.protocol === "https:") &&
-      ["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname)
-    );
-  } catch {
-    return false;
-  }
-}
-
-function isTauriDesktopOrigin(origin: string): boolean {
-  try {
-    const url = new URL(origin);
-
-    if (url.protocol === "tauri:" && url.hostname === "localhost") {
-      return true;
-    }
-
-    return (
-      (url.protocol === "http:" || url.protocol === "https:") &&
-      url.hostname === "tauri.localhost"
-    );
-  } catch {
-    return false;
-  }
-}
-
-function readConfiguredCorsOrigins(): string[] {
-  return (process.env.NADO_CORS_ORIGINS ?? "")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter((origin) => origin.length > 0);
-}
-
-const invalidJsonHandler: ErrorRequestHandler = (
-  error,
-  _request,
-  response,
-  next,
-) => {
-  if (isJsonParseError(error)) {
-    response.status(400).json({
-      error: {
-        code: "invalid_json",
-        message: "Invalid JSON body.",
-      },
-    });
-    return;
-  }
-
-  next(error);
-};
-
-const internalErrorHandler: ErrorRequestHandler = (
-  _error,
-  _request,
-  response,
-  next,
-) => {
-  if (response.headersSent) {
-    next(_error);
-    return;
-  }
-
-  response.status(500).json({
-    error: {
-      code: "internal_error",
-      message: "요청 처리 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
-    },
-  });
-};
-
-function isJsonParseError(error: unknown): boolean {
-  return (
-    error instanceof SyntaxError &&
-    typeof error === "object" &&
-    error !== null &&
-    "body" in error
-  );
 }
 
 function parseBearerToken(authorization: string | undefined): string | null {

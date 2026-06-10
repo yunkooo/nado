@@ -2,6 +2,7 @@ import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { describe, expect, it } from "vitest";
 import { app, createApp, parseAnalyzeInput } from "./app.js";
+import { UpstreamTimeoutError } from "./httpErrors.js";
 
 type TestHttpApp = {
   listen(port: number, hostname: string, callback: () => void): Server;
@@ -153,6 +154,24 @@ describe("app", () => {
     }
   });
 
+  it("does not allow localhost CORS when local origins are disabled", async () => {
+    const app = createApp({
+      allowLocalCors: false,
+      analyzeService: analysisService,
+    });
+    const response = await request(app, "/api/analyze", {
+      headers: {
+        "Access-Control-Request-Headers": "content-type",
+        "Access-Control-Request-Method": "POST",
+        Origin: "http://localhost:3000",
+      },
+      method: "OPTIONS",
+    });
+
+    expect(response.status).not.toBe(204);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  });
+
   it("rejects invalid analyze JSON", async () => {
     const response = await request(app, "/api/analyze", {
       body: "{",
@@ -290,6 +309,51 @@ describe("app", () => {
       error: {
         code: "analysis_failed",
         message: "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+      },
+    });
+  });
+
+  it("returns gateway_timeout when the analyze service times out", async () => {
+    const app = createApp({
+      analyzeService: {
+        analyze: async () => {
+          throw new UpstreamTimeoutError(
+            "analysis_timeout",
+            "분석 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
+          );
+        },
+      },
+      analysisUsageService,
+    });
+
+    const response = await request(app, "/api/analyze", {
+      body: JSON.stringify({ text: "I was wondering if you could help me." }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(504);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "analysis_timeout",
+        message:
+          "분석 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
+      },
+    });
+  });
+
+  it("returns payload_too_large for oversized JSON bodies", async () => {
+    const response = await request(app, "/api/analyze", {
+      body: JSON.stringify({ text: "I ".repeat(60_000) }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "payload_too_large",
+        message: "요청 본문이 너무 큽니다.",
       },
     });
   });
@@ -449,6 +513,29 @@ describe("app", () => {
       error: {
         code: "not_authenticated",
         message: "Google 로그인이 필요합니다.",
+      },
+    });
+  });
+
+  it("returns auth_unavailable when the auth service fails", async () => {
+    const app = createApp({
+      analyzeService: analysisService,
+      authService: {
+        getUser: async () => {
+          throw new Error("Supabase Auth unavailable");
+        },
+      },
+    });
+
+    const response = await request(app, "/api/vocabulary", {
+      headers: { Authorization: "Bearer valid-token" },
+    });
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "auth_unavailable",
+        message: "로그인 세션을 확인할 수 없어요. 잠시 후 다시 시도해 주세요.",
       },
     });
   });

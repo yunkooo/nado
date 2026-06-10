@@ -70,10 +70,10 @@ API 서버가 신뢰할 수 있는 reverse proxy 뒤에서 실행되고 그 prox
 
 일일 분석 제한은 아래 환경변수로 조정한다.
 
-- `NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT`: 익명 사용자 하루 분석 제한
-- `NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT`: 로그인 사용자 하루 분석 제한
+- `NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT`: 익명 사용자 하루 분석 제한. 값이 없으면 기본값 `3`을 사용한다.
+- `NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT`: 로그인 사용자 하루 분석 제한. 값이 없으면 기본값 `20`을 사용한다.
 
-값이 없거나 `0`이면 요청을 차단하지 않고 사용량만 기록한다. 제한에 도달하면 `POST /api/analyze`는 `429`와 `Retry-After` 헤더를 반환한다.
+명시적으로 `0`을 설정한 경우에만 요청을 차단하지 않고 사용량만 기록한다. 숫자가 아닌 값은 설정 오류로 처리된다. 제한에 도달하면 `POST /api/analyze`는 `429`와 `Retry-After` 헤더를 반환한다.
 
 ## API 서버 확인
 

@@ -1,5 +1,6 @@
 import { analyzeResponseJsonSchema, analyzeResponseSchema } from "@nado/shared";
 import type { AnalyzeResponse } from "@nado/shared";
+import { UpstreamTimeoutError } from "./httpErrors.js";
 
 type FetchLike = (
   input: RequestInfo | URL,
@@ -11,10 +12,12 @@ export type OpenAIAnalysisServiceOptions = {
   endpoint?: string;
   fetch?: FetchLike;
   model?: string;
+  timeoutMs?: number;
 };
 
 const DEFAULT_OPENAI_ENDPOINT = "https://api.openai.com/v1/responses";
 const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
+const DEFAULT_OPENAI_TIMEOUT_MS = 15000;
 
 const ANALYSIS_INSTRUCTIONS = [
   "당신은 한국인 영어 학습자를 돕는 영어 독해 분석기입니다.",
@@ -33,6 +36,7 @@ export function createOpenAIAnalysisService(
   const fetchImplementation = options.fetch ?? globalThis.fetch;
   const model =
     options.model ?? process.env.OPENAI_MODEL ?? DEFAULT_OPENAI_MODEL;
+  const timeoutMs = options.timeoutMs ?? DEFAULT_OPENAI_TIMEOUT_MS;
 
   return {
     async analyze(text: string): Promise<AnalyzeResponse> {
@@ -41,27 +45,47 @@ export function createOpenAIAnalysisService(
       }
 
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        const response = await fetchImplementation(endpoint, {
-          body: JSON.stringify({
-            input: text,
-            instructions: ANALYSIS_INSTRUCTIONS,
-            model,
-            store: false,
-            text: {
-              format: {
-                name: "nado_analysis_response",
-                schema: analyzeResponseJsonSchema,
-                strict: true,
-                type: "json_schema",
+        const abortController = new AbortController();
+        const timeoutId = globalThis.setTimeout(() => {
+          abortController.abort();
+        }, timeoutMs);
+        let response: Response;
+
+        try {
+          response = await fetchImplementation(endpoint, {
+            body: JSON.stringify({
+              input: text,
+              instructions: ANALYSIS_INSTRUCTIONS,
+              model,
+              store: false,
+              text: {
+                format: {
+                  name: "nado_analysis_response",
+                  schema: analyzeResponseJsonSchema,
+                  strict: true,
+                  type: "json_schema",
+                },
               },
+            }),
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
             },
-          }),
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          method: "POST",
-        });
+            method: "POST",
+            signal: abortController.signal,
+          });
+        } catch (error) {
+          if (isAbortError(error)) {
+            throw new UpstreamTimeoutError(
+              "analysis_timeout",
+              "분석 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
+            );
+          }
+
+          throw error;
+        } finally {
+          globalThis.clearTimeout(timeoutId);
+        }
 
         if (!response.ok) {
           throw new Error("OpenAI request failed.");
@@ -161,3 +185,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 class StructuredOutputError extends Error {}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
