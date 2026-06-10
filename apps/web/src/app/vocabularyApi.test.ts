@@ -31,10 +31,14 @@ describe("vocabularyApi", () => {
 
     const result = await listVocabulary("session-token", { fetcher });
 
-    expect(fetcher).toHaveBeenCalledWith("/api/vocabulary", {
-      headers: { Authorization: "Bearer session-token" },
-      method: "GET",
-    });
+    expect(fetcher).toHaveBeenCalledWith(
+      "/api/vocabulary",
+      expect.objectContaining({
+        headers: { Authorization: "Bearer session-token" },
+        method: "GET",
+        signal: expect.any(AbortSignal),
+      }),
+    );
     expect(result).toEqual({
       data: [vocabularyItem],
       status: "success",
@@ -125,5 +129,35 @@ describe("vocabularyApi", () => {
         status: "error",
       },
     );
+  });
+
+  it("returns an error when loading vocabulary takes too long", async () => {
+    vi.useFakeTimers();
+
+    try {
+      const fetcher = vi.fn(
+        async (_url: RequestInfo | URL, init?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener("abort", () => {
+              reject(new DOMException("Aborted", "AbortError"));
+            });
+          }),
+      );
+
+      const resultPromise = listVocabulary("session-token", {
+        fetcher,
+        timeoutMs: 5,
+      });
+
+      await vi.advanceTimersByTimeAsync(5);
+
+      await expect(resultPromise).resolves.toEqual({
+        message:
+          "단어장 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
+        status: "error",
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
