@@ -221,7 +221,7 @@ describe("vocabulary state store", () => {
     ).toBe(false);
   });
 
-  it("refreshes a ready same-token vocabulary snapshot on demand", async () => {
+  it("refreshes a ready same-token vocabulary snapshot in the background", async () => {
     const store = createVocabularyStateStore();
     const refreshedItem = {
       ...vocabularyItem,
@@ -247,7 +247,7 @@ describe("vocabulary state store", () => {
     expect(store.getSnapshot()).toMatchObject({
       accessToken: "session-token",
       items: [vocabularyItem],
-      status: "loading",
+      status: "ready",
     });
 
     await flushPromises();

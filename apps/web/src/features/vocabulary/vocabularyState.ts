@@ -136,11 +136,16 @@ export function createVocabularyAuthSync({
 } = {}) {
   let requestSequence = 0;
 
-  async function loadVocabularyForSession(accessToken: string) {
+  async function loadVocabularyForSession(
+    accessToken: string,
+    { showLoading = true }: { showLoading?: boolean } = {},
+  ) {
     requestSequence += 1;
     const requestId = requestSequence;
 
-    store.setLoading(accessToken);
+    if (showLoading) {
+      store.setLoading(accessToken);
+    }
 
     const result = await loadVocabulary(accessToken).catch(
       (): VocabularyListResult => ({
@@ -153,7 +158,7 @@ export function createVocabularyAuthSync({
     if (
       requestId !== requestSequence ||
       currentState.accessToken !== accessToken ||
-      currentState.status !== "loading"
+      (showLoading && currentState.status !== "loading")
     ) {
       return;
     }
@@ -163,7 +168,9 @@ export function createVocabularyAuthSync({
       return;
     }
 
-    store.setError(accessToken, result.message);
+    if (showLoading) {
+      store.setError(accessToken, result.message);
+    }
   }
 
   return {
@@ -181,7 +188,11 @@ export function createVocabularyAuthSync({
         return;
       }
 
-      void loadVocabularyForSession(authState.accessToken);
+      void loadVocabularyForSession(authState.accessToken, {
+        showLoading:
+          vocabularyState.accessToken !== authState.accessToken ||
+          vocabularyState.status !== "ready",
+      });
     },
 
     sync(authState: AuthStateSnapshot) {
