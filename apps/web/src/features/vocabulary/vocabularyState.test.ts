@@ -259,6 +259,34 @@ describe("vocabulary state store", () => {
       status: "ready",
     });
   });
+
+  it("keeps a ready snapshot when a background vocabulary refresh fails", async () => {
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => {
+      throw new Error("network lost");
+    });
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+
+    store.setReady("session-token", [vocabularyItem]);
+    sync.refresh({
+      accessToken: "session-token",
+      session: null,
+      status: "authenticated",
+    });
+
+    await flushPromises();
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [vocabularyItem],
+      message: null,
+      status: "ready",
+    });
+  });
 });
 
 async function flushPromises() {
