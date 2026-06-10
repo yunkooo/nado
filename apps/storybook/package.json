@@ -7,7 +7,7 @@
     "dev": "storybook dev -p 6006",
     "build": "storybook build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests --config ../../vitest.config.ts",
+    "test": "vitest run --config ../../vitest.config.ts",
     "lint": "prettier --check .storybook src tsconfig.json package.json"
   },
   "dependencies": {
