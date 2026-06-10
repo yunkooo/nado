@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@nado/ui";
 import {
+  createVocabularyMeaningRenderKey,
   moveVocabularyPage,
   paginateVocabularyItems,
   type VocabularyItem,
@@ -126,10 +127,14 @@ function VocabularyListItem({
         className="nado-vocabulary-meaning-list"
         aria-label={`${item.term} 뜻`}
       >
-        {item.meanings.map((meaning) => (
+        {item.meanings.map((meaning, meaningIndex) => (
           <span
             className="nado-vocabulary-meaning"
-            key={`${item.id}-${meaning.meaning}`}
+            key={createVocabularyMeaningRenderKey(
+              item.id,
+              meaning,
+              meaningIndex,
+            )}
           >
             <strong>{meaning.meaning}</strong>
             {meaning.note ? <small>{meaning.note}</small> : null}

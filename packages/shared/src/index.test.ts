@@ -4,6 +4,7 @@ import {
   analyzeResponseJsonSchema,
   analyzeResponseSchema,
   countAnalysisTextCharacters,
+  createVocabularyMeaningRenderKey,
   hasUnsupportedAnalysisTextCharacters,
   isLikelyEnglishLearningText,
   moveVocabularyPage,
@@ -151,6 +152,23 @@ describe("vocabulary pagination navigation", () => {
     expect(scrollTo).toHaveBeenCalledWith({ behavior: "auto", top: 0 });
 
     globalThis.scrollTo = originalScrollTo;
+  });
+});
+
+describe("createVocabularyMeaningRenderKey", () => {
+  it("keeps duplicate meanings renderable with unique keys", () => {
+    const duplicateMeaning = {
+      createdAt: "2026-06-10T00:00:00.000Z",
+      meaning: "상태",
+    };
+
+    expect([
+      createVocabularyMeaningRenderKey("row_1", duplicateMeaning, 0),
+      createVocabularyMeaningRenderKey("row_1", duplicateMeaning, 1),
+    ]).toEqual([
+      "row_1-2026-06-10T00:00:00.000Z-상태-0",
+      "row_1-2026-06-10T00:00:00.000Z-상태-1",
+    ]);
   });
 });
 

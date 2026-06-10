@@ -457,6 +457,14 @@ export function normalizeVocabularyTerm(term: string): string {
   return term.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
+export function createVocabularyMeaningRenderKey(
+  itemId: string,
+  meaning: VocabularyMeaning,
+  index: number,
+): string {
+  return `${itemId}-${meaning.createdAt ?? "pending"}-${meaning.meaning}-${index}`;
+}
+
 export function isLikelyEnglishLearningText(text: string): boolean {
   const normalized = normalizeAnalysisText(text);
 
