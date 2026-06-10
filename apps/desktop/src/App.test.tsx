@@ -6,11 +6,15 @@ const apiConfigSource = readFileSync(
   new URL("./apiConfig.ts", import.meta.url),
   "utf8",
 );
+const styles = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
 const vocabularyFlowSource = readFileSync(
-  new URL("./VocabularyFlow.tsx", import.meta.url),
+  new URL("./vocabulary/VocabularyFlow.tsx", import.meta.url),
   "utf8",
 );
-const styles = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
+const vocabularyListSource = readFileSync(
+  new URL("./vocabulary/VocabularyList.tsx", import.meta.url),
+  "utf8",
+);
 
 describe("Desktop App source", () => {
   it("renders the desktop analysis MVP with shared UI components", () => {
@@ -61,10 +65,10 @@ describe("Desktop App source", () => {
   });
 
   it("resets scroll position when desktop vocabulary pagination changes page", () => {
-    expect(vocabularyFlowSource).toContain("moveVocabularyPage");
-    expect(vocabularyFlowSource).toContain("event.currentTarget.closest");
-    expect(vocabularyFlowSource).toContain(".desktop-content-workspace");
-    expect(vocabularyFlowSource).toContain("moveVocabularyPage(");
+    expect(vocabularyFlowSource).toContain("VocabularyList");
+    expect(vocabularyListSource).toContain("scrollIntoView");
+    expect(vocabularyListSource).toContain("setRequestedPage");
+    expect(vocabularyListSource).toContain("requestAnimationFrame");
   });
 
   it("validates analysis input before submitting to the API", () => {
@@ -151,5 +155,14 @@ describe("Desktop App source", () => {
     expect(styles).toContain("overflow: auto");
     expect(styles).toContain("padding: 28px 28px 150px");
     expect(styles).toContain("max-width: 860px");
+  });
+
+  it("paginates vocabulary items and scrolls back to the list top", () => {
+    expect(vocabularyFlowSource).toContain("VocabularyList");
+    expect(vocabularyListSource).toContain("getVocabularyPage");
+    expect(vocabularyListSource).toContain("scrollIntoView");
+    expect(vocabularyListSource).toContain("currentPage - 1");
+    expect(vocabularyListSource).toContain("currentPage + 1");
+    expect(styles).toContain(".nado-vocabulary-pagination");
   });
 });

@@ -1,6 +1,6 @@
 import type { VocabularyItem } from "@nado/shared";
 import { describe, expect, it } from "vitest";
-import { getNextReviewIndex, getReviewCard } from "./reviewHelpers";
+import { getNextReviewIndex, getReviewCard } from "./reviewSession";
 
 const vocabularyItem: VocabularyItem = {
   createdAt: "2026-06-09T00:00:00.000Z",

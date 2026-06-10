@@ -12,8 +12,8 @@ import {
   type VocabularySuggestion,
 } from "@nado/ui";
 import { AuthControls } from "./AuthControls";
-import { ReviewFlow } from "./ReviewFlow";
-import { VocabularyFlow } from "./VocabularyFlow";
+import { ReviewFlow } from "./review/ReviewFlow";
+import { VocabularyFlow } from "./vocabulary/VocabularyFlow";
 import { apiBaseUrl } from "./apiConfig";
 import { analyzeText } from "./analysisApi";
 import { getCurrentAccessToken } from "./authClient";

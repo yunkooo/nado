@@ -425,24 +425,25 @@ textarea {
 
 .nado-vocabulary-pagination {
   align-items: center;
-  color: var(--nado-color-ink-muted);
+  background: var(--nado-color-surface);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
   display: flex;
-  font-size: 0.8125rem;
-  font-weight: 800;
   gap: 12px;
   justify-content: space-between;
+  min-height: 52px;
+  padding: 10px 12px;
 }
 
-.nado-vocabulary-pagination > div {
-  align-items: center;
+.nado-vocabulary-pagination > span {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.nado-vocabulary-pagination__actions {
   display: flex;
   gap: 8px;
-}
-
-.nado-vocabulary-pagination strong {
-  color: var(--nado-color-ink);
-  min-width: 44px;
-  text-align: center;
 }
 
 .nado-review-controls,
@@ -628,8 +629,8 @@ textarea {
     flex-direction: column;
   }
 
-  .nado-vocabulary-pagination > div {
-    justify-content: space-between;
+  .nado-vocabulary-pagination__actions .nado-button {
+    flex: 1;
   }
 
   .nado-review-actions {
