@@ -11,7 +11,7 @@ export interface InputSampleProps {
 
 export function InputSample({
   count,
-  label = "입력 예시",
+  label = "입력한 문장",
   maxLength,
   text,
 }: InputSampleProps) {
@@ -20,7 +20,6 @@ export function InputSample({
   return (
     <section className="nado-input-sample" aria-label={label}>
       <div className="nado-input-sample__header">
-        <span className="nado-eyebrow">{label}</span>
         <span className="nado-compact-label">
           {visibleCount} / {maxLength}
         </span>

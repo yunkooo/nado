@@ -4,6 +4,7 @@ import {
   AnalysisResult,
   Chip,
   InputComposer,
+  InputSample,
   ReadingChunkLine,
   type AnalysisResultData,
 } from "./index";
@@ -113,6 +114,19 @@ describe("analysis design system components", () => {
 
     expect(markup).toContain("1 / 1");
     expect(markup).not.toContain("disabled");
+  });
+
+  it("renders submitted input text without a visible sample label", () => {
+    const markup = renderToStaticMarkup(
+      <InputSample
+        maxLength={200}
+        text="What to avoid when organizing state"
+      />,
+    );
+
+    expect(markup).toContain("What to avoid when organizing state");
+    expect(markup).toContain("35 / 200");
+    expect(markup).not.toContain("입력 예시");
   });
 
   it("renders text submit button when action label is a word", () => {
