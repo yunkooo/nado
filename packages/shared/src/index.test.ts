@@ -8,6 +8,7 @@ import {
   isLikelyEnglishLearningText,
   normalizeAnalysisText,
   normalizeVocabularyTerm,
+  paginateVocabularyItems,
   parseAnalyzeRequest,
   saveVocabularyRequestSchema,
 } from "./index";
@@ -77,6 +78,48 @@ describe("analysis text helpers", () => {
 describe("normalizeVocabularyTerm", () => {
   it("normalizes case and repeated spaces", () => {
     expect(normalizeVocabularyTerm("  Wonder   If  ")).toBe("wonder if");
+  });
+});
+
+describe("paginateVocabularyItems", () => {
+  it("shows vocabulary items in pages of 10", () => {
+    const items = Array.from({ length: 24 }, (_, index) => `item-${index + 1}`);
+
+    expect(paginateVocabularyItems(items, 2).items).toEqual([
+      "item-11",
+      "item-12",
+      "item-13",
+      "item-14",
+      "item-15",
+      "item-16",
+      "item-17",
+      "item-18",
+      "item-19",
+      "item-20",
+    ]);
+  });
+
+  it("clamps the current page to the available vocabulary page range", () => {
+    const items = Array.from({ length: 11 }, (_, index) => `item-${index + 1}`);
+
+    expect(paginateVocabularyItems(items, 4)).toMatchObject({
+      currentPage: 2,
+      totalPages: 2,
+    });
+    expect(paginateVocabularyItems(items, 0)).toMatchObject({
+      currentPage: 1,
+      totalPages: 2,
+    });
+  });
+
+  it("keeps an empty vocabulary list on page 1", () => {
+    expect(paginateVocabularyItems([], 3)).toEqual({
+      currentPage: 1,
+      items: [],
+      pageSize: 10,
+      totalItems: 0,
+      totalPages: 1,
+    });
   });
 });
 

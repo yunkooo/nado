@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@nado/ui";
+import { paginateVocabularyItems } from "@nado/shared";
 import { useAuthState } from "./authState";
 import { deleteVocabularyItem as deleteVocabularyItemFromApi } from "./vocabularyApi";
 import {
@@ -16,7 +17,17 @@ export function VocabularyFlow() {
   const vocabularyState = useVocabularyState();
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const items = vocabularyState.items;
+  const pagination = paginateVocabularyItems(items, page);
+  const firstVisibleItem =
+    pagination.totalItems === 0
+      ? 0
+      : (pagination.currentPage - 1) * pagination.pageSize + 1;
+  const lastVisibleItem = Math.min(
+    pagination.currentPage * pagination.pageSize,
+    pagination.totalItems,
+  );
   const status: VocabularyStatus =
     authState.status === "loading" || vocabularyState.status === "loading"
       ? "loading"
@@ -127,7 +138,7 @@ export function VocabularyFlow() {
             </header>
 
             <div className="nado-vocabulary-list">
-              {items.map((item) => (
+              {pagination.items.map((item) => (
                 <article className="nado-vocabulary-item" key={item.id}>
                   <header>
                     <div>
@@ -168,6 +179,38 @@ export function VocabularyFlow() {
                 </article>
               ))}
             </div>
+
+            {pagination.totalPages > 1 ? (
+              <nav
+                className="nado-vocabulary-pagination"
+                aria-label="단어장 페이지"
+              >
+                <span>
+                  {firstVisibleItem}-{lastVisibleItem} / {pagination.totalItems}
+                </span>
+                <div>
+                  <Button
+                    disabled={pagination.currentPage === 1}
+                    onClick={() => setPage(pagination.currentPage - 1)}
+                    size="sm"
+                    variant="secondary"
+                  >
+                    이전
+                  </Button>
+                  <strong>
+                    {pagination.currentPage} / {pagination.totalPages}
+                  </strong>
+                  <Button
+                    disabled={pagination.currentPage === pagination.totalPages}
+                    onClick={() => setPage(pagination.currentPage + 1)}
+                    size="sm"
+                    variant="secondary"
+                  >
+                    다음
+                  </Button>
+                </div>
+              </nav>
+            ) : null}
           </section>
         ) : null}
       </section>

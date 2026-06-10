@@ -427,6 +427,28 @@ a {
   margin-top: auto;
 }
 
+.nado-vocabulary-pagination {
+  align-items: center;
+  color: var(--nado-color-ink-muted);
+  display: flex;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.nado-vocabulary-pagination > div {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.nado-vocabulary-pagination strong {
+  color: var(--nado-color-ink);
+  min-width: 44px;
+  text-align: center;
+}
+
 .nado-review-controls,
 .nado-review-actions {
   display: flex;
@@ -625,6 +647,15 @@ a {
 
   .nado-vocabulary-list {
     grid-template-columns: 1fr;
+  }
+
+  .nado-vocabulary-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .nado-vocabulary-pagination > div {
+    justify-content: space-between;
   }
 
   .nado-review-actions {
