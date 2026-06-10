@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { normalizeVocabularyTerm, type VocabularyItem } from "@nado/shared";
+import {
+  getDistinctVocabularyNote,
+  normalizeVocabularyTerm,
+  type VocabularyItem,
+} from "@nado/shared";
 import type { AuthStateSnapshot } from "../auth/authState";
 import { getCurrentAccessToken } from "../auth/authClient";
 import {
@@ -331,7 +335,9 @@ export function isVocabularySuggestionSaved(
 ) {
   const suggestionTerm = normalizeVocabularyTerm(suggestion.term);
   const suggestionMeaning = suggestion.meaning.trim();
-  const suggestionNote = suggestion.note?.trim() ?? "";
+  const suggestionNote = getDistinctVocabularyNote(suggestion.note, [
+    suggestionMeaning,
+  ]);
 
   return items.some((item) => {
     if (
@@ -344,7 +350,8 @@ export function isVocabularySuggestionSaved(
     return item.meanings.some(
       (meaning) =>
         meaning.meaning.trim() === suggestionMeaning &&
-        (meaning.note?.trim() ?? "") === suggestionNote,
+        getDistinctVocabularyNote(meaning.note, [meaning.meaning]) ===
+          suggestionNote,
     );
   });
 }

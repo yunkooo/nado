@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   createVocabularyMeaningRenderKey,
+  getDistinctVocabularyNote,
   type VocabularyItem,
 } from "@nado/shared";
 import { Button } from "@nado/ui";
@@ -125,19 +126,25 @@ function VocabularyListItem({
         className="nado-vocabulary-meaning-list"
         aria-label={`${item.term} 뜻`}
       >
-        {item.meanings.map((meaning, meaningIndex) => (
-          <span
-            className="nado-vocabulary-meaning"
-            key={createVocabularyMeaningRenderKey(
-              item.id,
-              meaning,
-              meaningIndex,
-            )}
-          >
-            <strong>{meaning.meaning}</strong>
-            {meaning.note ? <small>{meaning.note}</small> : null}
-          </span>
-        ))}
+        {item.meanings.map((meaning, meaningIndex) => {
+          const note = getDistinctVocabularyNote(meaning.note, [
+            meaning.meaning,
+          ]);
+
+          return (
+            <span
+              className="nado-vocabulary-meaning"
+              key={createVocabularyMeaningRenderKey(
+                item.id,
+                meaning,
+                meaningIndex,
+              )}
+            >
+              <strong>{meaning.meaning}</strong>
+              {note ? <small>{note}</small> : null}
+            </span>
+          );
+        })}
       </div>
       <footer className="nado-vocabulary-item__footer">
         <time className="nado-vocabulary-item__date" dateTime={item.updatedAt}>

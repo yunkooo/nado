@@ -5,6 +5,7 @@ import {
   analyzeResponseSchema,
   countAnalysisTextCharacters,
   createVocabularyMeaningRenderKey,
+  getDistinctVocabularyNote,
   hasUnsupportedAnalysisTextCharacters,
   isLikelyEnglishLearningText,
   moveVocabularyPage,
@@ -193,6 +194,22 @@ describe("createVocabularyMeaningRenderKey", () => {
   });
 });
 
+describe("getDistinctVocabularyNote", () => {
+  it("keeps notes that add context beyond the meaning", () => {
+    expect(
+      getDistinctVocabularyNote("일정이나 계획을 확인할 때 자주 씁니다.", [
+        "검토하다",
+        "go over",
+      ]),
+    ).toBe("일정이나 계획을 확인할 때 자주 씁니다.");
+  });
+
+  it("removes notes that repeat the answer or prompt text", () => {
+    expect(getDistinctVocabularyNote(" 피하다 ", ["피하다", "avoid"])).toBe("");
+    expect(getDistinctVocabularyNote(" Avoid ", ["피하다", "avoid"])).toBe("");
+  });
+});
+
 describe("analyzeResponseSchema", () => {
   it("accepts the MVP structured analysis response", () => {
     const response = analyzeResponseSchema.parse({
@@ -330,6 +347,21 @@ describe("saveVocabularyRequestSchema", () => {
       type: "phrase",
       meaning: "~인지 궁금하다",
       note: "정중한 질문에서 자주 쓰입니다.",
+    });
+  });
+
+  it("drops duplicate vocabulary notes that repeat the meaning", () => {
+    expect(
+      saveVocabularyRequestSchema.parse({
+        term: "avoid",
+        type: "word",
+        meaning: "피하다",
+        note: " 피하다 ",
+      }),
+    ).toEqual({
+      term: "avoid",
+      type: "word",
+      meaning: "피하다",
     });
   });
 });

@@ -9,7 +9,6 @@ export type ReviewDirectionOption = {
 
 export type ReviewCard = {
   answer: string;
-  note: string;
   prompt: string;
 };
 
@@ -31,20 +30,17 @@ export function getReviewCard(
   direction: ReviewDirection,
 ): ReviewCard {
   const primaryMeaning = item.meanings[0];
-  const meaning = primaryMeaning?.meaning ?? "";
-  const note = primaryMeaning?.note ?? "";
+  const meaning = primaryMeaning?.meaning.trim() ?? "";
 
   if (direction === "korean-to-english") {
     return {
       answer: item.term,
-      note,
       prompt: meaning,
     };
   }
 
   return {
     answer: meaning,
-    note,
     prompt: item.term,
   };
 }

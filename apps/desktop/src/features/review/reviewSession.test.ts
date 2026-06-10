@@ -21,7 +21,6 @@ describe("desktop review helpers", () => {
   it("builds an English to Korean review card", () => {
     expect(getReviewCard(vocabularyItem, "english-to-korean")).toEqual({
       answer: "검토하다",
-      note: "일정이나 계획을 확인할 때 자주 씁니다.",
       prompt: "go over",
     });
   });
@@ -29,8 +28,23 @@ describe("desktop review helpers", () => {
   it("builds a Korean to English review card", () => {
     expect(getReviewCard(vocabularyItem, "korean-to-english")).toEqual({
       answer: "go over",
-      note: "일정이나 계획을 확인할 때 자주 씁니다.",
       prompt: "검토하다",
+    });
+  });
+
+  it("does not include notes in review cards", () => {
+    expect(
+      getReviewCard(
+        {
+          ...vocabularyItem,
+          meanings: [{ meaning: "피하다", note: "뜻을 노출하는 설명" }],
+          term: "avoid",
+        },
+        "english-to-korean",
+      ),
+    ).toEqual({
+      answer: "피하다",
+      prompt: "avoid",
     });
   });
 

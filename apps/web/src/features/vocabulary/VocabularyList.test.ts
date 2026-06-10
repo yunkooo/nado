@@ -49,4 +49,25 @@ describe("VocabularyList source", () => {
     expect(markup).toContain("단어장 항목을 삭제하지 못했어요.");
     expect(markup).not.toContain("단어장을 불러오지 못했어요");
   });
+
+  it("hides duplicate notes that repeat a vocabulary meaning", () => {
+    const markup = renderToStaticMarkup(
+      createElement(VocabularyList, {
+        deleteMessage: null,
+        deletingItemId: null,
+        isLoading: false,
+        items: [
+          {
+            ...vocabularyItem,
+            meanings: [{ meaning: "피하다", note: "피하다" }],
+            term: "avoid",
+          },
+        ],
+        onDeleteItem: () => undefined,
+      }),
+    );
+
+    expect(markup).toContain("<strong>피하다</strong>");
+    expect(markup).not.toContain("<small>피하다</small>");
+  });
 });

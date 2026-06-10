@@ -116,7 +116,6 @@ function ReviewCard({
       >
         {card.answer}
       </p>
-      <p className="nado-review-card__note">{card.note}</p>
     </article>
   );
 }

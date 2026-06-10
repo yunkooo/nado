@@ -33,6 +33,27 @@ describe("vocabulary state store", () => {
     ).toBe(true);
   });
 
+  it("treats duplicate suggestion notes as saved when the stored note was cleaned", () => {
+    expect(
+      isVocabularySuggestionSaved(
+        [
+          {
+            ...vocabularyItem,
+            meanings: [{ meaning: "피하다" }],
+            term: "avoid",
+            type: "word",
+          },
+        ],
+        {
+          meaning: "피하다",
+          note: "피하다",
+          term: "avoid",
+          type: "word",
+        },
+      ),
+    ).toBe(true);
+  });
+
   it("adds and removes saved vocabulary items from the shared snapshot", () => {
     const store = createVocabularyStateStore();
 

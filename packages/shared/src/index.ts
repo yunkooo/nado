@@ -154,12 +154,29 @@ export function moveVocabularyPage(
   resetVocabularyPaginationScroll(scrollTarget);
 }
 
-export const saveVocabularyRequestSchema = z.object({
-  term: z.string().trim().min(1, "vocabulary.term.required"),
-  type: vocabularyTypeSchema,
-  meaning: z.string().trim().min(1, "vocabulary.meaning.required"),
-  note: z.string().trim().optional(),
-});
+export const saveVocabularyRequestSchema = z
+  .object({
+    term: z.string().trim().min(1, "vocabulary.term.required"),
+    type: vocabularyTypeSchema,
+    meaning: z.string().trim().min(1, "vocabulary.meaning.required"),
+    note: z.string().trim().optional(),
+  })
+  .transform((request) => {
+    const note = getDistinctVocabularyNote(request.note, [request.meaning]);
+
+    if (!note) {
+      return {
+        meaning: request.meaning,
+        term: request.term,
+        type: request.type,
+      };
+    }
+
+    return {
+      ...request,
+      note,
+    };
+  });
 
 export const analysisTokenSchema = z.object({
   text: z.string(),
@@ -471,6 +488,29 @@ export function parseAnalyzeRequest(input: unknown): AnalyzeRequest {
 
 export function normalizeVocabularyTerm(term: string): string {
   return term.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+export function getDistinctVocabularyNote(
+  note: string | undefined,
+  referenceTexts: string[],
+): string {
+  const trimmedNote = note?.trim() ?? "";
+
+  if (!trimmedNote) {
+    return "";
+  }
+
+  const normalizedNote = normalizeComparableVocabularyText(trimmedNote);
+  const isDuplicate = referenceTexts.some(
+    (referenceText) =>
+      normalizeComparableVocabularyText(referenceText) === normalizedNote,
+  );
+
+  return isDuplicate ? "" : trimmedNote;
+}
+
+function normalizeComparableVocabularyText(text: string): string {
+  return text.trim().replace(/\s+/g, " ").toLocaleLowerCase();
 }
 
 export function createVocabularyMeaningRenderKey(
