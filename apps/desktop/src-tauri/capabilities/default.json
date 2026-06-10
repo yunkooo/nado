@@ -2,5 +2,20 @@
   "identifier": "default",
   "description": "Default desktop window permissions",
   "windows": ["main"],
-  "permissions": ["core:default", "deep-link:default", "opener:default"]
+  "permissions": [
+    "core:default",
+    "deep-link:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://nadoapi-production.up.railway.app" },
+        { "url": "https://nadoapi-production.up.railway.app/*" },
+        { "url": "http://localhost:*" },
+        { "url": "http://localhost:*/*" },
+        { "url": "http://127.0.0.1:*" },
+        { "url": "http://127.0.0.1:*/*" }
+      ]
+    },
+    "opener:default"
+  ]
 }

@@ -18,4 +18,10 @@ describe("desktop Vite config", () => {
     expect(viteConfigSource).toContain('"/api"');
     expect(viteConfigSource).toContain("changeOrigin: true");
   });
+
+  it("resolves workspace packages from source during desktop bundling", () => {
+    expect(viteConfigSource).toContain("../../packages/shared/src/index.ts");
+    expect(viteConfigSource).toContain("../../packages/ui/src/index.ts");
+    expect(viteConfigSource).toContain("../../packages/ui/src/styles.css");
+  });
 });

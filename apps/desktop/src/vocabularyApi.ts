@@ -4,12 +4,11 @@ import {
   type SaveVocabularyRequest,
   type VocabularyItem,
 } from "@nado/shared";
+import { apiFetch, type ApiFetcher } from "./apiFetch";
 import { resolveApiUrl } from "./apiConfig";
 
-type Fetcher = typeof fetch;
-
 export type VocabularyApiOptions = {
-  fetcher?: Fetcher;
+  fetcher?: ApiFetcher;
 };
 
 export type VocabularyListResult =
@@ -31,7 +30,7 @@ export async function listVocabulary(
   accessToken: string,
   options: VocabularyApiOptions = {},
 ): Promise<VocabularyListResult> {
-  const fetcher = options.fetcher ?? globalThis.fetch;
+  const fetcher = options.fetcher ?? apiFetch;
 
   let response: Response;
 
@@ -76,7 +75,7 @@ export async function deleteVocabularyItem(
   accessToken: string,
   options: VocabularyApiOptions = {},
 ): Promise<DeleteVocabularyResult> {
-  const fetcher = options.fetcher ?? globalThis.fetch;
+  const fetcher = options.fetcher ?? apiFetch;
 
   let response: Response;
 
@@ -110,7 +109,7 @@ export async function saveVocabularyItem(
   accessToken: string,
   options: VocabularyApiOptions = {},
 ): Promise<SaveVocabularyResult> {
-  const fetcher = options.fetcher ?? globalThis.fetch;
+  const fetcher = options.fetcher ?? apiFetch;
 
   let response: Response;
 

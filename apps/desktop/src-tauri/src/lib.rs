@@ -6,6 +6,7 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
         .run(tauri::generate_context!())
         .expect("error while running nado desktop app");

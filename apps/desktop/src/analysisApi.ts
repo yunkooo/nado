@@ -3,8 +3,7 @@ import {
   type AnalysisResult as ApiAnalysisResult,
 } from "@nado/shared";
 import type { AnalysisResultData } from "@nado/ui";
-
-type Fetcher = typeof fetch;
+import { apiFetch, type ApiFetcher } from "./apiFetch";
 
 export type AnalyzeTextResult =
   | { data: AnalysisResultData; status: "success" }
@@ -13,7 +12,7 @@ export type AnalyzeTextResult =
 export type AnalyzeTextOptions = {
   accessToken?: string | null;
   apiBaseUrl?: string;
-  fetcher?: Fetcher;
+  fetcher?: ApiFetcher;
 };
 
 const ANALYZE_ERROR_MESSAGE =
@@ -26,7 +25,7 @@ export async function analyzeText(
   options: AnalyzeTextOptions = {},
 ): Promise<AnalyzeTextResult> {
   const trimmedText = text.trim();
-  const fetcher = options.fetcher ?? globalThis.fetch;
+  const fetcher = options.fetcher ?? apiFetch;
 
   let response: Response;
 
