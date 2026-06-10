@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { normalizeVocabularyTerm, type VocabularyItem } from "@nado/shared";
 import type { AuthStateSnapshot } from "./authState";
-import { listVocabulary } from "./vocabularyApi";
+import { listVocabulary, type VocabularyListResult } from "./vocabularyApi";
 
 export type VocabularyStateStatus = "idle" | "loading" | "ready" | "error";
 
@@ -20,6 +20,11 @@ export type VocabularySuggestionMatch = {
   term: string;
   type: VocabularyItem["type"];
 };
+
+type VocabularyStateStore = ReturnType<typeof createVocabularyStateStore>;
+type VocabularyListLoader = (
+  accessToken: string,
+) => Promise<VocabularyListResult>;
 
 const initialSnapshot: VocabularyStateSnapshot = {
   accessToken: null,
@@ -118,55 +123,70 @@ export function useVocabularyState(): VocabularyStateSnapshot {
   );
 }
 
-export function useSyncVocabularyForAuth(authState: AuthStateSnapshot) {
-  useEffect(() => {
-    let isCurrent = true;
+export function createVocabularyAuthSync({
+  listVocabulary: loadVocabulary = listVocabulary,
+  store = vocabularyStateStore,
+}: {
+  listVocabulary?: VocabularyListLoader;
+  store?: VocabularyStateStore;
+} = {}) {
+  let requestSequence = 0;
 
-    async function loadVocabularyForSession(accessToken: string) {
-      vocabularyStateStore.setLoading(accessToken);
+  async function loadVocabularyForSession(accessToken: string) {
+    requestSequence += 1;
+    const requestId = requestSequence;
 
-      const result = await listVocabulary(accessToken);
+    store.setLoading(accessToken);
 
-      if (!isCurrent) {
-        return;
-      }
-
-      if (result.status === "success") {
-        vocabularyStateStore.setReady(accessToken, result.data);
-        return;
-      }
-
-      vocabularyStateStore.setError(accessToken, result.message);
-    }
-
-    if (authState.status === "loading") {
-      return () => {
-        isCurrent = false;
-      };
-    }
-
-    if (authState.status !== "authenticated" || !authState.accessToken) {
-      vocabularyStateStore.reset();
-      return () => {
-        isCurrent = false;
-      };
-    }
-
-    const vocabularyState = vocabularyStateStore.getSnapshot();
+    const result = await loadVocabulary(accessToken);
+    const currentState = store.getSnapshot();
 
     if (
-      !shouldLoadVocabularyForSession(vocabularyState, authState.accessToken)
+      requestId !== requestSequence ||
+      currentState.accessToken !== accessToken ||
+      currentState.status !== "loading"
     ) {
-      return () => {
-        isCurrent = false;
-      };
+      return;
     }
 
-    void loadVocabularyForSession(authState.accessToken);
+    if (result.status === "success") {
+      store.setReady(accessToken, result.data);
+      return;
+    }
 
-    return () => {
-      isCurrent = false;
-    };
+    store.setError(accessToken, result.message);
+  }
+
+  return {
+    sync(authState: AuthStateSnapshot) {
+      if (authState.status === "loading") {
+        return;
+      }
+
+      if (authState.status !== "authenticated" || !authState.accessToken) {
+        requestSequence += 1;
+        store.reset();
+        return;
+      }
+
+      const vocabularyState = store.getSnapshot();
+
+      if (
+        !shouldLoadVocabularyForSession(vocabularyState, authState.accessToken)
+      ) {
+        return;
+      }
+
+      void loadVocabularyForSession(authState.accessToken);
+    },
+  };
+}
+
+const vocabularyAuthSync = createVocabularyAuthSync();
+
+export function useSyncVocabularyForAuth(authState: AuthStateSnapshot) {
+  useEffect(() => {
+    vocabularyAuthSync.sync(authState);
   }, [authState.accessToken, authState.status]);
 }
 

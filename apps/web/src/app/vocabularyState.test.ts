@@ -1,6 +1,7 @@
 import type { VocabularyItem } from "@nado/shared";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
+  createVocabularyAuthSync,
   createVocabularyStateStore,
   isVocabularySuggestionSaved,
   shouldLoadVocabularyForSession,
@@ -61,6 +62,37 @@ describe("vocabulary state store", () => {
     ).toBe(true);
   });
 
+  it("settles a vocabulary sync request even after the triggering render is gone", async () => {
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => ({
+      data: [vocabularyItem],
+      status: "success" as const,
+    }));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+
+    sync.sync({
+      accessToken: "session-token",
+      session: null,
+      status: "authenticated",
+    });
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      status: "loading",
+    });
+
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [vocabularyItem],
+      status: "ready",
+    });
+  });
+
   it("allows a same-token reload after a vocabulary load error", () => {
     expect(
       shouldLoadVocabularyForSession(
@@ -101,3 +133,8 @@ describe("vocabulary state store", () => {
     ).toBe(false);
   });
 });
+
+async function flushPromises() {
+  await Promise.resolve();
+  await Promise.resolve();
+}
