@@ -4,15 +4,15 @@
   "private": true,
   "main": "index.ts",
   "scripts": {
-    "dev": "expo start",
+    "dev": "node scripts/start-expo-with-root-env.mjs",
     "build": "tsc --noEmit -p tsconfig.json && node -e \"const fs=require('fs'); fs.mkdirSync('dist',{recursive:true}); fs.writeFileSync('dist/.buildkeep','');\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests --config ../../vitest.config.ts",
-    "lint": "prettier --check App.tsx app.json index.ts tsconfig.json package.json \"src/**/*.{ts,tsx}\""
+    "lint": "prettier --check App.tsx app.json index.ts tsconfig.json package.json \"scripts/**/*.mjs\" \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
     "@nado/shared": "workspace:*",
-    "@react-native-async-storage/async-storage": "^3.1.1",
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@supabase/supabase-js": "^2.107.0",
     "expo": "^56.0.9",
     "react": "^19.2.3",
