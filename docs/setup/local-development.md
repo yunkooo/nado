@@ -52,7 +52,7 @@ SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET="<Google OAuth client secret>"
 
 원격 Supabase 프로젝트도 Dashboard의 Authentication provider에서 Google을 켜고 같은 redirect URI 계열을 등록해야 한다. 웹 앱은 로그인 완료 후 현재 origin으로 돌아오므로, Supabase Auth의 Site URL 또는 Redirect URLs에 배포 origin을 함께 허용한다. 현재 배포된 웹 origin은 `https://nado-web.vercel.app`이다.
 
-데스크톱 앱은 Google 로그인 완료 후 브라우저가 앱 내부 loopback callback으로 돌아오도록 `VITE_DESKTOP_AUTH_REDIRECT_URL=http://127.0.0.1:3000`를 사용한다. 이 값도 Supabase Auth Redirect URLs에 추가해야 한다.
+데스크톱 앱은 Google 로그인 완료 후 브라우저가 앱 내부 loopback callback으로 돌아오도록 `VITE_DESKTOP_AUTH_REDIRECT_URL=http://127.0.0.1:17654`를 사용한다. 이 값도 Supabase Auth Redirect URLs에 추가해야 한다. 패키지 앱은 PKCE 코드 교환으로 세션을 만들며, loopback callback 페이지는 인증 코드를 실행 중인 앱으로 전달한 뒤 완료 화면을 보여준다.
 
 Railway API를 배포해서 웹 배포본에서 호출할 때는 API 서버 환경변수에 아래 origin을 허용한다.
 
