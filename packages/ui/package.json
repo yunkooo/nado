@@ -6,12 +6,16 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "development": "./src/index.ts",
+      "import": "./dist/index.js"
     },
-    "./styles.css": "./src/styles.css"
+    "./styles.css": {
+      "development": "./src/styles.css",
+      "import": "./dist/styles.css"
+    }
   },
   "scripts": {
-    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});\" && tsc -p tsconfig.json",
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});\" && tsc -p tsconfig.json && node -e \"require('fs').copyFileSync('src/styles.css','dist/styles.css');\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests --config ../../vitest.config.ts",
     "lint": "prettier --check src tsconfig.json package.json"

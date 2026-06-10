@@ -6,7 +6,17 @@ const packageJson = JSON.parse(
 );
 
 describe("@nado/ui package exports", () => {
-  it("points local app imports at source instead of ignored dist output", () => {
-    expect(packageJson.exports["."].import).toBe("./src/index.ts");
+  it("points development imports at source while keeping production imports on dist", () => {
+    expect(packageJson.exports["."].development).toBe("./src/index.ts");
+    expect(packageJson.exports["."].import).toBe("./dist/index.js");
+  });
+
+  it("copies stylesheet imports through the same development and production boundary", () => {
+    expect(packageJson.exports["./styles.css"].development).toBe(
+      "./src/styles.css",
+    );
+    expect(packageJson.exports["./styles.css"].import).toBe(
+      "./dist/styles.css",
+    );
   });
 });
