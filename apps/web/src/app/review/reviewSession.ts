@@ -13,6 +13,11 @@ export type ReviewCard = {
   prompt: string;
 };
 
+type ReviewableMeaning = {
+  meaning: string;
+  note?: string;
+};
+
 export const reviewDirectionOptions: ReviewDirectionOption[] = [
   { key: "english-to-korean", label: "영어 → 한국어" },
   { key: "korean-to-english", label: "한국어 → 영어" },
@@ -30,9 +35,9 @@ export function getReviewCard(
   item: VocabularyItem,
   direction: ReviewDirection,
 ): ReviewCard {
-  const primaryMeaning = item.meanings[0];
-  const meaning = primaryMeaning?.meaning ?? "";
-  const note = primaryMeaning?.note ?? "";
+  const primaryMeaning = getPrimaryReviewMeaning(item);
+  const meaning = primaryMeaning?.meaning.trim() ?? "";
+  const note = primaryMeaning?.note?.trim() ?? "";
 
   if (direction === "korean-to-english") {
     return {
@@ -47,4 +52,14 @@ export function getReviewCard(
     note,
     prompt: item.term,
   };
+}
+
+export function getReviewableItems(items: VocabularyItem[]) {
+  return items.filter((item) => getPrimaryReviewMeaning(item));
+}
+
+function getPrimaryReviewMeaning(
+  item: VocabularyItem,
+): ReviewableMeaning | undefined {
+  return item.meanings.find((meaning) => meaning.meaning.trim().length > 0);
 }

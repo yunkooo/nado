@@ -6,6 +6,7 @@ import type { VocabularyStateSnapshot } from "../vocabularyState";
 import {
   getNextReviewIndex,
   getReviewCard,
+  getReviewableItems,
   type ReviewDirection,
 } from "./reviewSession";
 
@@ -17,7 +18,7 @@ export function useReviewSession(
     useState<ReviewDirection>("english-to-korean");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
-  const items = vocabularyState.items;
+  const items = getReviewableItems(vocabularyState.items);
   const currentItem = items[currentIndex];
   const card = currentItem ? getReviewCard(currentItem, direction) : null;
 
