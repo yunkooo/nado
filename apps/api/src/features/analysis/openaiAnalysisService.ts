@@ -17,7 +17,7 @@ export type OpenAIAnalysisServiceOptions = {
 
 const DEFAULT_OPENAI_ENDPOINT = "https://api.openai.com/v1/responses";
 const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
-const DEFAULT_OPENAI_TIMEOUT_MS = 15000;
+const DEFAULT_OPENAI_TIMEOUT_MS = 30_000;
 
 const ANALYSIS_INSTRUCTIONS = [
   "당신은 한국인 영어 학습자를 돕는 영어 독해 분석기입니다.",
@@ -36,7 +36,10 @@ export function createOpenAIAnalysisService(
   const fetchImplementation = options.fetch ?? globalThis.fetch;
   const model =
     options.model ?? process.env.OPENAI_MODEL ?? DEFAULT_OPENAI_MODEL;
-  const timeoutMs = options.timeoutMs ?? DEFAULT_OPENAI_TIMEOUT_MS;
+  const timeoutMs =
+    options.timeoutMs ??
+    readOpenAITimeoutMs(process.env.OPENAI_TIMEOUT_MS) ??
+    DEFAULT_OPENAI_TIMEOUT_MS;
 
   return {
     async analyze(text: string): Promise<AnalyzeResponse> {
@@ -188,4 +191,18 @@ class StructuredOutputError extends Error {}
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
+}
+
+function readOpenAITimeoutMs(value: string | undefined): number | undefined {
+  if (value === undefined || value.trim().length === 0) {
+    return undefined;
+  }
+
+  const timeoutMs = Number(value);
+
+  if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
+    throw new Error("OPENAI_TIMEOUT_MS must be a positive integer.");
+  }
+
+  return timeoutMs;
 }

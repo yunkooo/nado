@@ -44,7 +44,15 @@ const sampleAnalyzeResponse = {
 } as const;
 
 describe("createOpenAIAnalysisService", () => {
+  const originalOpenAITimeoutMs = process.env.OPENAI_TIMEOUT_MS;
+
   afterEach(() => {
+    if (originalOpenAITimeoutMs === undefined) {
+      delete process.env.OPENAI_TIMEOUT_MS;
+    } else {
+      process.env.OPENAI_TIMEOUT_MS = originalOpenAITimeoutMs;
+    }
+
     vi.useRealTimers();
   });
 
@@ -172,6 +180,37 @@ describe("createOpenAIAnalysisService", () => {
     });
     await vi.advanceTimersByTimeAsync(11);
 
+    await assertion;
+  });
+
+  it("uses OPENAI_TIMEOUT_MS when no timeout option is provided", async () => {
+    process.env.OPENAI_TIMEOUT_MS = "20";
+    vi.useFakeTimers();
+    let aborted = false;
+    const service = createOpenAIAnalysisService({
+      apiKey: "test-api-key",
+      fetch: async (_input, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          const signal = init?.signal;
+
+          if (signal instanceof AbortSignal) {
+            signal.addEventListener("abort", () => {
+              aborted = true;
+              reject(new DOMException("Request aborted", "AbortError"));
+            });
+          }
+        }),
+    });
+
+    const resultPromise = service.analyze("Hello.");
+    const assertion = expect(resultPromise).rejects.toMatchObject({
+      code: "analysis_timeout",
+      status: 504,
+    });
+
+    await vi.advanceTimersByTimeAsync(21);
+
+    expect(aborted).toBe(true);
     await assertion;
   });
 

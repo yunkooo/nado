@@ -1,7 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { analyzeText } from "./analysisApi";
 
 describe("analyzeText", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("posts trimmed text to the analyze API and maps the response for the UI", async () => {
     const fetcher = vi.fn(async () =>
       Response.json({
@@ -312,6 +316,46 @@ describe("analyzeText", () => {
       message:
         "분석 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
       status: "error",
+    });
+  });
+
+  it("waits long enough for deployed analysis responses", async () => {
+    vi.useFakeTimers();
+    let aborted = false;
+    let resolveResponse: ((response: Response) => void) | undefined;
+    const fetcher = vi.fn(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const signal = init?.signal;
+
+        if (signal instanceof AbortSignal) {
+          signal.addEventListener("abort", () => {
+            aborted = true;
+          });
+        }
+
+        return new Promise<Response>((resolve) => {
+          resolveResponse = resolve;
+        });
+      },
+    );
+
+    const resultPromise = analyzeText("I was wondering if you could help me.", {
+      fetcher,
+    });
+
+    await vi.advanceTimersByTimeAsync(25_000);
+
+    expect(aborted).toBe(false);
+    resolveResponse?.(
+      Response.json({
+        reason: "영어 문장으로 분석하기 어려운 입력입니다.",
+        status: "not_analyzable",
+      }),
+    );
+
+    await expect(resultPromise).resolves.toEqual({
+      message: "영어 문장으로 분석하기 어려운 입력입니다.",
+      status: "not_analyzable",
     });
   });
 

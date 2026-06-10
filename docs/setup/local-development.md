@@ -62,7 +62,7 @@ NADO_CORS_ORIGINS=https://nado-web.vercel.app
 
 API 서버는 단어장 API에서 `Authorization: Bearer <Supabase access token>` 헤더를 읽어 `supabase.auth.getUser(token)`으로 사용자를 검증한다. 단어장 조회, 저장, 삭제는 사용자 토큰이 붙은 Supabase client로 실행해서 `vocabulary_items`의 RLS 정책을 그대로 적용한다.
 
-분석 API는 서버 환경변수의 `OPENAI_API_KEY`를 사용한다. `OPENAI_MODEL`은 기본 예시값을 제공하지만, 비용과 품질을 비교한 뒤 Railway 환경변수에서 조정할 수 있다.
+분석 API는 서버 환경변수의 `OPENAI_API_KEY`를 사용한다. `OPENAI_MODEL`은 기본 예시값을 제공하지만, 비용과 품질을 비교한 뒤 Railway 환경변수에서 조정할 수 있다. `OPENAI_TIMEOUT_MS`는 OpenAI 응답을 기다리는 서버 timeout이며, 기본값은 `30000`이다.
 
 분석 API는 사용량 추적을 위해 `analysis_usage_limits`를 `SUPABASE_SERVICE_ROLE_KEY`로 읽고 쓴다. 이 key는 서버 전용이며 웹, 모바일, 데스크톱 클라이언트에 노출하면 안 된다. 익명 사용자는 Express가 확인한 요청 IP를 `NADO_USAGE_IP_HASH_SALT`와 함께 SHA-256으로 해시해서 하루 단위로 추적하고, 로그인 사용자는 Supabase user id로 추적한다.
 

@@ -22,6 +22,7 @@ const ANALYZE_ERROR_MESSAGE =
   "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.";
 const ANALYZE_TIMEOUT_MESSAGE =
   "분석 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.";
+const ANALYZE_REQUEST_TIMEOUT_MS = 35_000;
 
 export async function analyzeText(
   text: string,
@@ -39,7 +40,7 @@ export async function analyzeText(
       fallbackMessage: ANALYZE_ERROR_MESSAGE,
       fetcher: options.fetcher,
       timeoutMessage: ANALYZE_TIMEOUT_MESSAGE,
-      timeoutMs: options.timeoutMs,
+      timeoutMs: options.timeoutMs ?? ANALYZE_REQUEST_TIMEOUT_MS,
     },
   );
 
