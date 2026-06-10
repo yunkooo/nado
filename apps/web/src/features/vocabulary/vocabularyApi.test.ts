@@ -172,7 +172,7 @@ describe("vocabularyApi", () => {
       deleteVocabularyItem("row_1", "session-token", { fetcher }),
     ).resolves.toEqual({
       message:
-        "단어장 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
+        "단어장 삭제 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
       status: "error",
     });
   });

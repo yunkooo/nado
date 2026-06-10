@@ -19,13 +19,13 @@ export function VocabularyFlow() {
     authState.status === "loading" || vocabularyState.status === "loading"
       ? "loading"
       : "ready";
-  const message = deleteMessage ?? vocabularyState.message;
+  const loadMessage = vocabularyState.message;
   const isLoading = status === "loading";
   const panelState = getVocabularyPanelState({
     authStatus: authState.status,
     isLoading,
     itemCount: items.length,
-    message,
+    message: loadMessage,
   });
   const isSummaryAvailable =
     panelState !== "loading" &&
@@ -41,11 +41,12 @@ export function VocabularyFlow() {
 
       <section className="nado-vocabulary-layout">
         {panelState !== "list" ? (
-          <VocabularyPanel message={message} state={panelState} />
+          <VocabularyPanel message={loadMessage} state={panelState} />
         ) : null}
 
         {panelState === "list" ? (
           <VocabularyList
+            deleteMessage={deleteMessage}
             deletingItemId={deletingItemId}
             isLoading={isLoading}
             items={items}

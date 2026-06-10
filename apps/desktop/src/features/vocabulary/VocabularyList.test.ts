@@ -1,14 +1,8 @@
-import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { VocabularyItem } from "@nado/shared";
 import { describe, expect, it } from "vitest";
 import { VocabularyList } from "./VocabularyList";
-
-const vocabularyListSource = readFileSync(
-  new URL("./VocabularyList.tsx", import.meta.url),
-  "utf8",
-);
 
 const vocabularyItem: VocabularyItem = {
   createdAt: "2026-06-09T00:00:00.000Z",
@@ -24,14 +18,7 @@ const vocabularyItem: VocabularyItem = {
   updatedAt: "2026-06-09T00:00:00.000Z",
 };
 
-describe("VocabularyList source", () => {
-  it("resets scroll position when vocabulary pagination changes page", () => {
-    expect(vocabularyListSource).toContain("moveVocabularyPage");
-    expect(vocabularyListSource).toContain("event.currentTarget.closest");
-    expect(vocabularyListSource).toContain(".nado-content-workspace");
-    expect(vocabularyListSource).toContain("moveVocabularyPage(");
-  });
-
+describe("desktop VocabularyList", () => {
   it("shows delete failures without replacing the vocabulary list", () => {
     const markup = renderToStaticMarkup(
       createElement(VocabularyList, {

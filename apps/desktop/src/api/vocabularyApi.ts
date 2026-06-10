@@ -23,8 +23,10 @@ export type SaveVocabularyResult =
   | { data: VocabularyItem; status: "success" }
   | { message: string; status: "error" };
 
-const VOCABULARY_ERROR_MESSAGE =
+export const VOCABULARY_ERROR_MESSAGE =
   "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
+export const DELETE_VOCABULARY_ERROR_MESSAGE =
+  "단어장 항목을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.";
 
 export async function listVocabulary(
   accessToken: string,
@@ -89,14 +91,17 @@ export async function deleteVocabularyItem(
     );
   } catch {
     return {
-      message: VOCABULARY_ERROR_MESSAGE,
+      message: DELETE_VOCABULARY_ERROR_MESSAGE,
       status: "error",
     };
   }
 
   if (!response.ok) {
     return {
-      message: readErrorMessage(await readJson(response)),
+      message: readErrorMessage(
+        await readJson(response),
+        DELETE_VOCABULARY_ERROR_MESSAGE,
+      ),
       status: "error",
     };
   }
@@ -167,14 +172,17 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-function readErrorMessage(payload: unknown): string {
+function readErrorMessage(
+  payload: unknown,
+  fallbackMessage = VOCABULARY_ERROR_MESSAGE,
+): string {
   if (isRecord(payload) && isRecord(payload.error)) {
     return typeof payload.error.message === "string"
       ? payload.error.message
-      : VOCABULARY_ERROR_MESSAGE;
+      : fallbackMessage;
   }
 
-  return VOCABULARY_ERROR_MESSAGE;
+  return fallbackMessage;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

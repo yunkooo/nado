@@ -92,6 +92,19 @@ describe("desktop vocabularyApi", () => {
     });
   });
 
+  it("returns a delete-specific fallback message when deleting vocabulary fails", async () => {
+    const fetcher = vi.fn(async () => {
+      throw new TypeError("fetch failed");
+    });
+
+    await expect(
+      deleteVocabularyItem("row_1", "session-token", { fetcher }),
+    ).resolves.toEqual({
+      message: "단어장 항목을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.",
+      status: "error",
+    });
+  });
+
   it("returns the API error message when loading vocabulary fails", async () => {
     const fetcher = vi.fn(async () =>
       Response.json(

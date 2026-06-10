@@ -7,6 +7,7 @@ import { Button } from "@nado/ui";
 import { getVocabularyPage } from "./vocabularyPagination";
 
 type VocabularyListProps = {
+  deleteMessage: string | null;
   deletingItemId: string | null;
   isLoading: boolean;
   items: VocabularyItem[];
@@ -14,6 +15,7 @@ type VocabularyListProps = {
 };
 
 export function VocabularyList({
+  deleteMessage,
   deletingItemId,
   isLoading,
   items,
@@ -54,6 +56,12 @@ export function VocabularyList({
             : `총 ${pagination.totalItems}개 중 ${pagination.startItemNumber}-${pagination.endItemNumber}`}
         </span>
       </header>
+
+      {deleteMessage ? (
+        <p className="nado-vocabulary-list-message" role="alert">
+          {deleteMessage}
+        </p>
+      ) : null}
 
       <div className="nado-vocabulary-list">
         {pagination.items.map((item) => (

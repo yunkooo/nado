@@ -8,6 +8,7 @@ import {
 } from "@nado/shared";
 
 type VocabularyListProps = {
+  deleteMessage: string | null;
   deletingItemId: string | null;
   isLoading: boolean;
   items: VocabularyItem[];
@@ -15,6 +16,7 @@ type VocabularyListProps = {
 };
 
 export function VocabularyList({
+  deleteMessage,
   deletingItemId,
   isLoading,
   items,
@@ -44,6 +46,12 @@ export function VocabularyList({
             : "분석에서 저장한 항목이에요"}
         </span>
       </header>
+
+      {deleteMessage ? (
+        <p className="nado-vocabulary-list-message" role="alert">
+          {deleteMessage}
+        </p>
+      ) : null}
 
       <div className="nado-vocabulary-list">
         {pagination.items.map((item) => (

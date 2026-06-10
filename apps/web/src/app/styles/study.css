@@ -148,6 +148,18 @@
   gap: 10px;
 }
 
+.nado-vocabulary-list-message {
+  background: var(--nado-color-surface-muted);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  color: var(--nado-color-ink-muted);
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1.5;
+  margin: 0;
+  padding: 12px 14px;
+}
+
 .nado-vocabulary-list {
   display: grid;
   gap: 10px;
