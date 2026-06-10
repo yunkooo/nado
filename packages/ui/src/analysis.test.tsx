@@ -149,11 +149,11 @@ describe("analysis design system components", () => {
       <AnalysisResult result={analysisFixture} />,
     );
 
-    expect(markup).toContain('<span class="nado-chip"');
+    expect(markup).toContain('class="nado-chip"');
     expect(markup).not.toContain('<button class="nado-chip"');
   });
 
-  it("keeps saved vocabulary suggestions as disabled plus buttons", () => {
+  it("shows saved vocabulary suggestions as saved disabled buttons", () => {
     const markup = renderToStaticMarkup(
       <AnalysisResult
         getVocabularySuggestionState={() => "saved"}
@@ -163,10 +163,18 @@ describe("analysis design system components", () => {
     );
 
     expect(markup).toContain('<button class="nado-chip"');
-    expect(markup).toContain('aria-label="setup: 준비 과정 저장"');
-    expect(markup).toContain('<span class="nado-chip__prefix">+</span>');
-    expect(markup).not.toContain("저장됨");
+    expect(markup).toContain('aria-label="setup: 준비 과정 저장됨"');
+    expect(markup).toContain('<span class="nado-chip__prefix">저장됨</span>');
+    expect(markup).not.toContain('<span class="nado-chip__prefix">+</span>');
     expect(markup).toContain("disabled");
+  });
+
+  it("keeps static chip accessibility labels when rendered as spans", () => {
+    const markup = renderToStaticMarkup(
+      <AnalysisResult result={analysisFixture} />,
+    );
+
+    expect(markup).toContain('aria-label="setup: 준비 과정"');
   });
 
   it("keeps saving vocabulary suggestions disabled while showing progress", () => {
@@ -221,11 +229,29 @@ describe("analysis design system components", () => {
     expect(markup).toContain('aria-label="habit 뜻과 저장 액션 보기"');
     expect(markup).toContain('aria-expanded="true"');
     expect(markup).toContain("nado-word-popover");
+    expect(markup).toContain('role="group"');
+    expect(markup).not.toContain('role="tooltip"');
     expect(markup).toContain("명사");
     expect(markup).toContain("습관");
     expect(markup).toContain("반복해서 이어가는 행동을 말합니다.");
     expect(markup).toContain('aria-label="habit 저장"');
     expect(markup).toContain("+ 저장");
+  });
+
+  it("shows saved vocabulary popover actions as saved disabled buttons", () => {
+    const markup = renderToStaticMarkup(
+      <AnalysisResult
+        activeVocabularyKey="habit"
+        getVocabularySuggestionState={() => "saved"}
+        onSaveVocabularySuggestion={noop}
+        result={analysisFixture}
+      />,
+    );
+
+    expect(markup).toContain('aria-label="habit 저장됨"');
+    expect(markup).toContain("저장됨");
+    expect(markup).toContain("disabled");
+    expect(markup).not.toContain("+ 저장");
   });
 
   it("renders the complete analysis result sections", () => {

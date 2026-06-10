@@ -26,11 +26,11 @@ export function VocabularySuggestionList({
 
         return (
           <Chip
-            aria-label={
-              isInteractive
-                ? `${suggestion.term}: ${suggestion.meaning} 저장`
-                : `${suggestion.term}: ${suggestion.meaning}`
-            }
+            aria-label={getSuggestionAriaLabel(
+              suggestion,
+              state,
+              isInteractive,
+            )}
             as={isInteractive ? "button" : "span"}
             disabled={isInteractive ? state !== "idle" : undefined}
             key={`${suggestion.term}-${suggestion.meaning}`}
@@ -46,9 +46,35 @@ export function VocabularySuggestionList({
   );
 }
 
+function getSuggestionAriaLabel(
+  suggestion: VocabularySuggestion,
+  state: VocabularySuggestionSaveState,
+  isInteractive: boolean,
+) {
+  const label = `${suggestion.term}: ${suggestion.meaning}`;
+
+  if (!isInteractive) {
+    return label;
+  }
+
+  if (state === "saving") {
+    return `${label} 저장 중`;
+  }
+
+  if (state === "saved") {
+    return `${label} 저장됨`;
+  }
+
+  return `${label} 저장`;
+}
+
 function getSavePrefix(state: VocabularySuggestionSaveState) {
   if (state === "saving") {
     return "저장 중";
+  }
+
+  if (state === "saved") {
+    return "저장됨";
   }
 
   return "+";

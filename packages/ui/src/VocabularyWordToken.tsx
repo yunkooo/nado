@@ -41,7 +41,11 @@ export function VocabularyWordToken({
       >
         {text}
       </button>
-      <span className="nado-word-popover" role="tooltip">
+      <span
+        aria-label={`${item.term} 뜻과 저장 액션`}
+        className="nado-word-popover"
+        role="group"
+      >
         <span className="nado-word-popover__header">
           <strong>{item.term}</strong>
           {item.partOfSpeech ? <span>{item.partOfSpeech}</span> : null}
@@ -52,16 +56,43 @@ export function VocabularyWordToken({
         </span>
         {canSave ? (
           <button
-            aria-label={`${item.term} 저장`}
+            aria-label={getSaveActionLabel(item.term, state)}
             className="nado-word-popover__save"
             disabled={state !== "idle"}
             onClick={() => onSaveVocabularySuggestion?.(item)}
             type="button"
           >
-            {state === "saving" ? "저장 중" : "+ 저장"}
+            {getSaveActionText(state)}
           </button>
         ) : null}
       </span>
     </span>
   );
+}
+
+function getSaveActionLabel(
+  term: string,
+  state: VocabularySuggestionSaveState,
+) {
+  if (state === "saving") {
+    return `${term} 저장 중`;
+  }
+
+  if (state === "saved") {
+    return `${term} 저장됨`;
+  }
+
+  return `${term} 저장`;
+}
+
+function getSaveActionText(state: VocabularySuggestionSaveState) {
+  if (state === "saving") {
+    return "저장 중";
+  }
+
+  if (state === "saved") {
+    return "저장됨";
+  }
+
+  return "+ 저장";
 }
