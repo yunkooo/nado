@@ -6,6 +6,10 @@ const srcDir = new URL("./", import.meta.url);
 const hasDesktopSource = (path: string) => existsSync(new URL(path, srcDir));
 
 describe("desktop source structure", () => {
+  it("keeps the analysis flow in its own feature folder", () => {
+    expect(hasDesktopSource("analysis/AnalysisFlow.tsx")).toBe(true);
+  });
+
   it("mirrors the web review feature folder names", () => {
     expect(hasDesktopSource("review/ReviewFlow.tsx")).toBe(true);
     expect(hasDesktopSource("review/ReviewPanels.tsx")).toBe(true);

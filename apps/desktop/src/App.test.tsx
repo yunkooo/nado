@@ -2,6 +2,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const appSource = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const analysisFlowSource = readFileSync(
+  new URL("./analysis/AnalysisFlow.tsx", import.meta.url),
+  "utf8",
+);
 const apiConfigSource = readFileSync(
   new URL("./apiConfig.ts", import.meta.url),
   "utf8",
@@ -18,11 +22,12 @@ const vocabularyListSource = readFileSync(
 
 describe("Desktop App source", () => {
   it("renders the desktop analysis MVP with shared UI components", () => {
-    expect(appSource).toContain("AnalysisResult");
-    expect(appSource).toContain("InputComposer");
-    expect(appSource).toContain("InputSample");
-    expect(appSource).toContain("useAnalysisPageState");
-    expect(appSource).toContain("analyzeText");
+    expect(appSource).toContain("AnalysisFlow");
+    expect(analysisFlowSource).toContain("AnalysisResult");
+    expect(analysisFlowSource).toContain("InputComposer");
+    expect(analysisFlowSource).toContain("InputSample");
+    expect(analysisFlowSource).toContain("useAnalysisPageState");
+    expect(analysisFlowSource).toContain("analyzeText");
   });
 
   it("renders web-style mobile sidebar controls", () => {
@@ -72,10 +77,12 @@ describe("Desktop App source", () => {
   });
 
   it("validates analysis input before submitting to the API", () => {
-    expect(appSource).toContain("normalizeAnalysisText");
-    expect(appSource).toContain("countAnalysisTextCharacters");
-    expect(appSource).toContain("hasUnsupportedAnalysisTextCharacters");
-    expect(appSource).toContain("MAX_ANALYSIS_TEXT_LENGTH");
+    expect(analysisFlowSource).toContain("normalizeAnalysisText");
+    expect(analysisFlowSource).toContain("countAnalysisTextCharacters");
+    expect(analysisFlowSource).toContain(
+      "hasUnsupportedAnalysisTextCharacters",
+    );
+    expect(analysisFlowSource).toContain("MAX_ANALYSIS_TEXT_LENGTH");
   });
 
   it("uses the root Vite API base URL variable configured for deployed backends", () => {
@@ -90,11 +97,11 @@ describe("Desktop App source", () => {
   });
 
   it("keeps vocabulary saving behind a login-needed desktop notice", () => {
-    expect(appSource).toContain(
+    expect(analysisFlowSource).toContain(
       "로그인이 필요해요. Google 로그인 후 단어장에 저장할 수 있어요.",
     );
-    expect(appSource).toContain("setVocabularySaveMessage");
-    expect(appSource).toContain("getVocabularySuggestionState");
+    expect(analysisFlowSource).toContain("setVocabularySaveMessage");
+    expect(analysisFlowSource).toContain("getVocabularySuggestionState");
   });
 
   it("does not render a desktop-only idle placeholder card", () => {
@@ -104,9 +111,9 @@ describe("Desktop App source", () => {
   });
 
   it("uses the same default icon submit button as the web composer", () => {
-    expect(appSource).not.toContain('actionLabel="분석"');
-    expect(appSource).not.toContain('submitButtonKind="text"');
-    expect(appSource).toContain('submitAriaLabel="분석 요청"');
+    expect(analysisFlowSource).not.toContain('actionLabel="분석"');
+    expect(analysisFlowSource).not.toContain('submitButtonKind="text"');
+    expect(analysisFlowSource).toContain('submitAriaLabel="분석 요청"');
   });
 
   it("does not render desktop-only sidebar intro copy", () => {
