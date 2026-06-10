@@ -185,27 +185,32 @@
 }
 
 .nado-input-sample {
+  align-items: stretch;
   background: #fbfbf8;
   border: 1px solid var(--nado-color-border);
   border-radius: var(--nado-radius-md);
   display: grid;
-  gap: 12px;
-  padding: 18px;
-}
-
-.nado-input-sample__header {
-  align-items: center;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
+  gap: 14px;
+  grid-template-rows: minmax(72px, 1fr) auto;
+  min-height: 128px;
+  padding: 18px 18px 16px;
 }
 
 .nado-input-sample__text {
+  align-self: center;
   color: #30302c;
   font-size: 0.9375rem;
   line-height: 1.7;
   margin: 0;
   max-width: 920px;
+}
+
+.nado-input-sample__count {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.875rem;
+  font-weight: 800;
+  justify-self: end;
+  line-height: 1;
 }
 
 .nado-result-card {
@@ -688,8 +693,7 @@
 }
 
 @media (max-width: 560px) {
-  .nado-result-card__header,
-  .nado-input-sample__header {
+  .nado-result-card__header {
     align-items: flex-start;
     flex-direction: column;
   }

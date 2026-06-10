@@ -30,3 +30,10 @@ export function getAnalysisComposerState(text: string) {
     isSubmitDisabled: !hasInput,
   };
 }
+
+export function getAnalysisSourceSampleState(text: string) {
+  return {
+    countLabel: `${countAnalysisTextCharacters(text)} / ${MAX_ANALYSIS_TEXT_LENGTH}`,
+    text,
+  };
+}

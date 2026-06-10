@@ -123,10 +123,16 @@ describe("analysis design system components", () => {
         text="What to avoid when organizing state"
       />,
     );
+    const textIndex = markup.indexOf("What to avoid when organizing state");
+    const countIndex = markup.indexOf("35 / 200");
 
     expect(markup).toContain("What to avoid when organizing state");
     expect(markup).toContain("35 / 200");
+    expect(markup).toContain("nado-input-sample__count");
+    expect(markup).not.toContain("nado-input-sample__header");
     expect(markup).not.toContain("입력 예시");
+    expect(textIndex).toBeGreaterThan(-1);
+    expect(countIndex).toBeGreaterThan(textIndex);
   });
 
   it("renders text submit button when action label is a word", () => {

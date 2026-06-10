@@ -33,6 +33,20 @@ describe("analysis component styles", () => {
     expect(sendButtonRule).toContain("background: var(--nado-color-primary)");
     expect(sendButtonRule).toContain("color: var(--nado-color-primary-ink)");
   });
+
+  it("centers submitted input text while pinning the count to the lower right", () => {
+    const inputSampleRule = readRule(".nado-input-sample");
+    const inputTextRule = readRule(".nado-input-sample__text");
+    const inputCountRule = readRule(".nado-input-sample__count");
+
+    expect(inputSampleRule).toContain(
+      "grid-template-rows: minmax(72px, 1fr) auto",
+    );
+    expect(inputSampleRule).toContain("min-height: 128px");
+    expect(inputTextRule).toContain("align-self: center");
+    expect(inputCountRule).toContain("justify-self: end");
+    expect(inputCountRule).toContain("line-height: 1");
+  });
 });
 
 function readRule(selector) {

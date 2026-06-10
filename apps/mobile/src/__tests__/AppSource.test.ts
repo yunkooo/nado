@@ -22,6 +22,13 @@ describe("mobile App API wiring", () => {
     expect(appSource).toContain('setText("")');
   });
 
+  it("renders analyzed source text with a bottom-right character count", () => {
+    expect(appSource).toContain("getAnalysisSourceSampleState");
+    expect(appSource).toContain("styles.sourceSample");
+    expect(appSource).toContain("styles.sourceSampleText");
+    expect(appSource).toContain("styles.sourceSampleCount");
+  });
+
   it("uses the shared mobile API base URL for configured backends", () => {
     expect(appSource).toContain("readMobileApiBaseUrl");
     expect(appSource).toContain("configuredMobileApiBaseUrl");

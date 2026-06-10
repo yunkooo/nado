@@ -6,6 +6,7 @@ import {
   ANALYSIS_PRIVACY_HELPER_TEXT,
   INITIAL_ANALYSIS_TEXT,
   getAnalysisComposerState,
+  getAnalysisSourceSampleState,
   mobileTabs,
 } from "./analysisScreen";
 
@@ -59,6 +60,15 @@ describe("mobile analysis screen state", () => {
       countLabel: `1 / ${MAX_ANALYSIS_TEXT_LENGTH}`,
       hasInput: true,
       isSubmitDisabled: false,
+    });
+  });
+
+  it("formats the analyzed source text count for the result card", () => {
+    expect(
+      getAnalysisSourceSampleState("What to avoid when organizing state"),
+    ).toEqual({
+      countLabel: `35 / ${MAX_ANALYSIS_TEXT_LENGTH}`,
+      text: "What to avoid when organizing state",
     });
   });
 

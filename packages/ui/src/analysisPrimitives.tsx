@@ -19,12 +19,10 @@ export function InputSample({
 
   return (
     <section className="nado-input-sample" aria-label={label}>
-      <div className="nado-input-sample__header">
-        <span className="nado-compact-label">
-          {visibleCount} / {maxLength}
-        </span>
-      </div>
       <p className="nado-input-sample__text">{text}</p>
+      <span className="nado-input-sample__count">
+        {visibleCount} / {maxLength}
+      </span>
     </section>
   );
 }

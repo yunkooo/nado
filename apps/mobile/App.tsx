@@ -15,6 +15,7 @@ import {
   ANALYSIS_INPUT_ACCESSIBILITY_LABEL,
   INITIAL_ANALYSIS_TEXT,
   getAnalysisComposerState,
+  getAnalysisSourceSampleState,
   mobileTabs,
 } from "./src/features/analysis/analysisScreen";
 import { signInWithGoogle, signOut } from "./src/auth/authClient";
@@ -285,6 +286,7 @@ function AnalysisResultPanel({
   }
 
   const result = analysisState.data;
+  const sourceSample = getAnalysisSourceSampleState(result.sourceText);
 
   return (
     <View style={styles.resultArea}>
@@ -297,6 +299,11 @@ function AnalysisResultPanel({
           </Text>
         </View>
         <Text style={styles.resultMeta}>200자 이내 기본 분석</Text>
+      </View>
+
+      <View accessibilityLabel="입력한 문장" style={styles.sourceSample}>
+        <Text style={styles.sourceSampleText}>{sourceSample.text}</Text>
+        <Text style={styles.sourceSampleCount}>{sourceSample.countLabel}</Text>
       </View>
 
       <ResultSection title="전체 자연스러운 번역">
