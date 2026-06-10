@@ -296,6 +296,10 @@ textarea {
   gap: 14px;
 }
 
+.nado-review-layout {
+  justify-items: center;
+}
+
 .nado-empty-panel,
 .nado-review-card,
 .nado-vocabulary-item {
@@ -425,23 +429,20 @@ textarea {
 
 .nado-vocabulary-pagination {
   align-items: center;
-  background: var(--nado-color-surface);
-  border: 1px solid var(--nado-color-border);
-  border-radius: var(--nado-radius-md);
+  color: var(--nado-color-ink-muted);
   display: flex;
+  font-size: 0.8125rem;
+  font-weight: 800;
   gap: 12px;
   justify-content: space-between;
-  min-height: 52px;
-  padding: 10px 12px;
 }
 
 .nado-vocabulary-pagination > span {
-  color: var(--nado-color-ink-muted);
-  font-size: 0.75rem;
-  font-weight: 800;
+  min-width: 72px;
 }
 
 .nado-vocabulary-pagination__actions {
+  align-items: center;
   display: flex;
   gap: 8px;
 }
@@ -450,6 +451,11 @@ textarea {
 .nado-review-actions {
   display: flex;
   gap: 8px;
+  width: min(100%, 420px);
+}
+
+.nado-review-controls {
+  flex-wrap: wrap;
 }
 
 .nado-review-direction {
@@ -457,12 +463,15 @@ textarea {
   border: 1px solid var(--nado-color-border);
   border-radius: var(--nado-radius-md);
   color: var(--nado-color-ink-muted);
-  cursor: pointer;
   font: inherit;
   font-size: 0.8125rem;
   font-weight: 800;
   min-height: 36px;
   padding: 0 12px;
+}
+
+.nado-review-direction:not(:disabled) {
+  cursor: pointer;
 }
 
 .nado-review-direction--active {
@@ -477,6 +486,7 @@ textarea {
   padding: 28px;
   place-content: center;
   text-align: center;
+  width: min(100%, 420px);
 }
 
 .nado-review-card h2 {

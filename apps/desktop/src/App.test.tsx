@@ -135,6 +135,10 @@ describe("Desktop App source", () => {
     expect(styles).toContain(".desktop-page");
     expect(styles).toContain(".nado-vocabulary-summary");
     expect(styles).toContain(".nado-review-layout");
+    expect(styles).toContain("justify-items: center");
+    expect(styles).toContain("width: min(100%, 420px)");
+    expect(styles).toContain(".nado-review-controls");
+    expect(styles).toContain("flex-wrap: wrap");
   });
 
   it("uses a drawer sidebar instead of stacking the sidebar on narrow screens", () => {
@@ -164,5 +168,12 @@ describe("Desktop App source", () => {
     expect(vocabularyListSource).toContain("currentPage - 1");
     expect(vocabularyListSource).toContain("currentPage + 1");
     expect(styles).toContain(".nado-vocabulary-pagination");
+    expect(styles).toMatch(
+      /\.nado-vocabulary-pagination\s*\{[^}]*color: var\(--nado-color-ink-muted\);/,
+    );
+    expect(styles).not.toMatch(/\.nado-vocabulary-pagination\s*\{[^}]*border:/);
+    expect(styles).not.toMatch(
+      /\.nado-vocabulary-pagination\s*\{[^}]*background:/,
+    );
   });
 });
