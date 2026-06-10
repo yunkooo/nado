@@ -77,7 +77,7 @@ function createMeaning(
   request: SaveVocabularyRequest,
   createdAt: string,
 ): VocabularyMeaning {
-  const note = request.note?.trim();
+  const note = "note" in request ? request.note.trim() : "";
 
   return {
     createdAt,
