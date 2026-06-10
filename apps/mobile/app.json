@@ -8,9 +8,11 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.nado.mobile",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.nado.mobile",
       "adaptiveIcon": {
         "backgroundColor": "#f7f7f4"
       }

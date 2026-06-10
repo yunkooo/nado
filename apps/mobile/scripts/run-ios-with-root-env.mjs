@@ -7,20 +7,19 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const appRoot = resolve(scriptDir, "..");
 const repoRoot = resolve(appRoot, "..", "..");
 const rootEnvPath = resolve(repoRoot, ".env");
-
+const expoArgs = process.argv.slice(2).filter((arg, index) => {
+  return !(index === 0 && arg === "--");
+});
 const env = {
   ...process.env,
   DEVELOPER_DIR:
     process.env.DEVELOPER_DIR ?? "/Applications/Xcode.app/Contents/Developer",
   ...readPublicExpoEnv(rootEnvPath),
 };
-const expoArgs = process.argv.slice(2).filter((arg, index) => {
-  return !(index === 0 && arg === "--");
-});
 
 buildSharedPackage();
 
-const child = spawn("pnpm", ["exec", "expo", "start", ...expoArgs], {
+const child = spawn("pnpm", ["exec", "expo", "run:ios", ...expoArgs], {
   cwd: appRoot,
   env,
   stdio: "inherit",
