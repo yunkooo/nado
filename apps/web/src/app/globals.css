@@ -296,6 +296,10 @@ a {
   gap: 14px;
 }
 
+.nado-review-layout {
+  justify-items: center;
+}
+
 .nado-empty-panel,
 .nado-review-card,
 .nado-vocabulary-item {
@@ -453,6 +457,11 @@ a {
 .nado-review-actions {
   display: flex;
   gap: 8px;
+  width: min(100%, 420px);
+}
+
+.nado-review-controls {
+  flex-wrap: wrap;
 }
 
 .nado-review-direction {
@@ -483,6 +492,7 @@ a {
   padding: 28px;
   place-content: center;
   text-align: center;
+  width: min(100%, 420px);
 }
 
 .nado-review-card h2 {

@@ -147,6 +147,12 @@ describe("HomePage", () => {
     expect(styles).toContain("filter: blur(5px)");
   });
 
+  it("keeps the review session in a compact column", () => {
+    expect(styles).toContain(".nado-review-layout");
+    expect(styles).toContain("justify-items: center");
+    expect(styles).toContain("width: min(100%, 420px)");
+  });
+
   it("defines polished vocabulary page styles", () => {
     expect(styles).toContain(".nado-vocabulary-summary");
     expect(styles).toContain(".nado-vocabulary-flow");
