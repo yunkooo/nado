@@ -1,6 +1,8 @@
 import type { VocabularyItem } from "@nado/shared";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import type { VocabularyListResult } from "./vocabularyApi";
 import {
+  createVocabularyAuthSync,
   createVocabularyStateStore,
   isVocabularySuggestionSaved,
   shouldLoadVocabularyForSession,
@@ -50,6 +52,77 @@ describe("vocabulary state store", () => {
     expect(store.getSnapshot().items).toEqual([]);
   });
 
+  it("settles a vocabulary sync request even after the triggering render is gone", async () => {
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => ({
+      data: [vocabularyItem],
+      status: "success" as const,
+    }));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+
+    sync.sync({
+      accessToken: "session-token",
+      session: null,
+      status: "authenticated",
+    });
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      status: "loading",
+    });
+
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [vocabularyItem],
+      status: "ready",
+    });
+  });
+
+  it("ignores stale vocabulary responses after the auth session changes", async () => {
+    let resolveListVocabulary: (result: VocabularyListResult) => void = () =>
+      undefined;
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(
+      () =>
+        new Promise<VocabularyListResult>((resolve) => {
+          resolveListVocabulary = resolve;
+        }),
+    );
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+
+    sync.sync({
+      accessToken: "old-session-token",
+      session: null,
+      status: "authenticated",
+    });
+    sync.sync({
+      accessToken: null,
+      session: null,
+      status: "anonymous",
+    });
+
+    resolveListVocabulary({
+      data: [vocabularyItem],
+      status: "success",
+    });
+    await flushPromises();
+
+    expect(store.getSnapshot()).toEqual({
+      accessToken: null,
+      items: [],
+      message: null,
+      status: "idle",
+    });
+  });
+
   it("allows a same-token reload after a vocabulary load error", () => {
     expect(
       shouldLoadVocabularyForSession(
@@ -90,3 +163,8 @@ describe("vocabulary state store", () => {
     ).toBe(false);
   });
 });
+
+async function flushPromises() {
+  await Promise.resolve();
+  await Promise.resolve();
+}

@@ -8,10 +8,7 @@ import {
   type ReviewDirection,
 } from "./reviewHelpers";
 import { getVocabularyPanelState } from "./vocabularyViewState";
-import {
-  useSyncVocabularyForAuth,
-  useVocabularyState,
-} from "./vocabularyState";
+import { useVocabularyState } from "./vocabularyState";
 
 type ReviewStatus = "loading" | "ready";
 
@@ -36,8 +33,6 @@ export function ReviewFlow() {
     itemCount: items.length,
     message,
   });
-
-  useSyncVocabularyForAuth(authState);
 
   useEffect(() => {
     setCurrentIndex((index) =>

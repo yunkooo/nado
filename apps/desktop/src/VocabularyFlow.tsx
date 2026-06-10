@@ -1,13 +1,10 @@
 import { useState } from "react";
+import { createVocabularyMeaningRenderKey } from "@nado/shared";
 import { Button } from "@nado/ui";
 import { moveVocabularyPage, paginateVocabularyItems } from "@nado/shared";
 import { useAuthState } from "./authState";
 import { deleteVocabularyItem as deleteVocabularyItemFromApi } from "./vocabularyApi";
-import {
-  useSyncVocabularyForAuth,
-  useVocabularyState,
-  vocabularyStateStore,
-} from "./vocabularyState";
+import { useVocabularyState, vocabularyStateStore } from "./vocabularyState";
 import { getVocabularyPanelState } from "./vocabularyViewState";
 
 type VocabularyStatus = "loading" | "ready";
@@ -46,8 +43,6 @@ export function VocabularyFlow() {
     panelState === "error"
       ? { label: "저장 항목", value: "-" }
       : { label: "저장 항목", value: String(items.length) };
-
-  useSyncVocabularyForAuth(authState);
 
   const deleteItem = async (itemId: string) => {
     if (!authState.accessToken) {
@@ -150,10 +145,14 @@ export function VocabularyFlow() {
                     className="nado-vocabulary-meaning-list"
                     aria-label={`${item.term} 뜻`}
                   >
-                    {item.meanings.map((meaning) => (
+                    {item.meanings.map((meaning, meaningIndex) => (
                       <span
                         className="nado-vocabulary-meaning"
-                        key={`${item.id}-${meaning.meaning}`}
+                        key={createVocabularyMeaningRenderKey(
+                          item.id,
+                          meaning,
+                          meaningIndex,
+                        )}
                       >
                         <strong>{meaning.meaning}</strong>
                         {meaning.note ? <small>{meaning.note}</small> : null}
