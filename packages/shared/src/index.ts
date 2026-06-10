@@ -113,6 +113,8 @@ export function paginateVocabularyItems<T>(
 }
 
 type ScrollTarget = {
+  clientHeight?: number;
+  scrollHeight?: number;
   scrollTo(options: { behavior: "auto"; top: number }): void;
 };
 
@@ -121,12 +123,26 @@ export function resetVocabularyPaginationScroll(
 ) {
   if (scrollTarget) {
     scrollTarget.scrollTo({ behavior: "auto", top: 0 });
-    return;
+
+    if (canScroll(scrollTarget)) {
+      return;
+    }
   }
 
   if (typeof globalThis.scrollTo === "function") {
     globalThis.scrollTo({ behavior: "auto", top: 0 });
   }
+}
+
+function canScroll(scrollTarget: ScrollTarget): boolean {
+  if (
+    typeof scrollTarget.scrollHeight !== "number" ||
+    typeof scrollTarget.clientHeight !== "number"
+  ) {
+    return true;
+  }
+
+  return scrollTarget.scrollHeight > scrollTarget.clientHeight;
 }
 
 export function moveVocabularyPage(

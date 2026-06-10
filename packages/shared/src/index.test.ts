@@ -153,6 +153,27 @@ describe("vocabulary pagination navigation", () => {
 
     globalThis.scrollTo = originalScrollTo;
   });
+
+  it("falls back to the window scroll position when the target cannot scroll", () => {
+    const originalScrollTo = globalThis.scrollTo;
+    const scrollTo = vi.fn();
+    const scrollTarget = {
+      clientHeight: 100,
+      scrollHeight: 100,
+      scrollTo: vi.fn(),
+    };
+
+    vi.stubGlobal("scrollTo", scrollTo);
+    resetVocabularyPaginationScroll(scrollTarget);
+
+    expect(scrollTarget.scrollTo).toHaveBeenCalledWith({
+      behavior: "auto",
+      top: 0,
+    });
+    expect(scrollTo).toHaveBeenCalledWith({ behavior: "auto", top: 0 });
+
+    globalThis.scrollTo = originalScrollTo;
+  });
 });
 
 describe("createVocabularyMeaningRenderKey", () => {
