@@ -3,7 +3,7 @@ import {
   deleteMockVocabularyItem,
   getMockVocabularySummary,
   mockVocabularyItems,
-} from "./mockVocabularyFlow";
+} from "../test-fixtures/mockVocabularyFlow";
 import { getNextReviewIndex, getReviewCard } from "./review/reviewSession";
 
 describe("mock vocabulary flow", () => {
