@@ -1,0 +1,96 @@
+.nado-analysis-workspace {
+  overflow: auto;
+  padding: 28px 28px 150px;
+}
+
+.nado-analysis-page {
+  display: grid;
+  gap: 24px;
+  margin: 0 auto;
+  max-width: 1080px;
+}
+
+.nado-analysis-status {
+  align-items: center;
+  background: var(--nado-color-surface-muted);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  color: var(--nado-color-ink-muted);
+  display: flex;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  min-height: 96px;
+  padding: 20px 24px;
+}
+
+.nado-save-status {
+  align-items: center;
+  background: var(--nado-color-surface-muted);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 16px 42px rgba(32, 32, 29, 0.16);
+  color: var(--nado-color-ink-muted);
+  display: flex;
+  font-size: 0.875rem;
+  font-weight: 700;
+  justify-content: center;
+  left: 50%;
+  line-height: 1.5;
+  max-width: calc(100vw - 32px);
+  min-height: 36px;
+  padding: 8px 12px;
+  position: fixed;
+  text-align: center;
+  transform: translateX(-50%);
+  width: fit-content;
+  z-index: 90;
+}
+
+.nado-save-status--error {
+  background: #fff9f1;
+  border-color: #f1d3a8;
+  color: #7c4a14;
+}
+
+.nado-analysis-page .nado-vocabulary-list {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nado-composer-wrap {
+  background: rgba(255, 255, 255, 0.92);
+  border-top: 1px solid var(--nado-color-border);
+  display: grid;
+  gap: 10px;
+  padding: 14px 24px 18px;
+}
+
+.nado-composer-wrap .nado-composer,
+.nado-input-disclosure {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 860px;
+  width: 100%;
+}
+
+.nado-input-disclosure {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  margin-bottom: 0;
+  margin-top: 0;
+}
+
+@media (max-width: 820px) {
+  .nado-analysis-workspace {
+    padding: 72px 14px 140px;
+  }
+
+  .nado-composer-wrap {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}

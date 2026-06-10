@@ -4,7 +4,15 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import HomePage from "./page";
 
-const styles = readFileSync(new URL("./globals.css", import.meta.url), "utf8");
+const styles = [
+  "./globals.css",
+  "./styles/base.css",
+  "./styles/shell.css",
+  "./styles/analysis.css",
+  "./styles/study.css",
+]
+  .map((stylePath) => readFileSync(new URL(stylePath, import.meta.url), "utf8"))
+  .join("\n");
 const pageSource = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
 const appShellSource = readFileSync(
   new URL("./AppShell.tsx", import.meta.url),
