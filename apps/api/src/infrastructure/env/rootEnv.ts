@@ -11,7 +11,7 @@ export type LoadRootEnvOptions = {
 
 const defaultRootEnvPath = join(
   dirname(fileURLToPath(import.meta.url)),
-  "../../..",
+  "../../../../..",
   ".env",
 );
 

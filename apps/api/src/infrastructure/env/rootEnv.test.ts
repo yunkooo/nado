@@ -1,10 +1,27 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import { loadRootEnv } from "./rootEnv.js";
 
 describe("loadRootEnv", () => {
+  it("loads the repository root env file by default", () => {
+    const expectedRootEnvPath = fileURLToPath(
+      new URL("../../../../../.env", import.meta.url),
+    );
+    const loadEnvFile = vi.fn();
+
+    expect(
+      loadRootEnv({
+        exists: (path) => path === expectedRootEnvPath,
+        loadEnvFile,
+      }),
+    ).toBe(true);
+
+    expect(loadEnvFile).toHaveBeenCalledWith(expectedRootEnvPath);
+  });
+
   it("loads the provided env file when it exists", () => {
     const tempDir = mkdtempSync(join(tmpdir(), "nado-env-"));
     const envPath = join(tempDir, ".env");
