@@ -28,7 +28,7 @@ describe("mobile App API wiring", () => {
     expect(appSource).toContain("useMobileAuthState");
     expect(appSource).toContain("signInWithGoogle");
     expect(appSource).toContain("signOut");
-    expect(appSource).toContain("listVocabulary");
+    expect(appSource).toContain("useMobileVocabulary");
     expect(appSource).not.toContain("mobileVocabularyItems.map");
     expect(appSource).not.toContain("mobileReviewCards");
   });

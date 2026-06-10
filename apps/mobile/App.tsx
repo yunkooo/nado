@@ -6,13 +6,11 @@ import {
   SafeAreaView,
   ScrollView,
   StatusBar,
-  StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
 import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
-import type { VocabularyItem } from "@nado/shared";
 import {
   ANALYSIS_INPUT_ACCESSIBILITY_LABEL,
   INITIAL_ANALYSIS_TEXT,
@@ -29,39 +27,24 @@ import {
   mobileReviewDirectionOptions,
   type ReviewDirection,
 } from "./src/reviewHelpers";
-import { deleteVocabularyItem, listVocabulary } from "./src/vocabularyApi";
 import type { MobileTabKey } from "./src/analysisScreen";
 import type { AnalyzeTextResult } from "./src/analysisApi";
+import { mobileColors, styles } from "./src/mobileStyles";
+import {
+  getMobileStatePanelCopy,
+  getMobileVocabularyPanelState,
+  type MobilePanelState,
+  type MobilePanelType,
+} from "./src/mobilePanelState";
+import {
+  useMobileVocabulary,
+  type MobileVocabularyState,
+} from "./src/useMobileVocabulary";
 
 type AnalysisState = AnalyzeTextResult | { status: "idle" | "loading" };
 
-type MobileVocabularyState = {
-  items: VocabularyItem[];
-  message: string | null;
-  status: "idle" | "loading" | "ready" | "error";
-};
-
-const mobileColors = {
-  canvas: "#f1f1ed",
-  surface: "#ffffff",
-  surfaceMuted: "#f7f7f4",
-  sidebar: "#e9e9e4",
-  sidebarActive: "#d9d9d2",
-  ink: "#20201d",
-  inkMuted: "#6f6f68",
-  border: "#e7e7e2",
-  primary: "#26365f",
-  primaryInk: "#ffffff",
-} as const;
-
 const configuredMobileApiBaseUrl = readMobileApiBaseUrl();
 const configuredMobileApiPlatform = Platform.OS;
-
-const initialVocabularyState: MobileVocabularyState = {
-  items: [],
-  message: null,
-  status: "idle",
-};
 
 export default function App() {
   const [text, setText] = useState(INITIAL_ANALYSIS_TEXT);
@@ -69,107 +52,24 @@ export default function App() {
     status: "idle",
   });
   const [activeTab, setActiveTab] = useState<MobileTabKey>("analysis");
-  const [deletingVocabularyItemId, setDeletingVocabularyItemId] = useState<
-    string | null
-  >(null);
-  const [vocabularyState, setVocabularyState] = useState<MobileVocabularyState>(
-    initialVocabularyState,
+  const [authActionMessage, setAuthActionMessage] = useState<string | null>(
+    null,
   );
   const authState = useMobileAuthState();
+  const [vocabularyState, vocabularyActions] = useMobileVocabulary(authState);
   const composerState = getAnalysisComposerState(text);
   const isAnalysisLoading = analysisState.status === "loading";
   const isAnalyzeDisabled = composerState.isSubmitDisabled || isAnalysisLoading;
 
-  useEffect(() => {
-    let isCurrent = true;
-
-    async function loadVocabulary(accessToken: string) {
-      setVocabularyState((currentState) => ({
-        items: currentState.items,
-        message: null,
-        status: "loading",
-      }));
-
-      const result = await listVocabulary(accessToken, {
-        apiBaseUrl: configuredMobileApiBaseUrl,
-        apiPlatform: configuredMobileApiPlatform,
-      });
-
-      if (!isCurrent) {
-        return;
-      }
-
-      if (result.status === "success") {
-        setVocabularyState({
-          items: result.data,
-          message: null,
-          status: "ready",
-        });
-        return;
-      }
-
-      setVocabularyState({
-        items: [],
-        message: result.message,
-        status: "error",
-      });
-    }
-
-    if (authState.status === "loading") {
-      return () => {
-        isCurrent = false;
-      };
-    }
-
-    if (authState.status !== "authenticated" || !authState.accessToken) {
-      setVocabularyState(initialVocabularyState);
-      return () => {
-        isCurrent = false;
-      };
-    }
-
-    void loadVocabulary(authState.accessToken);
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [authState.accessToken, authState.status]);
-
   const handleAuthPress = async () => {
     if (authState.status === "authenticated") {
-      await signOut();
+      const result = await signOut();
+      setAuthActionMessage(result.status === "error" ? result.message : null);
       return;
     }
 
-    await signInWithGoogle();
-  };
-
-  const handleDeleteVocabularyItem = async (itemId: string) => {
-    if (authState.status !== "authenticated" || !authState.accessToken) {
-      return;
-    }
-
-    setDeletingVocabularyItemId(itemId);
-    const result = await deleteVocabularyItem(itemId, authState.accessToken, {
-      apiBaseUrl: configuredMobileApiBaseUrl,
-      apiPlatform: configuredMobileApiPlatform,
-    });
-    setDeletingVocabularyItemId(null);
-
-    if (result.status !== "success") {
-      setVocabularyState((currentState) => ({
-        ...currentState,
-        message: result.message,
-        status: "error",
-      }));
-      return;
-    }
-
-    setVocabularyState((currentState) => ({
-      ...currentState,
-      items: currentState.items.filter((item) => item.id !== itemId),
-      status: "ready",
-    }));
+    const result = await signInWithGoogle();
+    setAuthActionMessage(result.status === "error" ? result.message : null);
   };
 
   const handleTextChange = (nextText: string) => {
@@ -237,14 +137,21 @@ export default function App() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
+          {authActionMessage ? (
+            <StatusCard
+              message={authActionMessage}
+              title="로그인 안내"
+              tone="error"
+            />
+          ) : null}
           {activeTab === "analysis" ? (
             <AnalysisResultPanel analysisState={analysisState} />
           ) : null}
           {activeTab === "vocabulary" ? (
             <VocabularyPage
               authStatus={authState.status}
-              deletingItemId={deletingVocabularyItemId}
-              onDeleteItem={handleDeleteVocabularyItem}
+              deletingItemId={vocabularyActions.deletingItemId}
+              onDeleteItem={vocabularyActions.deleteItem}
               vocabularyState={vocabularyState}
             />
           ) : null}
@@ -353,12 +260,10 @@ function AnalysisResultPanel({
 
   if (analysisState.status === "loading") {
     return (
-      <View style={styles.statusCard}>
-        <Text style={styles.statusTitle}>분석 중이에요</Text>
-        <Text style={styles.statusText}>
-          입력한 문장을 분석 서버로 전송하고 있어요.
-        </Text>
-      </View>
+      <StatusCard
+        message="입력한 문장을 분석 서버로 전송하고 있어요."
+        title="분석 중이에요"
+      />
     );
   }
 
@@ -367,10 +272,11 @@ function AnalysisResultPanel({
     analysisState.status === "not_analyzable"
   ) {
     return (
-      <View style={styles.statusCard} accessibilityRole="alert">
-        <Text style={styles.statusTitle}>분석 결과</Text>
-        <Text style={styles.statusText}>{analysisState.message}</Text>
-      </View>
+      <StatusCard
+        message={analysisState.message}
+        title="분석 결과"
+        tone="error"
+      />
     );
   }
 
@@ -483,6 +389,26 @@ function ResultSection({
     <View style={styles.resultSection}>
       <Text style={styles.sectionTitle}>{title}</Text>
       {children}
+    </View>
+  );
+}
+
+function StatusCard({
+  message,
+  title,
+  tone = "neutral",
+}: {
+  message: string;
+  title: string;
+  tone?: "error" | "neutral";
+}) {
+  return (
+    <View
+      accessibilityRole={tone === "error" ? "alert" : undefined}
+      style={styles.statusCard}
+    >
+      <Text style={styles.statusTitle}>{title}</Text>
+      <Text style={styles.statusText}>{message}</Text>
     </View>
   );
 }
@@ -672,13 +598,12 @@ function ReviewPage({
               <Text style={styles.eyebrow}>My flashcard</Text>
               <Text style={styles.reviewTerm}>{currentCard.prompt}</Text>
               <Text
-                aria-hidden={isAnswerRevealed ? undefined : true}
                 style={[
                   styles.reviewAnswer,
-                  isAnswerRevealed ? styles.reviewAnswerRevealed : null,
+                  isAnswerRevealed ? null : styles.reviewAnswerHidden,
                 ]}
               >
-                {currentCard.answer}
+                {isAnswerRevealed ? currentCard.answer : "정답 숨김"}
               </Text>
               <Text style={styles.reviewNote}>{currentCard.note}</Text>
             </View>
@@ -715,33 +640,7 @@ function ReviewPage({
   );
 }
 
-type MobilePanelState =
-  | "auth_required"
-  | "empty"
-  | "error"
-  | "list"
-  | "loading";
-
 type MobileAuthState = ReturnType<typeof useMobileAuthState>;
-
-function getMobileVocabularyPanelState(
-  authStatus: MobileAuthState["status"],
-  vocabularyState: MobileVocabularyState,
-): MobilePanelState {
-  if (authStatus === "loading" || vocabularyState.status === "loading") {
-    return "loading";
-  }
-
-  if (authStatus !== "authenticated") {
-    return "auth_required";
-  }
-
-  if (vocabularyState.status === "error") {
-    return "error";
-  }
-
-  return vocabularyState.items.length > 0 ? "list" : "empty";
-}
 
 function MobileStatePanel({
   message,
@@ -750,7 +649,7 @@ function MobileStatePanel({
 }: {
   message: string | null;
   state: Exclude<MobilePanelState, "list">;
-  type: "review" | "vocabulary";
+  type: MobilePanelType;
 }) {
   const copy = getMobileStatePanelCopy(type, state, message);
 
@@ -766,64 +665,6 @@ function MobileStatePanel({
   );
 }
 
-function getMobileStatePanelCopy(
-  type: "review" | "vocabulary",
-  state: Exclude<MobilePanelState, "list">,
-  message: string | null,
-) {
-  if (state === "error") {
-    return {
-      eyebrow: "연결 오류",
-      message:
-        message ??
-        (type === "vocabulary"
-          ? "단어장을 불러오지 못했어요."
-          : "복습 단어를 불러오지 못했어요."),
-      title:
-        type === "vocabulary"
-          ? "단어장을 불러오지 못했어요"
-          : "복습 단어를 불러오지 못했어요",
-    };
-  }
-
-  if (state === "loading") {
-    return {
-      eyebrow: "확인 중",
-      message:
-        type === "vocabulary"
-          ? "단어장 데이터를 불러오기 전에 계정 상태를 먼저 확인합니다."
-          : "복습 카드를 불러오기 전에 계정 상태를 먼저 확인합니다.",
-      title: "로그인 세션을 확인하고 있어요",
-    };
-  }
-
-  if (state === "empty") {
-    return {
-      eyebrow: "저장 전",
-      message:
-        type === "vocabulary"
-          ? "분석 결과에서 단어와 표현을 저장하면 이곳에 모을게요."
-          : "분석 결과에서 단어를 저장하면 바로 복습 카드로 이어집니다.",
-      title:
-        type === "vocabulary"
-          ? "저장된 단어가 아직 없어요"
-          : "복습할 단어가 없어요",
-    };
-  }
-
-  return {
-    eyebrow: "로그인 필요",
-    message:
-      type === "vocabulary"
-        ? "Google 로그인 후 저장한 단어와 표현을 이곳에서 확인해 주세요."
-        : "Google 로그인 후 단어장에 저장한 항목으로 복습을 이어가 주세요.",
-    title:
-      type === "vocabulary"
-        ? "로그인 후 단어장을 이용할 수 있어요"
-        : "로그인 후 복습을 이용할 수 있어요",
-  };
-}
-
 function formatVocabularyDate(value: string) {
   const date = new Date(value);
 
@@ -837,706 +678,3 @@ function formatVocabularyDate(value: string) {
 
   return `${year}.${month}.${day}`;
 }
-
-const styles = StyleSheet.create({
-  analyzeButton: {
-    alignItems: "center",
-    backgroundColor: mobileColors.primary,
-    borderRadius: 8,
-    minHeight: 42,
-    minWidth: 74,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-  analyzeButtonDisabled: {
-    backgroundColor: mobileColors.sidebarActive,
-  },
-  analyzeButtonText: {
-    color: mobileColors.primaryInk,
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  analyzeButtonTextDisabled: {
-    color: mobileColors.inkMuted,
-  },
-  bottomArea: {
-    backgroundColor: "rgba(255, 255, 255, 0.92)",
-    borderTopColor: mobileColors.border,
-    borderTopWidth: 1,
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingTop: 14,
-  },
-  brandGroup: {
-    height: 38,
-    justifyContent: "center",
-  },
-  cardHeader: {
-    alignItems: "stretch",
-    gap: 6,
-  },
-  chunkContent: {
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 5,
-    minWidth: 0,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    width: "100%",
-  },
-  chunkEnglish: {
-    color: mobileColors.ink,
-    fontSize: 16,
-    fontWeight: "800",
-    lineHeight: 22,
-  },
-  chunkUnit: {
-    alignItems: "flex-start",
-    minWidth: 0,
-    width: "100%",
-  },
-  chunkKorean: {
-    color: mobileColors.inkMuted,
-    fontSize: 12,
-    fontWeight: "700",
-    lineHeight: 17,
-    width: "100%",
-  },
-  chunkLine: {
-    gap: 8,
-    minWidth: 0,
-    width: "100%",
-  },
-  composer: {
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: 18,
-    borderWidth: 1,
-    gap: 10,
-    padding: 14,
-    shadowColor: mobileColors.ink,
-    shadowOffset: { height: 8, width: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-  },
-  composerFooter: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-  },
-  content: {
-    alignItems: "stretch",
-    gap: 20,
-    paddingHorizontal: 14,
-    paddingTop: 20,
-    paddingBottom: 24,
-    width: "100%",
-  },
-  count: {
-    color: mobileColors.inkMuted,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  emptyText: {
-    color: mobileColors.inkMuted,
-    fontSize: 15,
-    lineHeight: 23,
-  },
-  emptyPanel: {
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 10,
-    minHeight: 210,
-    padding: 22,
-  },
-  emptyPanelText: {
-    color: mobileColors.inkMuted,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  emptyPanelTitle: {
-    color: mobileColors.ink,
-    fontSize: 20,
-    fontWeight: "800",
-    lineHeight: 28,
-  },
-  eyebrow: {
-    color: mobileColors.inkMuted,
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0,
-    lineHeight: 16,
-    textTransform: "uppercase",
-  },
-  helperText: {
-    color: mobileColors.inkMuted,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  grammarExplanation: {
-    color: mobileColors.inkMuted,
-    fontSize: 13,
-    lineHeight: 20,
-    minWidth: 0,
-  },
-  grammarItem: {
-    alignItems: "flex-start",
-    borderTopColor: mobileColors.border,
-    borderTopWidth: 1,
-    gap: 8,
-    paddingTop: 10,
-  },
-  grammarList: {
-    gap: 10,
-  },
-  grammarTarget: {
-    color: mobileColors.ink,
-    fontSize: 13,
-    fontWeight: "800",
-    lineHeight: 20,
-  },
-  grammarType: {
-    color: mobileColors.inkMuted,
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 20,
-  },
-  input: {
-    color: mobileColors.ink,
-    fontSize: 15,
-    lineHeight: 22,
-    minHeight: 74,
-    outlineColor: "transparent",
-    outlineWidth: 0,
-    padding: 0,
-  },
-  inputFocusReset: {
-    borderColor: "transparent",
-  },
-  itemFooter: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 10,
-    justifyContent: "space-between",
-    marginTop: "auto",
-  },
-  itemMeta: {
-    color: mobileColors.inkMuted,
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 16,
-  },
-  loginButton: {
-    alignItems: "center",
-    backgroundColor: mobileColors.surfaceMuted,
-    borderColor: mobileColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    minHeight: 36,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  loginButtonDisabled: {
-    opacity: 0.64,
-  },
-  loginButtonText: {
-    color: mobileColors.ink,
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  logo: {
-    color: mobileColors.ink,
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  meaningCard: {
-    backgroundColor: mobileColors.surfaceMuted,
-    borderColor: "#eeeeea",
-    borderRadius: 7,
-    borderWidth: 1,
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  meaningNote: {
-    color: mobileColors.inkMuted,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  meaningText: {
-    color: mobileColors.ink,
-    fontSize: 14,
-    fontWeight: "800",
-    lineHeight: 20,
-  },
-  meaningList: {
-    gap: 8,
-  },
-  noticePanel: {
-    backgroundColor: mobileColors.surfaceMuted,
-    borderColor: mobileColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  noticeText: {
-    color: mobileColors.inkMuted,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  noticeTitle: {
-    color: mobileColors.ink,
-    fontSize: 14,
-    fontWeight: "800",
-    lineHeight: 20,
-  },
-  noteItem: {
-    gap: 4,
-  },
-  noteTerm: {
-    color: mobileColors.primary,
-    fontSize: 14,
-    fontWeight: "800",
-    lineHeight: 20,
-  },
-  noteText: {
-    color: mobileColors.ink,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  pageLayout: {
-    alignSelf: "stretch",
-    gap: 14,
-    width: "100%",
-  },
-  pageHeader: {
-    alignItems: "stretch",
-    gap: 8,
-  },
-  pageStack: {
-    alignSelf: "stretch",
-    gap: 16,
-    width: "100%",
-  },
-  pageDescription: {
-    color: mobileColors.inkMuted,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  pageTitleGroup: {
-    gap: 6,
-  },
-  pageTitle: {
-    color: mobileColors.ink,
-    fontSize: 24,
-    fontWeight: "800",
-    lineHeight: 30,
-  },
-  panelText: {
-    color: mobileColors.inkMuted,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  pressed: {
-    opacity: 0.72,
-  },
-  primaryButton: {
-    alignItems: "center",
-    backgroundColor: mobileColors.primary,
-    borderRadius: 8,
-    justifyContent: "center",
-    minHeight: 40,
-    paddingHorizontal: 16,
-  },
-  primaryButtonText: {
-    color: mobileColors.primaryInk,
-    fontSize: 14,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  reviewCard: {
-    alignItems: "center",
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 12,
-    justifyContent: "center",
-    minHeight: 260,
-    paddingHorizontal: 22,
-    paddingVertical: 28,
-    shadowColor: mobileColors.ink,
-    shadowOffset: { height: 10, width: 0 },
-    shadowOpacity: 0.04,
-    shadowRadius: 24,
-  },
-  reviewActionButton: {
-    flex: 1,
-    minWidth: 0,
-  },
-  reviewActions: {
-    alignSelf: "stretch",
-    flexDirection: "row",
-    gap: 8,
-    minWidth: 0,
-    width: "100%",
-  },
-  reviewAnswer: {
-    color: mobileColors.ink,
-    filter: "blur(5px)",
-    fontSize: 20,
-    fontWeight: "800",
-    lineHeight: 28,
-    minHeight: 30,
-  },
-  reviewAnswerRevealed: {
-    filter: "none",
-  },
-  reviewControls: {
-    alignSelf: "stretch",
-    flexDirection: "row",
-    gap: 8,
-    minWidth: 0,
-    width: "100%",
-  },
-  reviewDirection: {
-    alignItems: "center",
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flex: 1,
-    justifyContent: "center",
-    minHeight: 42,
-    minWidth: 0,
-    paddingHorizontal: 12,
-  },
-  reviewDirectionActive: {
-    backgroundColor: mobileColors.primary,
-    borderColor: mobileColors.primary,
-  },
-  reviewDirectionText: {
-    color: mobileColors.inkMuted,
-    fontSize: 13,
-    fontWeight: "800",
-    lineHeight: 36,
-  },
-  reviewDirectionTextActive: {
-    color: mobileColors.primaryInk,
-  },
-  reviewTerm: {
-    color: mobileColors.ink,
-    fontSize: 30,
-    fontWeight: "800",
-    lineHeight: 38,
-    textAlign: "center",
-  },
-  reviewMeta: {
-    color: mobileColors.inkMuted,
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 16,
-  },
-  reviewNote: {
-    color: mobileColors.inkMuted,
-    fontSize: 14,
-    lineHeight: 22,
-    maxWidth: 420,
-    textAlign: "center",
-  },
-  resultArea: {
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 0,
-    padding: 0,
-  },
-  resultDescription: {
-    color: mobileColors.inkMuted,
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  resultHeader: {
-    alignItems: "flex-start",
-    borderBottomColor: mobileColors.border,
-    borderBottomWidth: 1,
-    gap: 8,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-  },
-  resultTitleGroup: {
-    gap: 6,
-  },
-  resultTitle: {
-    color: mobileColors.ink,
-    fontSize: 18,
-    fontWeight: "800",
-    lineHeight: 24,
-  },
-  resultMeta: {
-    color: mobileColors.inkMuted,
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 16,
-  },
-  resultSection: {
-    borderBottomColor: mobileColors.border,
-    borderBottomWidth: 1,
-    gap: 12,
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-  },
-  resultTranslation: {
-    color: mobileColors.ink,
-    fontSize: 18,
-    fontWeight: "800",
-    lineHeight: 28,
-  },
-  statusCard: {
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 8,
-    marginTop: 8,
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-    shadowColor: mobileColors.ink,
-    shadowOffset: { height: 8, width: 0 },
-    shadowOpacity: 0.04,
-    shadowRadius: 18,
-  },
-  statusText: {
-    color: mobileColors.inkMuted,
-    fontSize: 14,
-    lineHeight: 21,
-  },
-  statusTitle: {
-    color: mobileColors.ink,
-    fontSize: 18,
-    fontWeight: "800",
-    lineHeight: 24,
-  },
-  sentenceCard: {
-    backgroundColor: mobileColors.surfaceMuted,
-    borderColor: "#eeeeea",
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 12,
-    minWidth: 0,
-    padding: 14,
-    width: "100%",
-  },
-  sentenceIndex: {
-    color: mobileColors.inkMuted,
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 16,
-  },
-  sentenceList: {
-    gap: 12,
-    minWidth: 0,
-    width: "100%",
-  },
-  sentenceTranslation: {
-    color: mobileColors.ink,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  suggestionChip: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: mobileColors.surfaceMuted,
-    borderColor: "#d8d8d2",
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 6,
-    minHeight: 34,
-    paddingHorizontal: 12,
-  },
-  suggestionList: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  suggestionPrefix: {
-    color: mobileColors.primary,
-    fontSize: 14,
-    fontWeight: "800",
-    lineHeight: 18,
-  },
-  suggestionText: {
-    color: mobileColors.primary,
-    fontSize: 13,
-    fontWeight: "800",
-    lineHeight: 18,
-  },
-  translationNoteList: {
-    gap: 12,
-  },
-  safeArea: {
-    backgroundColor: mobileColors.surface,
-    flex: 1,
-  },
-  shell: {
-    backgroundColor: mobileColors.surface,
-    flex: 1,
-  },
-  sectionHeader: {
-    alignItems: "stretch",
-    gap: 8,
-  },
-  sectionMeta: {
-    color: mobileColors.inkMuted,
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 18,
-  },
-  sectionTitle: {
-    color: mobileColors.ink,
-    fontSize: 15,
-    fontWeight: "800",
-    lineHeight: 21,
-  },
-  sectionTitleGroup: {
-    gap: 5,
-  },
-  summaryItem: {
-    alignItems: "center",
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "space-between",
-    minHeight: 66,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  summaryLabel: {
-    color: mobileColors.inkMuted,
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 16,
-  },
-  summaryValue: {
-    color: mobileColors.ink,
-    fontSize: 20,
-    fontWeight: "800",
-    lineHeight: 20,
-  },
-  tabbar: {
-    alignItems: "center",
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 4,
-    marginBottom: 8,
-    minHeight: 54,
-    padding: 4,
-  },
-  tabItem: {
-    alignItems: "center",
-    borderRadius: 6,
-    flex: 1,
-    minHeight: 44,
-    justifyContent: "center",
-  },
-  tabItemActive: {
-    backgroundColor: mobileColors.sidebar,
-  },
-  tabItemDisabled: {
-    opacity: 0.54,
-  },
-  tabText: {
-    color: mobileColors.inkMuted,
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  tabTextActive: {
-    color: mobileColors.primary,
-  },
-  tabTextDisabled: {
-    color: mobileColors.inkMuted,
-  },
-  termGroup: {
-    flex: 1,
-    gap: 4,
-    minWidth: 0,
-  },
-  termText: {
-    color: mobileColors.ink,
-    fontSize: 16,
-    fontWeight: "800",
-    lineHeight: 22,
-  },
-  topbar: {
-    alignItems: "center",
-    backgroundColor: mobileColors.surface,
-    borderBottomColor: mobileColors.border,
-    borderBottomWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  vocabularyItem: {
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 16,
-    minHeight: 0,
-    padding: 18,
-    shadowColor: mobileColors.ink,
-    shadowOffset: { height: 10, width: 0 },
-    shadowOpacity: 0.04,
-    shadowRadius: 24,
-  },
-  vocabularyListWrap: {
-    gap: 12,
-  },
-  vocabularyType: {
-    alignSelf: "flex-start",
-    backgroundColor: mobileColors.surfaceMuted,
-    borderColor: mobileColors.border,
-    borderRadius: 999,
-    borderWidth: 1,
-    color: mobileColors.inkMuted,
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-  },
-  secondaryButton: {
-    alignItems: "center",
-    backgroundColor: mobileColors.surfaceMuted,
-    borderColor: mobileColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    justifyContent: "center",
-    minHeight: 32,
-    paddingHorizontal: 12,
-  },
-  secondaryButtonText: {
-    color: mobileColors.ink,
-    fontSize: 13,
-    fontWeight: "800",
-    lineHeight: 32,
-    textAlign: "center",
-  },
-});
