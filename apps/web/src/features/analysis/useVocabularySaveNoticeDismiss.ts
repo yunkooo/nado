@@ -11,6 +11,12 @@ export function useVocabularySaveNoticeDismiss(
   store: AnalysisStateStore,
 ) {
   useEffect(() => {
+    return () => {
+      store.setVocabularySaveMessage(null);
+    };
+  }, [store]);
+
+  useEffect(() => {
     if (!message) {
       return;
     }

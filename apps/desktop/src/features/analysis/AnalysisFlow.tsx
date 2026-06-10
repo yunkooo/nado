@@ -48,6 +48,12 @@ export function AnalysisFlow() {
   }, [authState.accessToken]);
 
   useEffect(() => {
+    return () => {
+      analysisStore.setVocabularySaveMessage(null);
+    };
+  }, [analysisStore]);
+
+  useEffect(() => {
     if (!vocabularySaveMessage) {
       return;
     }

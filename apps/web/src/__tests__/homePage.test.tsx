@@ -139,6 +139,12 @@ describe("HomePage", () => {
     );
   });
 
+  it("clears vocabulary save notifications when leaving the analysis page", () => {
+    expect(useVocabularySaveNoticeDismissSource).toMatch(
+      /useEffect\(\(\) => \{\s*return \(\) => \{\s*store\.setVocabularySaveMessage\(null\);/s,
+    );
+  });
+
   it("keeps analysis page state outside the route component", () => {
     expect(pageSource).toContain("useAnalysisPageState");
     expect(pageSource).not.toContain("useState");

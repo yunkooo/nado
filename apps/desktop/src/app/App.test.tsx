@@ -132,6 +132,12 @@ describe("Desktop App source", () => {
     expect(analysisFlowSource).toContain("getVocabularySuggestionState");
   });
 
+  it("clears vocabulary save notices when leaving the analysis view", () => {
+    expect(analysisFlowSource).toMatch(
+      /useEffect\(\(\) => \{\s*return \(\) => \{\s*analysisStore\.setVocabularySaveMessage\(null\);/s,
+    );
+  });
+
   it("does not render a desktop-only idle placeholder card", () => {
     expect(appSource).not.toContain("desktop-empty-state");
     expect(appSource).not.toContain("영어 문장이나 짧은 문단을 입력하세요.");
