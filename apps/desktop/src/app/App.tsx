@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { AnalysisFlow } from "./analysis/AnalysisFlow";
-import { AuthControls } from "./AuthControls";
-import { ReviewFlow } from "./review/ReviewFlow";
-import { VocabularyFlow } from "./vocabulary/VocabularyFlow";
-import { useSyncVocabularyForAuth } from "./vocabularyState";
-import { useAuthState } from "./authState";
+import { AnalysisFlow } from "../features/analysis/AnalysisFlow";
+import { AuthControls } from "../auth/AuthControls";
+import { ReviewFlow } from "../features/review/ReviewFlow";
+import { VocabularyFlow } from "../features/vocabulary/VocabularyFlow";
+import { useSyncVocabularyForAuth } from "../features/vocabulary/vocabularyState";
+import { useAuthState } from "../auth/authState";
 
 type NavigationItem = {
   key: "analysis" | "review" | "vocabulary";

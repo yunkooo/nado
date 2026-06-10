@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { AuthStateSnapshot } from "../authState";
-import type { VocabularyStateSnapshot } from "../vocabularyState";
+import type { AuthStateSnapshot } from "../../auth/authState";
+import type { VocabularyStateSnapshot } from "../vocabulary/vocabularyState";
 import {
   getNextReviewIndex,
   getReviewCard,

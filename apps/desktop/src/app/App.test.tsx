@@ -3,20 +3,23 @@ import { describe, expect, it } from "vitest";
 
 const appSource = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 const analysisFlowSource = readFileSync(
-  new URL("./analysis/AnalysisFlow.tsx", import.meta.url),
+  new URL("../features/analysis/AnalysisFlow.tsx", import.meta.url),
   "utf8",
 );
 const apiConfigSource = readFileSync(
-  new URL("./apiConfig.ts", import.meta.url),
+  new URL("../api/apiConfig.ts", import.meta.url),
   "utf8",
 );
-const styles = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
+const styles = readFileSync(
+  new URL("../styles/styles.css", import.meta.url),
+  "utf8",
+);
 const vocabularyFlowSource = readFileSync(
-  new URL("./vocabulary/VocabularyFlow.tsx", import.meta.url),
+  new URL("../features/vocabulary/VocabularyFlow.tsx", import.meta.url),
   "utf8",
 );
 const vocabularyListSource = readFileSync(
-  new URL("./vocabulary/VocabularyList.tsx", import.meta.url),
+  new URL("../features/vocabulary/VocabularyList.tsx", import.meta.url),
   "utf8",
 );
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import type { AuthStateSnapshot } from "../authState";
-import { deleteVocabularyItem as deleteVocabularyItemFromApi } from "../vocabularyApi";
-import { vocabularyStateStore } from "../vocabularyState";
+import type { AuthStateSnapshot } from "../../auth/authState";
+import { deleteVocabularyItem as deleteVocabularyItemFromApi } from "../../api/vocabularyApi";
+import { vocabularyStateStore } from "./vocabularyState";
 
 export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);

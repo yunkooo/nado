@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const tauriConfig = JSON.parse(
   readFileSync(
-    new URL("../src-tauri/tauri.conf.json", import.meta.url),
+    new URL("../../src-tauri/tauri.conf.json", import.meta.url),
     "utf8",
   ),
 ) as {
@@ -15,7 +15,7 @@ const tauriConfig = JSON.parse(
 };
 const defaultCapability = JSON.parse(
   readFileSync(
-    new URL("../src-tauri/capabilities/default.json", import.meta.url),
+    new URL("../../src-tauri/capabilities/default.json", import.meta.url),
     "utf8",
   ),
 ) as {
@@ -28,7 +28,7 @@ const defaultCapability = JSON.parse(
   >;
 };
 const tauriLibSource = readFileSync(
-  new URL("../src-tauri/src/lib.rs", import.meta.url),
+  new URL("../../src-tauri/src/lib.rs", import.meta.url),
   "utf8",
 );
 

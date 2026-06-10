@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import type { VocabularySuggestionSaveState } from "@nado/ui";
-import type { AnalyzeTextResult } from "./analysisApi";
+import type { AnalyzeTextResult } from "../../api/analysisApi";
 
 export type AnalysisState = AnalyzeTextResult | { status: "idle" | "loading" };
 

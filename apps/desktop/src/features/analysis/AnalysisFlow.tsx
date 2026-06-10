@@ -11,17 +11,17 @@ import {
   InputSample,
   type VocabularySuggestion,
 } from "@nado/ui";
-import { apiBaseUrl } from "../apiConfig";
-import { analyzeText } from "../analysisApi";
-import { useAnalysisPageState } from "../analysisState";
-import { getCurrentAccessToken } from "../authClient";
-import { useAuthState } from "../authState";
-import { saveVocabularyItem } from "../vocabularyApi";
+import { apiBaseUrl } from "../../api/apiConfig";
+import { analyzeText } from "../../api/analysisApi";
+import { useAnalysisPageState } from "./analysisState";
+import { getCurrentAccessToken } from "../../auth/authClient";
+import { useAuthState } from "../../auth/authState";
+import { saveVocabularyItem } from "../../api/vocabularyApi";
 import {
   isVocabularySuggestionSaved,
   useVocabularyState,
   vocabularyStateStore,
-} from "../vocabularyState";
+} from "../vocabulary/vocabularyState";
 
 const inputDisclosure =
   "입력한 문장은 AI 분석을 위해 전송되며, 단어장에는 원문 문장을 저장하지 않습니다.";

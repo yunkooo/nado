@@ -1,7 +1,10 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { normalizeVocabularyTerm, type VocabularyItem } from "@nado/shared";
-import type { AuthStateSnapshot } from "./authState";
-import { listVocabulary, type VocabularyListResult } from "./vocabularyApi";
+import type { AuthStateSnapshot } from "../../auth/authState";
+import {
+  listVocabulary,
+  type VocabularyListResult,
+} from "../../api/vocabularyApi";
 
 export type VocabularyStateStatus = "idle" | "loading" | "ready" | "error";
 

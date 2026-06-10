@@ -1,6 +1,6 @@
-import { useAuthState } from "../authState";
+import { useAuthState } from "../../auth/authState";
 import { getVocabularyPanelState } from "../vocabulary/vocabularyViewState";
-import { useVocabularyState } from "../vocabularyState";
+import { useVocabularyState } from "../vocabulary/vocabularyState";
 import { ReviewPanel } from "./ReviewPanels";
 import { ReviewSessionView } from "./ReviewSessionView";
 import { useReviewSession } from "./useReviewSession";

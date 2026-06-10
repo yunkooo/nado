@@ -1,5 +1,5 @@
-import { useAuthState } from "../authState";
-import { useVocabularyState } from "../vocabularyState";
+import { useAuthState } from "../../auth/authState";
+import { useVocabularyState } from "./vocabularyState";
 import { VocabularyList } from "./VocabularyList";
 import { VocabularyPanel, VocabularySummary } from "./VocabularyPanels";
 import { useVocabularyDeleteAction } from "./useVocabularyDeleteAction";

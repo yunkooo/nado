@@ -1,6 +1,6 @@
 import type { VocabularyItem } from "@nado/shared";
 import { describe, expect, it, vi } from "vitest";
-import type { VocabularyListResult } from "./vocabularyApi";
+import type { VocabularyListResult } from "../../api/vocabularyApi";
 import {
   createVocabularyAuthSync,
   createVocabularyStateStore,

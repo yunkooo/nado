@@ -1,4 +1,4 @@
-import { isTauriRuntime } from "./authClient";
+import { isTauriRuntime } from "../auth/authClient";
 
 export type ApiFetchInput = Request | URL | string;
 export type ApiFetcher = (
