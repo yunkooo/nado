@@ -9,11 +9,8 @@ const vocabularyListSource = readFileSync(
 describe("VocabularyList source", () => {
   it("resets scroll position when vocabulary pagination changes page", () => {
     expect(vocabularyListSource).toContain("moveVocabularyPage");
-    expect(vocabularyListSource).toContain(
-      "moveVocabularyPage(pagination.currentPage - 1, setPage)",
-    );
-    expect(vocabularyListSource).toContain(
-      "moveVocabularyPage(pagination.currentPage + 1, setPage)",
-    );
+    expect(vocabularyListSource).toContain("event.currentTarget.closest");
+    expect(vocabularyListSource).toContain(".nado-content-workspace");
+    expect(vocabularyListSource).toContain("moveVocabularyPage(");
   });
 });

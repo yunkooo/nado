@@ -62,12 +62,9 @@ describe("Desktop App source", () => {
 
   it("resets scroll position when desktop vocabulary pagination changes page", () => {
     expect(vocabularyFlowSource).toContain("moveVocabularyPage");
-    expect(vocabularyFlowSource).toContain(
-      "moveVocabularyPage(pagination.currentPage - 1, setPage)",
-    );
-    expect(vocabularyFlowSource).toContain(
-      "moveVocabularyPage(pagination.currentPage + 1, setPage)",
-    );
+    expect(vocabularyFlowSource).toContain("event.currentTarget.closest");
+    expect(vocabularyFlowSource).toContain(".desktop-content-workspace");
+    expect(vocabularyFlowSource).toContain("moveVocabularyPage(");
   });
 
   it("validates analysis input before submitting to the API", () => {

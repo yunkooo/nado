@@ -128,20 +128,29 @@ describe("paginateVocabularyItems", () => {
 describe("vocabulary pagination navigation", () => {
   it("moves to the next page and resets the scroll position", () => {
     const setPage = vi.fn();
-    const scrollToTop = vi.fn();
+    const scrollTarget = {
+      scrollTo: vi.fn(),
+    };
 
-    moveVocabularyPage(2, setPage, scrollToTop);
+    moveVocabularyPage(2, setPage, scrollTarget);
 
     expect(setPage).toHaveBeenCalledWith(2);
-    expect(scrollToTop).toHaveBeenCalledTimes(1);
+    expect(scrollTarget.scrollTo).toHaveBeenCalledWith({
+      behavior: "auto",
+      top: 0,
+    });
   });
 
-  it("scrolls the viewport back to the top edge", () => {
+  it("falls back to the window scroll position when no target is provided", () => {
+    const originalScrollTo = globalThis.scrollTo;
     const scrollTo = vi.fn();
 
-    resetVocabularyPaginationScroll(scrollTo);
+    vi.stubGlobal("scrollTo", scrollTo);
+    resetVocabularyPaginationScroll();
 
     expect(scrollTo).toHaveBeenCalledWith({ behavior: "auto", top: 0 });
+
+    globalThis.scrollTo = originalScrollTo;
   });
 });
 

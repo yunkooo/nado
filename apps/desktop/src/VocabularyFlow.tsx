@@ -191,8 +191,14 @@ export function VocabularyFlow() {
                 <div>
                   <Button
                     disabled={pagination.currentPage === 1}
-                    onClick={() =>
-                      moveVocabularyPage(pagination.currentPage - 1, setPage)
+                    onClick={(event) =>
+                      moveVocabularyPage(
+                        pagination.currentPage - 1,
+                        setPage,
+                        event.currentTarget.closest(
+                          ".desktop-content-workspace",
+                        ) as HTMLElement | null,
+                      )
                     }
                     size="sm"
                     variant="secondary"
@@ -204,8 +210,14 @@ export function VocabularyFlow() {
                   </strong>
                   <Button
                     disabled={pagination.currentPage === pagination.totalPages}
-                    onClick={() =>
-                      moveVocabularyPage(pagination.currentPage + 1, setPage)
+                    onClick={(event) =>
+                      moveVocabularyPage(
+                        pagination.currentPage + 1,
+                        setPage,
+                        event.currentTarget.closest(
+                          ".desktop-content-workspace",
+                        ) as HTMLElement | null,
+                      )
                     }
                     size="sm"
                     variant="secondary"
