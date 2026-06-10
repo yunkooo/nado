@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { resolveMobileApiUrl } from "./apiConfig";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { MobileApiConfigurationError, resolveMobileApiUrl } from "./apiConfig";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe("resolveMobileApiUrl", () => {
   it("uses the iOS simulator local API server when no base URL is configured", () => {
@@ -20,6 +24,14 @@ describe("resolveMobileApiUrl", () => {
     expect(
       resolveMobileApiUrl("/api/vocabulary", undefined, { platform: "web" }),
     ).toBe("/api/vocabulary");
+  });
+
+  it("does not fall back to simulator localhost URLs in production native builds", () => {
+    vi.stubEnv("NODE_ENV", "production");
+
+    expect(() =>
+      resolveMobileApiUrl("/api/vocabulary", undefined, { platform: "ios" }),
+    ).toThrow(MobileApiConfigurationError);
   });
 
   it("joins configured Railway-style base URLs with API paths", () => {

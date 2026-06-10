@@ -3,7 +3,12 @@ import {
   normalizeAnalysisText,
   type AnalysisResult as ApiAnalysisResult,
 } from "@nado/shared";
-import { resolveMobileApiUrl, type MobileApiPlatform } from "./apiConfig";
+import {
+  MOBILE_API_CONFIGURATION_ERROR_MESSAGE,
+  MobileApiConfigurationError,
+  resolveMobileApiUrl,
+  type MobileApiPlatform,
+} from "./apiConfig";
 
 type Fetcher = typeof fetch;
 
@@ -81,9 +86,12 @@ export async function analyzeText(
         method: "POST",
       },
     );
-  } catch {
+  } catch (error) {
     return {
-      message: MOBILE_CONNECTION_ERROR_MESSAGE,
+      message:
+        error instanceof MobileApiConfigurationError
+          ? MOBILE_API_CONFIGURATION_ERROR_MESSAGE
+          : MOBILE_CONNECTION_ERROR_MESSAGE,
       status: "error",
     };
   }

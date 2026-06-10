@@ -38,6 +38,14 @@ type MobileAuthCallbackClient = {
 };
 
 export type MobileAuthCallbackResult = "handled" | "ignored" | "error";
+export type MobileAuthActionResult =
+  | { status: "success" }
+  | { message: string; status: "error" };
+
+const MOBILE_AUTH_CONFIGURATION_ERROR_MESSAGE =
+  "로그인 설정이 완료되지 않았어요. Supabase 환경변수를 확인해 주세요.";
+const MOBILE_AUTH_ERROR_MESSAGE =
+  "Google 로그인 처리 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.";
 
 export function getMobileSupabaseAuthConfig(): MobileAuthConfig {
   return {
@@ -84,7 +92,10 @@ export async function signInWithGoogle() {
   const supabase = getMobileSupabaseClient();
 
   if (!supabase) {
-    return { status: "error" as const };
+    return {
+      message: MOBILE_AUTH_CONFIGURATION_ERROR_MESSAGE,
+      status: "error" as const,
+    };
   }
 
   const redirectTo = createMobileOAuthRedirectTo();
@@ -97,11 +108,21 @@ export async function signInWithGoogle() {
   });
 
   if (error) {
-    return { status: "error" as const };
+    return {
+      message: MOBILE_AUTH_ERROR_MESSAGE,
+      status: "error" as const,
+    };
   }
 
   if (Platform.OS !== "web" && data.url) {
-    await Linking.openURL(data.url);
+    try {
+      await Linking.openURL(data.url);
+    } catch {
+      return {
+        message: MOBILE_AUTH_ERROR_MESSAGE,
+        status: "error" as const,
+      };
+    }
   }
 
   return { status: "success" as const };
@@ -111,12 +132,17 @@ export async function signOut() {
   const supabase = getMobileSupabaseClient();
 
   if (!supabase) {
-    return { status: "error" as const };
+    return {
+      message: MOBILE_AUTH_CONFIGURATION_ERROR_MESSAGE,
+      status: "error" as const,
+    };
   }
 
   const { error } = await supabase.auth.signOut();
 
-  return error ? { status: "error" as const } : { status: "success" as const };
+  return error
+    ? { message: MOBILE_AUTH_ERROR_MESSAGE, status: "error" as const }
+    : { status: "success" as const };
 }
 
 export function toMobileAuthSnapshot(session: Session | null) {
