@@ -94,6 +94,35 @@ describe("vocabulary state store", () => {
     });
   });
 
+  it("uses the latest Supabase access token before refreshing vocabulary", async () => {
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => ({
+      data: [vocabularyItem],
+      status: "success" as const,
+    }));
+    const sync = createVocabularyAuthSync({
+      getAccessToken: async () => "fresh-token",
+      listVocabulary,
+      store,
+    });
+
+    store.setReady("stale-token", []);
+    sync.refresh({
+      accessToken: "stale-token",
+      session: null,
+      status: "authenticated",
+    });
+
+    await flushPromises();
+
+    expect(listVocabulary).toHaveBeenCalledWith("fresh-token");
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "fresh-token",
+      items: [vocabularyItem],
+      status: "ready",
+    });
+  });
+
   it("settles thrown vocabulary sync failures as an error state", async () => {
     const store = createVocabularyStateStore();
     const listVocabulary = vi.fn(async () => {
@@ -290,6 +319,8 @@ describe("vocabulary state store", () => {
 });
 
 async function flushPromises() {
+  await Promise.resolve();
+  await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
 }

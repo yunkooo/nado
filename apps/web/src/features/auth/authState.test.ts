@@ -4,9 +4,15 @@ import { createAuthStateStore } from "./authState";
 
 const authenticatedSession = {
   access_token: "session-token",
+  refresh_token: "refresh-token",
   user: {
     email: "user@example.com",
   },
+} as Session;
+
+const refreshedSession = {
+  ...authenticatedSession,
+  access_token: "fresh-token",
 } as Session;
 
 describe("auth state store", () => {
@@ -24,6 +30,12 @@ describe("auth state store", () => {
               session: authenticatedSession,
             },
           }),
+          refreshSession: vi.fn(async () => ({
+            data: {
+              session: authenticatedSession,
+            },
+            error: null,
+          })),
           setSession: vi.fn(),
           onAuthStateChange: (handler) => {
             handleAuthStateChange = handler;
@@ -66,6 +78,96 @@ describe("auth state store", () => {
     stop();
 
     expect(unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it("waits for a refreshed startup session before authenticating restored users", async () => {
+    const refreshSession = vi.fn(async () => ({
+      data: {
+        session: refreshedSession,
+      },
+      error: null,
+    }));
+    const store = createAuthStateStore({
+      getClient: () => ({
+        auth: {
+          getSession: async () => ({
+            data: {
+              session: authenticatedSession,
+            },
+          }),
+          refreshSession,
+          setSession: vi.fn(),
+          onAuthStateChange: (handler) => {
+            handler("INITIAL_SESSION", authenticatedSession);
+
+            return {
+              data: {
+                subscription: {
+                  unsubscribe: vi.fn(),
+                },
+              },
+            };
+          },
+        },
+      }),
+    });
+    const snapshots: string[] = [];
+
+    store.subscribe(() => {
+      const snapshot = store.getSnapshot();
+      snapshots.push(`${snapshot.status}:${snapshot.accessToken ?? "none"}`);
+    });
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: null,
+      status: "loading",
+    });
+
+    await flushPromises();
+
+    expect(refreshSession).toHaveBeenCalledWith(authenticatedSession);
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "fresh-token",
+      status: "authenticated",
+    });
+    expect(snapshots).not.toContain("authenticated:session-token");
+  });
+
+  it("falls back to anonymous when a restored session cannot refresh", async () => {
+    const store = createAuthStateStore({
+      getClient: () => ({
+        auth: {
+          getSession: async () => ({
+            data: {
+              session: authenticatedSession,
+            },
+          }),
+          refreshSession: vi.fn(async () => ({
+            data: {
+              session: null,
+            },
+            error: new Error("Invalid Refresh Token"),
+          })),
+          setSession: vi.fn(),
+          onAuthStateChange: () => ({
+            data: {
+              subscription: {
+                unsubscribe: vi.fn(),
+              },
+            },
+          }),
+        },
+      }),
+    });
+
+    store.subscribe(() => undefined);
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: null,
+      session: null,
+      status: "anonymous",
+    });
   });
 
   it("exposes an error snapshot when Supabase auth is not configured", () => {

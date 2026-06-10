@@ -3,6 +3,7 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { normalizeVocabularyTerm, type VocabularyItem } from "@nado/shared";
 import type { AuthStateSnapshot } from "../auth/authState";
+import { getCurrentAccessToken } from "../auth/authClient";
 import {
   listVocabulary,
   VOCABULARY_ERROR_MESSAGE,
@@ -26,6 +27,7 @@ export type VocabularySuggestionMatch = {
 };
 
 type VocabularyStateStore = ReturnType<typeof createVocabularyStateStore>;
+type AccessTokenProvider = () => Promise<string | null>;
 type VocabularyListLoader = (
   accessToken: string,
 ) => Promise<VocabularyListResult>;
@@ -128,9 +130,11 @@ export function useVocabularyState(): VocabularyStateSnapshot {
 }
 
 export function createVocabularyAuthSync({
+  getAccessToken = getCurrentAccessToken,
   listVocabulary: loadVocabulary = listVocabulary,
   store = vocabularyStateStore,
 }: {
+  getAccessToken?: AccessTokenProvider;
   listVocabulary?: VocabularyListLoader;
   store?: VocabularyStateStore;
 } = {}) {
@@ -138,16 +142,36 @@ export function createVocabularyAuthSync({
 
   async function loadVocabularyForSession(
     accessToken: string,
-    { showLoading = true }: { showLoading?: boolean } = {},
+    {
+      refreshAccessToken = false,
+      showLoading = true,
+    }: { refreshAccessToken?: boolean; showLoading?: boolean } = {},
   ) {
     requestSequence += 1;
     const requestId = requestSequence;
+
+    let currentAccessToken = accessToken;
 
     if (showLoading) {
       store.setLoading(accessToken);
     }
 
-    const result = await loadVocabulary(accessToken).catch(
+    if (refreshAccessToken) {
+      currentAccessToken = await readCurrentAccessToken(
+        getAccessToken,
+        accessToken,
+      );
+
+      if (requestId !== requestSequence) {
+        return;
+      }
+
+      if (showLoading && currentAccessToken !== accessToken) {
+        store.setLoading(currentAccessToken);
+      }
+    }
+
+    const result = await loadVocabulary(currentAccessToken).catch(
       (): VocabularyListResult => ({
         message: VOCABULARY_ERROR_MESSAGE,
         status: "error",
@@ -157,19 +181,20 @@ export function createVocabularyAuthSync({
 
     if (
       requestId !== requestSequence ||
-      currentState.accessToken !== accessToken ||
+      (currentState.accessToken !== accessToken &&
+        currentState.accessToken !== currentAccessToken) ||
       (showLoading && currentState.status !== "loading")
     ) {
       return;
     }
 
     if (result.status === "success") {
-      store.setReady(accessToken, result.data);
+      store.setReady(currentAccessToken, result.data);
       return;
     }
 
     if (showLoading) {
-      store.setError(accessToken, result.message);
+      store.setError(currentAccessToken, result.message);
     }
   }
 
@@ -189,6 +214,7 @@ export function createVocabularyAuthSync({
       }
 
       void loadVocabularyForSession(authState.accessToken, {
+        refreshAccessToken: true,
         showLoading:
           vocabularyState.accessToken !== authState.accessToken ||
           vocabularyState.status !== "ready",
@@ -220,6 +246,17 @@ export function createVocabularyAuthSync({
 }
 
 const vocabularyAuthSync = createVocabularyAuthSync();
+
+async function readCurrentAccessToken(
+  getAccessToken: AccessTokenProvider,
+  fallbackAccessToken: string,
+) {
+  try {
+    return (await getAccessToken()) ?? fallbackAccessToken;
+  } catch {
+    return fallbackAccessToken;
+  }
+}
 
 export function useSyncVocabularyForAuth(authState: AuthStateSnapshot) {
   useEffect(() => {
