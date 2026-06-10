@@ -53,7 +53,7 @@ export function VocabularyList({
         </div>
         <span>
           {isLoading
-            ? "로그인 세션을 확인하고 있어요"
+            ? "단어장을 새로고침하고 있어요"
             : `총 ${pagination.totalItems}개 중 ${pagination.startItemNumber}-${pagination.endItemNumber}`}
         </span>
       </header>

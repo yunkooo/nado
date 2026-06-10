@@ -4,6 +4,7 @@ import { createAuthStateStore } from "./authState";
 
 const staleSession = {
   access_token: "stale-token",
+  expires_at: 1_800,
   refresh_token: "refresh-token",
   user: {
     email: "user@example.com",
@@ -13,6 +14,13 @@ const staleSession = {
 const refreshedSession = {
   ...staleSession,
   access_token: "fresh-token",
+  expires_at: 3_600,
+} as Session;
+
+const activeSession = {
+  ...staleSession,
+  access_token: "active-token",
+  expires_at: 3_600,
 } as Session;
 
 describe("desktop auth state store", () => {
@@ -46,6 +54,7 @@ describe("desktop auth state store", () => {
           },
         },
       }),
+      now: () => 1_550_000,
     });
     const snapshots: string[] = [];
 
@@ -71,6 +80,44 @@ describe("desktop auth state store", () => {
     stop();
 
     expect(unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it("uses a restored desktop session without refreshing when it is still valid", async () => {
+    const refreshSession = vi.fn(async () => ({
+      data: {
+        session: refreshedSession,
+      },
+      error: null,
+    }));
+    const store = createAuthStateStore({
+      getClient: () => ({
+        auth: {
+          getSession: async () => ({
+            data: {
+              session: activeSession,
+            },
+          }),
+          refreshSession,
+          onAuthStateChange: () => ({
+            data: {
+              subscription: {
+                unsubscribe: vi.fn(),
+              },
+            },
+          }),
+        },
+      }),
+      now: () => 1_000_000,
+    });
+
+    store.subscribe(() => undefined);
+    await flushPromises();
+
+    expect(refreshSession).not.toHaveBeenCalled();
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "active-token",
+      status: "authenticated",
+    });
   });
 
   it("falls back to anonymous when a restored desktop session cannot refresh", async () => {

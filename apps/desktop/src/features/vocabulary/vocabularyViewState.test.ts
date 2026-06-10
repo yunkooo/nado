@@ -6,20 +6,51 @@ describe("desktop vocabulary view state", () => {
     expect(
       getVocabularyPanelState({
         authStatus: "anonymous",
-        isLoading: false,
         itemCount: 0,
         message: null,
+        vocabularyStatus: "idle",
       }),
     ).toBe("auth_required");
+  });
+
+  it("separates auth loading from vocabulary loading", () => {
+    expect(
+      getVocabularyPanelState({
+        authStatus: "loading",
+        itemCount: 0,
+        message: null,
+        vocabularyStatus: "idle",
+      }),
+    ).toBe("auth_loading");
+
+    expect(
+      getVocabularyPanelState({
+        authStatus: "authenticated",
+        itemCount: 0,
+        message: null,
+        vocabularyStatus: "loading",
+      }),
+    ).toBe("vocabulary_loading");
+  });
+
+  it("keeps the list visible while a saved vocabulary snapshot refreshes", () => {
+    expect(
+      getVocabularyPanelState({
+        authStatus: "authenticated",
+        itemCount: 2,
+        message: null,
+        vocabularyStatus: "loading",
+      }),
+    ).toBe("list");
   });
 
   it("shows only the connection error when loading vocabulary fails", () => {
     expect(
       getVocabularyPanelState({
         authStatus: "authenticated",
-        isLoading: false,
         itemCount: 0,
         message: "단어장을 불러오지 못했어요.",
+        vocabularyStatus: "error",
       }),
     ).toBe("error");
   });
@@ -28,18 +59,18 @@ describe("desktop vocabulary view state", () => {
     expect(
       getVocabularyPanelState({
         authStatus: "authenticated",
-        isLoading: false,
         itemCount: 0,
         message: null,
+        vocabularyStatus: "ready",
       }),
     ).toBe("empty");
 
     expect(
       getVocabularyPanelState({
         authStatus: "authenticated",
-        isLoading: false,
         itemCount: 2,
         message: null,
+        vocabularyStatus: "ready",
       }),
     ).toBe("list");
   });

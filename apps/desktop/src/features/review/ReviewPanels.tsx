@@ -6,6 +6,11 @@ type ReviewPanelProps = {
 };
 
 const panelCopy = {
+  auth_loading: {
+    eyebrow: "확인 중",
+    message: "복습 카드를 보여주기 전에 로그인 상태를 확인하고 있어요.",
+    title: "로그인 상태를 확인하고 있어요",
+  },
   auth_required: {
     eyebrow: "로그인 필요",
     message: "Google 로그인 후 단어장에 저장한 항목으로 복습을 이어가 주세요.",
@@ -16,10 +21,10 @@ const panelCopy = {
     message: "분석 결과에서 단어를 저장하면 바로 복습 카드로 이어집니다.",
     title: "복습할 단어가 없어요",
   },
-  loading: {
-    eyebrow: "확인 중",
-    message: "복습 카드를 불러오기 전에 계정 상태를 먼저 확인합니다.",
-    title: "로그인 세션을 확인하고 있어요",
+  vocabulary_loading: {
+    eyebrow: "불러오는 중",
+    message: "저장한 단어를 서버에서 가져와 복습 카드로 준비하고 있어요.",
+    title: "복습 단어를 불러오고 있어요",
   },
 };
 
@@ -39,11 +44,15 @@ export function ReviewPanel({ message, state }: ReviewPanelProps) {
   return (
     <div
       className="nado-empty-panel"
-      role={state === "loading" ? "status" : undefined}
+      role={isLoadingPanelState(state) ? "status" : undefined}
     >
       <span className="nado-eyebrow">{copy.eyebrow}</span>
       <h2>{copy.title}</h2>
       <p>{copy.message}</p>
     </div>
   );
+}
+
+function isLoadingPanelState(state: ReviewPanelProps["state"]) {
+  return state === "auth_loading" || state === "vocabulary_loading";
 }

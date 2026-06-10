@@ -5,30 +5,21 @@ import { VocabularyPanel, VocabularySummary } from "./VocabularyPanels";
 import { useVocabularyDeleteAction } from "./useVocabularyDeleteAction";
 import { getVocabularyPanelState } from "./vocabularyViewState";
 
-type VocabularyStatus = "loading" | "ready";
-
 export function VocabularyFlow() {
   const authState = useAuthState();
   const vocabularyState = useVocabularyState();
   const { deleteItem, deleteMessage, deletingItemId } =
     useVocabularyDeleteAction(authState);
   const items = vocabularyState.items;
-  const status: VocabularyStatus =
-    authState.status === "loading" || vocabularyState.status === "loading"
-      ? "loading"
-      : "ready";
   const loadMessage = vocabularyState.message;
-  const isLoading = status === "loading";
+  const isVocabularyLoading = vocabularyState.status === "loading";
   const panelState = getVocabularyPanelState({
     authStatus: authState.status,
-    isLoading,
     itemCount: items.length,
     message: loadMessage,
+    vocabularyStatus: vocabularyState.status,
   });
-  const isSummaryAvailable =
-    panelState !== "loading" &&
-    panelState !== "auth_required" &&
-    panelState !== "error";
+  const isSummaryAvailable = panelState === "empty" || panelState === "list";
 
   return (
     <section className="nado-vocabulary-flow">
@@ -46,7 +37,7 @@ export function VocabularyFlow() {
           <VocabularyList
             deleteMessage={deleteMessage}
             deletingItemId={deletingItemId}
-            isLoading={isLoading}
+            isLoading={isVocabularyLoading}
             items={items}
             onDeleteItem={deleteItem}
           />

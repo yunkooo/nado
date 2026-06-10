@@ -40,6 +40,8 @@ const initialSnapshot: VocabularyStateSnapshot = {
   status: "idle",
 };
 
+const VOCABULARY_BACKGROUND_REFRESH_STALE_MS = 60 * 1000;
+
 export function createVocabularyStateStore() {
   const listeners = new Set<() => void>();
   let snapshot = initialSnapshot;
@@ -242,13 +244,25 @@ export function useRefreshVocabularyForActiveStudySurface(
   refreshKey: unknown = isStudySurfaceActive,
 ) {
   const latestAuthStateRef = useRef(authState);
+  const lastBackgroundRefreshAtRef = useRef(0);
   latestAuthStateRef.current = authState;
 
   useEffect(() => {
-    if (!isStudySurfaceActive) {
+    const vocabularyState = vocabularyStateStore.getSnapshot();
+    const now = Date.now();
+
+    if (
+      !shouldRefreshActiveVocabulary({
+        isStudySurfaceActive,
+        lastRefreshAt: lastBackgroundRefreshAtRef.current,
+        now,
+        vocabularyStatus: vocabularyState.status,
+      })
+    ) {
       return;
     }
 
+    lastBackgroundRefreshAtRef.current = now;
     void vocabularyAuthSync.refresh(authState);
   }, [
     authState.accessToken,
@@ -263,6 +277,21 @@ export function useRefreshVocabularyForActiveStudySurface(
     }
 
     const refreshVocabulary = () => {
+      const now = Date.now();
+      const vocabularyState = vocabularyStateStore.getSnapshot();
+
+      if (
+        !shouldRefreshActiveVocabulary({
+          isStudySurfaceActive,
+          lastRefreshAt: lastBackgroundRefreshAtRef.current,
+          now,
+          vocabularyStatus: vocabularyState.status,
+        })
+      ) {
+        return;
+      }
+
+      lastBackgroundRefreshAtRef.current = now;
       void vocabularyAuthSync.refresh(latestAuthStateRef.current);
     };
     const refreshVisibleVocabulary = () => {
@@ -282,6 +311,28 @@ export function useRefreshVocabularyForActiveStudySurface(
       );
     };
   }, [isStudySurfaceActive]);
+}
+
+export function shouldRefreshActiveVocabulary({
+  isStudySurfaceActive,
+  lastRefreshAt,
+  now,
+  vocabularyStatus,
+}: {
+  isStudySurfaceActive: boolean;
+  lastRefreshAt: number;
+  now: number;
+  vocabularyStatus: VocabularyStateStatus;
+}) {
+  if (!isStudySurfaceActive) {
+    return false;
+  }
+
+  if (vocabularyStatus !== "ready") {
+    return true;
+  }
+
+  return now - lastRefreshAt >= VOCABULARY_BACKGROUND_REFRESH_STALE_MS;
 }
 
 export function shouldLoadVocabularyForSession(

@@ -6,6 +6,11 @@ type VocabularyPanelProps = {
 };
 
 const panelCopy = {
+  auth_loading: {
+    eyebrow: "확인 중",
+    message: "저장한 단어를 보여주기 전에 로그인 상태를 확인하고 있어요.",
+    title: "로그인 상태를 확인하고 있어요",
+  },
   auth_required: {
     eyebrow: "로그인 필요",
     message: "Google 로그인 후 저장한 단어와 표현을 이곳에서 확인해 주세요.",
@@ -16,10 +21,10 @@ const panelCopy = {
     message: "분석 결과에서 단어와 표현을 저장하면 이곳에 모을게요.",
     title: "저장된 단어가 아직 없어요",
   },
-  loading: {
-    eyebrow: "확인 중",
-    message: "단어장 데이터를 불러오기 전에 계정 상태를 먼저 확인합니다.",
-    title: "로그인 세션을 확인하고 있어요",
+  vocabulary_loading: {
+    eyebrow: "불러오는 중",
+    message: "저장한 단어와 표현을 서버에서 가져오고 있어요.",
+    title: "단어장을 불러오고 있어요",
   },
 };
 
@@ -39,13 +44,17 @@ export function VocabularyPanel({ message, state }: VocabularyPanelProps) {
   return (
     <div
       className="nado-empty-panel nado-empty-panel--compact"
-      role={state === "loading" ? "status" : undefined}
+      role={isLoadingPanelState(state) ? "status" : undefined}
     >
       <span className="nado-eyebrow">{copy.eyebrow}</span>
       <h2>{copy.title}</h2>
       <p>{copy.message}</p>
     </div>
   );
+}
+
+function isLoadingPanelState(state: VocabularyPanelProps["state"]) {
+  return state === "auth_loading" || state === "vocabulary_loading";
 }
 
 type VocabularySummaryProps = {

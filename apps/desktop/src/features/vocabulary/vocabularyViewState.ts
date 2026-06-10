@@ -1,31 +1,37 @@
 import type { AuthStateStatus } from "../../auth/authState";
+import type { VocabularyStateStatus } from "./vocabularyState";
 
 export type VocabularyPanelState =
+  | "auth_loading"
   | "auth_required"
   | "empty"
   | "error"
   | "list"
-  | "loading";
+  | "vocabulary_loading";
 
 export type VocabularyPanelStateInput = {
   authStatus: AuthStateStatus;
-  isLoading: boolean;
   itemCount: number;
   message: string | null;
+  vocabularyStatus: VocabularyStateStatus;
 };
 
 export function getVocabularyPanelState({
   authStatus,
-  isLoading,
   itemCount,
   message,
+  vocabularyStatus,
 }: VocabularyPanelStateInput): VocabularyPanelState {
-  if (isLoading || authStatus === "loading") {
-    return "loading";
+  if (authStatus === "loading") {
+    return itemCount > 0 ? "list" : "auth_loading";
   }
 
   if (authStatus !== "authenticated") {
     return "auth_required";
+  }
+
+  if (vocabularyStatus === "loading") {
+    return itemCount > 0 ? "list" : "vocabulary_loading";
   }
 
   if (message) {

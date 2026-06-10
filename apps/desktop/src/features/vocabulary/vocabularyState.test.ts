@@ -5,6 +5,7 @@ import {
   createVocabularyAuthSync,
   createVocabularyStateStore,
   isVocabularySuggestionSaved,
+  shouldRefreshActiveVocabulary,
   shouldLoadVocabularyForSession,
 } from "./vocabularyState";
 
@@ -298,6 +299,37 @@ describe("vocabulary state store", () => {
       }),
     ).resolves.toBe("ignored");
     expect(listVocabulary).not.toHaveBeenCalled();
+  });
+
+  it("does not refresh a visible ready vocabulary snapshot before the stale window", () => {
+    expect(
+      shouldRefreshActiveVocabulary({
+        isStudySurfaceActive: true,
+        lastRefreshAt: 1_000,
+        now: 30_000,
+        vocabularyStatus: "ready",
+      }),
+    ).toBe(false);
+  });
+
+  it("refreshes active vocabulary when it is not ready or has become stale", () => {
+    expect(
+      shouldRefreshActiveVocabulary({
+        isStudySurfaceActive: true,
+        lastRefreshAt: 1_000,
+        now: 30_000,
+        vocabularyStatus: "error",
+      }),
+    ).toBe(true);
+
+    expect(
+      shouldRefreshActiveVocabulary({
+        isStudySurfaceActive: true,
+        lastRefreshAt: 1_000,
+        now: 61_000,
+        vocabularyStatus: "ready",
+      }),
+    ).toBe(true);
   });
 });
 

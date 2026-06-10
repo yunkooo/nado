@@ -41,7 +41,10 @@ export type AuthStateClient = {
 
 export type AuthStateStoreOptions = {
   getClient?: () => AuthStateClient | null;
+  now?: () => number;
 };
+
+const STARTUP_SESSION_REFRESH_LEEWAY_MS = 5 * 60 * 1000;
 
 const loadingSnapshot: AuthStateSnapshot = {
   accessToken: null,
@@ -59,6 +62,7 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
   const getClient =
     options.getClient ??
     (() => getSupabaseBrowserClient() as AuthStateClient | null);
+  const now = options.now ?? Date.now;
   const listeners = new Set<() => void>();
   let snapshot = loadingSnapshot;
   let subscription: { unsubscribe(): void } | null = null;
@@ -102,7 +106,7 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
 
     subscription = data.subscription;
 
-    resolveStartupSession(client)
+    resolveStartupSession(client, now)
       .then((session) => {
         isResolvingInitialSession = false;
         setSnapshot(toAuthStateSnapshot(session));
@@ -153,12 +157,17 @@ export function useAuthState(): AuthStateSnapshot {
 
 async function resolveStartupSession(
   client: AuthStateClient,
+  now: () => number,
 ): Promise<Session | null> {
   const { data } = await client.auth.getSession();
   const session = data.session;
 
   if (!session) {
     return null;
+  }
+
+  if (!shouldRefreshStartupSession(session, now())) {
+    return session;
   }
 
   const refreshed = await client.auth.refreshSession(session);
@@ -168,6 +177,14 @@ async function resolveStartupSession(
   }
 
   return refreshed.data.session;
+}
+
+function shouldRefreshStartupSession(session: Session, now: number) {
+  if (typeof session.expires_at !== "number") {
+    return true;
+  }
+
+  return session.expires_at * 1000 - now <= STARTUP_SESSION_REFRESH_LEEWAY_MS;
 }
 
 function toAuthStateSnapshot(session: Session | null): AuthStateSnapshot {
