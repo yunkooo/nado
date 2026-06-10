@@ -6,6 +6,7 @@ import {
   isVocabularySuggestionSaved,
   shouldLoadVocabularyForSession,
 } from "./vocabularyState";
+import type { VocabularyListResult } from "./vocabularyApi";
 
 const vocabularyItem: VocabularyItem = {
   createdAt: "2026-06-09T00:00:00.000Z",
@@ -89,6 +90,93 @@ describe("vocabulary state store", () => {
     expect(store.getSnapshot()).toMatchObject({
       accessToken: "session-token",
       items: [vocabularyItem],
+      status: "ready",
+    });
+  });
+
+  it("settles thrown vocabulary sync failures as an error state", async () => {
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => {
+      throw new Error("network lost");
+    });
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+
+    sync.sync({
+      accessToken: "session-token",
+      session: null,
+      status: "authenticated",
+    });
+
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [],
+      message: "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+      status: "error",
+    });
+  });
+
+  it("ignores stale vocabulary sync results after a later session starts", async () => {
+    const store = createVocabularyStateStore();
+    const firstRequest: {
+      resolve?: (result: VocabularyListResult) => void;
+    } = {};
+    const listVocabulary = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<VocabularyListResult>((resolve) => {
+            firstRequest.resolve = resolve;
+          }),
+      )
+      .mockResolvedValueOnce({
+        data: [
+          {
+            ...vocabularyItem,
+            id: "row_2",
+            term: "before",
+          },
+        ],
+        status: "success" as const,
+      });
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+
+    sync.sync({
+      accessToken: "first-token",
+      session: null,
+      status: "authenticated",
+    });
+    sync.sync({
+      accessToken: "second-token",
+      session: null,
+      status: "authenticated",
+    });
+
+    await flushPromises();
+    if (!firstRequest.resolve) {
+      throw new Error("Expected the first vocabulary request to start.");
+    }
+
+    firstRequest.resolve({
+      data: [vocabularyItem],
+      status: "success",
+    });
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "second-token",
+      items: [
+        expect.objectContaining({
+          id: "row_2",
+        }),
+      ],
       status: "ready",
     });
   });

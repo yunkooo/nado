@@ -80,6 +80,7 @@ describe("analyzeText", () => {
       body: JSON.stringify({ text: "I was wondering if you could help me." }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
+      signal: expect.any(AbortSignal),
     });
     expect(result).toMatchObject({
       data: {
@@ -296,6 +297,21 @@ describe("analyzeText", () => {
         "Content-Type": "application/json",
       },
       method: "POST",
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it("returns a timeout message when the analyze request is aborted", async () => {
+    const fetcher = vi.fn(async () => {
+      throw new DOMException("Aborted", "AbortError");
+    });
+
+    await expect(
+      analyzeText("I was wondering if you could help me.", { fetcher }),
+    ).resolves.toEqual({
+      message:
+        "분석 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
+      status: "error",
     });
   });
 

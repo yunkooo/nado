@@ -82,6 +82,63 @@ describe("analysis state store", () => {
     unsubscribe();
   });
 
+  it("persists in-flight analysis as idle so reloads do not get stuck loading", () => {
+    const storage = createStorage();
+    const store = createAnalysisStateStore({
+      getStorage: () => storage,
+    });
+
+    store.setText("I leave home.");
+    store.setAnalysisState({ status: "loading" });
+
+    const persisted = JSON.parse(
+      storage.getItem("nado.analysis-state.v1") ?? "null",
+    ) as { snapshot: AnalysisPageSnapshot };
+
+    expect(store.getSnapshot().analysisState.status).toBe("loading");
+    expect(persisted.snapshot).toMatchObject({
+      analysisState: {
+        status: "idle",
+      },
+      text: "I leave home.",
+      vocabularySaveMessage: null,
+      vocabularySaveStates: {},
+    });
+  });
+
+  it("does not persist transient vocabulary save messages or saving states", () => {
+    const storage = createStorage();
+    const store = createAnalysisStateStore({
+      getStorage: () => storage,
+    });
+
+    store.setAnalysisState(createSuccessSnapshot().analysisState);
+    store.setVocabularySaveMessage({
+      text: "단어장에 저장했어요.",
+      tone: "success",
+    });
+    store.setVocabularySaveStates({
+      "after::~한 후에": "saving",
+    });
+
+    const persisted = JSON.parse(
+      storage.getItem("nado.analysis-state.v1") ?? "null",
+    ) as { snapshot: AnalysisPageSnapshot };
+
+    expect(store.getSnapshot()).toMatchObject({
+      vocabularySaveMessage: {
+        text: "단어장에 저장했어요.",
+      },
+      vocabularySaveStates: {
+        "after::~한 후에": "saving",
+      },
+    });
+    expect(persisted.snapshot).toMatchObject({
+      vocabularySaveMessage: null,
+      vocabularySaveStates: {},
+    });
+  });
+
   it("drops persisted success snapshots with malformed analysis result data", () => {
     const storage = createStorage({
       "nado.analysis-state.v1": JSON.stringify({

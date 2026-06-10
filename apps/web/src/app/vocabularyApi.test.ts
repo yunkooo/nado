@@ -70,6 +70,7 @@ describe("vocabularyApi", () => {
     expect(fetcher).toHaveBeenCalledWith("/api/vocabulary/row_1", {
       headers: { Authorization: "Bearer session-token" },
       method: "DELETE",
+      signal: expect.any(AbortSignal),
     });
     expect(result).toEqual({ status: "success" });
   });
@@ -104,6 +105,7 @@ describe("vocabularyApi", () => {
         "Content-Type": "application/json",
       },
       method: "POST",
+      signal: expect.any(AbortSignal),
     });
     expect(result).toEqual({
       data: vocabularyItem,
@@ -159,5 +161,41 @@ describe("vocabularyApi", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("returns a timeout error when deleting vocabulary takes too long", async () => {
+    const fetcher = vi.fn(async () => {
+      throw new DOMException("Aborted", "AbortError");
+    });
+
+    await expect(
+      deleteVocabularyItem("row_1", "session-token", { fetcher }),
+    ).resolves.toEqual({
+      message:
+        "단어장 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
+      status: "error",
+    });
+  });
+
+  it("returns a timeout error when saving vocabulary takes too long", async () => {
+    const fetcher = vi.fn(async () => {
+      throw new DOMException("Aborted", "AbortError");
+    });
+
+    await expect(
+      saveVocabularyItem(
+        {
+          meaning: "궁금해하다",
+          term: "wondering",
+          type: "word",
+        },
+        "session-token",
+        { fetcher },
+      ),
+    ).resolves.toEqual({
+      message:
+        "단어장 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
+      status: "error",
+    });
   });
 });

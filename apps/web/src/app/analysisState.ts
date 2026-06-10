@@ -65,7 +65,7 @@ export function createAnalysisStateStore(
       storage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          snapshot: nextSnapshot,
+          snapshot: createPersistedSnapshot(nextSnapshot),
           version: STORAGE_VERSION,
         }),
       );
@@ -200,11 +200,25 @@ function readPersistedSnapshot(
       return null;
     }
 
-    return parsed.snapshot;
+    return createPersistedSnapshot(parsed.snapshot);
   } catch {
     storage.removeItem(STORAGE_KEY);
     return null;
   }
+}
+
+function createPersistedSnapshot(
+  nextSnapshot: AnalysisPageSnapshot,
+): AnalysisPageSnapshot {
+  return {
+    ...nextSnapshot,
+    analysisState:
+      nextSnapshot.analysisState.status === "loading"
+        ? initialSnapshot.analysisState
+        : nextSnapshot.analysisState,
+    vocabularySaveMessage: null,
+    vocabularySaveStates: {},
+  };
 }
 
 function getSessionStorage(): AnalysisStateStorage | null {

@@ -3,7 +3,11 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { normalizeVocabularyTerm, type VocabularyItem } from "@nado/shared";
 import type { AuthStateSnapshot } from "./authState";
-import { listVocabulary, type VocabularyListResult } from "./vocabularyApi";
+import {
+  listVocabulary,
+  VOCABULARY_ERROR_MESSAGE,
+  type VocabularyListResult,
+} from "./vocabularyApi";
 
 export type VocabularyStateStatus = "idle" | "loading" | "ready" | "error";
 
@@ -138,7 +142,12 @@ export function createVocabularyAuthSync({
 
     store.setLoading(accessToken);
 
-    const result = await loadVocabulary(accessToken);
+    const result = await loadVocabulary(accessToken).catch(
+      (): VocabularyListResult => ({
+        message: VOCABULARY_ERROR_MESSAGE,
+        status: "error",
+      }),
+    );
     const currentState = store.getSnapshot();
 
     if (

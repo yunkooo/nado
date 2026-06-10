@@ -3,48 +3,56 @@ import {
   type AnalysisResult as ApiAnalysisResult,
 } from "@nado/shared";
 import type { AnalysisResultData } from "@nado/ui";
-
-type Fetcher = typeof fetch;
+import {
+  fetchWithTimeout,
+  readApiErrorMessage,
+  readJson,
+  type ApiRequestOptions,
+} from "./apiClient";
 
 export type AnalyzeTextResult =
   | { data: AnalysisResultData; status: "success" }
   | { message: string; status: "error" | "not_analyzable" };
 
-export type AnalyzeTextOptions = {
+export type AnalyzeTextOptions = ApiRequestOptions & {
   accessToken?: string | null;
-  fetcher?: Fetcher;
 };
 
 const ANALYZE_ERROR_MESSAGE =
   "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.";
+const ANALYZE_TIMEOUT_MESSAGE =
+  "분석 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.";
 
 export async function analyzeText(
   text: string,
   options: AnalyzeTextOptions = {},
 ): Promise<AnalyzeTextResult> {
   const trimmedText = text.trim();
-  const fetcher = options.fetcher ?? globalThis.fetch;
-
-  let response: Response;
-
-  try {
-    response = await fetcher("/api/analyze", {
+  const fetchResult = await fetchWithTimeout(
+    "/api/analyze",
+    {
       body: JSON.stringify({ text: trimmedText }),
       headers: createAnalyzeHeaders(options.accessToken),
       method: "POST",
-    });
-  } catch {
-    return {
-      message: ANALYZE_ERROR_MESSAGE,
-      status: "error",
-    };
+    },
+    {
+      fallbackMessage: ANALYZE_ERROR_MESSAGE,
+      fetcher: options.fetcher,
+      timeoutMessage: ANALYZE_TIMEOUT_MESSAGE,
+      timeoutMs: options.timeoutMs,
+    },
+  );
+
+  if (fetchResult.status === "error") {
+    return fetchResult;
   }
 
+  const { response } = fetchResult;
   const payload = await readJson(response);
 
   if (!response.ok) {
     return {
-      message: readErrorMessage(payload),
+      message: readApiErrorMessage(payload, ANALYZE_ERROR_MESSAGE),
       status: "error",
     };
   }
@@ -137,24 +145,6 @@ function readVocabularySuggestions(result: ApiAnalysisResult) {
   }));
 }
 
-async function readJson(response: Response): Promise<unknown> {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
-}
-
-function readErrorMessage(payload: unknown): string {
-  if (isRecord(payload) && isRecord(payload.error)) {
-    return typeof payload.error.message === "string"
-      ? payload.error.message
-      : ANALYZE_ERROR_MESSAGE;
-  }
-
-  return ANALYZE_ERROR_MESSAGE;
-}
-
 function createAnalyzeHeaders(accessToken: string | null | undefined) {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -165,8 +155,4 @@ function createAnalyzeHeaders(accessToken: string | null | undefined) {
   }
 
   return headers;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
