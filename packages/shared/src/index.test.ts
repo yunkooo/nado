@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   MAX_ANALYSIS_TEXT_LENGTH,
   analyzeResponseJsonSchema,
@@ -6,10 +6,12 @@ import {
   countAnalysisTextCharacters,
   hasUnsupportedAnalysisTextCharacters,
   isLikelyEnglishLearningText,
+  moveVocabularyPage,
   normalizeAnalysisText,
   normalizeVocabularyTerm,
   paginateVocabularyItems,
   parseAnalyzeRequest,
+  resetVocabularyPaginationScroll,
   saveVocabularyRequestSchema,
 } from "./index";
 
@@ -120,6 +122,35 @@ describe("paginateVocabularyItems", () => {
       totalItems: 0,
       totalPages: 1,
     });
+  });
+});
+
+describe("vocabulary pagination navigation", () => {
+  it("moves to the next page and resets the scroll position", () => {
+    const setPage = vi.fn();
+    const scrollTarget = {
+      scrollTo: vi.fn(),
+    };
+
+    moveVocabularyPage(2, setPage, scrollTarget);
+
+    expect(setPage).toHaveBeenCalledWith(2);
+    expect(scrollTarget.scrollTo).toHaveBeenCalledWith({
+      behavior: "auto",
+      top: 0,
+    });
+  });
+
+  it("falls back to the window scroll position when no target is provided", () => {
+    const originalScrollTo = globalThis.scrollTo;
+    const scrollTo = vi.fn();
+
+    vi.stubGlobal("scrollTo", scrollTo);
+    resetVocabularyPaginationScroll();
+
+    expect(scrollTo).toHaveBeenCalledWith({ behavior: "auto", top: 0 });
+
+    globalThis.scrollTo = originalScrollTo;
   });
 });
 
