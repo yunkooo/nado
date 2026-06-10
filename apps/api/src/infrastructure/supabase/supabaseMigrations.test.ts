@@ -78,4 +78,16 @@ describe("Supabase migrations", () => {
       "grant execute on function public.save_vocabulary_item",
     );
   });
+
+  it("uses the vocabulary uniqueness constraint as the save conflict target", () => {
+    const migrationSql = readdirSync(migrationsDir)
+      .filter((file) => file.endsWith(".sql"))
+      .sort()
+      .map((file) => readFileSync(join(migrationsDir, file), "utf8"))
+      .join("\n");
+
+    expect(migrationSql).toContain(
+      "on conflict on constraint vocabulary_items_user_id_normalized_term_type_key",
+    );
+  });
 });
