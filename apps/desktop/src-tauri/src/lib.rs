@@ -26,7 +26,6 @@ fn start_oauth_loopback_redirect_server(app_handle: tauri::AppHandle) {
 
 fn handle_oauth_loopback_request(mut stream: std::net::TcpStream, app_handle: &tauri::AppHandle) {
     use std::time::Duration;
-    use tauri::Emitter;
 
     let _ = stream.set_read_timeout(Some(Duration::from_secs(2)));
     let request = read_http_request(&mut stream);
@@ -35,12 +34,7 @@ fn handle_oauth_loopback_request(mut stream: std::net::TcpStream, app_handle: &t
     if method == "POST" && path == "/desktop-auth-callback" {
         let payload = request_body(&request);
 
-        if payload.starts_with('?') || payload.starts_with('#') {
-            let _ = app_handle.emit(
-                "desktop-oauth-callback",
-                format!("nado://auth/callback{payload}"),
-            );
-        }
+        emit_desktop_oauth_callback(app_handle, &payload);
 
         write_http_response(
             &mut stream,
@@ -48,6 +42,18 @@ fn handle_oauth_loopback_request(mut stream: std::net::TcpStream, app_handle: &t
             "application/json; charset=utf-8",
         );
         return;
+    }
+
+    if method == "GET" {
+        if let Some(payload) = callback_payload_from_request_target(&path) {
+            emit_desktop_oauth_callback(app_handle, &payload);
+            write_http_response(
+                &mut stream,
+                completed_oauth_page(),
+                "text/html; charset=utf-8",
+            );
+            return;
+        }
     }
 
     let body = r#"<!doctype html>
@@ -95,7 +101,8 @@ fn handle_oauth_loopback_request(mut stream: std::net::TcpStream, app_handle: &t
               headers: { "Content-Type": "text/plain;charset=utf-8" },
               method: "POST"
             });
-            status.textContent = "You can return to the nado app now.";
+            status.textContent = "Login completed. You can close this tab.";
+            window.setTimeout(() => window.close(), 300);
             return;
           }
         } catch {
@@ -110,6 +117,24 @@ fn handle_oauth_loopback_request(mut stream: std::net::TcpStream, app_handle: &t
   </body>
 </html>"#;
     write_http_response(&mut stream, body, "text/html; charset=utf-8");
+}
+
+fn emit_desktop_oauth_callback(app_handle: &tauri::AppHandle, payload: &str) {
+    use tauri::{Emitter, Manager, UserAttentionType};
+
+    if payload.starts_with('?') || payload.starts_with('#') {
+        let _ = app_handle.emit(
+            "desktop-oauth-callback",
+            format!("nado://auth/callback{payload}"),
+        );
+    }
+
+    if let Some(window) = app_handle.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+        let _ = window.request_user_attention(Some(UserAttentionType::Informational));
+    }
 }
 
 fn read_http_request(stream: &mut std::net::TcpStream) -> Vec<u8> {
@@ -185,8 +210,43 @@ fn request_body(request: &[u8]) -> String {
     String::from_utf8_lossy(&request[header_end + 4..]).to_string()
 }
 
+fn callback_payload_from_request_target(target: &str) -> Option<String> {
+    let payload_start = target.find('?')?;
+    let payload = &target[payload_start..];
+
+    if payload.len() > 1 {
+        Some(payload.to_string())
+    } else {
+        None
+    }
+}
+
 fn find_header_end(request: &[u8]) -> Option<usize> {
     request.windows(4).position(|window| window == b"\r\n\r\n")
+}
+
+fn completed_oauth_page() -> &'static str {
+    r#"<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <title>nado login completed</title>
+    <style>
+      body {
+        color: #20201d;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 40px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>nado login completed.</h1>
+    <p>You can close this tab and return to the nado app.</p>
+    <script>
+      window.setTimeout(() => window.close(), 300);
+    </script>
+  </body>
+</html>"#
 }
 
 fn write_http_response(stream: &mut std::net::TcpStream, body: &str, content_type: &str) {

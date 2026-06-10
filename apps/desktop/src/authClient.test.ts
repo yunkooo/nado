@@ -32,9 +32,11 @@ describe("desktop auth client helpers", () => {
   it("keeps Supabase URL session detection for browser dev only", () => {
     expect(createSupabaseAuthOptions({ isTauri: false }).auth).toMatchObject({
       detectSessionInUrl: true,
+      flowType: "implicit",
     });
     expect(createSupabaseAuthOptions({ isTauri: true }).auth).toMatchObject({
       detectSessionInUrl: false,
+      flowType: "pkce",
     });
   });
 

@@ -2,5 +2,5 @@
   "identifier": "default",
   "description": "Default desktop window permissions",
   "windows": ["main"],
-  "permissions": ["core:default", "opener:default"]
+  "permissions": ["core:default", "deep-link:default", "opener:default"]
 }

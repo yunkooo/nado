@@ -8,7 +8,7 @@ export type SupabaseAuthConfig = {
 
 let browserClient: SupabaseClient | null = null;
 export const NADO_DESKTOP_AUTH_CALLBACK_URL = "nado://auth/callback";
-export const NADO_DESKTOP_OAUTH_REDIRECT_URL = "http://127.0.0.1:3000";
+export const NADO_DESKTOP_OAUTH_REDIRECT_URL = "http://127.0.0.1:17654";
 
 type OAuthRedirectOptions = {
   desktopRedirectUrl?: string;
@@ -58,10 +58,13 @@ export function createGoogleOAuthRedirectTo(
 }
 
 export function createSupabaseAuthOptions(options: { isTauri?: boolean } = {}) {
+  const isDesktop = options.isTauri ?? isTauriRuntime();
+
   return {
     auth: {
       autoRefreshToken: true,
-      detectSessionInUrl: !(options.isTauri ?? isTauriRuntime()),
+      detectSessionInUrl: !isDesktop,
+      flowType: isDesktop ? ("pkce" as const) : ("implicit" as const),
       persistSession: true,
     },
   };

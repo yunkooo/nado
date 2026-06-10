@@ -47,12 +47,21 @@ export function useDesktopAuthDeepLink(): DesktopAuthDeepLinkState {
 
     void import("@tauri-apps/plugin-deep-link")
       .then(async ({ getCurrent, onOpenUrl }) => {
-        await handleUrls(await getCurrent());
         unlistenCallbacks.push(await onOpenUrl(handleUrls));
+
+        try {
+          await handleUrls(await getCurrent());
+        } catch {
+          if (isMounted) {
+            setMessage("데스크탑 로그인 콜백을 확인하지 못했어요.");
+            setStatus("error");
+          }
+        }
       })
       .catch(() => {
         if (isMounted) {
           setMessage("데스크탑 로그인 콜백을 준비하지 못했어요.");
+          setStatus("error");
         }
       });
 
@@ -70,6 +79,7 @@ export function useDesktopAuthDeepLink(): DesktopAuthDeepLinkState {
       .catch(() => {
         if (isMounted) {
           setMessage("데스크탑 로그인 콜백을 준비하지 못했어요.");
+          setStatus("error");
         }
       });
 
