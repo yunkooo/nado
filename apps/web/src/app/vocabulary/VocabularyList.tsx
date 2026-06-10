@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Button } from "@nado/ui";
-import { paginateVocabularyItems, type VocabularyItem } from "@nado/shared";
+import {
+  moveVocabularyPage,
+  paginateVocabularyItems,
+  type VocabularyItem,
+} from "@nado/shared";
 
 type VocabularyListProps = {
   deletingItemId: string | null;
@@ -59,7 +63,15 @@ export function VocabularyList({
           <div>
             <Button
               disabled={pagination.currentPage === 1}
-              onClick={() => setPage(pagination.currentPage - 1)}
+              onClick={(event) =>
+                moveVocabularyPage(
+                  pagination.currentPage - 1,
+                  setPage,
+                  event.currentTarget.closest(
+                    ".nado-content-workspace",
+                  ) as HTMLElement | null,
+                )
+              }
               size="sm"
               variant="secondary"
             >
@@ -70,7 +82,15 @@ export function VocabularyList({
             </strong>
             <Button
               disabled={pagination.currentPage === pagination.totalPages}
-              onClick={() => setPage(pagination.currentPage + 1)}
+              onClick={(event) =>
+                moveVocabularyPage(
+                  pagination.currentPage + 1,
+                  setPage,
+                  event.currentTarget.closest(
+                    ".nado-content-workspace",
+                  ) as HTMLElement | null,
+                )
+              }
               size="sm"
               variant="secondary"
             >
