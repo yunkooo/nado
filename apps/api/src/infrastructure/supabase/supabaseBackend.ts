@@ -5,18 +5,18 @@ import {
   type AnalysisUsageConsumeResult,
   type AnalysisUsageStore,
   type UsageIdentity,
-} from "./analysisUsageService.js";
+} from "../../features/analysis/analysisUsageService.js";
 import {
   DEFAULT_ANONYMOUS_DAILY_ANALYSIS_LIMIT,
   DEFAULT_AUTHENTICATED_DAILY_ANALYSIS_LIMIT,
   readAnalysisDailyLimit,
-} from "./config/analysisLimits.js";
+} from "../../features/analysis/config/analysisLimits.js";
 import {
   createVocabularyService,
   type NewVocabularyRow,
   type VocabularyRow,
   type VocabularyStore,
-} from "./vocabularyService.js";
+} from "../../features/vocabulary/vocabularyService.js";
 
 export type SupabaseBackendOptions = {
   anonKey?: string;

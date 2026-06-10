@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const migrationsDir = join(
   dirname(fileURLToPath(import.meta.url)),
-  "../../../supabase/migrations",
+  "../../../../../supabase/migrations",
 );
 
 describe("Supabase migrations", () => {

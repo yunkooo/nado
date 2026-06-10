@@ -1,8 +1,9 @@
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { describe, expect, it } from "vitest";
-import { app, createApp, parseAnalyzeInput } from "./app.js";
-import { UpstreamTimeoutError } from "./httpErrors.js";
+import { parseAnalyzeInput } from "../features/analysis/analyzeInput.js";
+import { UpstreamTimeoutError } from "../shared/errors/httpErrors.js";
+import { app, createApp } from "./createApp.js";
 
 type TestHttpApp = {
   listen(port: number, hostname: string, callback: () => void): Server;

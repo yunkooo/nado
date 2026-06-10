@@ -1,5 +1,5 @@
 import { pathToFileURL } from "node:url";
-import { loadRootEnv } from "./rootEnv.js";
+import { loadRootEnv } from "./infrastructure/env/rootEnv.js";
 
 loadRootEnv();
 

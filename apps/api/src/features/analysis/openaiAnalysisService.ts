@@ -1,6 +1,6 @@
 import { analyzeResponseJsonSchema, analyzeResponseSchema } from "@nado/shared";
 import type { AnalyzeResponse } from "@nado/shared";
-import { UpstreamTimeoutError } from "./httpErrors.js";
+import { UpstreamTimeoutError } from "../../shared/errors/httpErrors.js";
 
 type FetchLike = (
   input: RequestInfo | URL,

@@ -1,5 +1,5 @@
 import type { ErrorRequestHandler } from "express";
-import { isHttpError } from "../httpErrors.js";
+import { isHttpError } from "../../shared/errors/httpErrors.js";
 
 export const invalidJsonHandler: ErrorRequestHandler = (
   error,

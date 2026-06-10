@@ -1,4 +1,4 @@
-import { app } from "./app.js";
+import { app } from "./app/createApp.js";
 
 const port = Number(process.env.NADO_API_PORT ?? process.env.PORT ?? 4000);
 
