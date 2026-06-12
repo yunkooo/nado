@@ -1,0 +1,108 @@
+name: 작업 Issue
+description: 기능, 버그, 문서, 설정 작업을 Issue로 정리합니다.
+title: "[type] 작업 요약"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issue는 작업을 바로 시작하기 위한 지시가 아니라, 왜 필요한지와 어디까지 하면 끝인지 정리하는 문서입니다.
+        작성 기준은 `docs/workflow/issue-workflow.md`를 참고해주세요.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: 작업 유형
+      description: 이 Issue의 성격을 선택해주세요.
+      options:
+        - feature
+        - fix
+        - docs
+        - chore
+        - test
+        - refactor
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 영향 영역
+      description: 가장 크게 영향을 받는 영역을 선택해주세요.
+      options:
+        - web
+        - api
+        - mobile
+        - desktop
+        - storybook
+        - shared
+        - ui
+        - supabase
+        - docs
+        - workflow
+        - repo
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 작업 내용
+      description: 무엇을 바꾸나요?
+      placeholder: 분석 결과 화면에서 입력창과 결과 카드 사이의 간격을 개선한다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: 이유
+      description: 왜 필요한가요?
+      placeholder: 현재 narrow 화면에서 입력 영역과 결과 카드가 붙어 보여서 사용자가 분석 결과의 시작 지점을 빠르게 구분하기 어렵다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: 완료 조건
+      description: 어디까지 하면 끝났다고 볼 수 있나요?
+      value: |
+        - [ ] 조건 1
+        - [ ] 조건 2
+        - [ ] 테스트 또는 확인 완료
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: 제외 범위
+      description: 이번 작업에서 하지 않을 것을 적어주세요.
+      placeholder: |
+        - 분석 API 응답 구조 변경
+        - 전체 화면 레이아웃 개편
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: 확인 방법
+      description: 작업 후 어떤 명령이나 화면으로 확인하면 되나요?
+      placeholder: |
+        - pnpm test
+        - pnpm typecheck
+        - Storybook narrow 상태 확인
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 참고
+      description: 관련 화면, 파일, 문서, 에러 메시지, 링크를 적어주세요.
+      placeholder: |
+        - 관련 문서: docs/workflow/issue-workflow.md
+        - 관련 화면: 웹 분석 화면
+    validations:
+      required: false

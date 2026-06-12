@@ -18,6 +18,16 @@
 - 단, 사용자 직접 요청과 이 파일의 기본 원칙이 우선이며, 현재 코드 구조와 프로젝트 단계에 맞지 않는 과도한 최적화는 하지 않는다.
 - `useMemo`, `useCallback`, `memo`, `useRef` 같은 최적화성 API는 실제 병목이나 명확한 렌더링/상태 경계 문제가 있을 때 근거를 남기고 사용한다.
 
+## GitHub Issue/PR 작업 규칙
+
+- GitHub Issue, branch, PR, 리뷰 반영 작업을 할 때는 먼저 `docs/workflow/README.md`를 확인하고 필요한 세부 문서를 함께 따른다.
+- Issue 생성 요청을 받으면 코드를 수정하지 않고 Issue의 작업 내용, 이유, 완료 조건, 제외 범위를 먼저 정리한다.
+- `#<번호> issue 작업해줘`처럼 특정 Issue 작업 요청을 받으면 해당 Issue 하나를 기준으로 branch 1개와 PR 1개를 만든다.
+- Issue 작업을 위해 branch를 만들 때는 AI가 생성하더라도 `<type>/<issue-number>-<short-slug>` 형식을 기본으로 한다.
+- PR 본문에는 관련 Issue를 닫는 `Closes #<번호>` 문구를 포함한다.
+- AI는 PR 생성과 리뷰 반영까지 도울 수 있지만, 사용자의 명시적 요청 없이 merge하거나 `main`에 직접 push하지 않는다.
+- Issue나 PR 요구사항이 모호하거나 현재 작업tree에 관련 없는 변경사항이 있으면 작업을 시작하기 전에 사용자에게 확인한다.
+
 ## 커밋 규칙
 
 - 커밋 메시지는 한국어로 작성한다.
