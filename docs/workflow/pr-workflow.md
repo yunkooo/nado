@@ -11,7 +11,18 @@ PR은 변경 내용을 공유하고 merge 전에 검토하는 공간이다. nado
 - 가능한 검증을 실행했다.
 - 실행하지 못한 검증이 있다면 이유를 설명할 수 있다.
 
-AI가 작업한 PR은 처음에는 draft PR을 기본값으로 둔다. 사용자가 확인한 뒤 ready for review 또는 merge 여부를 결정한다.
+AI가 작업한 PR은 요청 방식에 따라 draft 또는 ready 상태로 만든다. 사용자가 범위를 먼저 확인하고 싶다면 draft로 두고, "바로 리뷰까지 진행해줘"라고 요청하면 ready 상태로 만들어 Codex automatic review를 기다린다.
+
+## PR 공개 방식
+
+PR을 만드는 방식은 두 가지로 나눈다.
+
+| 방식 | 언제 사용하나 | Codex review |
+| --- | --- | --- |
+| Draft PR | 사용자가 PR 범위와 본문을 먼저 확인하고 싶을 때 | ready 전환 전에는 자동 리뷰를 기대하지 않는다. |
+| Ready PR | 사용자가 "바로 리뷰까지 진행해줘"라고 요청했을 때 | ready 상태로 만든 뒤 Codex automatic review를 기다린다. |
+
+기본적으로는 사용자 요청 문맥을 따른다. 요청이 애매하면 draft PR을 만들고, ready 전환 여부를 사용자에게 확인한다.
 
 ## PR 제목
 
@@ -162,7 +173,9 @@ Issue가 여러 개인 경우는 원칙적으로 작업을 분리한다. 정말 
 
 ## Codex review 흐름
 
-PR 생성 후에는 Codex automatic review를 기다린다. 저장소 설정에서 automatic review가 켜져 있으면 Codex가 새 PR을 자동으로 리뷰한다.
+사용자가 "바로 리뷰까지 진행해줘"라고 요청한 경우에는 PR을 ready 상태로 만들고 Codex automatic review를 기다린다. 저장소 설정에서 automatic review가 켜져 있으면 Codex가 review 대상으로 열린 PR을 자동으로 리뷰한다.
+
+Draft PR로 만든 경우에는 바로 automatic review를 기다리지 않는다. 사용자가 ready for review로 전환하거나 수동 리뷰를 요청할 때 review 단계로 넘어간다.
 
 Codex review가 달리지 않았거나 다시 확인이 필요하면 사용자가 PR 댓글로 수동 리뷰를 요청할 수 있다.
 

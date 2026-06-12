@@ -40,6 +40,7 @@ AI가 하지 않는 일:
 ```text
 #12 issue 작업해줘
 Issue #12 작업 시작해줘
+#12 issue 작업하고 바로 리뷰까지 진행해줘
 ```
 
 AI가 해야 할 일:
@@ -54,9 +55,9 @@ AI가 해야 할 일:
 7. 가능한 검증을 실행한다.
 8. 관련 변경만 commit한다.
 9. branch를 push한다.
-10. draft PR을 만들고 Issue를 연결한다.
-11. Codex automatic review를 기다린다.
-12. Codex review가 없으면 사용자가 `@codex review`를 수동으로 요청할 수 있다고 안내한다.
+10. 사용자 요청에 따라 draft PR 또는 ready PR을 만들고 Issue를 연결한다.
+11. "바로 리뷰까지 진행해줘" 요청이 있으면 PR을 ready 상태로 만들고 Codex automatic review를 기다린다.
+12. draft PR로 만든 경우에는 ready 전환 또는 수동 `@codex review` 요청이 필요하다고 안내한다.
 ```
 
 AI가 만드는 branch도 사람이 만드는 branch와 같은 `<type>/<issue-number>-<short-slug>` 형식을 사용한다.
