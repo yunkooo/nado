@@ -55,6 +55,8 @@ AI가 해야 할 일:
 8. 관련 변경만 commit한다.
 9. branch를 push한다.
 10. draft PR을 만들고 Issue를 연결한다.
+11. Codex automatic review를 기다린다.
+12. Codex review가 없으면 사용자가 `@codex review`를 수동으로 요청할 수 있다고 안내한다.
 ```
 
 AI가 만드는 branch도 사람이 만드는 branch와 같은 `<type>/<issue-number>-<short-slug>` 형식을 사용한다.
@@ -71,6 +73,12 @@ PR 본문에는 다음 문구를 포함한다.
 ```text
 Closes #12
 ```
+
+PR 생성 이후 AI가 하지 않는 일:
+
+- Codex review가 달렸다는 이유만으로 자동 수정
+- 사용자 요청 없는 리뷰 코멘트 반영
+- 사용자 승인 없는 merge
 
 AI가 멈춰야 하는 경우:
 
@@ -102,6 +110,7 @@ AI가 하지 않는 일:
 
 - 사용자 승인 없는 merge
 - 사용자 승인 없는 main 직접 push
+- 사용자 요청 없는 Codex review 자동 수정
 - 리뷰와 무관한 리팩터링
 - 실패한 검증을 통과한 것처럼 보고
 
