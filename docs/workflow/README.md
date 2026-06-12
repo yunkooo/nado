@@ -29,6 +29,7 @@ Issue 1개 = Branch 1개 = PR 1개
 - Issue는 작업의 이유, 범위, 완료 조건을 기록한다.
 - Branch는 하나의 Issue를 해결하기 위해 만든다.
 - PR은 변경 내용, 검증 결과, 리뷰 포인트를 공유한다.
+- 특정 Issue 작업 요청은 branch push와 PR 생성을 포함한다.
 - AI는 Issue와 PR 작업을 도울 수 있지만 merge는 사용자가 결정한다.
 - 애매한 요구사항은 구현으로 넘기지 않고 Issue 또는 질문으로 먼저 정리한다.
 

@@ -60,6 +60,10 @@ AI가 해야 할 일:
 12. draft PR로 만든 경우에는 ready 전환 또는 수동 `@codex review` 요청이 필요하다고 안내한다.
 ```
 
+특정 Issue 작업 요청은 branch push와 PR 생성을 포함한다. 별도로 "push해줘"라고 말하지 않아도 PR 생성을 위해 원격 branch를 push할 수 있다.
+
+일반 커밋 요청은 다르게 처리한다. 사용자가 "커밋해줘"라고만 요청한 경우에는 로컬 commit까지만 진행하고, push는 사용자가 별도로 요청해야 한다.
+
 AI가 만드는 branch도 사람이 만드는 branch와 같은 `<type>/<issue-number>-<short-slug>` 형식을 사용한다.
 
 ```text

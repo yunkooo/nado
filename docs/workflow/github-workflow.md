@@ -17,6 +17,34 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 -> merge
 ```
 
+## Issue 작업 요청의 범위
+
+사용자가 특정 Issue 작업을 요청하면 해당 요청은 branch push와 PR 생성을 포함한다.
+
+```text
+#12 issue 작업해줘
+```
+
+위 요청에는 다음 작업이 포함된다.
+
+- Issue 확인
+- branch 생성
+- 코드/문서 수정
+- 검증
+- commit
+- push
+- PR 생성
+
+일반 커밋 요청은 push 요청으로 간주하지 않는다.
+
+```text
+현재 변경사항 커밋해줘
+```
+
+위 요청은 로컬 commit까지만 포함한다. push는 사용자가 별도로 요청해야 한다.
+
+Issue 작업 요청에도 merge나 `main` 직접 push는 포함되지 않는다.
+
 ## 상태 기준
 
 처음에는 GitHub label만으로 상태를 관리해도 충분하다.
