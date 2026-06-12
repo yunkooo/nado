@@ -14,7 +14,7 @@ body:
       label: 작업 유형
       description: 이 Issue의 성격을 선택해주세요.
       options:
-        - feature
+        - feat
         - fix
         - docs
         - chore
@@ -66,7 +66,7 @@ body:
     attributes:
       label: 완료 조건
       description: 어디까지 하면 끝났다고 볼 수 있나요?
-      value: |
+      placeholder: |
         - [ ] 조건 1
         - [ ] 조건 2
         - [ ] 테스트 또는 확인 완료

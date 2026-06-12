@@ -208,7 +208,7 @@ AI는 Issue 초안에 다음 내용을 포함한다.
 권장 label:
 
 ```text
-type:feature
+type:feat
 type:fix
 type:docs
 type:chore
