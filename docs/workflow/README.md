@@ -33,8 +33,9 @@
 - PR은 변경 내용, 검증 결과, 리뷰 포인트를 공유한다.
 - 작업이 크면 parent issue를 추적용으로 만들고, 실제 구현은 sub-issue로 분리한다.
 - Parent issue에는 branch를 만들지 않고, sub-issue 기준으로 branch와 PR을 만든다.
-- 특정 Issue 작업 요청은 branch push, PR 생성, Codex review 트리거를 포함한다.
-- 새 PR은 기본적으로 ready 상태로 만들고, 저장소 Codex automatic review 또는 PR 댓글 트리거로 Codex review가 시작되게 한다.
+- 특정 Issue 작업 요청은 branch push, PR 생성, Codex automatic review 대기를 포함한다.
+- 새 PR은 기본적으로 ready 상태로 만들고, 저장소 Codex automatic review 결과를 기다린다.
+- 자동 리뷰 결과가 없거나 재검토가 필요할 때만 사용자가 PR 댓글로 `@codex review`를 직접 요청한다.
 - AI는 Issue와 PR 작업을 도울 수 있지만 merge는 사용자가 결정한다.
 - 애매한 요구사항은 구현으로 넘기지 않고 Issue 또는 질문으로 먼저 정리한다.
 
@@ -47,10 +48,11 @@
 4. 사용자가 특정 일반 Issue 또는 sub-issue 작업을 요청한다.
 5. 해당 작업 Issue 전용 branch에서 작업한다.
 6. 검증 후 commit, push, ready PR을 만든다.
-7. Codex review가 시작되도록 automatic review를 기다리거나 PR 댓글로 수동 요청한다.
+7. Codex automatic review 결과를 기다린다.
 8. 사용자가 PR과 Codex review를 확인한다.
-9. 수정 요청이 있으면 같은 PR branch에 반영한다.
-10. 사용자가 merge한다.
+9. 자동 리뷰 결과가 없거나 재검토가 필요하면 사용자가 `@codex review`를 직접 요청한다.
+10. 수정 요청이 있으면 같은 PR branch에 반영한다.
+11. 사용자가 merge한다.
 ```
 
 ## 예시 요청

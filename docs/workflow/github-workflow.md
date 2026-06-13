@@ -36,7 +36,7 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 - commit
 - push
 - ready PR 생성
-- Codex review 요청 또는 automatic review 대기
+- Codex automatic review 대기
 
 일반 커밋 요청은 push 요청으로 간주하지 않는다.
 
@@ -48,7 +48,9 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 
 Issue 작업 요청에도 merge나 `main` 직접 push는 포함되지 않는다.
 
-새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열릴 때 Codex review를 기다린다. 자동 리뷰가 시작되지 않거나 다시 확인이 필요하면 PR 댓글로 수동 리뷰를 요청한다.
+새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열리거나 push가 들어올 때 자동 리뷰 결과를 기다린다.
+
+AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다. 자동 리뷰 결과가 없거나 다시 확인이 필요할 때만 사용자가 PR 댓글로 수동 리뷰를 직접 요청한다.
 
 ```text
 @codex review
@@ -226,7 +228,7 @@ AI는 다음 작업까지 수행할 수 있다.
 - commit
 - push
 - PR 생성
-- Codex review 트리거
+- Codex automatic review 결과 확인
 - 리뷰 반영
 
 AI는 다음 작업을 하지 않는다.

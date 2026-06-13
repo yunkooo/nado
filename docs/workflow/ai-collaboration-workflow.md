@@ -80,13 +80,13 @@ AI가 해야 할 일:
 11. branch를 push한다.
 12. 기본적으로 ready PR을 만들고 Issue를 연결한다.
 13. 저장소 Codex automatic review가 켜져 있으면 Codex review가 시작되는지 확인한다.
-14. Codex review가 시작되지 않았거나 다시 확인이 필요하면 PR 댓글로 `@codex review`를 요청한다.
+14. Codex review 결과가 없거나 다시 확인이 필요하면 사용자가 PR 댓글로 `@codex review`를 직접 요청하도록 안내한다.
 15. 사용자가 명시적으로 draft를 요청한 경우에만 draft PR을 만들고, ready 전환 전에는 Codex review를 기대하지 않는다고 안내한다.
 ```
 
 특정 Issue 작업 요청은 branch push와 PR 생성을 포함한다. 별도로 "push해줘"라고 말하지 않아도 PR 생성을 위해 원격 branch를 push할 수 있다.
 
-특정 Issue 작업으로 새 PR을 만드는 경우 Codex review 트리거까지 기본 범위에 포함한다. 자동 리뷰는 저장소 Codex 설정에 의존하므로, 자동 리뷰가 바로 달리지 않으면 AI가 같은 PR에 `@codex review` 댓글을 남겨 수동으로 요청한다.
+특정 Issue 작업으로 새 PR을 만드는 경우 Codex automatic review 대기까지 기본 범위에 포함한다. 자동 리뷰는 저장소 Codex 설정에 의존하므로, 자동 리뷰 결과가 없으면 AI가 같은 PR에 댓글을 남기는 대신 사용자가 `@codex review`를 직접 요청하도록 안내한다.
 
 일반 커밋 요청은 다르게 처리한다. 사용자가 "커밋해줘"라고만 요청한 경우에는 로컬 commit까지만 진행하고, push는 사용자가 별도로 요청해야 한다.
 

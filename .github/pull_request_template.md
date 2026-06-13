@@ -6,7 +6,7 @@
 
 - [ ] `git diff --check`
 - [ ] 필요한 lint, typecheck, test 또는 화면 확인
-- [ ] Codex review 자동 리뷰 대기 또는 수동 리뷰 요청 확인
+- [ ] Codex automatic review 결과 확인
 
 ## 영향 범위
 
