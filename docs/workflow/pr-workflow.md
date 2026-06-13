@@ -11,9 +11,9 @@ PR은 변경 내용을 공유하고 merge 전에 검토하는 공간이다. nado
 - 가능한 검증을 실행했다.
 - 실행하지 못한 검증이 있다면 이유를 설명할 수 있다.
 
-AI가 특정 Issue 작업으로 만든 새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열리거나 push가 들어올 때 Codex review 결과를 기다린다.
+AI가 특정 Issue 작업으로 만든 새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열릴 때 Codex review 결과를 기다린다. Codex Review trigger가 `매 푸시마다`로 설정된 저장소에서는 PR branch에 새 push가 들어올 때도 Codex review 결과를 기다린다.
 
-자동 리뷰 결과가 없거나 재검토가 필요한 경우에만 사용자가 PR 댓글로 `@codex review`를 직접 요청한다. AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다.
+자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다. `chatgpt-codex-connector` 댓글의 `Reviewed commit`이 최신 head SHA와 일치하면 해당 커밋은 리뷰된 것으로 본다. 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없거나 재검토가 필요한 경우에만 사용자가 PR 댓글로 `@codex review`를 직접 요청한다. AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다.
 
 Draft PR은 사용자가 명시적으로 draft를 요청했거나 범위 검토를 먼저 하겠다고 합의한 경우에만 만든다. Draft PR은 ready 전환 전에는 Codex review를 기대하지 않는다.
 
@@ -193,22 +193,23 @@ Issue가 여러 개인 경우는 원칙적으로 작업을 분리한다. 정말 
 
 ## Codex review 흐름
 
-특정 Issue 작업으로 새 PR을 만들면 Codex review가 시작되도록 처리한다. 기본 흐름은 다음과 같다.
+특정 Issue 작업으로 새 PR을 만들면 Codex automatic review 결과를 확인한다. 기본 흐름은 다음과 같다.
 
 ```text
 1. ready PR 생성
 2. 저장소 Codex automatic review 대기
-3. 자동 리뷰 결과가 없으면 사용자가 PR 댓글로 `@codex review` 직접 요청
-4. Codex review 결과를 사용자 리뷰와 함께 확인
+3. Codex review 결과가 최신 PR head commit을 가리키는지 확인
+4. 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없으면 사용자가 PR 댓글로 `@codex review` 직접 요청
+5. Codex review 결과를 사용자 리뷰와 함께 확인
 ```
 
-저장소 설정에서 automatic review가 켜져 있으면 Codex가 review 대상으로 열린 PR을 자동으로 리뷰한다. automatic review는 GitHub 저장소 설정이 아니라 Codex code review 설정에 의존한다.
+저장소 설정에서 automatic review가 켜져 있으면 Codex가 review 대상으로 열린 PR을 자동으로 리뷰한다. push마다 자동 리뷰를 받을지는 Codex Review trigger 설정에 의존한다. automatic review는 GitHub 저장소 설정이 아니라 Codex code review 설정에 의존한다.
 
 설정 위치와 동작 방식은 [Codex code review in GitHub](https://developers.openai.com/codex/integrations/github)를 기준으로 확인한다.
 
 Draft PR로 만든 경우에는 바로 automatic review를 기다리지 않는다. 사용자가 ready for review로 전환하거나 수동 리뷰를 요청할 때 review 단계로 넘어간다.
 
-Codex review가 달리지 않았거나 다시 확인이 필요하면 사용자가 PR 댓글로 수동 리뷰를 직접 요청한다.
+최신 head commit 기준 Codex review가 달리지 않았거나 다시 확인이 필요하면 사용자가 PR 댓글로 수동 리뷰를 직접 요청한다.
 
 ```text
 @codex review

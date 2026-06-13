@@ -21,7 +21,7 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 
 ## Issue 작업 요청의 범위
 
-사용자가 특정 Issue 작업을 요청하면 해당 요청은 branch push, PR 생성, Codex review 트리거를 포함한다.
+사용자가 특정 Issue 작업을 요청하면 해당 요청은 branch push, PR 생성, Codex automatic review 대기를 포함한다.
 
 ```text
 #12 issue 작업해줘
@@ -48,9 +48,11 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 
 Issue 작업 요청에도 merge나 `main` 직접 push는 포함되지 않는다.
 
-새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열리거나 push가 들어올 때 자동 리뷰 결과를 기다린다.
+새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열릴 때 자동 리뷰 결과를 기다린다. Codex Review trigger가 `매 푸시마다`로 설정된 저장소에서는 PR branch에 새 push가 들어올 때도 자동 리뷰 결과를 기다린다.
 
-AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다. 자동 리뷰 결과가 없거나 다시 확인이 필요할 때만 사용자가 PR 댓글로 수동 리뷰를 직접 요청한다.
+자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다. `chatgpt-codex-connector` 댓글의 `Reviewed commit`이 최신 head SHA와 일치하면 해당 커밋은 리뷰된 것으로 본다.
+
+AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다. 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없거나 다시 확인이 필요할 때만 사용자가 PR 댓글로 수동 리뷰를 직접 요청한다.
 
 ```text
 @codex review

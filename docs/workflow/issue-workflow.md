@@ -260,9 +260,12 @@ type:feat
 type:fix
 type:docs
 type:chore
+type:test
+type:refactor
 status:todo
 status:in-progress
 status:review
+status:done
 ```
 
 필요해질 때만 `area:web`, `area:api`, `area:storybook` 같은 영역 label을 추가한다.
