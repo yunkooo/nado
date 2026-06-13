@@ -76,7 +76,7 @@ AI가 해야 할 일:
 7. Issue 번호가 포함된 branch를 만든다.
 8. 작업을 구현한다.
 9. 가능한 검증을 실행한다.
-10. 관련 변경만 commit한다.
+10. 관련 변경만 목적별로 commit한다.
 11. branch를 push한다.
 12. 기본적으로 ready PR을 만들고 Issue를 연결한다.
 13. 저장소 Codex automatic review가 켜져 있으면 최신 PR head commit 기준 Codex review 결과가 있는지 확인한다.
@@ -89,6 +89,8 @@ AI가 해야 할 일:
 특정 Issue 작업으로 새 PR을 만드는 경우 Codex automatic review 대기까지 기본 범위에 포함한다. 자동 리뷰는 저장소 Codex 설정에 의존하므로, 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없으면 AI가 같은 PR에 댓글을 남기는 대신 사용자가 `@codex review`를 직접 요청하도록 안내한다.
 
 일반 커밋 요청은 다르게 처리한다. 사용자가 "커밋해줘"라고만 요청한 경우에는 로컬 commit까지만 진행하고, push는 사용자가 별도로 요청해야 한다.
+
+Issue 작업을 수행할 때는 모든 변경을 하나의 commit에 몰아넣지 않는다. 커밋 전 현재 변경사항을 목적별로 분류하고, 단일 목적이면 하나의 commit으로 만들며, 목적이 둘 이상이면 여러 commit으로 나눈다. 모든 commit은 같은 Issue/PR branch에 쌓는다.
 
 AI가 만드는 branch도 사람이 만드는 branch와 같은 `<type>/<issue-number>-<short-slug>` 형식을 사용한다.
 
@@ -173,6 +175,14 @@ git diff --check
 
 ```bash
 git diff --cached --check
+```
+
+커밋을 만들기 전에는 다음도 확인한다.
+
+```text
+1. 현재 변경사항이 하나의 목적에 속하는가?
+2. 목적이 둘 이상이면 commit을 분리했는가?
+3. 각 commit 메시지가 해당 목적을 한국어로 구체적으로 설명하는가?
 ```
 
 ## 사용자 확인 지점

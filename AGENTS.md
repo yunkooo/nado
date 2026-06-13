@@ -25,6 +25,7 @@
 - `#<번호> issue 작업해줘`처럼 특정 Issue 작업 요청을 받으면 해당 Issue 하나를 기준으로 branch 1개와 PR 1개를 만든다.
 - 특정 Issue 작업 요청은 해당 branch를 원격에 push하고 PR을 생성해도 된다는 요청으로 간주한다.
 - Issue 작업을 위해 branch를 만들 때는 AI가 생성하더라도 `<type>/<issue-number>-<short-slug>` 형식을 기본으로 한다.
+- Issue는 작업의 추적 단위이고, commit은 변경 목적의 단위다. 하나의 Issue 작업 안에서도 목적이 다르면 여러 commit으로 분리한다.
 - PR 본문에는 관련 Issue를 닫는 `Closes #<번호>` 문구를 포함한다.
 - 특정 Issue 작업으로 새 PR을 만들 때는 기본적으로 ready 상태로 만들고 Codex review가 시작되도록 한다.
 - 저장소 Codex automatic review가 켜져 있으면 최신 PR head commit 기준 자동 리뷰 결과를 기다리고, 필수 check가 끝난 뒤 5분 동안 결과가 없거나 다시 확인이 필요하면 사용자가 PR 댓글로 `@codex review`를 직접 요청하도록 안내한다.
@@ -38,6 +39,7 @@
 
 - 커밋 메시지는 한국어로 작성한다.
 - 한 커밋에는 하나의 논리적 변경만 담는다.
+- 커밋은 파일 개수가 아니라 변경 목적을 기준으로 나눈다.
 - 커밋 전에는 변경 범위를 확인한다.
   - `git status --short --branch`
   - `git diff --stat`

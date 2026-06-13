@@ -8,6 +8,7 @@
 기본 작업: Issue 1개 = Branch 1개 = PR 1개
 큰 작업: Parent issue 1개 = 추적용
 실제 작업: Sub-issue 1개 = Branch 1개 = PR 1개
+Commit 1개 = 단일 목적 1개
 ```
 
 ## 문서 읽는 순서
@@ -30,6 +31,7 @@
 
 - Issue는 작업의 이유, 범위, 완료 조건을 기록한다.
 - Branch는 하나의 Issue를 해결하기 위해 만든다.
+- Commit은 하나의 변경 목적을 기록한다.
 - PR은 변경 내용, 검증 결과, 리뷰 포인트를 공유한다.
 - 작업이 크면 parent issue를 추적용으로 만들고, 실제 구현은 sub-issue로 분리한다.
 - Parent issue에는 branch를 만들지 않고, sub-issue 기준으로 branch와 PR을 만든다.
