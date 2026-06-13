@@ -35,6 +35,16 @@ const config: StorybookConfig = {
             replacement: toPathname("../../../packages/ui/src/styles.css"),
           },
           {
+            find: /^@nado\/tokens$/,
+            replacement: toPathname("../../../packages/tokens/src/index.ts"),
+          },
+          {
+            find: /^@nado\/tokens\/react-native$/,
+            replacement: toPathname(
+              "../../../packages/tokens/src/reactNative.ts",
+            ),
+          },
+          {
             find: /^@nado\/shared$/,
             replacement: toPathname("../../../packages/shared/src/index.ts"),
           },

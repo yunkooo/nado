@@ -21,6 +21,10 @@ describe("desktop Vite config", () => {
 
   it("resolves workspace packages from source during desktop bundling", () => {
     expect(viteConfigSource).toContain("../../packages/shared/src/index.ts");
+    expect(viteConfigSource).toContain("../../packages/tokens/src/index.ts");
+    expect(viteConfigSource).toContain(
+      "../../packages/tokens/src/reactNative.ts",
+    );
     expect(viteConfigSource).toContain("../../packages/ui/src/index.ts");
     expect(viteConfigSource).toContain("../../packages/ui/src/styles.css");
   });
