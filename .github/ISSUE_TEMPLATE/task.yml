@@ -43,6 +43,18 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: issue-size
+    attributes:
+      label: 작업 분해
+      description: 이 Issue가 단일 작업인지, parent issue로 분해가 필요한지 선택해주세요.
+      options:
+        - 단일 issue로 진행
+        - parent issue로 만들고 sub-issue 분리 필요
+        - 판단 필요
+    validations:
+      required: true
+
   - type: textarea
     id: summary
     attributes:
@@ -72,6 +84,18 @@ body:
         - [ ] 테스트 또는 확인 완료
     validations:
       required: true
+
+  - type: textarea
+    id: sub-issues
+    attributes:
+      label: Sub-issue 후보
+      description: parent issue로 분리할 가능성이 있으면 실제 작업 단위 후보를 적어주세요.
+      placeholder: |
+        - [ ] `@nado/tokens` 패키지 분리
+        - [ ] Mobile 스타일 공통 토큰 연결
+        - [ ] Storybook story co-location 적용
+    validations:
+      required: false
 
   - type: textarea
     id: out-of-scope

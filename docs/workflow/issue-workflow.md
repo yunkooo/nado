@@ -15,6 +15,53 @@ Issue는 작업을 시작하기 전에 문제, 범위, 완료 조건을 정리�
 
 아주 작은 오타 수정처럼 맥락이 필요 없는 작업은 사용자가 직접 요청하면 Issue 없이 처리할 수 있다. 단, 작업 범위가 커질 것 같으면 Issue로 분리한다.
 
+## Issue 크기 판단
+
+기본값은 일반 Issue 하나다. 일반 Issue는 branch 1개와 PR 1개로 끝낼 수 있는 작업에 사용한다.
+
+다만 하나의 요청이 여러 독립 PR로 나뉘는 것이 자연스럽거나 여러 앱/패키지에 걸쳐 있으면 parent issue와 sub-issue로 분리한다.
+
+```text
+작은 작업 = Issue 1개 -> Branch 1개 -> PR 1개
+큰 작업 = Parent issue 1개 -> Sub-issue 여러 개
+실제 작업 = Sub-issue 1개 -> Branch 1개 -> PR 1개
+```
+
+Parent issue는 큰 작업의 배경, 목표, 전체 완료 조건을 추적하는 용도로 사용한다. Branch와 PR은 parent issue가 아니라 실제 구현 단위인 sub-issue 기준으로 만든다.
+
+## Sub-issue로 분리하는 기준
+
+아래 조건 중 하나 이상에 해당하면 parent issue를 만들고 실제 구현 단위는 sub-issue로 분리하는 것을 검토한다.
+
+- 영향 영역이 2개 이상이다.
+- PR이 2개 이상으로 나뉘는 것이 자연스럽다.
+- 단계 간 의존성이 있다.
+- 완료 조건이 6개 이상이다.
+- 하루 안에 구현과 검증을 끝내기 어렵다.
+- 리뷰 관점이 서로 다르다.
+
+반대로 단일 파일 수정, 작은 버그 수정, Story 하나 추가, 문서 한두 개 정리처럼 한 번에 구현/검증/리뷰할 수 있는 작업은 일반 Issue 하나로 유지한다.
+
+### Parent issue 예시
+
+```md
+## 작업 내용
+
+Storybook과 디자인 시스템 패키지 운영 구조를 정리한다.
+
+## 이유
+
+토큰, Web/Desktop 공통 UI, Mobile 스타일, Storybook 검증 규칙이 서로 연결되어 있어 하나의 PR로 리뷰하기 어렵다.
+
+## Sub-issue 후보
+
+- [ ] `@nado/tokens` 패키지 분리
+- [ ] Mobile 스타일 공통 토큰 연결
+- [ ] UI 패키지에 Storybook story 배치
+- [ ] Web/Desktop surface story 추가
+- [ ] Storybook 검증 규칙 문서화
+```
+
 ## 좋은 Issue의 기준
 
 좋은 Issue는 아래 질문에 답한다.
@@ -167,6 +214,7 @@ AI는 Issue 초안에 다음 내용을 포함한다.
 - 완료 조건
 - 제외 범위
 - 검증 방법
+- 일반 Issue로 충분한지 또는 parent/sub-issue 분리가 필요한지에 대한 판단
 
 요구사항이 모호하면 Issue를 만들기 전에 질문한다. 질문 없이 구현으로 넘어가지 않는다.
 
@@ -212,9 +260,12 @@ type:feat
 type:fix
 type:docs
 type:chore
+type:test
+type:refactor
 status:todo
 status:in-progress
 status:review
+status:done
 ```
 
 필요해질 때만 `area:web`, `area:api`, `area:storybook` 같은 영역 label을 추가한다.

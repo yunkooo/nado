@@ -26,8 +26,10 @@
 - 특정 Issue 작업 요청은 해당 branch를 원격에 push하고 PR을 생성해도 된다는 요청으로 간주한다.
 - Issue 작업을 위해 branch를 만들 때는 AI가 생성하더라도 `<type>/<issue-number>-<short-slug>` 형식을 기본으로 한다.
 - PR 본문에는 관련 Issue를 닫는 `Closes #<번호>` 문구를 포함한다.
-- 사용자가 "바로 리뷰까지 진행해줘"라고 요청하면 PR을 ready 상태로 만들고 Codex automatic review를 기다린다.
-- Codex review가 없거나 다시 확인이 필요하면 사용자가 `@codex review`를 수동으로 요청할 수 있다.
+- 특정 Issue 작업으로 새 PR을 만들 때는 기본적으로 ready 상태로 만들고 Codex review가 시작되도록 한다.
+- 저장소 Codex automatic review가 켜져 있으면 최신 PR head commit 기준 자동 리뷰 결과를 기다리고, 필수 check가 끝난 뒤 5분 동안 결과가 없거나 다시 확인이 필요하면 사용자가 PR 댓글로 `@codex review`를 직접 요청하도록 안내한다.
+- AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다.
+- Draft PR은 사용자가 명시적으로 요청한 경우에만 만들며, ready 전환 시 Codex automatic review 결과를 기다린다.
 - 리뷰 수정은 사용자가 `PR #<번호> 리뷰 반영해줘`처럼 명시적으로 요청했을 때만 진행한다.
 - AI는 PR 생성과 리뷰 반영까지 도울 수 있지만, 사용자의 명시적 요청 없이 merge하거나 `main`에 직접 push하지 않는다.
 - Issue나 PR 요구사항이 모호하거나 현재 작업tree에 관련 없는 변경사항이 있으면 작업을 시작하기 전에 사용자에게 확인한다.
