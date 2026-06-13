@@ -61,7 +61,7 @@ AI는 큰 작업을 parent issue로 만들 때 구현을 바로 시작하지 않
 ```text
 #12 issue 작업해줘
 Issue #12 작업 시작해줘
-#12 issue 작업하고 바로 리뷰까지 진행해줘
+#12 issue 작업하고 draft PR로 열어줘
 ```
 
 AI가 해야 할 일:
@@ -78,12 +78,15 @@ AI가 해야 할 일:
 9. 가능한 검증을 실행한다.
 10. 관련 변경만 commit한다.
 11. branch를 push한다.
-12. 사용자 요청에 따라 draft PR 또는 ready PR을 만들고 Issue를 연결한다.
-13. "바로 리뷰까지 진행해줘" 요청이 있으면 PR을 ready 상태로 만들고 Codex automatic review를 기다린다.
-14. draft PR로 만든 경우에는 ready 전환 또는 수동 `@codex review` 요청이 필요하다고 안내한다.
+12. 기본적으로 ready PR을 만들고 Issue를 연결한다.
+13. 저장소 Codex automatic review가 켜져 있으면 Codex review가 시작되는지 확인한다.
+14. Codex review가 시작되지 않았거나 다시 확인이 필요하면 PR 댓글로 `@codex review`를 요청한다.
+15. 사용자가 명시적으로 draft를 요청한 경우에만 draft PR을 만들고, ready 전환 전에는 Codex review를 기대하지 않는다고 안내한다.
 ```
 
 특정 Issue 작업 요청은 branch push와 PR 생성을 포함한다. 별도로 "push해줘"라고 말하지 않아도 PR 생성을 위해 원격 branch를 push할 수 있다.
+
+특정 Issue 작업으로 새 PR을 만드는 경우 Codex review 트리거까지 기본 범위에 포함한다. 자동 리뷰는 저장소 Codex 설정에 의존하므로, 자동 리뷰가 바로 달리지 않으면 AI가 같은 PR에 `@codex review` 댓글을 남겨 수동으로 요청한다.
 
 일반 커밋 요청은 다르게 처리한다. 사용자가 "커밋해줘"라고만 요청한 경우에는 로컬 commit까지만 진행하고, push는 사용자가 별도로 요청해야 한다.
 

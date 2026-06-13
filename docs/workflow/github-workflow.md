@@ -14,13 +14,14 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 -> commit
 -> push
 -> PR 생성
--> review
+-> Codex review
+-> 사용자 review
 -> merge
 ```
 
 ## Issue 작업 요청의 범위
 
-사용자가 특정 Issue 작업을 요청하면 해당 요청은 branch push와 PR 생성을 포함한다.
+사용자가 특정 Issue 작업을 요청하면 해당 요청은 branch push, PR 생성, Codex review 트리거를 포함한다.
 
 ```text
 #12 issue 작업해줘
@@ -34,7 +35,8 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 - 검증
 - commit
 - push
-- PR 생성
+- ready PR 생성
+- Codex review 요청 또는 automatic review 대기
 
 일반 커밋 요청은 push 요청으로 간주하지 않는다.
 
@@ -45,6 +47,14 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 위 요청은 로컬 commit까지만 포함한다. push는 사용자가 별도로 요청해야 한다.
 
 Issue 작업 요청에도 merge나 `main` 직접 push는 포함되지 않는다.
+
+새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열릴 때 Codex review를 기다린다. 자동 리뷰가 시작되지 않거나 다시 확인이 필요하면 PR 댓글로 수동 리뷰를 요청한다.
+
+```text
+@codex review
+```
+
+Draft PR은 사용자가 명시적으로 draft를 요청했을 때만 만들고, ready 전환 전에는 Codex review를 기대하지 않는다.
 
 ## Parent/Sub-issue 기준
 
@@ -216,6 +226,7 @@ AI는 다음 작업까지 수행할 수 있다.
 - commit
 - push
 - PR 생성
+- Codex review 트리거
 - 리뷰 반영
 
 AI는 다음 작업을 하지 않는다.

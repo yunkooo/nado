@@ -11,18 +11,20 @@ PR은 변경 내용을 공유하고 merge 전에 검토하는 공간이다. nado
 - 가능한 검증을 실행했다.
 - 실행하지 못한 검증이 있다면 이유를 설명할 수 있다.
 
-AI가 작업한 PR은 요청 방식에 따라 draft 또는 ready 상태로 만든다. 사용자가 범위를 먼저 확인하고 싶다면 draft로 두고, "바로 리뷰까지 진행해줘"라고 요청하면 ready 상태로 만들어 Codex automatic review를 기다린다.
+AI가 특정 Issue 작업으로 만든 새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열릴 때 Codex review를 기다리고, 자동 리뷰가 시작되지 않으면 PR 댓글로 `@codex review`를 요청한다.
+
+Draft PR은 사용자가 명시적으로 draft를 요청했거나 범위 검토를 먼저 하겠다고 합의한 경우에만 만든다. Draft PR은 ready 전환 전에는 Codex review를 기대하지 않는다.
 
 ## PR 공개 방식
 
 PR을 만드는 방식은 두 가지로 나눈다.
 
-| 방식     | 언제 사용하나                                     | Codex review                                            |
-| -------- | ------------------------------------------------- | ------------------------------------------------------- |
-| Draft PR | 사용자가 PR 범위와 본문을 먼저 확인하고 싶을 때   | ready 전환 전에는 자동 리뷰를 기대하지 않는다.          |
-| Ready PR | 사용자가 "바로 리뷰까지 진행해줘"라고 요청했을 때 | ready 상태로 만든 뒤 Codex automatic review를 기다린다. |
+| 방식     | 언제 사용하나                                   | Codex review                                                           |
+| -------- | ----------------------------------------------- | ---------------------------------------------------------------------- |
+| Ready PR | 특정 Issue 작업을 끝내고 새 PR을 만들 때 기본값 | automatic review를 기다리고, 시작되지 않으면 `@codex review`를 남긴다. |
+| Draft PR | 사용자가 명시적으로 draft를 요청했을 때         | ready 전환 전에는 자동 리뷰를 기대하지 않는다.                         |
 
-기본적으로는 사용자 요청 문맥을 따른다. 요청이 애매하면 draft PR을 만들고, ready 전환 여부를 사용자에게 확인한다.
+요청이 애매하더라도 특정 Issue 작업이 완료되어 PR을 만드는 상황이면 ready PR을 기본값으로 둔다. 아직 범위 합의가 되지 않았거나 사용자가 draft를 명시한 경우에만 draft PR을 만든다.
 
 ## PR 제목
 
@@ -189,11 +191,22 @@ Issue가 여러 개인 경우는 원칙적으로 작업을 분리한다. 정말 
 
 ## Codex review 흐름
 
-사용자가 "바로 리뷰까지 진행해줘"라고 요청한 경우에는 PR을 ready 상태로 만들고 Codex automatic review를 기다린다. 저장소 설정에서 automatic review가 켜져 있으면 Codex가 review 대상으로 열린 PR을 자동으로 리뷰한다.
+특정 Issue 작업으로 새 PR을 만들면 Codex review가 시작되도록 처리한다. 기본 흐름은 다음과 같다.
+
+```text
+1. ready PR 생성
+2. 저장소 Codex automatic review 대기
+3. 자동 리뷰가 시작되지 않으면 PR 댓글로 `@codex review` 요청
+4. Codex review 결과를 사용자 리뷰와 함께 확인
+```
+
+저장소 설정에서 automatic review가 켜져 있으면 Codex가 review 대상으로 열린 PR을 자동으로 리뷰한다. automatic review는 GitHub 저장소 설정이 아니라 Codex code review 설정에 의존한다.
+
+설정 위치와 동작 방식은 [Codex code review in GitHub](https://developers.openai.com/codex/integrations/github)를 기준으로 확인한다.
 
 Draft PR로 만든 경우에는 바로 automatic review를 기다리지 않는다. 사용자가 ready for review로 전환하거나 수동 리뷰를 요청할 때 review 단계로 넘어간다.
 
-Codex review가 달리지 않았거나 다시 확인이 필요하면 사용자가 PR 댓글로 수동 리뷰를 요청할 수 있다.
+Codex review가 달리지 않았거나 다시 확인이 필요하면 PR 댓글로 수동 리뷰를 요청한다.
 
 ```text
 @codex review
