@@ -17,9 +17,9 @@ AI가 작업한 PR은 요청 방식에 따라 draft 또는 ready 상태로 만�
 
 PR을 만드는 방식은 두 가지로 나눈다.
 
-| 방식 | 언제 사용하나 | Codex review |
-| --- | --- | --- |
-| Draft PR | 사용자가 PR 범위와 본문을 먼저 확인하고 싶을 때 | ready 전환 전에는 자동 리뷰를 기대하지 않는다. |
+| 방식     | 언제 사용하나                                     | Codex review                                            |
+| -------- | ------------------------------------------------- | ------------------------------------------------------- |
+| Draft PR | 사용자가 PR 범위와 본문을 먼저 확인하고 싶을 때   | ready 전환 전에는 자동 리뷰를 기대하지 않는다.          |
 | Ready PR | 사용자가 "바로 리뷰까지 진행해줘"라고 요청했을 때 | ready 상태로 만든 뒤 Codex automatic review를 기다린다. |
 
 기본적으로는 사용자 요청 문맥을 따른다. 요청이 애매하면 draft PR을 만들고, ready 전환 여부를 사용자에게 확인한다.
@@ -64,6 +64,13 @@ PR을 만드는 방식은 두 가지로 나눈다.
 - 특히 확인해줬으면 하는 부분
 
 Closes #12
+```
+
+Parent issue 아래의 sub-issue 작업이라면 parent issue를 별도 줄에 함께 적는다.
+
+```md
+Closes #8
+Parent: #7
 ```
 
 ## PR 템플릿 작성 예시
@@ -168,6 +175,15 @@ PR 본문 마지막에 관련 Issue를 연결한다.
 ```text
 Closes #12
 ```
+
+Sub-issue 작업 PR은 sub-issue를 닫고 parent issue를 참조한다.
+
+```text
+Closes #8
+Parent: #7
+```
+
+Parent issue를 직접 닫는 PR은 만들지 않는다. Parent issue는 큰 작업의 추적용으로 두고, 모든 sub-issue가 merge된 뒤 사용자가 닫는다.
 
 Issue가 여러 개인 경우는 원칙적으로 작업을 분리한다. 정말 하나의 PR에서 처리해야 한다면 왜 묶는지 PR 본문에 설명한다.
 

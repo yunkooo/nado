@@ -23,7 +23,9 @@ AI가 해야 할 일:
 
 - 코드를 수정하지 않는다.
 - 요구사항을 Issue 초안으로 정리한다.
+- 일반 Issue로 충분한지, parent/sub-issue 구조가 필요한지 먼저 판단한다.
 - 작업 내용, 이유, 완료 조건, 제외 범위를 쓴다.
+- 큰 작업이면 parent issue와 sub-issue 후보를 제안한다.
 - 요구사항이 모호하면 질문한다.
 - GitHub Issue 생성 도구를 사용할 수 없으면 Issue 본문 초안을 제공하고 중단한다.
 
@@ -32,6 +34,25 @@ AI가 하지 않는 일:
 - 사용자의 작업 시작 요청 없이 branch 생성
 - Issue 생성 요청만으로 코드 수정
 - 완료 조건이 없는 상태에서 구현 착수
+
+Issue 생성 시 분해 판단 기준:
+
+```text
+일반 Issue로 충분한 경우:
+- 한 PR로 리뷰하기 쉽다.
+- 영향 영역이 하나다.
+- 완료 조건이 5개 이하로 작다.
+- 작업 순서 의존성이 없다.
+
+parent/sub-issue 구조가 필요한 경우:
+- 여러 앱/패키지에 걸쳐 있다.
+- 여러 PR로 나누는 것이 자연스럽다.
+- 단계 간 의존성이 있다.
+- 완료 조건이 6개 이상이다.
+- 리뷰 관점이 서로 다르다.
+```
+
+AI는 큰 작업을 parent issue로 만들 때 구현을 바로 시작하지 않는다. 사용자가 특정 sub-issue 작업을 요청하면 그 sub-issue를 기준으로 branch, commit, push, PR 생성을 진행한다.
 
 ### 2. Issue 작업 요청
 
@@ -47,17 +68,19 @@ AI가 해야 할 일:
 
 ```text
 1. Issue 내용을 확인한다.
-2. 작업 범위와 완료 조건을 요약한다.
-3. 현재 git 상태를 확인한다.
-4. 필요한 경우 main 최신 상태를 확인한다.
-5. Issue 번호가 포함된 branch를 만든다.
-6. 작업을 구현한다.
-7. 가능한 검증을 실행한다.
-8. 관련 변경만 commit한다.
-9. branch를 push한다.
-10. 사용자 요청에 따라 draft PR 또는 ready PR을 만들고 Issue를 연결한다.
-11. "바로 리뷰까지 진행해줘" 요청이 있으면 PR을 ready 상태로 만들고 Codex automatic review를 기다린다.
-12. draft PR로 만든 경우에는 ready 전환 또는 수동 `@codex review` 요청이 필요하다고 안내한다.
+2. parent issue인지 실제 작업 issue인지 판단한다.
+3. parent issue라면 sub-issue 선택 또는 분해를 먼저 요청한다.
+4. 작업 범위와 완료 조건을 요약한다.
+5. 현재 git 상태를 확인한다.
+6. 필요한 경우 main 최신 상태를 확인한다.
+7. Issue 번호가 포함된 branch를 만든다.
+8. 작업을 구현한다.
+9. 가능한 검증을 실행한다.
+10. 관련 변경만 commit한다.
+11. branch를 push한다.
+12. 사용자 요청에 따라 draft PR 또는 ready PR을 만들고 Issue를 연결한다.
+13. "바로 리뷰까지 진행해줘" 요청이 있으면 PR을 ready 상태로 만들고 Codex automatic review를 기다린다.
+14. draft PR로 만든 경우에는 ready 전환 또는 수동 `@codex review` 요청이 필요하다고 안내한다.
 ```
 
 특정 Issue 작업 요청은 branch push와 PR 생성을 포함한다. 별도로 "push해줘"라고 말하지 않아도 PR 생성을 위해 원격 branch를 push할 수 있다.
@@ -79,6 +102,13 @@ PR 본문에는 다음 문구를 포함한다.
 Closes #12
 ```
 
+Sub-issue 작업 PR에는 parent issue도 함께 남긴다.
+
+```text
+Closes #8
+Parent: #7
+```
+
 PR 생성 이후 AI가 하지 않는 일:
 
 - Codex review가 달렸다는 이유만으로 자동 수정
@@ -88,6 +118,7 @@ PR 생성 이후 AI가 하지 않는 일:
 AI가 멈춰야 하는 경우:
 
 - Issue가 너무 넓거나 완료 조건이 없다.
+- parent issue를 직접 작업하라는 요청이라 실제 구현 단위가 불명확하다.
 - 현재 작업tree에 관련 없는 변경사항이 있다.
 - main과 원격 branch가 충돌 위험이 있는 상태다.
 - 필요한 secret, `.env`, 외부 권한이 없다.
