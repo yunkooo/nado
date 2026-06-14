@@ -16,8 +16,9 @@ const env = {
     process.env.DEVELOPER_DIR ?? "/Applications/Xcode.app/Contents/Developer",
   ...readPublicExpoEnv(rootEnvPath),
 };
+const mobileRuntimePackages = ["@nado/shared", "@nado/tokens"];
 
-buildSharedPackage();
+buildMobileRuntimePackages();
 
 const child = spawn("pnpm", ["exec", "expo", "run:ios", ...expoArgs], {
   cwd: appRoot,
@@ -54,15 +55,17 @@ function readPublicExpoEnv(path) {
   );
 }
 
-function buildSharedPackage() {
-  const result = spawnSync("pnpm", ["--filter", "@nado/shared", "build"], {
-    cwd: repoRoot,
-    env,
-    stdio: "inherit",
-  });
+function buildMobileRuntimePackages() {
+  for (const packageName of mobileRuntimePackages) {
+    const result = spawnSync("pnpm", ["--filter", packageName, "build"], {
+      cwd: repoRoot,
+      env,
+      stdio: "inherit",
+    });
 
-  if (result.status !== 0) {
-    process.exit(result.status ?? 1);
+    if (result.status !== 0) {
+      process.exit(result.status ?? 1);
+    }
   }
 }
 
