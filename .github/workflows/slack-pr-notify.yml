@@ -1,0 +1,95 @@
+name: Slack PR Notification
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  notify:
+    name: Send PR review request
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack notification
+        env:
+          PR_ACTION: ${{ github.event.action }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL is not set. Skipping Slack notification."
+            exit 0
+          fi
+
+          python3 - <<'PY' > slack-payload.json
+          import json
+          import os
+
+          action_labels = {
+              "opened": "새 PR",
+              "reopened": "다시 열린 PR",
+              "ready_for_review": "리뷰 준비 완료",
+          }
+          action_label = action_labels.get(os.environ["PR_ACTION"], os.environ["PR_ACTION"])
+          payload = {
+              "text": f"nado PR review request: #{os.environ['PR_NUMBER']}",
+              "blocks": [
+                  {
+                      "type": "header",
+                      "text": {
+                          "type": "plain_text",
+                          "text": "nado PR 리뷰 요청",
+                      },
+                  },
+                  {
+                      "type": "section",
+                      "text": {
+                          "type": "mrkdwn",
+                          "text": (
+                              f"*{action_label}:* <{os.environ['PR_URL']}|"
+                              f"#{os.environ['PR_NUMBER']} {os.environ['PR_TITLE']}>"
+                          ),
+                      },
+                  },
+                  {
+                      "type": "section",
+                      "fields": [
+                          {
+                              "type": "mrkdwn",
+                              "text": f"*Author:*\\n{os.environ['PR_AUTHOR']}",
+                          },
+                          {
+                              "type": "mrkdwn",
+                              "text": f"*Branch:*\\n{os.environ['PR_HEAD_REF']} -> {os.environ['PR_BASE_REF']}",
+                          },
+                      ],
+                  },
+                  {
+                      "type": "section",
+                      "text": {
+                          "type": "mrkdwn",
+                          "text": "PR 본문의 검증 항목과 Codex automatic review 결과를 확인해 주세요.",
+                      },
+                  },
+              ],
+          }
+          print(json.dumps(payload))
+          PY
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data @slack-payload.json \
+            "$SLACK_WEBHOOK_URL"
