@@ -12,6 +12,8 @@ storybook-static/
 
 apps/web/.next/
 apps/web/out/
+apps/e2e/test-results/
+apps/e2e/playwright-report/
 apps/mobile/.expo/
 apps/mobile/dist/
 apps/desktop/dist/
