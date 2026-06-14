@@ -17,6 +17,14 @@ const readUiStorySource = (fileName: string) =>
 const packageJson = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
 );
+const prTemplateSource = readFileSync(
+  new URL("../../../.github/pull_request_template.md", import.meta.url),
+  "utf8",
+);
+const prWorkflowSource = readFileSync(
+  new URL("../../../docs/workflow/pr-workflow.md", import.meta.url),
+  "utf8",
+);
 const readmeSource = readFileSync(
   new URL("../README.md", import.meta.url),
   "utf8",
@@ -128,5 +136,18 @@ describe("storybook source structure", () => {
     expect(analysisResultSource).toContain("export const NarrowTapOpen");
     expect(webSurfaceSource).toContain("export const NarrowSidebarOpen");
     expect(desktopSurfaceSource).toContain("export const SidebarOpen");
+  });
+
+  it("connects Storybook verification to the PR checklist and workflow docs", () => {
+    expect(prTemplateSource).toContain("UI/Storybook 변경 시");
+    expect(prTemplateSource).toContain("pnpm --filter @nado/storybook test");
+    expect(prTemplateSource).toContain("pnpm --filter @nado/storybook build");
+    expect(prWorkflowSource).toContain("Storybook 검증 기준");
+    expect(prWorkflowSource).toContain(
+      "CI에는 아직 Storybook build를 자동 추가하지 않는다",
+    );
+    expect(prWorkflowSource).toContain("pnpm --filter @nado/ui test");
+    expect(prWorkflowSource).toContain("pnpm --filter @nado/mobile test");
+    expect(readmeSource).toContain("PR checklist");
   });
 });
