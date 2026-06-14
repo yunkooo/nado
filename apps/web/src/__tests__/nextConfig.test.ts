@@ -26,4 +26,20 @@ describe("nextConfig", () => {
       },
     ]);
   });
+
+  it("transpiles workspace packages that are consumed from source", () => {
+    expect(nextConfig.transpilePackages).toEqual(
+      expect.arrayContaining(["@nado/shared", "@nado/tokens", "@nado/ui"]),
+    );
+  });
+
+  it("resolves workspace packages from source during web bundling", () => {
+    expect(nextConfig.turbopack?.resolveAlias).toMatchObject({
+      "@nado/shared": "../../packages/shared/src/index.ts",
+      "@nado/tokens": "../../packages/tokens/src/index.ts",
+      "@nado/tokens/react-native": "../../packages/tokens/src/reactNative.ts",
+      "@nado/ui": "../../packages/ui/src/index.ts",
+      "@nado/ui/styles.css": "../../packages/ui/src/styles.css",
+    });
+  });
 });

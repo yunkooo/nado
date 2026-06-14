@@ -20,6 +20,14 @@ export default defineConfig(({ mode }) => {
           replacement: toPathname("../../packages/shared/src/index.ts"),
         },
         {
+          find: /^@nado\/tokens$/,
+          replacement: toPathname("../../packages/tokens/src/index.ts"),
+        },
+        {
+          find: /^@nado\/tokens\/react-native$/,
+          replacement: toPathname("../../packages/tokens/src/reactNative.ts"),
+        },
+        {
           find: /^@nado\/ui$/,
           replacement: toPathname("../../packages/ui/src/index.ts"),
         },

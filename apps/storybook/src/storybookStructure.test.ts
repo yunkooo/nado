@@ -39,6 +39,12 @@ describe("storybook source structure", () => {
       "../../../packages/ui/src/index.ts",
     );
     expect(storybookConfigSource).toContain(
+      "../../../packages/tokens/src/index.ts",
+    );
+    expect(storybookConfigSource).toContain(
+      "../../../packages/tokens/src/reactNative.ts",
+    );
+    expect(storybookConfigSource).toContain(
       "../../../packages/shared/src/index.ts",
     );
   });

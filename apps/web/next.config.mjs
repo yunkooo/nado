@@ -35,8 +35,15 @@ const nextConfig = {
   },
   turbopack: {
     root,
+    resolveAlias: {
+      "@nado/shared": "../../packages/shared/src/index.ts",
+      "@nado/tokens": "../../packages/tokens/src/index.ts",
+      "@nado/tokens/react-native": "../../packages/tokens/src/reactNative.ts",
+      "@nado/ui": "../../packages/ui/src/index.ts",
+      "@nado/ui/styles.css": "../../packages/ui/src/styles.css",
+    },
   },
-  transpilePackages: ["@nado/shared", "@nado/ui"],
+  transpilePackages: ["@nado/shared", "@nado/tokens", "@nado/ui"],
 };
 
 export default nextConfig;
