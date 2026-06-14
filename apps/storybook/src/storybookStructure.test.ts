@@ -218,6 +218,25 @@ export const OtherStory: Story = {
     expectStoryExport(desktopSurfaceSource, "SidebarOpen");
   });
 
+  it("keeps analysis input stories on the shared product length limit", () => {
+    const analysisInputSampleSource = readUiStorySource(
+      "AnalysisInputSample.stories.tsx",
+    );
+    const inputComposerSource = readUiStorySource("InputComposer.stories.tsx");
+
+    expect(analysisInputSampleSource).toContain(
+      'import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared"',
+    );
+    expect(inputComposerSource).toContain(
+      'import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared"',
+    );
+    expect(analysisInputSampleSource).not.toContain(
+      "MAX_STORY_ANALYSIS_TEXT_LENGTH",
+    );
+    expect(inputComposerSource).not.toContain("MAX_STORY_ANALYSIS_TEXT_LENGTH");
+    expect(inputComposerSource).not.toContain("487");
+  });
+
   it("connects Storybook verification to the PR checklist and workflow docs", () => {
     expect(prTemplateSource).toContain("UI/Storybook 변경 시");
     expect(prTemplateSource).toContain("pnpm --filter @nado/storybook test");
