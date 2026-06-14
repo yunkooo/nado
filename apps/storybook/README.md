@@ -26,4 +26,8 @@ source contract test + Storybook build는 지금 구조에서 유지보수 비�
 - 분석 결과 단어 popover: `WordPopoverOpen`, `NarrowTapOpen`
 - 작은 화면 확인: `NarrowSidebarOpen`, `SidebarOpen`
 
+## PR checklist
+
+UI/Storybook 변경 PR에서는 PR checklist의 Storybook 항목을 확인한다. story만 바꾼 경우에도 `pnpm --filter @nado/storybook test`, `pnpm --filter @nado/storybook typecheck`, `pnpm --filter @nado/storybook build` 결과를 PR 본문에 남긴다.
+
 새 UI 상태를 추가할 때는 story를 먼저 만들고, 중요한 회귀 포인트는 `storybookStructure.test.ts`에 소스 계약으로 남긴다. 실제 사용자 조작 흐름까지 자동화해야 할 만큼 위험도가 올라가면 Vitest addon 또는 portable stories 기반 테스트를 별도 이슈로 도입한다.
