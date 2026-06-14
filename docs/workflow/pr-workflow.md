@@ -193,7 +193,7 @@ UI/Storybook 변경 PR은 변경 파일만 보고 검증 명령을 고르지 않
 | Mobile UI 또는 token을 사용하는 Mobile 스타일   | `pnpm --filter @nado/mobile test`, token 변경이 Storybook UI에 영향 있으면 Storybook test/build도 함께 실행            |
 | Web/Desktop surface story가 필요한 화면 UI 변경 | 관련 story 추가 또는 갱신, Storybook build, 필요한 경우 PR 본문에 수동 화면 확인 story 이름 기록                       |
 
-CI에는 아직 Storybook build를 자동 추가하지 않는다. 현재 저장소에는 `.github/workflows`가 없고, #16의 범위는 대규모 CI 파이프라인 개편이 아니다. 따라서 지금 기준은 PR checklist와 workflow 문서에 명령을 명확히 남기고 로컬에서 실행한 결과를 PR 본문에 적는 것이다.
+CI는 [../../.github/workflows/ci.yml](../../.github/workflows/ci.yml)에서 기본 검증을 실행한다. 현재 기본 CI 범위는 `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm e2e`다. Storybook 전용 build는 아직 별도 필수 check로 분리하지 않았으므로, Storybook/UI 변경 PR은 아래 Storybook 검증 명령을 PR 본문에 별도로 남긴다.
 
 CI를 도입할 때는 Storybook을 한 번에 전체 품질 gate로 묶기보다 다음 순서로 분리한다.
 

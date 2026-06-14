@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   verify:
-    name: Lint, typecheck, test
+    name: Lint, typecheck, test, build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -39,74 +39,46 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Build
+        run: pnpm build
+
       - name: Notify Slack on failure
         if: failure()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          GITHUB_ACTOR_NAME: ${{ github.actor }}
-          GITHUB_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-          GITHUB_RUN_LINK: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          GITHUB_SHA_VALUE: ${{ github.sha }}
-          GITHUB_WORKFLOW_NAME: ${{ github.workflow }}
+        uses: ./.github/actions/notify-slack-failure
+        with:
+          job-name: Lint, typecheck, test, build
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  e2e:
+    name: E2E smoke
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
         run: |
-          if [ -z "$SLACK_WEBHOOK_URL" ]; then
-            echo "SLACK_WEBHOOK_URL is not set. Skipping Slack notification."
-            exit 0
-          fi
+          corepack enable
+          corepack prepare pnpm@11.5.2 --activate
 
-          python3 - <<'PY' > slack-payload.json
-          import json
-          import os
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-          short_sha = os.environ["GITHUB_SHA_VALUE"][:7]
-          payload = {
-              "text": f"nado CI failed on {os.environ['GITHUB_BRANCH_NAME']}",
-              "blocks": [
-                  {
-                      "type": "header",
-                      "text": {
-                          "type": "plain_text",
-                          "text": "nado CI 실패",
-                      },
-                  },
-                  {
-                      "type": "section",
-                      "fields": [
-                          {
-                              "type": "mrkdwn",
-                              "text": f"*Workflow:*\\n{os.environ['GITHUB_WORKFLOW_NAME']}",
-                          },
-                          {
-                              "type": "mrkdwn",
-                              "text": f"*Branch:*\\n{os.environ['GITHUB_BRANCH_NAME']}",
-                          },
-                          {
-                              "type": "mrkdwn",
-                              "text": f"*Actor:*\\n{os.environ['GITHUB_ACTOR_NAME']}",
-                          },
-                          {
-                              "type": "mrkdwn",
-                              "text": f"*Commit:*\\n`{short_sha}`",
-                          },
-                      ],
-                  },
-                  {
-                      "type": "section",
-                      "text": {
-                          "type": "mrkdwn",
-                          "text": f"*실패한 run:*\\n<{os.environ['GITHUB_RUN_LINK']}|GitHub Actions 로그 보기>",
-                      },
-                  },
-              ],
-          }
-          print(json.dumps(payload))
-          PY
+      - name: Install Playwright Chromium
+        run: pnpm e2e:install
 
-          curl \
-            --fail \
-            --silent \
-            --show-error \
-            --request POST \
-            --header "Content-Type: application/json" \
-            --data @slack-payload.json \
-            "$SLACK_WEBHOOK_URL"
+      - name: Run e2e smoke tests
+        run: pnpm e2e
+
+      - name: Notify Slack on failure
+        if: failure()
+        uses: ./.github/actions/notify-slack-failure
+        with:
+          job-name: E2E smoke
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
