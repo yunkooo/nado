@@ -25,7 +25,8 @@ AI가 해야 할 일:
 - 요구사항을 Issue 초안으로 정리한다.
 - 일반 Issue로 충분한지, parent issue 기준 PR 1개가 맞는지, 독립 sub-issue PR 분리가 필요한지 먼저 판단한다.
 - 작업 내용, 이유, 완료 조건, 제외 범위를 쓴다.
-- 큰 작업이면 parent issue와 sub-issue/checklist 후보를 제안한다.
+- 큰 작업이면 parent issue와 native sub-issue 후보를 제안한다.
+- tracking parent issue로 확정되면 후보를 별도 GitHub issue로 만들고 GitHub native sub-issue 관계로 연결하는 것을 기본 흐름으로 안내한다.
 - 요구사항이 모호하면 질문한다.
 - GitHub Issue 생성 도구를 사용할 수 없으면 Issue 본문 초안을 제공하고 중단한다.
 
@@ -68,7 +69,7 @@ AI가 해야 할 일:
 ```text
 1. Issue 내용을 확인한다.
 2. 일반 Issue, cohesive parent issue, tracking parent issue, 독립 sub-issue 중 무엇인지 판단한다.
-3. tracking parent issue라면 sub-issue 선택 또는 분해를 먼저 요청한다.
+3. tracking parent issue라면 연결된 GitHub native sub-issue 중 작업할 항목을 선택하거나, native sub-issue 생성/연결을 먼저 요청한다.
 4. 작업 범위와 완료 조건을 요약한다.
 5. 현재 git 상태를 확인한다.
 6. 필요한 경우 main 최신 상태를 확인한다.
@@ -84,7 +85,7 @@ AI가 해야 할 일:
 16. 사용자가 명시적으로 draft를 요청한 경우에만 draft PR을 만들고, ready 전환 전에는 Codex review 대상이 아닐 수 있다고 안내한다.
 ```
 
-PR 작업 단위로 확정된 Issue 작업 요청은 branch push와 PR 생성을 포함한다. 별도로 "push해줘"라고 말하지 않아도 PR 생성을 위해 원격 branch를 push할 수 있다. tracking parent issue는 PR 작업 단위가 아니므로 branch push와 PR 생성 범위에 포함하지 않는다.
+PR 작업 단위로 확정된 Issue 작업 요청은 branch push와 PR 생성을 포함한다. 별도로 "push해줘"라고 말하지 않아도 PR 생성을 위해 원격 branch를 push할 수 있다. tracking parent issue는 PR 작업 단위가 아니므로 branch push와 PR 생성 범위에 포함하지 않는다. tracking parent issue의 실제 작업은 GitHub native sub-issue 중 하나를 PR 작업 단위로 선택한 뒤 진행한다.
 
 PR 작업 단위로 확정된 Issue 작업으로 새 PR을 만드는 경우 ready PR 생성까지 기본 범위에 포함한다. AI는 Codex review 생성을 고정 시간 동안 지켜보지 않는다. 사용자가 필요할 때 PR 화면에서 최신 head commit 기준 Codex review 여부를 확인하고, 결과가 없으면 AI가 같은 PR에 댓글을 남기는 대신 사용자가 `@codex review`를 직접 요청하도록 안내한다.
 
@@ -120,6 +121,8 @@ Closes #8
 Parent: #7
 ```
 
+`Parent: #7` 표기는 GitHub native sub-issue 연결을 대체하지 않는다. native 연결은 parent issue의 진행률과 관계 추적용으로 사용하고, PR 본문의 `Parent:` 줄은 리뷰어가 PR 안에서 parent 맥락을 바로 확인하기 위한 보조 표기로 유지한다.
+
 PR 생성 이후 AI가 하지 않는 일:
 
 - Codex review가 달렸다는 이유만으로 자동 수정
@@ -129,7 +132,7 @@ PR 생성 이후 AI가 하지 않는 일:
 AI가 멈춰야 하는 경우:
 
 - Issue가 너무 넓거나 완료 조건이 없다.
-- tracking parent issue를 직접 작업하라는 요청이라 실제 구현 단위가 불명확하다.
+- tracking parent issue를 직접 작업하라는 요청이고, 연결된 native sub-issue나 선택된 실제 구현 단위가 없다.
 - 현재 작업tree에 관련 없는 변경사항이 있다.
 - main과 원격 branch가 충돌 위험이 있는 상태다.
 - 필요한 secret, `.env`, 외부 권한이 없다.

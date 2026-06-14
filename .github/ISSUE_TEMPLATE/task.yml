@@ -89,12 +89,12 @@ body:
   - type: textarea
     id: sub-issues
     attributes:
-      label: Sub-issue/checklist 후보
-      description: cohesive parent issue의 세부 checklist 또는 tracking parent issue의 실제 sub-issue 후보를 적어주세요.
+      label: Native sub-issue/checklist 후보
+      description: tracking parent issue라면 GitHub native sub-issue로 만들 후보를, cohesive parent issue라면 PR checklist 후보를 적어주세요.
       placeholder: |
-        - [ ] `@nado/tokens` 패키지 분리
-        - [ ] Mobile 스타일 공통 토큰 연결
-        - [ ] Storybook story co-location 적용
+        - `@nado/tokens` 패키지 분리
+        - Mobile 스타일 공통 토큰 연결
+        - Storybook story co-location 적용
     validations:
       required: false
 

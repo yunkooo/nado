@@ -24,11 +24,11 @@ Issue는 작업을 시작하기 전에 문제, 범위, 완료 조건을 정리�
 ```text
 작은 작업 = Issue 1개 -> Branch 1개 -> PR 1개
 큰 cohesive 작업 = Parent issue 1개 -> Branch 1개 -> PR 1개
-독립 작업 묶음 = Parent issue 1개 -> Sub-issue 여러 개
+독립 작업 묶음 = Parent issue 1개 -> GitHub native Sub-issue 여러 개
 독립 실제 작업 = Sub-issue 1개 -> Branch 1개 -> PR 1개
 ```
 
-Parent issue는 큰 작업의 배경, 목표, 전체 완료 조건을 추적하는 용도로 사용한다. 큰 작업이 하나의 cohesive change라면 parent issue 기준으로 branch와 PR을 만들고, sub-issue나 checklist는 세부 추적용으로 사용한다. 여러 독립 변경으로 나뉘는 작업이라면 sub-issue 기준으로 branch와 PR을 만든다.
+Parent issue는 큰 작업의 배경, 목표, 전체 완료 조건을 추적하는 용도로 사용한다. 큰 작업이 하나의 cohesive change라면 parent issue 기준으로 branch와 PR을 만들고, sub-issue나 checklist는 세부 추적용으로 사용한다. 여러 독립 변경으로 나뉘는 작업이라면 GitHub native sub-issue 기준으로 branch와 PR을 만든다.
 
 ## Parent/sub-issue 판단 기준
 
@@ -80,12 +80,14 @@ Storybook과 디자인 시스템 패키지 운영 구조를 정리한다.
 
 ## Sub-issue 후보
 
-- [ ] `@nado/tokens` 패키지 분리
-- [ ] Mobile 스타일 공통 토큰 연결
-- [ ] UI 패키지에 Storybook story 배치
-- [ ] Web/Desktop surface story 추가
-- [ ] Storybook 검증 규칙 문서화
+- `@nado/tokens` 패키지 분리
+- Mobile 스타일 공통 토큰 연결
+- UI 패키지에 Storybook story 배치
+- Web/Desktop surface story 추가
+- Storybook 검증 규칙 문서화
 ```
+
+위 목록은 parent issue 생성 전후의 후보 정리용이다. tracking parent issue로 확정되면 후보를 실제 GitHub issue로 만들고, GitHub native sub-issue 관계로 parent issue에 연결한다. Markdown checklist는 native 연결을 만들기 전의 초안이나 보조 메모로만 사용한다.
 
 ## 좋은 Issue의 기준
 
@@ -105,12 +107,25 @@ Storybook과 디자인 시스템 패키지 운영 구조를 정리한다.
 
 Issue form의 `작업 분해` 값은 아래 기준으로 선택한다.
 
-| 값                                                   | 의미                                          | 이후 흐름                                         |
-| ---------------------------------------------------- | --------------------------------------------- | ------------------------------------------------- |
-| `단일 issue로 진행`                                  | 작은 작업의 일반 Issue                        | 해당 Issue 번호로 branch와 PR을 만든다.           |
-| `cohesive parent issue로 진행`                       | 큰 작업이지만 하나의 PR로 함께 리뷰해야 한다. | parent issue 번호로 branch와 PR을 만든다.         |
-| `tracking parent issue로 만들고 sub-issue 분리 필요` | 여러 독립 작업의 배경과 진행률을 추적한다.    | parent issue로 직접 branch/PR을 만들지 않는다.    |
-| `판단 필요`                                          | 아직 PR 단위를 확정하기 어렵다.               | Issue 작업 전에 사용자가 PR 단위를 다시 결정한다. |
+| 값                                                   | 의미                                          | 이후 흐름                                                                               |
+| ---------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `단일 issue로 진행`                                  | 작은 작업의 일반 Issue                        | 해당 Issue 번호로 branch와 PR을 만든다.                                                 |
+| `cohesive parent issue로 진행`                       | 큰 작업이지만 하나의 PR로 함께 리뷰해야 한다. | parent issue 번호로 branch와 PR을 만든다.                                               |
+| `tracking parent issue로 만들고 sub-issue 분리 필요` | 여러 독립 작업의 배경과 진행률을 추적한다.    | GitHub native sub-issue를 생성/연결하고, parent issue로 직접 branch/PR을 만들지 않는다. |
+| `판단 필요`                                          | 아직 PR 단위를 확정하기 어렵다.               | Issue 작업 전에 사용자가 PR 단위를 다시 결정한다.                                       |
+
+## GitHub native sub-issue 운영
+
+tracking parent issue는 GitHub native sub-issue 연결을 우선 사용한다.
+
+운영 기준:
+
+- parent issue 본문에는 목표, 배경, 전체 완료 조건, sub-issue 후보를 정리한다.
+- 후보가 확정되면 각 후보를 별도 GitHub issue로 만들고 parent issue에 native sub-issue로 연결한다.
+- 연결된 sub-issue가 실제 branch/PR 단위가 된다.
+- sub-issue PR 본문에는 `Closes #<sub-issue-number>`와 `Parent: #<parent-number>`를 함께 남긴다.
+- parent issue의 진행률은 native sub-issue 상태를 기준으로 확인한다.
+- native sub-issue 연결이 도구나 권한 문제로 불가능하면 Markdown checklist를 fallback으로 사용하고, 수동 최신화가 필요하다고 명시한다.
 
 ```md
 ## 작업 내용

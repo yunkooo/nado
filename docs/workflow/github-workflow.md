@@ -38,7 +38,7 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 - ready PR 생성
 - Codex automatic review 대상 PR로 생성됐는지 확인
 
-단, 요청한 Issue가 tracking parent issue라면 직접 branch/PR을 만들지 않는다. 먼저 cohesive parent issue로 처리할 수 있는지, 아니면 어떤 sub-issue를 작업할지 확인한다.
+단, 요청한 Issue가 tracking parent issue라면 직접 branch/PR을 만들지 않는다. 먼저 cohesive parent issue로 처리할 수 있는지, 아니면 연결된 GitHub native sub-issue 중 어떤 항목을 작업할지 확인한다.
 
 일반 커밋 요청은 push 요청으로 간주하지 않는다.
 
@@ -66,12 +66,12 @@ Draft PR은 사용자가 명시적으로 draft를 요청했을 때만 만들고,
 
 기본 작업은 일반 Issue 하나로 관리한다. 큰 작업은 parent issue를 만들되, PR 단위가 parent issue인지 독립 sub-issue인지 먼저 판단한다.
 
-| 구분                   | 역할                                     | Branch/PR                                        |
-| ---------------------- | ---------------------------------------- | ------------------------------------------------ |
-| 일반 Issue             | 작은 작업의 추적과 구현 단위             | Issue 번호 기준으로 branch와 PR을 만든다.        |
-| Parent issue, cohesive | 하나로 리뷰/검증/merge해야 하는 큰 작업  | Parent issue 번호 기준으로 branch와 PR을 만든다. |
-| Parent issue, tracking | 여러 독립 작업의 배경, 목표, 진행률 추적 | 직접 branch와 PR을 만들지 않는다.                |
-| Sub-issue              | 독립적으로 리뷰/검증/merge 가능한 작업   | Sub-issue 번호 기준으로 branch와 PR을 만든다.    |
+| 구분                   | 역할                                     | Branch/PR                                                             |
+| ---------------------- | ---------------------------------------- | --------------------------------------------------------------------- |
+| 일반 Issue             | 작은 작업의 추적과 구현 단위             | Issue 번호 기준으로 branch와 PR을 만든다.                             |
+| Parent issue, cohesive | 하나로 리뷰/검증/merge해야 하는 큰 작업  | Parent issue 번호 기준으로 branch와 PR을 만든다.                      |
+| Parent issue, tracking | 여러 독립 작업의 배경, 목표, 진행률 추적 | GitHub native sub-issue를 연결하고, 직접 branch와 PR을 만들지 않는다. |
+| Sub-issue              | 독립적으로 리뷰/검증/merge 가능한 작업   | Sub-issue 번호 기준으로 branch와 PR을 만든다.                         |
 
 Parent issue 기준 PR 1개 예시:
 
@@ -90,6 +90,8 @@ Sub-issue: #8 @nado/tokens 패키지 분리
 Branch: chore/8-tokens-package
 PR: Closes #8, Parent: #7
 ```
+
+Tracking parent issue에서 sub-issue는 GitHub native sub-issue 관계로 parent에 연결한다. 독립 sub-issue PR 흐름에서는 native 연결이 있더라도 검색과 히스토리 추적을 위해 `Closes #<sub-issue>`와 `Parent: #<parent>`를 함께 적는다.
 
 Parent issue 기준 PR 1개 흐름에서는 PR 본문에 `Closes #<parent>`를 적고, 세부 항목은 checklist 또는 `Refs #<sub-issue>`로 연결한다. 독립 sub-issue PR 흐름에서는 `Closes #<sub-issue>`와 `Parent: #<parent>`를 함께 적는다.
 
@@ -258,7 +260,7 @@ Closes #19
 - Refs #20
 ```
 
-독립 sub-issue 작업 PR은 sub-issue를 닫고 parent issue를 별도 줄에 남긴다.
+독립 sub-issue 작업 PR은 sub-issue를 닫고 parent issue를 별도 줄에 남긴다. 이 줄은 GitHub native sub-issue 연결을 대체하지 않고, PR 본문에서 parent 맥락을 바로 볼 수 있게 하는 보조 표기다.
 
 ```text
 Closes #8

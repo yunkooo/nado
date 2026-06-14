@@ -80,7 +80,7 @@ Closes #19
 - Refs #20
 ```
 
-독립 sub-issue 작업이라면 parent issue를 별도 줄에 함께 적는다.
+독립 sub-issue 작업이라면 GitHub native sub-issue 연결을 기본으로 두고, PR 본문에는 parent issue를 별도 줄에 함께 적는다. `Parent:` 줄은 native 연결을 대체하지 않는 보조 맥락 표기다.
 
 ```md
 Closes #8
@@ -221,7 +221,7 @@ Closes #19
 - Refs #20
 ```
 
-독립 sub-issue 작업 PR은 sub-issue를 닫고 parent issue를 참조한다.
+독립 sub-issue 작업 PR은 native sub-issue를 닫고 parent issue를 참조한다. `Parent:` 줄은 PR 화면에서 parent 맥락을 바로 보기 위한 보조 표기다.
 
 ```text
 Closes #8
