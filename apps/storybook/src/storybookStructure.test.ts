@@ -13,6 +13,13 @@ const readUiStorySource = (fileName: string) =>
     new URL(`../../../packages/ui/src/${fileName}`, import.meta.url),
     "utf8",
   );
+const escapeRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const storyExportPattern = (exportName: string) =>
+  new RegExp(`export\\s+const\\s+${escapeRegExp(exportName)}\\s*(?::|=)`);
+const expectStoryExport = (source: string, exportName: string) => {
+  expect(source).toMatch(storyExportPattern(exportName));
+};
 
 const packageJson = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
@@ -84,17 +91,18 @@ describe("storybook source structure", () => {
   });
 
   it("keeps app surface stories on mock data without app API or auth imports", () => {
-    const appSurfaceSource = [
-      readStorySource("DesktopSurface.stories.tsx"),
-      readStorySource("WebSurface.stories.tsx"),
-    ].join("\n");
+    const desktopSurfaceSource = readStorySource("DesktopSurface.stories.tsx");
+    const webSurfaceSource = readStorySource("WebSurface.stories.tsx");
+    const appSurfaceSource = [desktopSurfaceSource, webSurfaceSource].join(
+      "\n",
+    );
 
     expect(appSurfaceSource).not.toContain("/api/");
     expect(appSurfaceSource).not.toContain("authState");
     expect(appSurfaceSource).not.toContain("useAuthState");
     expect(appSurfaceSource).not.toContain("useAnalysisSubmission");
-    expect(appSurfaceSource).toContain("Narrow");
-    expect(appSurfaceSource).toContain("SidebarOpen");
+    expectStoryExport(webSurfaceSource, "NarrowSidebarOpen");
+    expectStoryExport(desktopSurfaceSource, "SidebarOpen");
   });
 
   it("documents the selected story verification approach", () => {
@@ -104,6 +112,20 @@ describe("storybook source structure", () => {
     expect(readmeSource).toContain("Vitest addon");
     expect(readmeSource).toContain("portable stories");
     expect(readmeSource).toContain("pnpm --filter @nado/storybook build");
+  });
+
+  it("matches story export identifiers exactly", () => {
+    expect(
+      storyExportPattern("Idle").test("export const Idle: Story = {}"),
+    ).toBe(true);
+    expect(
+      storyExportPattern("Idle").test("export const IdleDisabled: Story = {}"),
+    ).toBe(false);
+    expect(
+      storyExportPattern("WordPopoverOpen").test(
+        "export const WordPopoverOpenLegacy = {}",
+      ),
+    ).toBe(false);
   });
 
   it("keeps core interaction states testable through story exports", () => {
@@ -116,11 +138,9 @@ describe("storybook source structure", () => {
     const webSurfaceSource = readStorySource("WebSurface.stories.tsx");
     const desktopSurfaceSource = readStorySource("DesktopSurface.stories.tsx");
 
-    expect(vocabularySuggestionListSource).toContain("export const Idle");
-    expect(vocabularySuggestionListSource).toContain("export const Saving");
-    expect(vocabularySuggestionListSource).toContain(
-      "export const SavedDisabled",
-    );
+    expectStoryExport(vocabularySuggestionListSource, "Idle");
+    expectStoryExport(vocabularySuggestionListSource, "Saving");
+    expectStoryExport(vocabularySuggestionListSource, "SavedDisabled");
     expect(vocabularySuggestionListSource).toContain(
       'getSuggestionState: () => "idle"',
     );
@@ -131,11 +151,11 @@ describe("storybook source structure", () => {
       'getSuggestionState: () => "saved"',
     );
 
-    expect(analysisResultSource).toContain("export const WordPopoverOpen");
+    expectStoryExport(analysisResultSource, "WordPopoverOpen");
     expect(analysisResultSource).toContain('activeVocabularyKey: "framework"');
-    expect(analysisResultSource).toContain("export const NarrowTapOpen");
-    expect(webSurfaceSource).toContain("export const NarrowSidebarOpen");
-    expect(desktopSurfaceSource).toContain("export const SidebarOpen");
+    expectStoryExport(analysisResultSource, "NarrowTapOpen");
+    expectStoryExport(webSurfaceSource, "NarrowSidebarOpen");
+    expectStoryExport(desktopSurfaceSource, "SidebarOpen");
   });
 
   it("connects Storybook verification to the PR checklist and workflow docs", () => {
