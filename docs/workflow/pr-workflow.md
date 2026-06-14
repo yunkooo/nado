@@ -11,9 +11,9 @@ PR은 변경 내용을 공유하고 merge 전에 검토하는 공간이다. nado
 - 가능한 검증을 실행했다.
 - 실행하지 못한 검증이 있다면 이유를 설명할 수 있다.
 
-AI가 특정 Issue 작업으로 만든 새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열릴 때 Codex review 결과를 기다린다. `yunkooo/nado` 저장소는 개인 기본 설정 상속을 피하고 저장소 row에서 `자동 코드 검토`를 명시적으로 켠 뒤 `Review trigger`를 `매 푸시마다`로 두는 것을 기준으로 한다. 이 설정에서는 PR branch에 새 push가 들어올 때도 Codex review 결과를 기다린다.
+AI가 특정 Issue 작업으로 만든 새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열릴 때 Codex review 결과를 기다린다. `yunkooo/nado` 저장소는 개인 기본 설정 상속을 피하고 저장소 row에서 `자동 코드 검토`를 명시적으로 켠 뒤 `Review trigger`를 `매 푸시마다`로 두는 것을 기준으로 한다. PR branch에 새 push가 들어온 경우에는 push-trigger 자동 리뷰를 기대하되 보장하지 않고, 최신 head commit 기준 리뷰가 실제로 생성됐는지 확인한다.
 
-자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다. `chatgpt-codex-connector` 댓글의 `Reviewed commit`이 최신 head SHA와 일치하면 해당 커밋은 리뷰된 것으로 본다. 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없거나 재검토가 필요한 경우에만 사용자가 PR 댓글로 `@codex review`를 직접 요청한다. AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다.
+자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다. `chatgpt-codex-connector` 댓글의 `Reviewed commit`이 최신 head SHA와 일치하면 해당 커밋은 리뷰된 것으로 본다. PR 생성 또는 draft에서 ready 전환한 경우에는 자동 리뷰 결과를 기다린다. 기존 PR branch에 새 push가 들어온 경우에는 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없거나 재검토가 필요한 경우에만 사용자가 PR 댓글로 `@codex review`를 직접 요청한다. AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다.
 
 Draft PR은 사용자가 명시적으로 draft를 요청했거나 범위 검토를 먼저 하겠다고 합의한 경우에만 만든다. Draft PR은 ready 전환 전에는 Codex review를 기대하지 않는다.
 
@@ -199,7 +199,7 @@ Issue가 여러 개인 경우는 원칙적으로 작업을 분리한다. 정말 
 1. ready PR 생성
 2. 저장소 Codex automatic review 대기
 3. Codex review 결과가 최신 PR head commit을 가리키는지 확인
-4. 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없으면 사용자가 PR 댓글로 `@codex review` 직접 요청
+4. 기존 PR branch push 후에는 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없으면 사용자가 PR 댓글로 `@codex review` 직접 요청
 5. Codex review 결과를 사용자 리뷰와 함께 확인
 ```
 
@@ -215,11 +215,15 @@ Review trigger: 매 푸시마다
 
 `자동 코드 검토`를 `개인 기본 설정 따라`로 두면 개인 trigger와 저장소 trigger가 섞여 실제 push review 동작을 판단하기 어려워진다. 이 저장소의 PR flow를 안정적으로 운영하려면 저장소 row에서 자동 코드 검토와 trigger를 모두 명시한다.
 
+AI는 Codex 설정 UI를 직접 확인하거나 변경할 수 없다. 설정 상태가 불명확하면 사용자에게 현재 저장소 row 설정을 확인해 달라고 요청하고, AI는 PR에 생성된 Codex review가 최신 head commit 기준인지 확인하는 역할만 맡는다.
+
+push-trigger 자동 리뷰는 설정을 맞춰도 생성이 지연되거나 생략될 수 있으므로, 문서/설정처럼 위험도가 낮은 변경은 최신 head 자동 리뷰가 없다는 사실을 보고하고 사용자가 판단한다. 코드, 빌드, 배포 영향이 있는 변경에서 최신 head 자동 리뷰가 없으면 사용자가 `@codex review`로 수동 재검토를 요청하는 것을 기본 대체 흐름으로 둔다.
+
 설정 위치와 동작 방식은 [Codex code review in GitHub](https://developers.openai.com/codex/integrations/github)를 기준으로 확인한다.
 
 Draft PR로 만든 경우에는 바로 automatic review를 기다리지 않는다. 사용자가 ready for review로 전환하거나 수동 리뷰를 요청할 때 review 단계로 넘어간다.
 
-최신 head commit 기준 Codex review가 달리지 않았거나 다시 확인이 필요하면 사용자가 PR 댓글로 수동 리뷰를 직접 요청한다.
+대체 흐름이 필요하면 사용자가 PR 댓글로 수동 리뷰를 직접 요청한다.
 
 ```text
 @codex review

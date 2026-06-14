@@ -28,7 +28,9 @@
 - PR 본문에는 관련 Issue를 닫는 `Closes #<번호>` 문구를 포함한다.
 - 특정 Issue 작업으로 새 PR을 만들 때는 기본적으로 ready 상태로 만들고 Codex review가 시작되도록 한다.
 - 이 저장소의 Codex code review 설정은 개인 기본 설정 상속 대신 저장소 row에서 `자동 코드 검토`를 명시적으로 켜고, `Review trigger`를 `매 푸시마다`로 고정하는 것을 기준으로 한다.
-- 저장소 Codex automatic review가 켜져 있으면 최신 PR head commit 기준 자동 리뷰 결과를 기다리고, 필수 check가 끝난 뒤 5분 동안 결과가 없거나 다시 확인이 필요하면 사용자가 PR 댓글로 `@codex review`를 직접 요청하도록 안내한다.
+- AI는 Codex 설정 UI를 직접 확인하거나 변경할 수 없으므로, 설정 상태가 불명확하면 사용자에게 확인한다.
+- 저장소 Codex automatic review가 켜져 있으면 PR 생성 또는 ready 전환 후 최신 PR head commit 기준 자동 리뷰 결과를 기다린다.
+- PR branch에 새 push가 들어온 경우에는 push-trigger 자동 리뷰를 기대하되 보장하지 않고, 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 결과가 없거나 다시 확인이 필요하면 사용자가 PR 댓글로 `@codex review`를 직접 요청하도록 안내한다.
 - AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다.
 - Draft PR은 사용자가 명시적으로 요청한 경우에만 만들며, ready 전환 시 Codex automatic review 결과를 기다린다.
 - 리뷰 수정은 사용자가 `PR #<번호> 리뷰 반영해줘`처럼 명시적으로 요청했을 때만 진행한다.
