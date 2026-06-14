@@ -33,6 +33,13 @@ const getStoryExportBlock = (source: string, exportName: string) => {
 const expectStoryExport = (source: string, exportName: string) => {
   expect(source).toMatch(storyExportPattern(exportName));
 };
+const expectStoryExportBlockToContain = (
+  source: string,
+  exportName: string,
+  expected: string,
+) => {
+  expect(getStoryExportBlock(source, exportName)).toContain(expected);
+};
 
 const packageJson = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
@@ -152,6 +159,7 @@ export const WordPopoverOpen: Story = {
 export const OtherStory: Story = {
   args: {
     activeVocabularyKey: "framework",
+    getSuggestionState: () => "saved",
   },
 };
 `;
@@ -161,6 +169,12 @@ export const OtherStory: Story = {
     );
     expect(getStoryExportBlock(source, "OtherStory")).toContain(
       'activeVocabularyKey: "framework"',
+    );
+    expect(getStoryExportBlock(source, "WordPopoverOpen")).not.toContain(
+      'getSuggestionState: () => "saved"',
+    );
+    expect(getStoryExportBlock(source, "OtherStory")).toContain(
+      'getSuggestionState: () => "saved"',
     );
   });
 
@@ -177,13 +191,19 @@ export const OtherStory: Story = {
     expectStoryExport(vocabularySuggestionListSource, "Idle");
     expectStoryExport(vocabularySuggestionListSource, "Saving");
     expectStoryExport(vocabularySuggestionListSource, "SavedDisabled");
-    expect(vocabularySuggestionListSource).toContain(
+    expectStoryExportBlockToContain(
+      vocabularySuggestionListSource,
+      "Idle",
       'getSuggestionState: () => "idle"',
     );
-    expect(vocabularySuggestionListSource).toContain(
+    expectStoryExportBlockToContain(
+      vocabularySuggestionListSource,
+      "Saving",
       'getSuggestionState: () => "saving"',
     );
-    expect(vocabularySuggestionListSource).toContain(
+    expectStoryExportBlockToContain(
+      vocabularySuggestionListSource,
+      "SavedDisabled",
       'getSuggestionState: () => "saved"',
     );
 
