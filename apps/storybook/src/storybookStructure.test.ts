@@ -6,6 +6,9 @@ const toStoryFiles = (path: string) =>
     .filter((fileName) => fileName.endsWith(".stories.tsx"))
     .sort();
 
+const readStorySource = (fileName: string) =>
+  readFileSync(new URL(`./${fileName}`, import.meta.url), "utf8");
+
 const packageJson = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
 );
@@ -24,7 +27,9 @@ describe("storybook source structure", () => {
   it("keeps app-level stories in the Storybook app", () => {
     expect(appStoryFiles).toEqual([
       "AnalysisPageMock.stories.tsx",
+      "DesktopSurface.stories.tsx",
       "Foundations.stories.tsx",
+      "WebSurface.stories.tsx",
     ]);
   });
 
@@ -58,6 +63,40 @@ describe("storybook source structure", () => {
     );
     expect(storybookConfigSource).toContain(
       "../../../packages/shared/src/index.ts",
+    );
+  });
+
+  it("keeps app surface stories on mock data without app API or auth imports", () => {
+    const appSurfaceSource = [
+      readStorySource("DesktopSurface.stories.tsx"),
+      readStorySource("WebSurface.stories.tsx"),
+    ].join("\n");
+
+    expect(appSurfaceSource).not.toContain("/api/");
+    expect(appSurfaceSource).not.toContain("authState");
+    expect(appSurfaceSource).not.toContain("useAuthState");
+    expect(appSurfaceSource).not.toContain("useAnalysisSubmission");
+    expect(appSurfaceSource).toContain("Narrow");
+    expect(appSurfaceSource).toContain("SidebarOpen");
+  });
+
+  it("uses viewport globals for narrow sidebar stories", () => {
+    const appSurfaceSource = [
+      readStorySource("DesktopSurface.stories.tsx"),
+      readStorySource("WebSurface.stories.tsx"),
+    ].join("\n");
+
+    expect(appSurfaceSource).toContain("globals:");
+    expect(appSurfaceSource).toContain('value: "mobile1"');
+    expect(appSurfaceSource).not.toContain("defaultViewport");
+  });
+
+  it("keeps the desktop review story aligned with desktop review CSS", () => {
+    const desktopSurfaceSource = readStorySource("DesktopSurface.stories.tsx");
+
+    expect(desktopSurfaceSource).not.toContain("ReviewCard,");
+    expect(desktopSurfaceSource).toContain(
+      "nado-review-card__answer--revealed",
     );
   });
 });
