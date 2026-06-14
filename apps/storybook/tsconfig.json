@@ -7,5 +7,10 @@
     "noEmit": true,
     "types": ["react", "react-dom", "vite/client"]
   },
-  "include": [".storybook", "src"]
+  "include": [
+    ".storybook",
+    "src",
+    "../../packages/ui/src/**/*.stories.tsx",
+    "../../packages/ui/src/**/*StoryFixtures.ts"
+  ]
 }

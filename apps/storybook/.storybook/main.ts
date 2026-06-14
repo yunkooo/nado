@@ -8,7 +8,10 @@ const config: StorybookConfig = {
     name: "@storybook/react-vite",
     options: {},
   },
-  stories: ["../src/**/*.stories.@(ts|tsx)"],
+  stories: [
+    "../src/**/*.stories.@(ts|tsx)",
+    "../../../packages/ui/src/**/*.stories.@(ts|tsx)",
+  ],
   viteFinal: async (viteConfig) => {
     const existingAlias = viteConfig.resolve?.alias;
     const aliases = Array.isArray(existingAlias)

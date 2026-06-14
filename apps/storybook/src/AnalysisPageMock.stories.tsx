@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
 import { AnalysisResult, InputComposer, InputSample } from "@nado/ui";
-import { analysisMock } from "./analysisMock";
+import { analysisMock } from "../../../packages/ui/src/analysisStoryFixtures";
 
 function AnalysisPageMockView() {
   return (
