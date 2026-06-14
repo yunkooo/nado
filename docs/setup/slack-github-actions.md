@@ -12,7 +12,7 @@ Slack 알림은 리뷰 요청과 실패 대응을 빠르게 공유하기 위한 
 | --------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | CI                    | [../../.github/workflows/ci.yml](../../.github/workflows/ci.yml)                                               | `lint`, `typecheck`, `test`, `build`, `e2e`를 실행하고 실패하면 Slack에 알린다. |
 | Slack PR Notification | [../../.github/workflows/slack-pr-notify.yml](../../.github/workflows/slack-pr-notify.yml)                     | PR 생성, reopen, ready 전환 시 Slack에 리뷰 요청 알림을 보낸다.                 |
-| Slack failure action  | [../../.github/actions/notify-slack-failure/action.yml](../../.github/actions/notify-slack-failure/action.yml) | CI job 실패 알림 payload를 공통으로 만든다.                                     |
+| Slack failure action  | [../../.github/actions/notify-slack-failure/action.yml](../../.github/actions/notify-slack-failure/action.yml) | checkout 이후 CI job 실패 알림 payload를 공통으로 만든다.                       |
 
 ## 필요한 GitHub Secret
 
@@ -79,6 +79,8 @@ pnpm e2e
 - actor
 - commit SHA
 - GitHub Actions run 링크
+
+checkout 실패는 repository 파일을 내려받기 전이라 로컬 composite action을 사용할 수 없다. 이 경우에는 workflow 안의 inline fallback step이 Slack payload를 직접 만든다. checkout 이후 단계에서 실패하면 `.github/actions/notify-slack-failure` local action을 사용한다.
 
 ### E2E smoke 검증
 

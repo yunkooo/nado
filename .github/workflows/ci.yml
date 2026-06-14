@@ -15,7 +15,85 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
+        id: checkout
         uses: actions/checkout@v4
+
+      - name: Notify Slack on checkout failure
+        if: failure() && steps.checkout.outcome == 'failure'
+        env:
+          FAILED_JOB_NAME: Lint, typecheck, test, build / Checkout
+          GITHUB_ACTOR_NAME: ${{ github.actor }}
+          GITHUB_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+          GITHUB_RUN_LINK: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GITHUB_SHA_VALUE: ${{ github.sha }}
+          GITHUB_WORKFLOW_NAME: ${{ github.workflow }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL is not set. Skipping Slack notification."
+            exit 0
+          fi
+
+          python3 - <<'PY' > slack-payload.json
+          import json
+          import os
+
+          short_sha = os.environ["GITHUB_SHA_VALUE"][:7]
+          payload = {
+              "text": f"nado CI failed on {os.environ['GITHUB_BRANCH_NAME']}",
+              "blocks": [
+                  {
+                      "type": "header",
+                      "text": {
+                          "type": "plain_text",
+                          "text": "nado CI 실패",
+                      },
+                  },
+                  {
+                      "type": "section",
+                      "fields": [
+                          {
+                              "type": "mrkdwn",
+                              "text": f"*Workflow:*\n{os.environ['GITHUB_WORKFLOW_NAME']}",
+                          },
+                          {
+                              "type": "mrkdwn",
+                              "text": f"*Job:*\n{os.environ['FAILED_JOB_NAME']}",
+                          },
+                          {
+                              "type": "mrkdwn",
+                              "text": f"*Branch:*\n{os.environ['GITHUB_BRANCH_NAME']}",
+                          },
+                          {
+                              "type": "mrkdwn",
+                              "text": f"*Actor:*\n{os.environ['GITHUB_ACTOR_NAME']}",
+                          },
+                          {
+                              "type": "mrkdwn",
+                              "text": f"*Commit:*\n`{short_sha}`",
+                          },
+                      ],
+                  },
+                  {
+                      "type": "section",
+                      "text": {
+                          "type": "mrkdwn",
+                          "text": f"*실패한 run:*\n<{os.environ['GITHUB_RUN_LINK']}|GitHub Actions 로그 보기>",
+                      },
+                  },
+              ],
+          }
+          print(json.dumps(payload))
+          PY
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data @slack-payload.json \
+            "$SLACK_WEBHOOK_URL"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -43,7 +121,7 @@ jobs:
         run: pnpm build
 
       - name: Notify Slack on failure
-        if: failure()
+        if: failure() && steps.checkout.outcome == 'success'
         uses: ./.github/actions/notify-slack-failure
         with:
           job-name: Lint, typecheck, test, build
@@ -55,7 +133,85 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
+        id: checkout
         uses: actions/checkout@v4
+
+      - name: Notify Slack on checkout failure
+        if: failure() && steps.checkout.outcome == 'failure'
+        env:
+          FAILED_JOB_NAME: E2E smoke / Checkout
+          GITHUB_ACTOR_NAME: ${{ github.actor }}
+          GITHUB_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+          GITHUB_RUN_LINK: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GITHUB_SHA_VALUE: ${{ github.sha }}
+          GITHUB_WORKFLOW_NAME: ${{ github.workflow }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL is not set. Skipping Slack notification."
+            exit 0
+          fi
+
+          python3 - <<'PY' > slack-payload.json
+          import json
+          import os
+
+          short_sha = os.environ["GITHUB_SHA_VALUE"][:7]
+          payload = {
+              "text": f"nado CI failed on {os.environ['GITHUB_BRANCH_NAME']}",
+              "blocks": [
+                  {
+                      "type": "header",
+                      "text": {
+                          "type": "plain_text",
+                          "text": "nado CI 실패",
+                      },
+                  },
+                  {
+                      "type": "section",
+                      "fields": [
+                          {
+                              "type": "mrkdwn",
+                              "text": f"*Workflow:*\n{os.environ['GITHUB_WORKFLOW_NAME']}",
+                          },
+                          {
+                              "type": "mrkdwn",
+                              "text": f"*Job:*\n{os.environ['FAILED_JOB_NAME']}",
+                          },
+                          {
+                              "type": "mrkdwn",
+                              "text": f"*Branch:*\n{os.environ['GITHUB_BRANCH_NAME']}",
+                          },
+                          {
+                              "type": "mrkdwn",
+                              "text": f"*Actor:*\n{os.environ['GITHUB_ACTOR_NAME']}",
+                          },
+                          {
+                              "type": "mrkdwn",
+                              "text": f"*Commit:*\n`{short_sha}`",
+                          },
+                      ],
+                  },
+                  {
+                      "type": "section",
+                      "text": {
+                          "type": "mrkdwn",
+                          "text": f"*실패한 run:*\n<{os.environ['GITHUB_RUN_LINK']}|GitHub Actions 로그 보기>",
+                      },
+                  },
+              ],
+          }
+          print(json.dumps(payload))
+          PY
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data @slack-payload.json \
+            "$SLACK_WEBHOOK_URL"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -77,7 +233,7 @@ jobs:
         run: pnpm e2e
 
       - name: Notify Slack on failure
-        if: failure()
+        if: failure() && steps.checkout.outcome == 'success'
         uses: ./.github/actions/notify-slack-failure
         with:
           job-name: E2E smoke
