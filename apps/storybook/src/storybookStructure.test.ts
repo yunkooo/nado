@@ -8,9 +8,53 @@ const toStoryFiles = (path: string) =>
 
 const readStorySource = (fileName: string) =>
   readFileSync(new URL(`./${fileName}`, import.meta.url), "utf8");
+const readUiStorySource = (fileName: string) =>
+  readFileSync(
+    new URL(`../../../packages/ui/src/${fileName}`, import.meta.url),
+    "utf8",
+  );
+const escapeRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const storyExportPattern = (exportName: string) =>
+  new RegExp(`export\\s+const\\s+${escapeRegExp(exportName)}\\s*(?::|=)`);
+const storyExportBlockPattern = (exportName: string) =>
+  new RegExp(
+    `export\\s+const\\s+${escapeRegExp(exportName)}\\s*(?::|=)[\\s\\S]*?(?=\\nexport\\s+const\\s+|$)`,
+  );
+const getStoryExportBlock = (source: string, exportName: string) => {
+  const match = storyExportBlockPattern(exportName).exec(source);
+
+  if (!match) {
+    throw new Error(`Missing story export: ${exportName}`);
+  }
+
+  return match[0];
+};
+const expectStoryExport = (source: string, exportName: string) => {
+  expect(source).toMatch(storyExportPattern(exportName));
+};
+const expectStoryExportBlockToContain = (
+  source: string,
+  exportName: string,
+  expected: string,
+) => {
+  expect(getStoryExportBlock(source, exportName)).toContain(expected);
+};
 
 const packageJson = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+);
+const prTemplateSource = readFileSync(
+  new URL("../../../.github/pull_request_template.md", import.meta.url),
+  "utf8",
+);
+const prWorkflowSource = readFileSync(
+  new URL("../../../docs/workflow/pr-workflow.md", import.meta.url),
+  "utf8",
+);
+const readmeSource = readFileSync(
+  new URL("../README.md", import.meta.url),
+  "utf8",
 );
 const appStoryFiles = toStoryFiles("./");
 const uiStoryFiles = toStoryFiles("../../../packages/ui/src/");
@@ -67,28 +111,146 @@ describe("storybook source structure", () => {
   });
 
   it("keeps app surface stories on mock data without app API or auth imports", () => {
-    const appSurfaceSource = [
-      readStorySource("DesktopSurface.stories.tsx"),
-      readStorySource("WebSurface.stories.tsx"),
-    ].join("\n");
+    const desktopSurfaceSource = readStorySource("DesktopSurface.stories.tsx");
+    const webSurfaceSource = readStorySource("WebSurface.stories.tsx");
+    const appSurfaceSource = [desktopSurfaceSource, webSurfaceSource].join(
+      "\n",
+    );
 
     expect(appSurfaceSource).not.toContain("/api/");
     expect(appSurfaceSource).not.toContain("authState");
     expect(appSurfaceSource).not.toContain("useAuthState");
     expect(appSurfaceSource).not.toContain("useAnalysisSubmission");
-    expect(appSurfaceSource).toContain("Narrow");
-    expect(appSurfaceSource).toContain("SidebarOpen");
+    expectStoryExport(webSurfaceSource, "NarrowSidebarOpen");
+    expectStoryExport(desktopSurfaceSource, "SidebarOpen");
+  });
+
+  it("documents the selected story verification approach", () => {
+    expect(readmeSource).toContain(
+      "선택: source contract test + Storybook build",
+    );
+    expect(readmeSource).toContain("Vitest addon");
+    expect(readmeSource).toContain("portable stories");
+    expect(readmeSource).toContain("pnpm --filter @nado/storybook build");
+  });
+
+  it("matches story export identifiers exactly", () => {
+    expect(
+      storyExportPattern("Idle").test("export const Idle: Story = {}"),
+    ).toBe(true);
+    expect(
+      storyExportPattern("Idle").test("export const IdleDisabled: Story = {}"),
+    ).toBe(false);
+    expect(
+      storyExportPattern("WordPopoverOpen").test(
+        "export const WordPopoverOpenLegacy = {}",
+      ),
+    ).toBe(false);
+  });
+
+  it("scopes story arg checks to the selected export block", () => {
+    const source = `
+export const WordPopoverOpen: Story = {
+  args: {
+    result: analysisMock,
+  },
+};
+
+export const OtherStory: Story = {
+  args: {
+    activeVocabularyKey: "framework",
+    getSuggestionState: () => "saved",
+  },
+};
+`;
+
+    expect(getStoryExportBlock(source, "WordPopoverOpen")).not.toContain(
+      'activeVocabularyKey: "framework"',
+    );
+    expect(getStoryExportBlock(source, "OtherStory")).toContain(
+      'activeVocabularyKey: "framework"',
+    );
+    expect(getStoryExportBlock(source, "WordPopoverOpen")).not.toContain(
+      'getSuggestionState: () => "saved"',
+    );
+    expect(getStoryExportBlock(source, "OtherStory")).toContain(
+      'getSuggestionState: () => "saved"',
+    );
+  });
+
+  it("keeps core interaction states testable through story exports", () => {
+    const vocabularySuggestionListSource = readUiStorySource(
+      "VocabularySuggestionList.stories.tsx",
+    );
+    const analysisResultSource = readUiStorySource(
+      "AnalysisResult.stories.tsx",
+    );
+    const webSurfaceSource = readStorySource("WebSurface.stories.tsx");
+    const desktopSurfaceSource = readStorySource("DesktopSurface.stories.tsx");
+
+    expectStoryExport(vocabularySuggestionListSource, "Idle");
+    expectStoryExport(vocabularySuggestionListSource, "Saving");
+    expectStoryExport(vocabularySuggestionListSource, "SavedDisabled");
+    expectStoryExportBlockToContain(
+      vocabularySuggestionListSource,
+      "Idle",
+      'getSuggestionState: () => "idle"',
+    );
+    expectStoryExportBlockToContain(
+      vocabularySuggestionListSource,
+      "Saving",
+      'getSuggestionState: () => "saving"',
+    );
+    expectStoryExportBlockToContain(
+      vocabularySuggestionListSource,
+      "SavedDisabled",
+      'getSuggestionState: () => "saved"',
+    );
+
+    const wordPopoverOpenStory = getStoryExportBlock(
+      analysisResultSource,
+      "WordPopoverOpen",
+    );
+
+    expect(wordPopoverOpenStory).toContain('activeVocabularyKey: "framework"');
+    expectStoryExport(analysisResultSource, "NarrowTapOpen");
+    expectStoryExport(webSurfaceSource, "NarrowSidebarOpen");
+    expectStoryExport(desktopSurfaceSource, "SidebarOpen");
+  });
+
+  it("connects Storybook verification to the PR checklist and workflow docs", () => {
+    expect(prTemplateSource).toContain("UI/Storybook 변경 시");
+    expect(prTemplateSource).toContain("pnpm --filter @nado/storybook test");
+    expect(prTemplateSource).toContain("pnpm --filter @nado/storybook build");
+    expect(prWorkflowSource).toContain("Storybook 검증 기준");
+    expect(prWorkflowSource).toContain(
+      "CI에는 아직 Storybook build를 자동 추가하지 않는다",
+    );
+    expect(prWorkflowSource).toContain("pnpm --filter @nado/ui test");
+    expect(prWorkflowSource).toContain("pnpm --filter @nado/mobile test");
+    expect(readmeSource).toContain("PR checklist");
   });
 
   it("uses viewport globals for narrow sidebar stories", () => {
-    const appSurfaceSource = [
-      readStorySource("DesktopSurface.stories.tsx"),
-      readStorySource("WebSurface.stories.tsx"),
-    ].join("\n");
+    const desktopSurfaceSource = readStorySource("DesktopSurface.stories.tsx");
+    const webSurfaceSource = readStorySource("WebSurface.stories.tsx");
+    const webNarrowSidebarOpenStory = getStoryExportBlock(
+      webSurfaceSource,
+      "NarrowSidebarOpen",
+    );
+    const desktopSidebarOpenStory = getStoryExportBlock(
+      desktopSurfaceSource,
+      "SidebarOpen",
+    );
 
-    expect(appSurfaceSource).toContain("globals:");
-    expect(appSurfaceSource).toContain('value: "mobile1"');
-    expect(appSurfaceSource).not.toContain("defaultViewport");
+    expect(webNarrowSidebarOpenStory).toContain("globals:");
+    expect(webNarrowSidebarOpenStory).toContain("viewport:");
+    expect(webNarrowSidebarOpenStory).toContain('value: "mobile1"');
+    expect(webNarrowSidebarOpenStory).not.toContain("defaultViewport");
+    expect(desktopSidebarOpenStory).toContain("globals:");
+    expect(desktopSidebarOpenStory).toContain("viewport:");
+    expect(desktopSidebarOpenStory).toContain('value: "mobile1"');
+    expect(desktopSidebarOpenStory).not.toContain("defaultViewport");
   });
 
   it("keeps the desktop review story aligned with desktop review CSS", () => {

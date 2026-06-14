@@ -6,6 +6,12 @@
 
 - [ ] `git diff --check`
 - [ ] 필요한 lint, typecheck, test 또는 화면 확인
+- [ ] UI/Storybook 변경 시 Storybook story 갱신 또는 영향 없음 사유 작성
+- [ ] UI/Storybook 변경 시 `pnpm --filter @nado/storybook test`
+- [ ] UI/Storybook 변경 시 `pnpm --filter @nado/storybook typecheck`
+- [ ] UI/Storybook 변경 시 `pnpm --filter @nado/storybook build`
+- [ ] 공통 UI 변경 시 `pnpm --filter @nado/ui test`
+- [ ] Mobile UI/token 변경 시 `pnpm --filter @nado/mobile test`
 - [ ] Codex automatic review 대상 PR로 ready 상태 확인
 
 ## 영향 범위
