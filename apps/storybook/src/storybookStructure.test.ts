@@ -8,9 +8,18 @@ const toStoryFiles = (path: string) =>
 
 const readStorySource = (fileName: string) =>
   readFileSync(new URL(`./${fileName}`, import.meta.url), "utf8");
+const readUiStorySource = (fileName: string) =>
+  readFileSync(
+    new URL(`../../../packages/ui/src/${fileName}`, import.meta.url),
+    "utf8",
+  );
 
 const packageJson = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+);
+const readmeSource = readFileSync(
+  new URL("../README.md", import.meta.url),
+  "utf8",
 );
 const appStoryFiles = toStoryFiles("./");
 const uiStoryFiles = toStoryFiles("../../../packages/ui/src/");
@@ -78,5 +87,46 @@ describe("storybook source structure", () => {
     expect(appSurfaceSource).not.toContain("useAnalysisSubmission");
     expect(appSurfaceSource).toContain("Narrow");
     expect(appSurfaceSource).toContain("SidebarOpen");
+  });
+
+  it("documents the selected story verification approach", () => {
+    expect(readmeSource).toContain(
+      "선택: source contract test + Storybook build",
+    );
+    expect(readmeSource).toContain("Vitest addon");
+    expect(readmeSource).toContain("portable stories");
+    expect(readmeSource).toContain("pnpm --filter @nado/storybook build");
+  });
+
+  it("keeps core interaction states testable through story exports", () => {
+    const vocabularySuggestionListSource = readUiStorySource(
+      "VocabularySuggestionList.stories.tsx",
+    );
+    const analysisResultSource = readUiStorySource(
+      "AnalysisResult.stories.tsx",
+    );
+    const webSurfaceSource = readStorySource("WebSurface.stories.tsx");
+    const desktopSurfaceSource = readStorySource("DesktopSurface.stories.tsx");
+
+    expect(vocabularySuggestionListSource).toContain("export const Idle");
+    expect(vocabularySuggestionListSource).toContain("export const Saving");
+    expect(vocabularySuggestionListSource).toContain(
+      "export const SavedDisabled",
+    );
+    expect(vocabularySuggestionListSource).toContain(
+      'getSuggestionState: () => "idle"',
+    );
+    expect(vocabularySuggestionListSource).toContain(
+      'getSuggestionState: () => "saving"',
+    );
+    expect(vocabularySuggestionListSource).toContain(
+      'getSuggestionState: () => "saved"',
+    );
+
+    expect(analysisResultSource).toContain("export const WordPopoverOpen");
+    expect(analysisResultSource).toContain('activeVocabularyKey: "framework"');
+    expect(analysisResultSource).toContain("export const NarrowTapOpen");
+    expect(webSurfaceSource).toContain("export const NarrowSidebarOpen");
+    expect(desktopSurfaceSource).toContain("export const SidebarOpen");
   });
 });
