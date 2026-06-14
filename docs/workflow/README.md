@@ -39,7 +39,8 @@
 - AI는 설정 UI를 직접 확인하거나 변경할 수 없으므로, 설정 상태가 불명확하면 사용자에게 확인한다.
 - 자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다.
 - PR 생성 또는 ready 전환 때는 자동 리뷰를 기다린다.
-- 기존 PR branch에 새 push가 들어온 경우에는 자동 리뷰를 기대하되 보장하지 않고, 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없거나 재검토가 필요할 때만 사용자가 PR 댓글로 `@codex review`를 직접 요청한다.
+- 기존 PR branch에 새 push가 들어온 경우에는 자동 리뷰를 기대하되 보장하지 않는다.
+- PR 생성, ready 전환, PR branch 새 push 후 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없거나 재검토가 필요할 때만 사용자가 PR 댓글로 `@codex review`를 직접 요청한다.
 - AI는 Issue와 PR 작업을 도울 수 있지만 merge는 사용자가 결정한다.
 - 애매한 요구사항은 구현으로 넘기지 않고 Issue 또는 질문으로 먼저 정리한다.
 
