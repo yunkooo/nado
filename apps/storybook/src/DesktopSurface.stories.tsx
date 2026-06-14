@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
-import { Button, ReviewCard, VocabularyListItem } from "@nado/ui";
+import { Button, VocabularyListItem } from "@nado/ui";
 import "../../desktop/src/styles/styles.css";
 
 type DesktopSurfaceKey = "analysis" | "review" | "vocabulary";
@@ -198,6 +198,22 @@ function DesktopVocabularySurface() {
   );
 }
 
+function DesktopReviewCardMock() {
+  return (
+    <article className="nado-review-card">
+      <span className="nado-eyebrow">My flashcard</span>
+      <span className="nado-review-card__meta">1 / 6</span>
+      <h2>shipping</h2>
+      <p className="nado-review-card__answer nado-review-card__answer--revealed">
+        출시/배포
+      </p>
+      <p className="nado-review-card__note">
+        The team improved shipping speed.
+      </p>
+    </article>
+  );
+}
+
 function DesktopReviewSurface({
   isSidebarOpen = false,
 }: {
@@ -237,12 +253,7 @@ function DesktopReviewSurface({
                 한국어 → 영어
               </button>
             </div>
-            <ReviewCard
-              answer="출시/배포"
-              example="The team improved shipping speed."
-              isRevealed
-              prompt="shipping"
-            />
+            <DesktopReviewCardMock />
             <div className="nado-review-actions">
               <Button variant="secondary">다시 보기</Button>
               <Button>다음 카드</Button>
@@ -269,9 +280,9 @@ export const SidebarClosed: Story = {
 };
 
 export const SidebarOpen: Story = {
-  parameters: {
+  globals: {
     viewport: {
-      defaultViewport: "mobile1",
+      value: "mobile1",
     },
   },
   render: () => <DesktopReviewSurface isSidebarOpen />,
