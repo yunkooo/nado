@@ -6,9 +6,9 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 
 ```text
 요청 정리
--> 작업 크기 판단
--> 일반 Issue 또는 parent/sub-issue 생성
--> 실제 작업 Issue 번호 기준 branch 생성
+-> 작업 크기와 PR 단위 판단
+-> 일반 Issue, parent issue, 또는 parent/sub-issue 생성
+-> PR 작업 단위 Issue 번호 기준 branch 생성
 -> 코드/문서 작업
 -> 검증
 -> commit
@@ -21,7 +21,7 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 
 ## Issue 작업 요청의 범위
 
-사용자가 특정 Issue 작업을 요청하면 해당 요청은 branch push, PR 생성, Codex automatic review 대기를 포함한다.
+사용자가 특정 Issue 작업을 요청하면 해당 요청은 branch push와 ready PR 생성을 포함한다.
 
 ```text
 #12 issue 작업해줘
@@ -36,7 +36,7 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 - commit
 - push
 - ready PR 생성
-- Codex automatic review 대기
+- Codex automatic review 대상 PR로 생성됐는지 확인
 
 일반 커밋 요청은 push 요청으로 간주하지 않는다.
 
@@ -48,11 +48,11 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 
 Issue 작업 요청에도 merge나 `main` 직접 push는 포함되지 않는다.
 
-새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열릴 때 자동 리뷰 결과를 기다린다. `yunkooo/nado` 저장소는 개인 기본 설정 상속을 피하고 저장소 row에서 `자동 코드 검토`를 명시적으로 켠 뒤 `Review trigger`를 `매 푸시마다`로 두는 것을 기준으로 한다. PR branch에 새 push가 들어온 경우에는 push-trigger 자동 리뷰를 기대하되 보장하지 않고, 최신 head commit 기준 리뷰가 실제로 생성됐는지 확인한다.
+새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열린다. `yunkooo/nado` 저장소는 개인 기본 설정 상속을 피하고 저장소 row에서 `자동 코드 검토`를 명시적으로 켠 뒤 `Review trigger`를 `매 푸시마다`로 두는 것을 기준으로 한다.
 
 자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다. `chatgpt-codex-connector` 댓글의 `Reviewed commit`이 최신 head SHA와 일치하면 해당 커밋은 리뷰된 것으로 본다.
 
-AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다. 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없거나 다시 확인이 필요할 때만 사용자가 PR 댓글로 수동 리뷰를 직접 요청한다.
+AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않고, Codex review 생성을 고정 시간 동안 지켜보지 않는다. 사용자가 필요할 때 PR 화면에서 최신 head commit 기준 리뷰 여부를 확인하고, 결과가 없거나 다시 확인이 필요하면 PR 댓글로 수동 리뷰를 직접 요청한다.
 
 ```text
 @codex review
@@ -62,15 +62,25 @@ Draft PR은 사용자가 명시적으로 draft를 요청했을 때만 만들고,
 
 ## Parent/Sub-issue 기준
 
-기본 작업은 일반 Issue 하나로 관리한다. 큰 작업은 parent issue를 추적용으로 만들고, 실제 구현 단위는 sub-issue로 분리한다.
+기본 작업은 일반 Issue 하나로 관리한다. 큰 작업은 parent issue를 만들되, PR 단위가 parent issue인지 독립 sub-issue인지 먼저 판단한다.
 
-| 구분         | 역할                              | Branch/PR                                     |
-| ------------ | --------------------------------- | --------------------------------------------- |
-| 일반 Issue   | 작은 작업의 추적과 구현 단위      | Issue 번호 기준으로 branch와 PR을 만든다.     |
-| Parent issue | 큰 작업의 배경, 목표, 진행률 추적 | 직접 branch와 PR을 만들지 않는다.             |
-| Sub-issue    | 큰 작업 안의 실제 구현 단위       | Sub-issue 번호 기준으로 branch와 PR을 만든다. |
+| 구분                   | 역할                                     | Branch/PR                                        |
+| ---------------------- | ---------------------------------------- | ------------------------------------------------ |
+| 일반 Issue             | 작은 작업의 추적과 구현 단위             | Issue 번호 기준으로 branch와 PR을 만든다.        |
+| Parent issue, cohesive | 하나로 리뷰/검증/merge해야 하는 큰 작업  | Parent issue 번호 기준으로 branch와 PR을 만든다. |
+| Parent issue, tracking | 여러 독립 작업의 배경, 목표, 진행률 추적 | 직접 branch와 PR을 만들지 않는다.                |
+| Sub-issue              | 독립적으로 리뷰/검증/merge 가능한 작업   | Sub-issue 번호 기준으로 branch와 PR을 만든다.    |
 
-예시:
+Parent issue 기준 PR 1개 예시:
+
+```text
+Parent issue: #19 workflow 리뷰 확인과 parent/sub-issue PR 기준 재정리
+Branch: docs/19-workflow-pr-rules
+PR: Closes #19
+세부 항목: PR 본문 checklist 또는 Refs #<sub-issue>
+```
+
+독립 sub-issue 기준 PR 예시:
 
 ```text
 Parent issue: #7 Storybook과 디자인 시스템 패키지 운영 구조 정리
@@ -79,26 +89,26 @@ Branch: chore/8-tokens-package
 PR: Closes #8, Parent: #7
 ```
 
-Parent issue를 닫는 PR을 직접 만들지 않는다. 모든 sub-issue가 merge된 뒤 사용자가 parent issue를 닫거나, 마지막 정리 PR에서 parent issue 상태를 갱신한다.
+Parent issue 기준 PR 1개 흐름에서는 PR 본문에 `Closes #<parent>`를 적고, 세부 항목은 checklist 또는 `Refs #<sub-issue>`로 연결한다. 독립 sub-issue PR 흐름에서는 `Closes #<sub-issue>`와 `Parent: #<parent>`를 함께 적는다.
 
 ## 상태 기준
 
 처음에는 GitHub label만으로 상태를 관리해도 충분하다.
 
-| 상태                 | 의미                             |
-| -------------------- | -------------------------------- |
-| `status:todo`        | 작업할 Issue가 만들어진 상태     |
-| `status:in-progress` | Issue 작업을 시작한 상태         |
-| `status:review`      | PR이 올라가 리뷰를 기다리는 상태 |
-| `status:done`        | PR이 merge되어 Issue가 닫힌 상태 |
+| 상태                 | 의미                                |
+| -------------------- | ----------------------------------- |
+| `status:todo`        | 작업할 Issue가 만들어진 상태        |
+| `status:in-progress` | Issue 작업을 시작한 상태            |
+| `status:review`      | PR이 올라가 리뷰 단계에 들어간 상태 |
+| `status:done`        | PR이 merge되어 Issue가 닫힌 상태    |
 
 `status:done`은 사용자가 PR을 merge한 뒤의 상태로 본다. AI는 직접 merge하거나 완료 상태를 확정하지 않는다.
 
 ## Branch 규칙
 
-Branch는 Issue 하나에 하나씩 만든다.
+Branch는 PR 작업 단위 하나에 하나씩 만든다.
 
-Issue 작업을 위해 branch를 만들 때는 아래 형식을 기본으로 한다. AI가 생성하는 branch도 같은 규칙을 따른다.
+Issue 작업을 위해 branch를 만들 때는 아래 형식을 기본으로 한다. AI가 생성하는 branch도 같은 규칙을 따른다. 큰 cohesive 작업은 parent issue 번호를 사용하고, 독립 sub-issue 작업은 sub-issue 번호를 사용한다.
 
 ```text
 <type>/<issue-number>-<short-slug>
@@ -159,7 +169,7 @@ Slug 규칙:
 
 Issue 유형이 애매하면 branch를 만들기 전에 유형을 먼저 정한다.
 
-Parent issue 아래의 sub-issue를 작업할 때도 branch 이름은 parent issue 번호가 아니라 sub-issue 번호를 사용한다.
+Parent issue 기준 PR 1개 흐름에서는 parent issue 번호를 branch 이름에 사용한다. 독립 sub-issue PR 흐름에서는 sub-issue 번호를 branch 이름에 사용한다.
 
 ## 작업 시작 체크
 
@@ -175,7 +185,7 @@ git status --short --branch
 - `main`이 원격과 크게 diverge되어 단순 pull이 위험하다.
 - Issue 내용만으로 완료 조건을 판단하기 어렵다.
 - 하나의 Issue에 서로 독립적인 작업이 여러 개 섞여 있다.
-- parent issue를 직접 구현하라는 요청처럼 실제 작업 단위가 불명확하다.
+- parent issue가 cohesive 작업 단위인지 추적용인지 불명확하다.
 - 민감 정보나 `.env` 값이 변경 범위에 포함될 가능성이 있다.
 
 ## Commit 규칙
@@ -236,7 +246,17 @@ PR 본문에는 관련 Issue를 닫는 문구를 포함한다.
 Closes #12
 ```
 
-Sub-issue 작업 PR은 sub-issue를 닫고 parent issue를 별도 줄에 남긴다.
+Parent issue 기준 PR 1개 흐름은 parent issue를 닫고 세부 항목을 checklist 또는 `Refs`로 남긴다.
+
+```text
+Closes #19
+
+- [x] AGENTS.md 규칙 정리
+- [x] docs/workflow 기준 정리
+- Refs #20
+```
+
+독립 sub-issue 작업 PR은 sub-issue를 닫고 parent issue를 별도 줄에 남긴다.
 
 ```text
 Closes #8

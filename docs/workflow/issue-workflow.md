@@ -19,30 +19,55 @@ Issue는 작업을 시작하기 전에 문제, 범위, 완료 조건을 정리�
 
 기본값은 일반 Issue 하나다. 일반 Issue는 branch 1개와 PR 1개로 끝낼 수 있는 작업에 사용한다.
 
-다만 하나의 요청이 여러 독립 PR로 나뉘는 것이 자연스럽거나 여러 앱/패키지에 걸쳐 있으면 parent issue와 sub-issue로 분리한다.
+다만 하나의 요청이 크다면 먼저 PR 단위를 판단한다. PR 단위는 issue 구조가 아니라 리뷰 가능, 검증 가능, 독립 merge 가능 여부로 정한다.
 
 ```text
 작은 작업 = Issue 1개 -> Branch 1개 -> PR 1개
-큰 작업 = Parent issue 1개 -> Sub-issue 여러 개
-실제 작업 = Sub-issue 1개 -> Branch 1개 -> PR 1개
+큰 cohesive 작업 = Parent issue 1개 -> Branch 1개 -> PR 1개
+독립 작업 묶음 = Parent issue 1개 -> Sub-issue 여러 개
+독립 실제 작업 = Sub-issue 1개 -> Branch 1개 -> PR 1개
 ```
 
-Parent issue는 큰 작업의 배경, 목표, 전체 완료 조건을 추적하는 용도로 사용한다. Branch와 PR은 parent issue가 아니라 실제 구현 단위인 sub-issue 기준으로 만든다.
+Parent issue는 큰 작업의 배경, 목표, 전체 완료 조건을 추적하는 용도로 사용한다. 큰 작업이 하나의 cohesive change라면 parent issue 기준으로 branch와 PR을 만들고, sub-issue나 checklist는 세부 추적용으로 사용한다. 여러 독립 변경으로 나뉘는 작업이라면 sub-issue 기준으로 branch와 PR을 만든다.
 
-## Sub-issue로 분리하는 기준
+## Parent/sub-issue 판단 기준
 
-아래 조건 중 하나 이상에 해당하면 parent issue를 만들고 실제 구현 단위는 sub-issue로 분리하는 것을 검토한다.
+아래 조건 중 하나 이상에 해당하면 parent issue 기준 PR 1개로 진행하는 것을 검토한다.
 
-- 영향 영역이 2개 이상이다.
-- PR이 2개 이상으로 나뉘는 것이 자연스럽다.
-- 단계 간 의존성이 있다.
-- 완료 조건이 6개 이상이다.
-- 하루 안에 구현과 검증을 끝내기 어렵다.
-- 리뷰 관점이 서로 다르다.
+- 여러 파일을 수정하지만 하나의 정책, 기능 흐름, UX 흐름으로 같이 리뷰해야 한다.
+- 일부만 merge되면 문서나 코드가 서로 다른 기준을 말할 수 있다.
+- 검증이 하나의 PR에서 함께 이루어져야 의미가 있다.
+- 리뷰어가 같은 맥락에서 한 번에 보는 편이 이해하기 쉽다.
+
+아래 조건 중 하나 이상에 해당하면 parent issue를 추적용으로 만들고 독립 sub-issue 기준 PR로 나누는 것을 검토한다.
+
+- 각 sub-issue가 독립적으로 리뷰, 검증, merge될 수 있다.
+- 한 sub-issue가 늦어져도 다른 sub-issue를 먼저 merge해도 된다.
+- 앱, 패키지, 리뷰 관점이 뚜렷하게 다르다.
+- 각 sub-issue가 별도 배포 가치나 rollback 가치를 가진다.
 
 반대로 단일 파일 수정, 작은 버그 수정, Story 하나 추가, 문서 한두 개 정리처럼 한 번에 구현/검증/리뷰할 수 있는 작업은 일반 Issue 하나로 유지한다.
 
-### Parent issue 예시
+### Parent issue 기준 PR 1개 예시
+
+```md
+## 작업 내용
+
+GitHub workflow 문서의 review fallback과 parent/sub-issue PR 기준을 재정리한다.
+
+## 이유
+
+`AGENTS.md`와 `docs/workflow/`가 같은 정책을 설명하므로, 일부 문서만 먼저 merge되면 문서끼리 충돌할 수 있다.
+
+## 세부 항목
+
+- [ ] `AGENTS.md`의 고정 review 확인 규칙 제거
+- [ ] `docs/workflow/README.md`의 parent/sub-issue 기준 수정
+- [ ] `pr-workflow.md`의 PR 연결 예시 수정
+- [ ] `issue-workflow.md`의 분해 기준 수정
+```
+
+### 독립 sub-issue 분리 예시
 
 ```md
 ## 작업 내용

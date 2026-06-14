@@ -23,9 +23,9 @@ AI가 해야 할 일:
 
 - 코드를 수정하지 않는다.
 - 요구사항을 Issue 초안으로 정리한다.
-- 일반 Issue로 충분한지, parent/sub-issue 구조가 필요한지 먼저 판단한다.
+- 일반 Issue로 충분한지, parent issue 기준 PR 1개가 맞는지, 독립 sub-issue PR 분리가 필요한지 먼저 판단한다.
 - 작업 내용, 이유, 완료 조건, 제외 범위를 쓴다.
-- 큰 작업이면 parent issue와 sub-issue 후보를 제안한다.
+- 큰 작업이면 parent issue와 sub-issue/checklist 후보를 제안한다.
 - 요구사항이 모호하면 질문한다.
 - GitHub Issue 생성 도구를 사용할 수 없으면 Issue 본문 초안을 제공하고 중단한다.
 
@@ -45,14 +45,13 @@ Issue 생성 시 분해 판단 기준:
 - 작업 순서 의존성이 없다.
 
 parent/sub-issue 구조가 필요한 경우:
-- 여러 앱/패키지에 걸쳐 있다.
-- 여러 PR로 나누는 것이 자연스럽다.
-- 단계 간 의존성이 있다.
-- 완료 조건이 6개 이상이다.
-- 리뷰 관점이 서로 다르다.
+- 큰 작업이지만 하나의 cohesive change라면 parent issue 기준 PR 1개로 진행한다.
+- 서로 독립적으로 리뷰/검증/merge 가능한 작업이 여러 개라면 sub-issue별 PR로 나눈다.
+- 일부만 merge되면 문서나 코드가 서로 다른 기준을 말하는 경우에는 하나의 PR로 묶는다.
+- 한 sub-issue가 늦어져도 다른 작업을 먼저 merge할 수 있으면 sub-issue별 PR로 나눈다.
 ```
 
-AI는 큰 작업을 parent issue로 만들 때 구현을 바로 시작하지 않는다. 사용자가 특정 sub-issue 작업을 요청하면 그 sub-issue를 기준으로 branch, commit, push, PR 생성을 진행한다.
+AI는 큰 작업을 parent issue로 만들 때 구현을 바로 시작하지 않는다. 사용자가 작업 시작을 요청하면 parent issue가 cohesive 작업 단위인지, 독립 sub-issue 추적용인지 먼저 확인한 뒤 해당 PR 작업 단위 기준으로 branch, commit, push, PR 생성을 진행한다.
 
 ### 2. Issue 작업 요청
 
@@ -68,8 +67,8 @@ AI가 해야 할 일:
 
 ```text
 1. Issue 내용을 확인한다.
-2. parent issue인지 실제 작업 issue인지 판단한다.
-3. parent issue라면 sub-issue 선택 또는 분해를 먼저 요청한다.
+2. 일반 Issue, cohesive parent issue, tracking parent issue, 독립 sub-issue 중 무엇인지 판단한다.
+3. tracking parent issue라면 sub-issue 선택 또는 분해를 먼저 요청한다.
 4. 작업 범위와 완료 조건을 요약한다.
 5. 현재 git 상태를 확인한다.
 6. 필요한 경우 main 최신 상태를 확인한다.
@@ -79,16 +78,17 @@ AI가 해야 할 일:
 10. 관련 변경만 목적별로 commit한다.
 11. branch를 push한다.
 12. 기본적으로 ready PR을 만들고 Issue를 연결한다.
-13. 저장소 Codex automatic review가 켜져 있으면 최신 PR head commit 기준 Codex review 결과가 있는지 확인한다.
-14. 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 Codex review 결과가 없거나 다시 확인이 필요하면 사용자가 PR 댓글로 `@codex review`를 직접 요청하도록 안내한다.
-15. 사용자가 명시적으로 draft를 요청한 경우에만 draft PR을 만들고, ready 전환 전에는 Codex review를 기대하지 않는다고 안내한다.
+13. 저장소 Codex automatic review가 켜져 있으면 PR이 Codex automatic review 대상인지 확인한다.
+14. AI는 Codex review 생성을 고정 시간 동안 지켜보지 않는다.
+15. 사용자가 필요할 때 PR 화면에서 최신 head commit 기준 Codex review 여부를 확인하고, 결과가 없거나 다시 확인이 필요하면 PR 댓글로 `@codex review`를 직접 요청하도록 안내한다.
+16. 사용자가 명시적으로 draft를 요청한 경우에만 draft PR을 만들고, ready 전환 전에는 Codex review 대상이 아닐 수 있다고 안내한다.
 ```
 
 특정 Issue 작업 요청은 branch push와 PR 생성을 포함한다. 별도로 "push해줘"라고 말하지 않아도 PR 생성을 위해 원격 branch를 push할 수 있다.
 
-특정 Issue 작업으로 새 PR을 만드는 경우 Codex automatic review 대기까지 기본 범위에 포함한다. PR 생성 또는 draft에서 ready 전환한 경우에는 자동 리뷰 결과를 기다린다. 기존 PR branch에 새 push가 들어온 경우에는 자동 리뷰를 기대하되 보장하지 않는다. PR 생성, ready 전환, PR branch 새 push 후 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없으면 AI가 같은 PR에 댓글을 남기는 대신 사용자가 `@codex review`를 직접 요청하도록 안내한다.
+특정 Issue 작업으로 새 PR을 만드는 경우 ready PR 생성까지 기본 범위에 포함한다. AI는 Codex review 생성을 고정 시간 동안 지켜보지 않는다. 사용자가 필요할 때 PR 화면에서 최신 head commit 기준 Codex review 여부를 확인하고, 결과가 없으면 AI가 같은 PR에 댓글을 남기는 대신 사용자가 `@codex review`를 직접 요청하도록 안내한다.
 
-`yunkooo/nado` 저장소의 Codex code review 설정은 개인 기본 설정 상속 대신 저장소 row에서 `자동 코드 검토`를 명시적으로 켜고 `Review trigger`를 `매 푸시마다`로 두는 것을 기준으로 한다. AI는 설정 UI를 직접 확인하거나 변경할 수 없으므로, 설정 상태가 불명확하면 사용자에게 확인한다. 작업 중에는 자동 리뷰가 최신 head commit 기준으로 생성됐는지만 확인하며, 기본 PR 생성 흐름에서 `@codex review` 댓글을 남기지 않는다.
+`yunkooo/nado` 저장소의 Codex code review 설정은 개인 기본 설정 상속 대신 저장소 row에서 `자동 코드 검토`를 명시적으로 켜고 `Review trigger`를 `매 푸시마다`로 두는 것을 기준으로 한다. AI는 설정 UI를 직접 확인하거나 변경할 수 없으므로, 설정 상태가 불명확하면 사용자에게 확인한다. 기본 PR 생성 흐름에서 `@codex review` 댓글을 남기지 않는다.
 
 일반 커밋 요청은 다르게 처리한다. 사용자가 "커밋해줘"라고만 요청한 경우에는 로컬 commit까지만 진행하고, push는 사용자가 별도로 요청해야 한다.
 
@@ -103,13 +103,17 @@ docs/21-github-workflow
 
 `<type>`은 Issue 성격에 따라 `feat`, `fix`, `docs`, `chore`, `test`, `refactor` 중 하나를 고른다. 유형이 애매하면 branch를 만들기 전에 사용자에게 확인한다.
 
-PR 본문에는 다음 문구를 포함한다.
+Parent issue 기준 PR 1개 흐름에서는 parent issue를 닫고 세부 항목을 checklist 또는 `Refs`로 연결한다.
 
 ```text
-Closes #12
+Closes #19
+
+- [x] AGENTS.md 규칙 정리
+- [x] docs/workflow 기준 정리
+- Refs #20
 ```
 
-Sub-issue 작업 PR에는 parent issue도 함께 남긴다.
+독립 sub-issue 작업 PR에는 parent issue도 함께 남긴다.
 
 ```text
 Closes #8

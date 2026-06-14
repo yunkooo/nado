@@ -6,8 +6,8 @@
 
 ```text
 기본 작업: Issue 1개 = Branch 1개 = PR 1개
-큰 작업: Parent issue 1개 = 추적용
-실제 작업: Sub-issue 1개 = Branch 1개 = PR 1개
+큰 cohesive 작업: Parent issue 1개 = Branch 1개 = PR 1개
+독립 작업 묶음: Parent issue 1개 = 추적용, Sub-issue 1개 = Branch 1개 = PR 1개
 Commit 1개 = 단일 목적 1개
 ```
 
@@ -30,19 +30,19 @@ Commit 1개 = 단일 목적 1개
 ## 핵심 원칙
 
 - Issue는 작업의 이유, 범위, 완료 조건을 기록한다.
-- Branch는 하나의 Issue를 해결하기 위해 만든다.
+- Branch는 하나의 PR 작업 단위를 해결하기 위해 만든다.
 - Commit은 하나의 변경 목적을 기록한다.
 - PR은 변경 내용, 검증 결과, 리뷰 포인트를 공유한다.
-- 작업이 크면 parent issue를 추적용으로 만들고, 실제 구현은 sub-issue로 분리한다.
-- Parent issue에는 branch를 만들지 않고, sub-issue 기준으로 branch와 PR을 만든다.
-- 특정 Issue 작업 요청은 branch push, PR 생성, Codex automatic review 대기를 포함한다.
-- 새 PR은 기본적으로 ready 상태로 만들고, 저장소 Codex automatic review 결과를 기다린다.
+- PR 단위는 issue 구조가 아니라 리뷰 가능, 검증 가능, 독립 merge 가능 여부로 정한다.
+- 큰 cohesive 작업은 parent issue 기준 branch 1개와 PR 1개로 처리하고, sub-issue나 checklist는 세부 추적용으로 사용할 수 있다.
+- 여러 독립 작업으로 나뉘는 큰 작업은 parent issue를 추적용으로 만들고, sub-issue 기준으로 branch와 PR을 만든다.
+- 특정 Issue 작업 요청은 branch push와 ready PR 생성을 포함한다.
+- 새 PR은 기본적으로 ready 상태로 만들고, 저장소 Codex automatic review 대상이 되도록 한다.
 - `yunkooo/nado`의 Codex code review 설정은 개인 기본 설정 상속을 피하고, 저장소 row에서 `자동 코드 검토`를 명시적으로 켠 뒤 `Review trigger`를 `매 푸시마다`로 둔다.
 - AI는 설정 UI를 직접 확인하거나 변경할 수 없으므로, 설정 상태가 불명확하면 사용자에게 확인한다.
 - 자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다.
-- PR 생성 또는 ready 전환 때는 자동 리뷰를 기다린다.
-- 기존 PR branch에 새 push가 들어온 경우에는 자동 리뷰를 기대하되 보장하지 않는다.
-- PR 생성, ready 전환, PR branch 새 push 후 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없거나 재검토가 필요할 때만 사용자가 PR 댓글로 `@codex review`를 직접 요청한다.
+- AI는 Codex review 생성을 고정 시간 동안 지켜보지 않는다.
+- 사용자가 필요할 때 PR 화면에서 Codex review 여부를 확인하고, 결과가 없거나 재검토가 필요하면 PR 댓글로 `@codex review`를 직접 요청한다.
 - AI는 Issue와 PR 작업을 도울 수 있지만 merge는 사용자가 결정한다.
 - 애매한 요구사항은 구현으로 넘기지 않고 Issue 또는 질문으로 먼저 정리한다.
 
@@ -51,13 +51,13 @@ Commit 1개 = 단일 목적 1개
 ```text
 1. 사용자가 기능/버그/개선 요청을 말한다.
 2. 작업 크기를 판단한다.
-3. 작은 작업이면 일반 Issue를 만들고, 큰 작업이면 parent issue와 sub-issue 후보를 만든다.
-4. 사용자가 특정 일반 Issue 또는 sub-issue 작업을 요청한다.
-5. 해당 작업 Issue 전용 branch에서 작업한다.
+3. 작은 작업은 일반 Issue로 만들고, 큰 작업은 parent issue와 sub-issue/checklist 후보를 만든다.
+4. PR 단위가 parent issue인지, 독립 sub-issue인지 판단한다.
+5. 해당 PR 작업 단위의 Issue 번호로 branch를 만든다.
 6. 검증 후 commit, push, ready PR을 만든다.
-7. 새 PR이면 Codex automatic review 결과를 기다리고, 기존 PR branch push 후에는 최신 head 기준 리뷰 생성 여부를 확인한다.
-8. 사용자가 PR과 Codex review를 확인한다.
-9. 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없거나 재검토가 필요하면 사용자가 `@codex review`를 직접 요청한다.
+7. PR 본문에 닫을 Issue와 세부 추적 항목을 연결한다.
+8. 사용자가 필요할 때 PR과 Codex review를 확인한다.
+9. Codex review가 없거나 재검토가 필요하면 사용자가 `@codex review`를 직접 요청한다.
 10. 수정 요청이 있으면 같은 PR branch에 반영한다.
 11. 사용자가 merge한다.
 ```
@@ -73,4 +73,5 @@ PR #13 리뷰 반영해줘
 위 요청을 처리할 때는 루트 [AGENTS.md](../../AGENTS.md)의 규칙과 이 디렉터리의 문서를 함께 따른다.
 
 Issue 작업을 위해 branch를 만들 때는 AI가 생성하더라도 `<type>/<issue-number>-<short-slug>` 형식을 기본으로 한다.
-Parent issue가 있는 경우에도 branch 이름과 PR 연결은 실제 작업 단위인 sub-issue 번호를 기준으로 한다.
+큰 cohesive 작업은 parent issue 번호를 기준으로 branch와 PR을 만들고, 세부 항목은 PR 본문 checklist나 `Refs #<sub-issue>`로 연결한다.
+독립적으로 리뷰/검증/merge 가능한 sub-issue 작업은 sub-issue 번호를 기준으로 branch와 PR을 만들고 `Parent: #<parent>`를 함께 남긴다.

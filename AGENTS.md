@@ -22,18 +22,18 @@
 
 - GitHub Issue, branch, PR, 리뷰 반영 작업을 할 때는 먼저 `docs/workflow/README.md`를 확인하고 필요한 세부 문서를 함께 따른다.
 - Issue 생성 요청을 받으면 코드를 수정하지 않고 Issue의 작업 내용, 이유, 완료 조건, 제외 범위를 먼저 정리한다.
-- `#<번호> issue 작업해줘`처럼 특정 Issue 작업 요청을 받으면 해당 Issue 하나를 기준으로 branch 1개와 PR 1개를 만든다.
+- `#<번호> issue 작업해줘`처럼 특정 Issue 작업 요청을 받으면 해당 Issue를 PR 작업 단위로 보고 branch 1개와 PR 1개를 만든다.
 - 특정 Issue 작업 요청은 해당 branch를 원격에 push하고 PR을 생성해도 된다는 요청으로 간주한다.
-- Issue 작업을 위해 branch를 만들 때는 AI가 생성하더라도 `<type>/<issue-number>-<short-slug>` 형식을 기본으로 한다.
+- Issue 작업을 위해 branch를 만들 때는 AI가 생성하더라도 `<type>/<issue-number>-<short-slug>` 형식을 기본으로 한다. 큰 cohesive 작업은 parent issue 번호를 사용할 수 있고, 독립적으로 리뷰/검증/merge 가능한 sub-issue 작업은 sub-issue 번호를 사용한다.
 - Issue는 작업의 추적 단위이고, commit은 변경 목적의 단위다. 하나의 Issue 작업 안에서도 목적이 다르면 여러 commit으로 분리한다.
-- PR 본문에는 관련 Issue를 닫는 `Closes #<번호>` 문구를 포함한다.
+- PR 본문에는 관련 Issue를 닫는 `Closes #<번호>` 문구를 포함한다. Parent issue 기준 PR 1개 흐름에서는 `Closes #<parent>`와 세부 체크리스트 또는 `Refs #<sub-issue>`를 사용하고, 독립 sub-issue PR에서는 `Closes #<sub-issue>`와 `Parent: #<parent>`를 사용한다.
 - 특정 Issue 작업으로 새 PR을 만들 때는 기본적으로 ready 상태로 만들고 Codex review가 시작되도록 한다.
 - 이 저장소의 Codex code review 설정은 개인 기본 설정 상속 대신 저장소 row에서 `자동 코드 검토`를 명시적으로 켜고, `Review trigger`를 `매 푸시마다`로 고정하는 것을 기준으로 한다.
 - AI는 Codex 설정 UI를 직접 확인하거나 변경할 수 없으므로, 설정 상태가 불명확하면 사용자에게 확인한다.
-- 저장소 Codex automatic review가 켜져 있으면 PR 생성 또는 ready 전환 후 최신 PR head commit 기준 자동 리뷰 결과를 기다린다.
-- PR 생성, ready 전환, PR branch 새 push 후 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 결과가 없거나 다시 확인이 필요하면 사용자가 PR 댓글로 `@codex review`를 직접 요청하도록 안내한다.
+- 저장소 Codex automatic review가 켜져 있으면 PR 생성 또는 ready 전환 후 Codex review 대상이 된다.
+- AI는 Codex review 생성을 고정 시간 동안 지켜보지 않는다. 사용자가 필요할 때 PR 화면에서 최신 head commit 기준 Codex review 여부를 확인하고, 결과가 없거나 다시 확인이 필요하면 PR 댓글로 `@codex review`를 직접 요청하도록 안내한다.
 - AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다.
-- Draft PR은 사용자가 명시적으로 요청한 경우에만 만들며, ready 전환 시 Codex automatic review 결과를 기다린다.
+- Draft PR은 사용자가 명시적으로 요청한 경우에만 만들며, ready 전환 시 Codex automatic review 대상이 된다.
 - 리뷰 수정은 사용자가 `PR #<번호> 리뷰 반영해줘`처럼 명시적으로 요청했을 때만 진행한다.
 - AI는 PR 생성과 리뷰 반영까지 도울 수 있지만, 사용자의 명시적 요청 없이 merge하거나 `main`에 직접 push하지 않는다.
 - Issue나 PR 요구사항이 모호하거나 현재 작업tree에 관련 없는 변경사항이 있으면 작업을 시작하기 전에 사용자에게 확인한다.
