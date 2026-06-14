@@ -103,6 +103,15 @@ Storybook과 디자인 시스템 패키지 운영 구조를 정리한다.
 
 실제 GitHub Issue template은 [../../.github/ISSUE_TEMPLATE/task.yml](../../.github/ISSUE_TEMPLATE/task.yml)에 둔다.
 
+Issue form의 `작업 분해` 값은 아래 기준으로 선택한다.
+
+| 값                                                   | 의미                                          | 이후 흐름                                         |
+| ---------------------------------------------------- | --------------------------------------------- | ------------------------------------------------- |
+| `단일 issue로 진행`                                  | 작은 작업의 일반 Issue                        | 해당 Issue 번호로 branch와 PR을 만든다.           |
+| `cohesive parent issue로 진행`                       | 큰 작업이지만 하나의 PR로 함께 리뷰해야 한다. | parent issue 번호로 branch와 PR을 만든다.         |
+| `tracking parent issue로 만들고 sub-issue 분리 필요` | 여러 독립 작업의 배경과 진행률을 추적한다.    | parent issue로 직접 branch/PR을 만들지 않는다.    |
+| `판단 필요`                                          | 아직 PR 단위를 확정하기 어렵다.               | Issue 작업 전에 사용자가 PR 단위를 다시 결정한다. |
+
 ```md
 ## 작업 내용
 
@@ -239,7 +248,7 @@ AI는 Issue 초안에 다음 내용을 포함한다.
 - 완료 조건
 - 제외 범위
 - 검증 방법
-- 일반 Issue로 충분한지 또는 parent/sub-issue 분리가 필요한지에 대한 판단
+- 일반 Issue, cohesive parent issue, tracking parent issue, 독립 sub-issue 중 어떤 흐름이 맞는지에 대한 판단
 
 요구사항이 모호하면 Issue를 만들기 전에 질문한다. 질문 없이 구현으로 넘어가지 않는다.
 
