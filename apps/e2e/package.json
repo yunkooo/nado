@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "e2e": "playwright test",
+    "e2e": "pnpm --filter @nado/shared build && playwright test",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "prettier --check playwright.config.ts tests tsconfig.json package.json"
   },
