@@ -48,23 +48,23 @@ runs:
                     "fields": [
                         {
                             "type": "mrkdwn",
-                            "text": f"*Workflow:*\\n{os.environ['GITHUB_WORKFLOW_NAME']}",
+                            "text": f"*Workflow:*\n{os.environ['GITHUB_WORKFLOW_NAME']}",
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Job:*\\n{os.environ['FAILED_JOB_NAME']}",
+                            "text": f"*Job:*\n{os.environ['FAILED_JOB_NAME']}",
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Branch:*\\n{os.environ['GITHUB_BRANCH_NAME']}",
+                            "text": f"*Branch:*\n{os.environ['GITHUB_BRANCH_NAME']}",
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Actor:*\\n{os.environ['GITHUB_ACTOR_NAME']}",
+                            "text": f"*Actor:*\n{os.environ['GITHUB_ACTOR_NAME']}",
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Commit:*\\n`{short_sha}`",
+                            "text": f"*Commit:*\n`{short_sha}`",
                         },
                     ],
                 },
@@ -72,7 +72,7 @@ runs:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": f"*실패한 run:*\\n<{os.environ['GITHUB_RUN_LINK']}|GitHub Actions 로그 보기>",
+                        "text": f"*실패한 run:*\n<{os.environ['GITHUB_RUN_LINK']}|GitHub Actions 로그 보기>",
                     },
                 },
             ],
