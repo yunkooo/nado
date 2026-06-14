@@ -21,7 +21,7 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 
 ## Issue 작업 요청의 범위
 
-사용자가 특정 Issue 작업을 요청하면 해당 요청은 branch push와 ready PR 생성을 포함한다.
+사용자가 PR 작업 단위로 확정된 Issue 작업을 요청하면 해당 요청은 branch push와 ready PR 생성을 포함한다.
 
 ```text
 #12 issue 작업해줘
@@ -37,6 +37,8 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 - push
 - ready PR 생성
 - Codex automatic review 대상 PR로 생성됐는지 확인
+
+단, 요청한 Issue가 tracking parent issue라면 직접 branch/PR을 만들지 않는다. 먼저 cohesive parent issue로 처리할 수 있는지, 아니면 어떤 sub-issue를 작업할지 확인한다.
 
 일반 커밋 요청은 push 요청으로 간주하지 않는다.
 

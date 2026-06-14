@@ -84,9 +84,9 @@ AI가 해야 할 일:
 16. 사용자가 명시적으로 draft를 요청한 경우에만 draft PR을 만들고, ready 전환 전에는 Codex review 대상이 아닐 수 있다고 안내한다.
 ```
 
-특정 Issue 작업 요청은 branch push와 PR 생성을 포함한다. 별도로 "push해줘"라고 말하지 않아도 PR 생성을 위해 원격 branch를 push할 수 있다.
+PR 작업 단위로 확정된 Issue 작업 요청은 branch push와 PR 생성을 포함한다. 별도로 "push해줘"라고 말하지 않아도 PR 생성을 위해 원격 branch를 push할 수 있다. tracking parent issue는 PR 작업 단위가 아니므로 branch push와 PR 생성 범위에 포함하지 않는다.
 
-특정 Issue 작업으로 새 PR을 만드는 경우 ready PR 생성까지 기본 범위에 포함한다. AI는 Codex review 생성을 고정 시간 동안 지켜보지 않는다. 사용자가 필요할 때 PR 화면에서 최신 head commit 기준 Codex review 여부를 확인하고, 결과가 없으면 AI가 같은 PR에 댓글을 남기는 대신 사용자가 `@codex review`를 직접 요청하도록 안내한다.
+PR 작업 단위로 확정된 Issue 작업으로 새 PR을 만드는 경우 ready PR 생성까지 기본 범위에 포함한다. AI는 Codex review 생성을 고정 시간 동안 지켜보지 않는다. 사용자가 필요할 때 PR 화면에서 최신 head commit 기준 Codex review 여부를 확인하고, 결과가 없으면 AI가 같은 PR에 댓글을 남기는 대신 사용자가 `@codex review`를 직접 요청하도록 안내한다.
 
 `yunkooo/nado` 저장소의 Codex code review 설정은 개인 기본 설정 상속 대신 저장소 row에서 `자동 코드 검토`를 명시적으로 켜고 `Review trigger`를 `매 푸시마다`로 두는 것을 기준으로 한다. AI는 설정 UI를 직접 확인하거나 변경할 수 없으므로, 설정 상태가 불명확하면 사용자에게 확인한다. 기본 PR 생성 흐름에서 `@codex review` 댓글을 남기지 않는다.
 
@@ -129,7 +129,7 @@ PR 생성 이후 AI가 하지 않는 일:
 AI가 멈춰야 하는 경우:
 
 - Issue가 너무 넓거나 완료 조건이 없다.
-- parent issue를 직접 작업하라는 요청이라 실제 구현 단위가 불명확하다.
+- tracking parent issue를 직접 작업하라는 요청이라 실제 구현 단위가 불명확하다.
 - 현재 작업tree에 관련 없는 변경사항이 있다.
 - main과 원격 branch가 충돌 위험이 있는 상태다.
 - 필요한 secret, `.env`, 외부 권한이 없다.

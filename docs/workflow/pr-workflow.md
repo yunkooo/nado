@@ -11,7 +11,7 @@ PR은 변경 내용을 공유하고 merge 전에 검토하는 공간이다. nado
 - 가능한 검증을 실행했다.
 - 실행하지 못한 검증이 있다면 이유를 설명할 수 있다.
 
-AI가 특정 Issue 작업으로 만든 새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열린다. `yunkooo/nado` 저장소는 개인 기본 설정 상속을 피하고 저장소 row에서 `자동 코드 검토`를 명시적으로 켠 뒤 `Review trigger`를 `매 푸시마다`로 두는 것을 기준으로 한다.
+AI가 PR 작업 단위로 확정된 Issue 작업으로 만든 새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열린다. `yunkooo/nado` 저장소는 개인 기본 설정 상속을 피하고 저장소 row에서 `자동 코드 검토`를 명시적으로 켠 뒤 `Review trigger`를 `매 푸시마다`로 두는 것을 기준으로 한다.
 
 자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다. `chatgpt-codex-connector` 댓글의 `Reviewed commit`이 최신 head SHA와 일치하면 해당 커밋은 리뷰된 것으로 본다. AI는 Codex review 생성을 고정 시간 동안 지켜보지 않는다. 사용자가 필요할 때 PR 화면에서 review 여부를 확인하고, 결과가 없거나 재검토가 필요한 경우 사용자가 PR 댓글로 `@codex review`를 직접 요청한다. AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다.
 
@@ -21,12 +21,12 @@ Draft PR은 사용자가 명시적으로 draft를 요청했거나 범위 검토�
 
 PR을 만드는 방식은 두 가지로 나눈다.
 
-| 방식     | 언제 사용하나                                   | Codex review                                   |
-| -------- | ----------------------------------------------- | ---------------------------------------------- |
-| Ready PR | 특정 Issue 작업을 끝내고 새 PR을 만들 때 기본값 | automatic review 대상이 된다.                  |
-| Draft PR | 사용자가 명시적으로 draft를 요청했을 때         | ready 전환 전에는 자동 리뷰를 기대하지 않는다. |
+| 방식     | 언제 사용하나                                           | Codex review                                   |
+| -------- | ------------------------------------------------------- | ---------------------------------------------- |
+| Ready PR | PR 작업 단위 Issue 작업을 끝내고 새 PR을 만들 때 기본값 | automatic review 대상이 된다.                  |
+| Draft PR | 사용자가 명시적으로 draft를 요청했을 때                 | ready 전환 전에는 자동 리뷰를 기대하지 않는다. |
 
-요청이 애매하더라도 특정 Issue 작업이 완료되어 PR을 만드는 상황이면 ready PR을 기본값으로 둔다. 아직 범위 합의가 되지 않았거나 사용자가 draft를 명시한 경우에만 draft PR을 만든다.
+요청이 애매하더라도 PR 작업 단위로 확정된 Issue 작업이 완료되어 PR을 만드는 상황이면 ready PR을 기본값으로 둔다. tracking parent issue처럼 실제 PR 작업 단위가 확정되지 않았거나 사용자가 draft를 명시한 경우에는 ready PR을 만들지 않는다.
 
 ## PR 제목
 
@@ -213,7 +213,7 @@ Issue가 여러 개인 경우는 원칙적으로 작업을 분리한다. 정말 
 
 ## Codex review 흐름
 
-특정 Issue 작업으로 새 PR을 만들면 Codex automatic review 대상인지 확인한다. 기본 흐름은 다음과 같다.
+PR 작업 단위로 확정된 Issue 작업으로 새 PR을 만들면 Codex automatic review 대상인지 확인한다. 기본 흐름은 다음과 같다.
 
 ```text
 1. ready PR 생성
