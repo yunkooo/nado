@@ -210,9 +210,9 @@ export const AnalysisSurface: Story = {
 };
 
 export const NarrowSidebarOpen: Story = {
-  parameters: {
+  globals: {
     viewport: {
-      defaultViewport: "mobile1",
+      value: "mobile1",
     },
   },
   render: () => <WebAnalysisSurface isSidebarOpen />,

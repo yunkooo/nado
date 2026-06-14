@@ -79,4 +79,24 @@ describe("storybook source structure", () => {
     expect(appSurfaceSource).toContain("Narrow");
     expect(appSurfaceSource).toContain("SidebarOpen");
   });
+
+  it("uses viewport globals for narrow sidebar stories", () => {
+    const appSurfaceSource = [
+      readStorySource("DesktopSurface.stories.tsx"),
+      readStorySource("WebSurface.stories.tsx"),
+    ].join("\n");
+
+    expect(appSurfaceSource).toContain("globals:");
+    expect(appSurfaceSource).toContain('value: "mobile1"');
+    expect(appSurfaceSource).not.toContain("defaultViewport");
+  });
+
+  it("keeps the desktop review story aligned with desktop review CSS", () => {
+    const desktopSurfaceSource = readStorySource("DesktopSurface.stories.tsx");
+
+    expect(desktopSurfaceSource).not.toContain("ReviewCard,");
+    expect(desktopSurfaceSource).toContain(
+      "nado-review-card__answer--revealed",
+    );
+  });
 });
