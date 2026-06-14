@@ -232,14 +232,25 @@ export const OtherStory: Story = {
   });
 
   it("uses viewport globals for narrow sidebar stories", () => {
-    const appSurfaceSource = [
-      readStorySource("DesktopSurface.stories.tsx"),
-      readStorySource("WebSurface.stories.tsx"),
-    ].join("\n");
+    const desktopSurfaceSource = readStorySource("DesktopSurface.stories.tsx");
+    const webSurfaceSource = readStorySource("WebSurface.stories.tsx");
+    const webNarrowSidebarOpenStory = getStoryExportBlock(
+      webSurfaceSource,
+      "NarrowSidebarOpen",
+    );
+    const desktopSidebarOpenStory = getStoryExportBlock(
+      desktopSurfaceSource,
+      "SidebarOpen",
+    );
 
-    expect(appSurfaceSource).toContain("globals:");
-    expect(appSurfaceSource).toContain('value: "mobile1"');
-    expect(appSurfaceSource).not.toContain("defaultViewport");
+    expect(webNarrowSidebarOpenStory).toContain("globals:");
+    expect(webNarrowSidebarOpenStory).toContain("viewport:");
+    expect(webNarrowSidebarOpenStory).toContain('value: "mobile1"');
+    expect(webNarrowSidebarOpenStory).not.toContain("defaultViewport");
+    expect(desktopSidebarOpenStory).toContain("globals:");
+    expect(desktopSidebarOpenStory).toContain("viewport:");
+    expect(desktopSidebarOpenStory).toContain('value: "mobile1"');
+    expect(desktopSidebarOpenStory).not.toContain("defaultViewport");
   });
 
   it("keeps the desktop review story aligned with desktop review CSS", () => {
