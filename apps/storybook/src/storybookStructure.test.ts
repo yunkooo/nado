@@ -17,6 +17,19 @@ const escapeRegExp = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const storyExportPattern = (exportName: string) =>
   new RegExp(`export\\s+const\\s+${escapeRegExp(exportName)}\\s*(?::|=)`);
+const storyExportBlockPattern = (exportName: string) =>
+  new RegExp(
+    `export\\s+const\\s+${escapeRegExp(exportName)}\\s*(?::|=)[\\s\\S]*?(?=\\nexport\\s+const\\s+|$)`,
+  );
+const getStoryExportBlock = (source: string, exportName: string) => {
+  const match = storyExportBlockPattern(exportName).exec(source);
+
+  if (!match) {
+    throw new Error(`Missing story export: ${exportName}`);
+  }
+
+  return match[0];
+};
 const expectStoryExport = (source: string, exportName: string) => {
   expect(source).toMatch(storyExportPattern(exportName));
 };
@@ -128,6 +141,29 @@ describe("storybook source structure", () => {
     ).toBe(false);
   });
 
+  it("scopes story arg checks to the selected export block", () => {
+    const source = `
+export const WordPopoverOpen: Story = {
+  args: {
+    result: analysisMock,
+  },
+};
+
+export const OtherStory: Story = {
+  args: {
+    activeVocabularyKey: "framework",
+  },
+};
+`;
+
+    expect(getStoryExportBlock(source, "WordPopoverOpen")).not.toContain(
+      'activeVocabularyKey: "framework"',
+    );
+    expect(getStoryExportBlock(source, "OtherStory")).toContain(
+      'activeVocabularyKey: "framework"',
+    );
+  });
+
   it("keeps core interaction states testable through story exports", () => {
     const vocabularySuggestionListSource = readUiStorySource(
       "VocabularySuggestionList.stories.tsx",
@@ -151,8 +187,12 @@ describe("storybook source structure", () => {
       'getSuggestionState: () => "saved"',
     );
 
-    expectStoryExport(analysisResultSource, "WordPopoverOpen");
-    expect(analysisResultSource).toContain('activeVocabularyKey: "framework"');
+    const wordPopoverOpenStory = getStoryExportBlock(
+      analysisResultSource,
+      "WordPopoverOpen",
+    );
+
+    expect(wordPopoverOpenStory).toContain('activeVocabularyKey: "framework"');
     expectStoryExport(analysisResultSource, "NarrowTapOpen");
     expectStoryExport(webSurfaceSource, "NarrowSidebarOpen");
     expectStoryExport(desktopSurfaceSource, "SidebarOpen");
