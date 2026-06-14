@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
 import { InputSample } from "@nado/ui";
-import { analysisMock } from "./analysisMock";
+
+const longInputSampleText =
+  "Many developers choose a framework because it promises faster shipping, but the real test appears after the product grows. A simple setup can help a small team move quickly, while unclear rules can make every change harder to review. Before adding tools, the team should understand which problems are frequent, which costs are ";
 
 const meta = {
   component: InputSample,
@@ -13,8 +15,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Basic: Story = {
   args: {
-    count: 487,
     maxLength: MAX_ANALYSIS_TEXT_LENGTH,
-    text: analysisMock.sourceText,
+    text: longInputSampleText,
   },
 };
