@@ -11,7 +11,7 @@ PR은 변경 내용을 공유하고 merge 전에 검토하는 공간이다. nado
 - 가능한 검증을 실행했다.
 - 실행하지 못한 검증이 있다면 이유를 설명할 수 있다.
 
-AI가 특정 Issue 작업으로 만든 새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열릴 때 Codex review 결과를 기다린다. Codex Review trigger가 `매 푸시마다`로 설정된 저장소에서는 PR branch에 새 push가 들어올 때도 Codex review 결과를 기다린다.
+AI가 특정 Issue 작업으로 만든 새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열릴 때 Codex review 결과를 기다린다. `yunkooo/nado` 저장소는 개인 기본 설정 상속을 피하고 저장소 row에서 `자동 코드 검토`를 명시적으로 켠 뒤 `Review trigger`를 `매 푸시마다`로 두는 것을 기준으로 한다. 이 설정에서는 PR branch에 새 push가 들어올 때도 Codex review 결과를 기다린다.
 
 자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다. `chatgpt-codex-connector` 댓글의 `Reviewed commit`이 최신 head SHA와 일치하면 해당 커밋은 리뷰된 것으로 본다. 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없거나 재검토가 필요한 경우에만 사용자가 PR 댓글로 `@codex review`를 직접 요청한다. AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다.
 
@@ -204,6 +204,16 @@ Issue가 여러 개인 경우는 원칙적으로 작업을 분리한다. 정말 
 ```
 
 저장소 설정에서 automatic review가 켜져 있으면 Codex가 review 대상으로 열린 PR을 자동으로 리뷰한다. push마다 자동 리뷰를 받을지는 Codex Review trigger 설정에 의존한다. automatic review는 GitHub 저장소 설정이 아니라 Codex code review 설정에 의존한다.
+
+`yunkooo/nado`에서는 다음처럼 저장소 row를 명시 설정으로 둔다.
+
+```text
+자동 코드 검토: 켜기
+Review trigger: 매 푸시마다
+철저한 리뷰: 개인 설정 따라 또는 끄기
+```
+
+`자동 코드 검토`를 `개인 기본 설정 따라`로 두면 개인 trigger와 저장소 trigger가 섞여 실제 push review 동작을 판단하기 어려워진다. 이 저장소의 PR flow를 안정적으로 운영하려면 저장소 row에서 자동 코드 검토와 trigger를 모두 명시한다.
 
 설정 위치와 동작 방식은 [Codex code review in GitHub](https://developers.openai.com/codex/integrations/github)를 기준으로 확인한다.
 

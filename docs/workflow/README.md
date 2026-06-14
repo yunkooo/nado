@@ -35,6 +35,7 @@
 - Parent issue에는 branch를 만들지 않고, sub-issue 기준으로 branch와 PR을 만든다.
 - 특정 Issue 작업 요청은 branch push, PR 생성, Codex automatic review 대기를 포함한다.
 - 새 PR은 기본적으로 ready 상태로 만들고, 저장소 Codex automatic review 결과를 기다린다.
+- `yunkooo/nado`의 Codex code review 설정은 개인 기본 설정 상속을 피하고, 저장소 row에서 `자동 코드 검토`를 명시적으로 켠 뒤 `Review trigger`를 `매 푸시마다`로 둔다.
 - 자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다.
 - 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없거나 재검토가 필요할 때만 사용자가 PR 댓글로 `@codex review`를 직접 요청한다.
 - AI는 Issue와 PR 작업을 도울 수 있지만 merge는 사용자가 결정한다.
@@ -49,7 +50,7 @@
 4. 사용자가 특정 일반 Issue 또는 sub-issue 작업을 요청한다.
 5. 해당 작업 Issue 전용 branch에서 작업한다.
 6. 검증 후 commit, push, ready PR을 만든다.
-7. Codex automatic review 결과를 기다린다.
+7. 저장소 Codex 설정이 명시 ON + `매 푸시마다`인지 확인하고, Codex automatic review 결과를 기다린다.
 8. 사용자가 PR과 Codex review를 확인한다.
 9. 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없거나 재검토가 필요하면 사용자가 `@codex review`를 직접 요청한다.
 10. 수정 요청이 있으면 같은 PR branch에 반영한다.

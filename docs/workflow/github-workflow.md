@@ -48,7 +48,7 @@ nado의 GitHub 작업 흐름은 작은 단위의 Issue, branch, PR을 기준으�
 
 Issue 작업 요청에도 merge나 `main` 직접 push는 포함되지 않는다.
 
-새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열릴 때 자동 리뷰 결과를 기다린다. Codex Review trigger가 `매 푸시마다`로 설정된 저장소에서는 PR branch에 새 push가 들어올 때도 자동 리뷰 결과를 기다린다.
+새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열릴 때 자동 리뷰 결과를 기다린다. `yunkooo/nado` 저장소는 개인 기본 설정 상속을 피하고 저장소 row에서 `자동 코드 검토`를 명시적으로 켠 뒤 `Review trigger`를 `매 푸시마다`로 두는 것을 기준으로 한다. 이 설정에서는 PR branch에 새 push가 들어올 때도 자동 리뷰 결과를 기다린다.
 
 자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다. `chatgpt-codex-connector` 댓글의 `Reviewed commit`이 최신 head SHA와 일치하면 해당 커밋은 리뷰된 것으로 본다.
 
