@@ -11,9 +11,9 @@ PR은 변경 내용을 공유하고 merge 전에 검토하는 공간이다. nado
 - 가능한 검증을 실행했다.
 - 실행하지 못한 검증이 있다면 이유를 설명할 수 있다.
 
-AI가 특정 Issue 작업으로 만든 새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열릴 때 Codex review 결과를 기다린다. `yunkooo/nado` 저장소는 개인 기본 설정 상속을 피하고 저장소 row에서 `자동 코드 검토`를 명시적으로 켠 뒤 `Review trigger`를 `매 푸시마다`로 두는 것을 기준으로 한다. PR branch에 새 push가 들어온 경우에는 push-trigger 자동 리뷰를 기대하되 보장하지 않고, 최신 head commit 기준 리뷰가 실제로 생성됐는지 확인한다.
+AI가 PR 작업 단위로 확정된 Issue 작업으로 만든 새 PR은 기본적으로 ready 상태로 만든다. 저장소 Codex automatic review가 켜져 있으면 새 PR이 review 대상으로 열린다. `yunkooo/nado` 저장소는 개인 기본 설정 상속을 피하고 저장소 row에서 `자동 코드 검토`를 명시적으로 켠 뒤 `Review trigger`를 `매 푸시마다`로 두는 것을 기준으로 한다.
 
-자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다. `chatgpt-codex-connector` 댓글의 `Reviewed commit`이 최신 head SHA와 일치하면 해당 커밋은 리뷰된 것으로 본다. PR 생성 또는 draft에서 ready 전환한 경우에는 자동 리뷰 결과를 기다린다. 기존 PR branch에 새 push가 들어온 경우에는 자동 리뷰를 기대하되 보장하지 않는다. PR 생성, ready 전환, PR branch 새 push 후 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없거나 재검토가 필요한 경우에만 사용자가 PR 댓글로 `@codex review`를 직접 요청한다. AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다.
+자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다. `chatgpt-codex-connector` 댓글의 `Reviewed commit`이 최신 head SHA와 일치하면 해당 커밋은 리뷰된 것으로 본다. AI는 Codex review 생성을 고정 시간 동안 지켜보지 않는다. 사용자가 필요할 때 PR 화면에서 review 여부를 확인하고, 결과가 없거나 재검토가 필요한 경우 사용자가 PR 댓글로 `@codex review`를 직접 요청한다. AI는 기본 PR 생성 흐름에서 `@codex review` 댓글을 대신 남기지 않는다.
 
 Draft PR은 사용자가 명시적으로 draft를 요청했거나 범위 검토를 먼저 하겠다고 합의한 경우에만 만든다. Draft PR은 ready 전환 전에는 Codex review를 기대하지 않는다.
 
@@ -21,12 +21,12 @@ Draft PR은 사용자가 명시적으로 draft를 요청했거나 범위 검토�
 
 PR을 만드는 방식은 두 가지로 나눈다.
 
-| 방식     | 언제 사용하나                                   | Codex review                                   |
-| -------- | ----------------------------------------------- | ---------------------------------------------- |
-| Ready PR | 특정 Issue 작업을 끝내고 새 PR을 만들 때 기본값 | automatic review 결과를 기다린다.              |
-| Draft PR | 사용자가 명시적으로 draft를 요청했을 때         | ready 전환 전에는 자동 리뷰를 기대하지 않는다. |
+| 방식     | 언제 사용하나                                           | Codex review                                   |
+| -------- | ------------------------------------------------------- | ---------------------------------------------- |
+| Ready PR | PR 작업 단위 Issue 작업을 끝내고 새 PR을 만들 때 기본값 | automatic review 대상이 된다.                  |
+| Draft PR | 사용자가 명시적으로 draft를 요청했을 때                 | ready 전환 전에는 자동 리뷰를 기대하지 않는다. |
 
-요청이 애매하더라도 특정 Issue 작업이 완료되어 PR을 만드는 상황이면 ready PR을 기본값으로 둔다. 아직 범위 합의가 되지 않았거나 사용자가 draft를 명시한 경우에만 draft PR을 만든다.
+요청이 애매하더라도 PR 작업 단위로 확정된 Issue 작업이 완료되어 PR을 만드는 상황이면 ready PR을 기본값으로 둔다. tracking parent issue처럼 실제 PR 작업 단위가 확정되지 않았거나 사용자가 draft를 명시한 경우에는 ready PR을 만들지 않는다.
 
 ## PR 제목
 
@@ -70,7 +70,17 @@ PR을 만드는 방식은 두 가지로 나눈다.
 Closes #12
 ```
 
-Parent issue 아래의 sub-issue 작업이라면 parent issue를 별도 줄에 함께 적는다.
+Parent issue 기준 PR 1개 흐름에서는 parent issue를 닫고 세부 항목을 checklist 또는 `Refs`로 남긴다.
+
+```md
+Closes #19
+
+- [x] AGENTS.md의 고정 review 확인 규칙 제거
+- [x] docs/workflow의 parent/sub-issue 기준 수정
+- Refs #20
+```
+
+독립 sub-issue 작업이라면 parent issue를 별도 줄에 함께 적는다.
 
 ```md
 Closes #8
@@ -158,7 +168,7 @@ Closes #22
 
 ## 리뷰 포인트
 
-- Issue 1개 = Branch 1개 = PR 1개 원칙이 문서 전반에서 일관적인지 확인해주세요.
+- PR 단위가 리뷰 가능, 검증 가능, 독립 merge 가능 기준으로 일관적인지 확인해주세요.
 - AI가 merge하지 않는다는 경계가 충분히 명확한지 확인해주세요.
 
 Closes #21
@@ -180,27 +190,37 @@ PR 본문 마지막에 관련 Issue를 연결한다.
 Closes #12
 ```
 
-Sub-issue 작업 PR은 sub-issue를 닫고 parent issue를 참조한다.
+Parent issue 기준 PR 1개 흐름에서는 parent issue를 닫고 세부 항목을 checklist 또는 `Refs #<sub-issue>`로 연결한다.
+
+```text
+Closes #19
+
+- [x] AGENTS.md 규칙 정리
+- [x] docs/workflow 기준 정리
+- Refs #20
+```
+
+독립 sub-issue 작업 PR은 sub-issue를 닫고 parent issue를 참조한다.
 
 ```text
 Closes #8
 Parent: #7
 ```
 
-Parent issue를 직접 닫는 PR은 만들지 않는다. Parent issue는 큰 작업의 추적용으로 두고, 모든 sub-issue가 merge된 뒤 사용자가 닫는다.
+Parent issue가 하나의 cohesive 작업 단위라면 parent issue를 닫는 PR을 만들 수 있다. Parent issue가 여러 독립 작업의 추적용이라면 직접 닫는 PR을 만들지 않고, 모든 sub-issue가 merge된 뒤 사용자가 닫거나 마지막 정리 PR에서 상태를 갱신한다.
 
 Issue가 여러 개인 경우는 원칙적으로 작업을 분리한다. 정말 하나의 PR에서 처리해야 한다면 왜 묶는지 PR 본문에 설명한다.
 
 ## Codex review 흐름
 
-특정 Issue 작업으로 새 PR을 만들면 Codex automatic review 결과를 확인한다. 기본 흐름은 다음과 같다.
+PR 작업 단위로 확정된 Issue 작업으로 새 PR을 만들면 Codex automatic review 대상인지 확인한다. 기본 흐름은 다음과 같다.
 
 ```text
 1. ready PR 생성
-2. 저장소 Codex automatic review 대기
-3. Codex review 결과가 최신 PR head commit을 가리키는지 확인
-4. PR 생성, ready 전환, PR branch push 후 필수 check가 끝난 뒤 5분 동안 최신 head commit 기준 자동 리뷰 결과가 없으면 사용자가 PR 댓글로 `@codex review` 직접 요청
-5. Codex review 결과를 사용자 리뷰와 함께 확인
+2. PR이 Codex automatic review 대상인지 확인
+3. AI는 Codex review 생성을 고정 시간 동안 지켜보지 않음
+4. 사용자가 필요할 때 PR 화면에서 최신 head commit 기준 review 여부 확인
+5. 결과가 없거나 재검토가 필요하면 사용자가 PR 댓글로 `@codex review` 직접 요청
 ```
 
 저장소 설정에서 automatic review가 켜져 있으면 Codex가 review 대상으로 열린 PR을 자동으로 리뷰한다. push마다 자동 리뷰를 받을지는 Codex Review trigger 설정에 의존한다. automatic review는 GitHub 저장소 설정이 아니라 Codex code review 설정에 의존한다.
@@ -217,11 +237,11 @@ Review trigger: 매 푸시마다
 
 AI는 Codex 설정 UI를 직접 확인하거나 변경할 수 없다. 설정 상태가 불명확하면 사용자에게 현재 저장소 row 설정을 확인해 달라고 요청하고, AI는 PR에 생성된 Codex review가 최신 head commit 기준인지 확인하는 역할만 맡는다.
 
-automatic review는 트리거 조건을 만족해도 생성이 지연되거나 생략될 수 있으므로, 문서/설정처럼 위험도가 낮은 변경은 최신 head 자동 리뷰가 없다는 사실을 보고하고 사용자가 판단한다. 코드, 빌드, 배포 영향이 있는 변경에서 최신 head 자동 리뷰가 없으면 사용자가 `@codex review`로 수동 재검토를 요청하는 것을 기본 대체 흐름으로 둔다.
+automatic review는 트리거 조건을 만족해도 생성이 지연되거나 생략될 수 있다. 사용자가 필요할 때 최신 head 자동 리뷰 여부를 확인하고, 결과가 없거나 재검토가 필요하면 `@codex review`로 수동 재검토를 요청하는 것을 기본 대체 흐름으로 둔다.
 
 설정 위치와 동작 방식은 [Codex code review in GitHub](https://developers.openai.com/codex/integrations/github)를 기준으로 확인한다.
 
-Draft PR로 만든 경우에는 바로 automatic review를 기다리지 않는다. 사용자가 ready for review로 전환하거나 수동 리뷰를 요청할 때 review 단계로 넘어간다.
+Draft PR로 만든 경우에는 ready 전환 전까지 automatic review 대상이 아닐 수 있다. 사용자가 ready for review로 전환하거나 수동 리뷰를 요청할 때 review 단계로 넘어간다.
 
 대체 흐름이 필요하면 사용자가 PR 댓글로 수동 리뷰를 직접 요청한다.
 
