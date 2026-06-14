@@ -4,7 +4,7 @@ import {
   VocabularyErrorState,
   VocabularyListItem,
 } from "@nado/ui";
-import { analysisMock } from "./analysisMock";
+import { analysisMock } from "./analysisStoryFixtures";
 
 const firstItem =
   analysisMock.vocabularyItems[2] ?? analysisMock.vocabularyItems[0];

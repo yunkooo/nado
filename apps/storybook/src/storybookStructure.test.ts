@@ -1,12 +1,16 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+const toStoryFiles = (path: string) =>
+  readdirSync(new URL(path, import.meta.url))
+    .filter((fileName) => fileName.endsWith(".stories.tsx"))
+    .sort();
+
 const packageJson = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
 );
-const storyFiles = readdirSync(new URL("./", import.meta.url))
-  .filter((fileName) => fileName.endsWith(".stories.tsx"))
-  .sort();
+const appStoryFiles = toStoryFiles("./");
+const uiStoryFiles = toStoryFiles("../../../packages/ui/src/");
 const storybookConfigSource = readFileSync(
   new URL("../.storybook/main.ts", import.meta.url),
   "utf8",
@@ -17,16 +21,21 @@ describe("storybook source structure", () => {
     expect(packageJson.scripts.test).not.toContain("--passWithNoTests");
   });
 
-  it("covers the core design-system story groups", () => {
-    expect(storyFiles).toEqual([
-      "AnalysisInputSample.stories.tsx",
+  it("keeps app-level stories in the Storybook app", () => {
+    expect(appStoryFiles).toEqual([
       "AnalysisPageMock.stories.tsx",
+      "Foundations.stories.tsx",
+    ]);
+  });
+
+  it("co-locates shared UI stories with the UI package source", () => {
+    expect(uiStoryFiles).toEqual([
+      "AnalysisInputSample.stories.tsx",
       "AnalysisReadingChunkLine.stories.tsx",
       "AnalysisResult.stories.tsx",
       "AnalysisSentenceAnalysis.stories.tsx",
       "Button.stories.tsx",
       "Chip.stories.tsx",
-      "Foundations.stories.tsx",
       "InputComposer.stories.tsx",
       "ReviewCard.stories.tsx",
       "VocabularyList.stories.tsx",
@@ -35,6 +44,9 @@ describe("storybook source structure", () => {
   });
 
   it("loads workspace packages from source while editing stories", () => {
+    expect(storybookConfigSource).toContain(
+      "../../../packages/ui/src/**/*.stories.@(ts|tsx)",
+    );
     expect(storybookConfigSource).toContain(
       "../../../packages/ui/src/index.ts",
     );

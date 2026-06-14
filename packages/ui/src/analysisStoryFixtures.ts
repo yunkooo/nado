@@ -1,4 +1,4 @@
-import type { AnalysisResultData } from "@nado/ui";
+import type { AnalysisResultData } from "./analysisTypes";
 
 export const analysisMock: AnalysisResultData = {
   sourceText:

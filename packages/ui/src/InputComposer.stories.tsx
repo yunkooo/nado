@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
 import { InputComposer, type InputComposerProps } from "@nado/ui";
+
+const MAX_STORY_ANALYSIS_TEXT_LENGTH = 500;
 
 const meta = {
   component: InputComposer,
@@ -37,7 +38,7 @@ export const Empty: Story = {
   args: {
     actionLabel: "↑",
     label: "기본 분석",
-    maxLength: MAX_ANALYSIS_TEXT_LENGTH,
+    maxLength: MAX_STORY_ANALYSIS_TEXT_LENGTH,
     onSubmit: () => undefined,
     onValueChange: () => undefined,
     placeholder: "영어 문장이나 짧은 문단을 붙여넣으세요",
@@ -53,7 +54,7 @@ export const Empty: Story = {
 
 export const Basic: Story = {
   args: {
-    maxLength: MAX_ANALYSIS_TEXT_LENGTH,
+    maxLength: MAX_STORY_ANALYSIS_TEXT_LENGTH,
     onSubmit: () => undefined,
     onValueChange: () => undefined,
     value: "",
@@ -61,7 +62,7 @@ export const Basic: Story = {
   render: () => (
     <ComposerPreview
       initialValue="I was wondering if you could help me keep this habit."
-      maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+      maxLength={MAX_STORY_ANALYSIS_TEXT_LENGTH}
       placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
       submitAriaLabel="분석 요청"
     />
@@ -70,7 +71,7 @@ export const Basic: Story = {
 
 export const TextAction: Story = {
   args: {
-    maxLength: MAX_ANALYSIS_TEXT_LENGTH,
+    maxLength: MAX_STORY_ANALYSIS_TEXT_LENGTH,
     onSubmit: () => undefined,
     onValueChange: () => undefined,
     value: "",
@@ -79,7 +80,7 @@ export const TextAction: Story = {
     <ComposerPreview
       actionLabel="분석"
       initialValue="I need help understanding this sentence."
-      maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+      maxLength={MAX_STORY_ANALYSIS_TEXT_LENGTH}
       placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
       submitAriaLabel="분석 요청"
     />
@@ -88,7 +89,7 @@ export const TextAction: Story = {
 
 export const NearLimit: Story = {
   args: {
-    maxLength: MAX_ANALYSIS_TEXT_LENGTH,
+    maxLength: MAX_STORY_ANALYSIS_TEXT_LENGTH,
     onSubmit: () => undefined,
     onValueChange: () => undefined,
     value: "",
@@ -99,7 +100,7 @@ export const NearLimit: Story = {
         0,
         487,
       )}
-      maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+      maxLength={MAX_STORY_ANALYSIS_TEXT_LENGTH}
       placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
       submitAriaLabel="분석 요청"
     />
@@ -108,7 +109,7 @@ export const NearLimit: Story = {
 
 export const LongInput: Story = {
   args: {
-    maxLength: MAX_ANALYSIS_TEXT_LENGTH,
+    maxLength: MAX_STORY_ANALYSIS_TEXT_LENGTH,
     onSubmit: () => undefined,
     onValueChange: () => undefined,
     value: "",
@@ -118,7 +119,7 @@ export const LongInput: Story = {
       initialValue={"Many developers choose a framework because it promises faster shipping, but the real test appears after the product grows. ".repeat(
         6,
       )}
-      maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+      maxLength={MAX_STORY_ANALYSIS_TEXT_LENGTH}
       placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
       submitAriaLabel="분석 요청"
     />
