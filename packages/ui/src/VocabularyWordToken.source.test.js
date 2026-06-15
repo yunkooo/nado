@@ -36,4 +36,12 @@ describe("VocabularyWordToken interaction source", () => {
       "shouldSuppressFocusFromPointer(event.pointerType)",
     );
   });
+
+  it("closes interaction-open popovers after a vocabulary save completes", () => {
+    expect(source).toContain("previousSaveStateRef");
+    expect(source).toContain("closeInteractionPopover");
+    expect(source).toContain(
+      'previousSaveState !== "saved" && state === "saved"',
+    );
+  });
 });

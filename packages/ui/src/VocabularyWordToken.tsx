@@ -81,6 +81,7 @@ export function VocabularyWordToken({
   const [popoverRoot, setPopoverRoot] = useState<HTMLElement | null>(null);
   const hoverCloseDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPointerFocusRef = useRef(false);
+  const previousSaveStateRef = useRef<VocabularySuggestionSaveState>(state);
   const tokenRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLSpanElement>(null);
   const isPopoverOpen = isOpen || isHovering || hasFocusWithin || isTapOpen;
@@ -116,6 +117,14 @@ export function VocabularyWordToken({
     clearHoverCloseDelay();
     setIsTapOpen(true);
   }, [clearHoverCloseDelay]);
+
+  const closeInteractionPopover = useCallback(() => {
+    clearHoverCloseDelay();
+    closeTapOpen();
+    isPointerFocusRef.current = false;
+    setHasFocusWithin(false);
+    setIsHovering(false);
+  }, [clearHoverCloseDelay, closeTapOpen]);
 
   const trackPointerFocus = useCallback(
     (event: ReactPointerEvent) => {
@@ -203,6 +212,15 @@ export function VocabularyWordToken({
     },
     [],
   );
+
+  useEffect(() => {
+    const previousSaveState = previousSaveStateRef.current;
+    previousSaveStateRef.current = state;
+
+    if (previousSaveState !== "saved" && state === "saved") {
+      closeInteractionPopover();
+    }
+  }, [closeInteractionPopover, state]);
 
   useEffect(() => {
     if (!isTapOpen || typeof document === "undefined") {
