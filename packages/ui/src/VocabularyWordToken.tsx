@@ -1,5 +1,6 @@
 import {
   type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
@@ -162,6 +163,48 @@ export function VocabularyWordToken({
 
     setHasFocusWithin(true);
   }, []);
+
+  const focusPopoverSaveButton = useCallback(() => {
+    const saveButton = popoverRef.current?.querySelector<HTMLButtonElement>(
+      ".nado-word-popover__save:not(:disabled)",
+    );
+
+    if (!saveButton) {
+      return false;
+    }
+
+    saveButton.focus();
+    return true;
+  }, []);
+
+  const handleTokenKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+      if (event.key !== "Tab" || event.shiftKey) {
+        return;
+      }
+
+      if (!isPopoverOpen || !canSave || state !== "idle") {
+        return;
+      }
+
+      if (focusPopoverSaveButton()) {
+        event.preventDefault();
+      }
+    },
+    [canSave, focusPopoverSaveButton, isPopoverOpen, state],
+  );
+
+  const handleSaveButtonKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+      if (event.key !== "Tab" || !event.shiftKey) {
+        return;
+      }
+
+      event.preventDefault();
+      tokenRef.current?.focus();
+    },
+    [],
+  );
 
   const updatePopoverPosition = useCallback(() => {
     if (!isPopoverOpen || typeof window === "undefined") {
@@ -329,6 +372,7 @@ export function VocabularyWordToken({
           className="nado-word-popover__save"
           disabled={state !== "idle"}
           onClick={() => onSaveVocabularySuggestion?.(item)}
+          onKeyDown={handleSaveButtonKeyDown}
           type="button"
         >
           {getSaveActionText(state)}
@@ -363,6 +407,7 @@ export function VocabularyWordToken({
         aria-expanded={isPopoverOpen ? true : undefined}
         aria-label={`${text} 뜻과 저장 액션 보기`}
         className="nado-word-token"
+        onKeyDown={handleTokenKeyDown}
         ref={tokenRef}
         type="button"
       >

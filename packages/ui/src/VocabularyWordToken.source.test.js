@@ -44,4 +44,12 @@ describe("VocabularyWordToken interaction source", () => {
       'previousSaveState !== "saved" && state === "saved"',
     );
   });
+
+  it("keeps keyboard tab access to the portaled save button", () => {
+    expect(source).toContain("focusPopoverSaveButton");
+    expect(source).toContain("handleTokenKeyDown");
+    expect(source).toContain("handleSaveButtonKeyDown");
+    expect(source).toContain('event.key !== "Tab" || event.shiftKey');
+    expect(source).toContain(".nado-word-popover__save:not(:disabled)");
+  });
 });
