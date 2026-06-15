@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { AuthStateSnapshot } from "../../auth/authState";
-import { deleteVocabularyItem as deleteVocabularyItemFromApi } from "../../api/vocabularyApi";
+import {
+  deleteVocabularyItem as deleteVocabularyItemFromApi,
+  type DeleteVocabularyResult,
+} from "../../api/vocabularyApi";
 import { vocabularyStateStore } from "./vocabularyState";
 
 export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
@@ -35,7 +38,7 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
 
     setDeletingItemId(null);
 
-    if (result.status === "success") {
+    if (shouldRemoveVocabularyItemAfterDelete(result)) {
       vocabularyStateStore.removeItem(itemId);
       setDeleteMessage(null);
       return;
@@ -56,4 +59,10 @@ export function shouldApplyVocabularyMutation(
   currentAccessToken: string | null,
 ) {
   return requestAccessToken === currentAccessToken;
+}
+
+export function shouldRemoveVocabularyItemAfterDelete(
+  result: DeleteVocabularyResult,
+) {
+  return result.status === "success" || result.status === "not-found";
 }
