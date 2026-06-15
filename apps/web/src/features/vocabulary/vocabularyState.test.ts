@@ -544,6 +544,28 @@ describe("vocabulary realtime sync", () => {
     expect(client.removeChannel).toHaveBeenCalledWith(channels[0]);
   });
 
+  it("ignores broadcasts from a cleaned-up realtime channel", async () => {
+    const { client, channels } = createFakeRealtimeClient();
+    const scheduler = createFakeScheduler();
+    const sync = createVocabularyRealtimeSync({
+      createRefreshScheduler: scheduler.factory,
+      getClient: () => client,
+      refresh: vi.fn(),
+    });
+
+    sync.sync(createAuthenticatedAuthState("session-token", "user-id"));
+    await flushPromises();
+    sync.sync({
+      accessToken: null,
+      session: null,
+      status: "anonymous",
+    });
+
+    channels[0]?.emit("INSERT");
+
+    expect(scheduler.schedule).not.toHaveBeenCalled();
+  });
+
   it("waits for active realtime channel removal before resubscribing the same topic", async () => {
     const removal = createDeferred<unknown>();
     const { client, channels } = createFakeRealtimeClient({

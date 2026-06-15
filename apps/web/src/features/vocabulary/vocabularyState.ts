@@ -527,10 +527,18 @@ export function createVocabularyRealtimeSync({
           const channel = client.channel(topic, {
             config: { private: true },
           });
+          const isCurrentSubscription = () =>
+            requestId === subscriptionSequence &&
+            activeAccessToken === authState.accessToken &&
+            activeChannel === channel &&
+            activeScheduler === scheduler &&
+            activeTopic === topic;
 
           for (const event of VOCABULARY_REALTIME_EVENTS) {
             channel.on("broadcast", { event }, () => {
-              scheduler.schedule();
+              if (isCurrentSubscription()) {
+                scheduler.schedule();
+              }
             });
           }
 
