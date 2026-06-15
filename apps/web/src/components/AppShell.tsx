@@ -8,6 +8,7 @@ import { useAuthState } from "../features/auth/authState";
 import {
   useRefreshVocabularyForActiveStudySurface,
   useSyncVocabularyForAuth,
+  useSyncVocabularyRealtimeForAuth,
 } from "../features/vocabulary/vocabularyState";
 
 type NavigationItem = {
@@ -46,6 +47,7 @@ export function AppShell({
   };
 
   useSyncVocabularyForAuth(authState);
+  useSyncVocabularyRealtimeForAuth(authState);
   useRefreshVocabularyForActiveStudySurface(
     authState,
     isStudySurfaceActive,

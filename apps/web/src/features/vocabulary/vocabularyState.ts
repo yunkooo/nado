@@ -2,12 +2,18 @@
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import {
+  createVocabularyRealtimeRefreshScheduler,
+  createVocabularyRealtimeTopic,
   getDistinctVocabularyNote,
   normalizeVocabularyTerm,
+  type VocabularyRealtimeRefreshScheduler,
   type VocabularyItem,
 } from "@nado/shared";
 import type { AuthStateSnapshot } from "../auth/authState";
-import { getCurrentAccessToken } from "../auth/authClient";
+import {
+  getCurrentAccessToken,
+  getSupabaseBrowserClient,
+} from "../auth/authClient";
 import {
   listVocabulary,
   VOCABULARY_ERROR_MESSAGE,
@@ -36,8 +42,40 @@ type VocabularyListLoader = (
   accessToken: string,
 ) => Promise<VocabularyListResult>;
 type TimestampProvider = () => number;
+export type VocabularyRealtimeChannel = {
+  on(
+    type: "broadcast",
+    filter: { event: VocabularyRealtimeEvent },
+    callback: () => void,
+  ): VocabularyRealtimeChannel;
+  subscribe(): VocabularyRealtimeChannel;
+};
+export type VocabularyRealtimeClient = {
+  channel(
+    topic: string,
+    options: { config: { private: true } },
+  ): VocabularyRealtimeChannel;
+  realtime: {
+    setAuth(accessToken?: string | null): Promise<void>;
+  };
+  removeChannel(channel: VocabularyRealtimeChannel): Promise<unknown>;
+};
+export type VocabularyRealtimeRefreshSchedulerFactory = (
+  refresh: () => Promise<void> | void,
+) => VocabularyRealtimeRefreshScheduler;
+
+type VocabularyRealtimeEvent = "DELETE" | "INSERT" | "UPDATE";
+type VocabularyRealtimeClientProvider = () => VocabularyRealtimeClient | null;
+type VocabularyRealtimeRefresher = (
+  authState: AuthStateSnapshot,
+) => Promise<void> | void;
 
 const VOCABULARY_REFRESH_STALE_MS = 60_000;
+const VOCABULARY_REALTIME_EVENTS: VocabularyRealtimeEvent[] = [
+  "INSERT",
+  "UPDATE",
+  "DELETE",
+];
 
 const initialSnapshot: VocabularyStateSnapshot = {
   accessToken: null,
@@ -150,6 +188,8 @@ export function createVocabularyAuthSync({
   store?: VocabularyStateStore;
 } = {}) {
   let requestSequence = 0;
+  let activeLoadPromise: Promise<void> | null = null;
+  let pendingForcedRefreshAccessToken: string | null = null;
   const loadedAtByAccessToken = new Map<string, number>();
 
   async function loadVocabularyForSession(
@@ -158,7 +198,7 @@ export function createVocabularyAuthSync({
       refreshAccessToken = false,
       showLoading = true,
     }: { refreshAccessToken?: boolean; showLoading?: boolean } = {},
-  ) {
+  ): Promise<void> {
     requestSequence += 1;
     const requestId = requestSequence;
 
@@ -203,47 +243,105 @@ export function createVocabularyAuthSync({
     if (result.status === "success") {
       loadedAtByAccessToken.set(currentAccessToken, now());
       store.setReady(currentAccessToken, result.data);
-      return;
+      return runPendingForcedRefresh(accessToken, currentAccessToken);
     }
 
     if (showLoading) {
       store.setError(currentAccessToken, result.message);
     }
+
+    return runPendingForcedRefresh(accessToken, currentAccessToken);
+  }
+
+  function startVocabularyLoad(
+    accessToken: string,
+    options?: Parameters<typeof loadVocabularyForSession>[1],
+  ): Promise<void> {
+    const loadPromise: Promise<void> = loadVocabularyForSession(
+      accessToken,
+      options,
+    ).finally(() => {
+      if (activeLoadPromise === loadPromise) {
+        activeLoadPromise = null;
+      }
+    });
+
+    activeLoadPromise = loadPromise;
+    return loadPromise;
+  }
+
+  function queuePendingForcedRefresh(accessToken: string) {
+    pendingForcedRefreshAccessToken = accessToken;
+  }
+
+  function runPendingForcedRefresh(
+    accessToken: string,
+    currentAccessToken: string,
+  ): Promise<void> | undefined {
+    if (
+      pendingForcedRefreshAccessToken !== accessToken &&
+      pendingForcedRefreshAccessToken !== currentAccessToken
+    ) {
+      return;
+    }
+
+    pendingForcedRefreshAccessToken = null;
+
+    return startVocabularyLoad(currentAccessToken, {
+      refreshAccessToken: true,
+      showLoading: false,
+    });
+  }
+
+  function refreshVocabulary(
+    authState: AuthStateSnapshot,
+    { force = false }: { force?: boolean } = {},
+  ): Promise<void> | undefined {
+    if (authState.status !== "authenticated" || !authState.accessToken) {
+      return;
+    }
+
+    const vocabularyState = store.getSnapshot();
+
+    if (
+      vocabularyState.accessToken === authState.accessToken &&
+      vocabularyState.status === "loading"
+    ) {
+      if (force) {
+        queuePendingForcedRefresh(authState.accessToken);
+      }
+
+      return activeLoadPromise ?? undefined;
+    }
+
+    if (
+      !force &&
+      vocabularyState.accessToken === authState.accessToken &&
+      vocabularyState.status === "ready" &&
+      isVocabularySnapshotFresh(
+        loadedAtByAccessToken.get(authState.accessToken),
+        now(),
+        refreshStaleMs,
+      )
+    ) {
+      return;
+    }
+
+    return startVocabularyLoad(authState.accessToken, {
+      refreshAccessToken: true,
+      showLoading:
+        vocabularyState.accessToken !== authState.accessToken ||
+        vocabularyState.status !== "ready",
+    });
   }
 
   return {
     refresh(authState: AuthStateSnapshot) {
-      if (authState.status !== "authenticated" || !authState.accessToken) {
-        return;
-      }
+      return refreshVocabulary(authState);
+    },
 
-      const vocabularyState = store.getSnapshot();
-
-      if (
-        vocabularyState.accessToken === authState.accessToken &&
-        vocabularyState.status === "loading"
-      ) {
-        return;
-      }
-
-      if (
-        vocabularyState.accessToken === authState.accessToken &&
-        vocabularyState.status === "ready" &&
-        isVocabularySnapshotFresh(
-          loadedAtByAccessToken.get(authState.accessToken),
-          now(),
-          refreshStaleMs,
-        )
-      ) {
-        return;
-      }
-
-      void loadVocabularyForSession(authState.accessToken, {
-        refreshAccessToken: true,
-        showLoading:
-          vocabularyState.accessToken !== authState.accessToken ||
-          vocabularyState.status !== "ready",
-      });
+    refreshNow(authState: AuthStateSnapshot) {
+      return refreshVocabulary(authState, { force: true });
     },
 
     sync(authState: AuthStateSnapshot) {
@@ -253,6 +351,7 @@ export function createVocabularyAuthSync({
 
       if (authState.status !== "authenticated" || !authState.accessToken) {
         requestSequence += 1;
+        pendingForcedRefreshAccessToken = null;
         store.reset();
         return;
       }
@@ -265,7 +364,7 @@ export function createVocabularyAuthSync({
         return;
       }
 
-      void loadVocabularyForSession(authState.accessToken);
+      void startVocabularyLoad(authState.accessToken);
     },
   };
 }
@@ -283,6 +382,7 @@ function isVocabularySnapshotFresh(
 }
 
 const vocabularyAuthSync = createVocabularyAuthSync();
+const vocabularyRealtimeSync = createVocabularyRealtimeSync();
 
 async function readCurrentAccessToken(
   getAccessToken: AccessTokenProvider,
@@ -347,6 +447,143 @@ export function useRefreshVocabularyForActiveStudySurface(
       );
     };
   }, [isStudySurfaceActive]);
+}
+
+export function createVocabularyRealtimeSync({
+  createRefreshScheduler = (refresh) =>
+    createVocabularyRealtimeRefreshScheduler({ refresh }),
+  getClient = () =>
+    getSupabaseBrowserClient() as VocabularyRealtimeClient | null,
+  refresh = (authState) => vocabularyAuthSync.refreshNow(authState),
+}: {
+  createRefreshScheduler?: VocabularyRealtimeRefreshSchedulerFactory;
+  getClient?: VocabularyRealtimeClientProvider;
+  refresh?: VocabularyRealtimeRefresher;
+} = {}) {
+  let activeAccessToken: string | null = null;
+  let activeChannel: VocabularyRealtimeChannel | null = null;
+  let activeClient: VocabularyRealtimeClient | null = null;
+  let activeScheduler: VocabularyRealtimeRefreshScheduler | null = null;
+  let activeTopic: string | null = null;
+  let channelRemovalPromise: Promise<unknown> = Promise.resolve();
+  let subscriptionSequence = 0;
+
+  const removeActiveChannel = () => {
+    activeScheduler?.cancel();
+
+    const channel = activeChannel;
+    const client = activeClient;
+
+    activeAccessToken = null;
+    activeChannel = null;
+    activeClient = null;
+    activeScheduler = null;
+    activeTopic = null;
+
+    if (channel && client) {
+      channelRemovalPromise = client
+        .removeChannel(channel)
+        .catch(() => undefined);
+    }
+
+    return channelRemovalPromise;
+  };
+
+  const cleanup = () => {
+    subscriptionSequence += 1;
+    return removeActiveChannel();
+  };
+
+  return {
+    cleanup,
+
+    sync(authState: AuthStateSnapshot) {
+      const topic = createVocabularyRealtimeTopic(authState.session?.user.id);
+
+      if (
+        authState.status !== "authenticated" ||
+        !authState.accessToken ||
+        !topic
+      ) {
+        cleanup();
+        return;
+      }
+
+      if (
+        activeTopic === topic &&
+        activeAccessToken === authState.accessToken &&
+        activeChannel
+      ) {
+        return;
+      }
+
+      const channelRemoval = cleanup();
+
+      const client = getClient();
+
+      if (!client) {
+        return;
+      }
+
+      subscriptionSequence += 1;
+      const requestId = subscriptionSequence;
+      const scheduler = createRefreshScheduler(() => refresh(authState));
+
+      void channelRemoval
+        .then(async () => {
+          if (requestId !== subscriptionSequence) {
+            scheduler.cancel();
+            return;
+          }
+
+          await client.realtime.setAuth(authState.accessToken);
+
+          if (requestId !== subscriptionSequence) {
+            scheduler.cancel();
+            return;
+          }
+
+          const channel = client.channel(topic, {
+            config: { private: true },
+          });
+          const isCurrentSubscription = () =>
+            requestId === subscriptionSequence &&
+            activeAccessToken === authState.accessToken &&
+            activeChannel === channel &&
+            activeScheduler === scheduler &&
+            activeTopic === topic;
+
+          for (const event of VOCABULARY_REALTIME_EVENTS) {
+            channel.on("broadcast", { event }, () => {
+              if (isCurrentSubscription()) {
+                scheduler.schedule();
+              }
+            });
+          }
+
+          activeAccessToken = authState.accessToken;
+          activeChannel = channel;
+          activeClient = client;
+          activeScheduler = scheduler;
+          activeTopic = topic;
+
+          channel.subscribe();
+        })
+        .catch(() => {
+          scheduler.cancel();
+        });
+    },
+  };
+}
+
+export function useSyncVocabularyRealtimeForAuth(authState: AuthStateSnapshot) {
+  useEffect(() => {
+    vocabularyRealtimeSync.sync(authState);
+
+    return () => {
+      void vocabularyRealtimeSync.cleanup();
+    };
+  }, [authState.accessToken, authState.session?.user.id, authState.status]);
 }
 
 export function shouldLoadVocabularyForSession(
