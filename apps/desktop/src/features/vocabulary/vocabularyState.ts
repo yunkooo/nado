@@ -210,10 +210,64 @@ export function createVocabularyAuthSync({
     return "failed";
   }
 
+  function waitForCurrentLoadToSettle(accessToken: string) {
+    const currentState = store.getSnapshot();
+
+    if (
+      currentState.accessToken !== accessToken ||
+      currentState.status !== "loading"
+    ) {
+      return Promise.resolve(currentState.accessToken === accessToken);
+    }
+
+    return new Promise<boolean>((resolve) => {
+      const unsubscribe = store.subscribe(() => {
+        const nextState = store.getSnapshot();
+
+        if (
+          nextState.accessToken === accessToken &&
+          nextState.status === "loading"
+        ) {
+          return;
+        }
+
+        unsubscribe();
+        resolve(nextState.accessToken === accessToken);
+      });
+    });
+  }
+
+  function refresh(
+    authState: AuthStateSnapshot,
+  ): Promise<VocabularyRefreshResult> {
+    if (authState.status !== "authenticated" || !authState.accessToken) {
+      return Promise.resolve("ignored");
+    }
+
+    const vocabularyState = store.getSnapshot();
+
+    if (
+      vocabularyState.accessToken === authState.accessToken &&
+      vocabularyState.status === "loading"
+    ) {
+      return Promise.resolve("ignored");
+    }
+
+    return loadVocabularyForSession(authState.accessToken, {
+      showLoading:
+        vocabularyState.accessToken !== authState.accessToken ||
+        vocabularyState.status !== "ready",
+    });
+  }
+
   return {
-    refresh(authState: AuthStateSnapshot): Promise<VocabularyRefreshResult> {
+    refresh,
+
+    async refreshAfterCurrentLoad(
+      authState: AuthStateSnapshot,
+    ): Promise<VocabularyRefreshResult> {
       if (authState.status !== "authenticated" || !authState.accessToken) {
-        return Promise.resolve("ignored");
+        return "ignored";
       }
 
       const vocabularyState = store.getSnapshot();
@@ -222,14 +276,16 @@ export function createVocabularyAuthSync({
         vocabularyState.accessToken === authState.accessToken &&
         vocabularyState.status === "loading"
       ) {
-        return Promise.resolve("ignored");
+        const isSameSession = await waitForCurrentLoadToSettle(
+          authState.accessToken,
+        );
+
+        if (!isSameSession) {
+          return "ignored";
+        }
       }
 
-      return loadVocabularyForSession(authState.accessToken, {
-        showLoading:
-          vocabularyState.accessToken !== authState.accessToken ||
-          vocabularyState.status !== "ready",
-      });
+      return refresh(authState);
     },
 
     sync(authState: AuthStateSnapshot) {
@@ -266,7 +322,7 @@ export async function startVocabularyRealtimeSubscription({
   authState,
   client = getSupabaseBrowserClient() as VocabularyRealtimeClient | null,
   debounceMs,
-  refresh = () => vocabularyAuthSync.refresh(authState),
+  refresh = () => vocabularyAuthSync.refreshAfterCurrentLoad(authState),
 }: {
   authState: AuthStateSnapshot;
   client?: VocabularyRealtimeClient | null;
@@ -334,7 +390,8 @@ export function useVocabularyRealtimeRefresh(authState: AuthStateSnapshot) {
 
     void startVocabularyRealtimeSubscription({
       authState,
-      refresh: () => vocabularyAuthSync.refresh(latestAuthStateRef.current),
+      refresh: () =>
+        vocabularyAuthSync.refreshAfterCurrentLoad(latestAuthStateRef.current),
     }).then(
       (nextSubscription) => {
         if (!isActive) {

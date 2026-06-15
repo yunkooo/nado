@@ -282,6 +282,65 @@ describe("vocabulary state store", () => {
     });
   });
 
+  it("runs a realtime refresh after the current same-token load settles", async () => {
+    let resolveInitialLoad: (result: VocabularyListResult) => void = () =>
+      undefined;
+    const refreshedItem = {
+      ...vocabularyItem,
+      id: "row_2",
+      term: "afterwards",
+    };
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi
+      .fn(
+        async (_accessToken: string): Promise<VocabularyListResult> => ({
+          data: [refreshedItem],
+          status: "success",
+        }),
+      )
+      .mockImplementationOnce(
+        (_accessToken: string) =>
+          new Promise<VocabularyListResult>((resolve) => {
+            resolveInitialLoad = resolve;
+          }),
+      );
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+    const authState = {
+      accessToken: "session-token",
+      session: null,
+      status: "authenticated" as const,
+    };
+
+    sync.sync(authState);
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      status: "loading",
+    });
+
+    const realtimeRefresh = sync.refreshAfterCurrentLoad(authState);
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    resolveInitialLoad({
+      data: [vocabularyItem],
+      status: "success",
+    });
+    await flushPromises();
+
+    await expect(realtimeRefresh).resolves.toBe("refreshed");
+
+    expect(listVocabulary).toHaveBeenCalledTimes(2);
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [refreshedItem],
+      status: "ready",
+    });
+  });
+
   it("skips manual refreshes when the user is not authenticated", async () => {
     const store = createVocabularyStateStore();
     const listVocabulary = vi.fn(async () => ({
