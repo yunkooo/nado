@@ -1,10 +1,12 @@
 import type { VocabularyItem } from "@nado/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { VocabularyListResult } from "../../api/vocabularyApi";
+import type { AuthStateSnapshot } from "../../auth/authState";
 import {
   createVocabularyAuthSync,
   createVocabularyStateStore,
   isVocabularySuggestionSaved,
+  startVocabularyRealtimeSubscription,
   shouldRefreshActiveVocabulary,
   shouldLoadVocabularyForSession,
 } from "./vocabularyState";
@@ -331,9 +333,137 @@ describe("vocabulary state store", () => {
       }),
     ).toBe(true);
   });
+
+  it("subscribes to the authenticated user's private realtime vocabulary topic", async () => {
+    vi.useFakeTimers();
+    const realtime = createFakeRealtimeClient();
+    const refresh = vi.fn();
+
+    const subscription = await startVocabularyRealtimeSubscription({
+      authState: createAuthenticatedAuthState(),
+      client: realtime.client,
+      refresh,
+    });
+
+    expect(subscription).not.toBeNull();
+    expect(realtime.client.realtime.setAuth).toHaveBeenCalledWith(
+      "session-token",
+    );
+    expect(realtime.client.channel).toHaveBeenCalledWith("vocabulary:user_1", {
+      config: { private: true },
+    });
+    expect(realtime.channel.subscribe).toHaveBeenCalledTimes(1);
+    expect(realtime.channel.on).toHaveBeenCalledWith(
+      "broadcast",
+      { event: "INSERT" },
+      expect.any(Function),
+    );
+    expect(realtime.channel.on).toHaveBeenCalledWith(
+      "broadcast",
+      { event: "UPDATE" },
+      expect.any(Function),
+    );
+    expect(realtime.channel.on).toHaveBeenCalledWith(
+      "broadcast",
+      { event: "DELETE" },
+      expect.any(Function),
+    );
+
+    realtime.emit("INSERT");
+    realtime.emit("UPDATE");
+    realtime.emit("DELETE");
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+
+    subscription?.unsubscribe();
+    vi.useRealTimers();
+  });
+
+  it("removes the realtime channel and cancels a pending refresh on unsubscribe", async () => {
+    vi.useFakeTimers();
+    const realtime = createFakeRealtimeClient();
+    const refresh = vi.fn();
+
+    const subscription = await startVocabularyRealtimeSubscription({
+      authState: createAuthenticatedAuthState(),
+      client: realtime.client,
+      refresh,
+    });
+
+    realtime.emit("INSERT");
+    subscription?.unsubscribe();
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(refresh).not.toHaveBeenCalled();
+    expect(realtime.client.removeChannel).toHaveBeenCalledWith(
+      realtime.channel,
+    );
+
+    vi.useRealTimers();
+  });
+
+  it("skips realtime subscription when the user is not authenticated", async () => {
+    const realtime = createFakeRealtimeClient();
+
+    await expect(
+      startVocabularyRealtimeSubscription({
+        authState: {
+          accessToken: null,
+          session: null,
+          status: "anonymous",
+        },
+        client: realtime.client,
+        refresh: vi.fn(),
+      }),
+    ).resolves.toBeNull();
+
+    expect(realtime.client.channel).not.toHaveBeenCalled();
+  });
 });
 
 async function flushPromises() {
   await Promise.resolve();
   await Promise.resolve();
+}
+
+function createAuthenticatedAuthState(): AuthStateSnapshot {
+  return {
+    accessToken: "session-token",
+    session: {
+      access_token: "session-token",
+      user: {
+        id: "user_1",
+      },
+    },
+    status: "authenticated" as const,
+  } as AuthStateSnapshot;
+}
+
+function createFakeRealtimeClient() {
+  const handlers = new Map<string, () => void>();
+  const channel = {
+    on: vi.fn(
+      (_type: "broadcast", filter: { event: string }, handler: () => void) => {
+        handlers.set(filter.event, handler);
+        return channel;
+      },
+    ),
+    subscribe: vi.fn(() => channel),
+  };
+  const client = {
+    channel: vi.fn(() => channel),
+    realtime: {
+      setAuth: vi.fn(async () => undefined),
+    },
+    removeChannel: vi.fn(async () => "ok"),
+  };
+
+  return {
+    channel,
+    client,
+    emit(event: string) {
+      handlers.get(event)?.();
+    },
+  };
 }

@@ -89,6 +89,21 @@ describe("Desktop App source", () => {
     );
   });
 
+  it("subscribes to desktop vocabulary realtime updates after authentication", () => {
+    expect(appSource).toContain("useVocabularyRealtimeRefresh");
+    expect(appSource).toMatch(
+      /useVocabularyRealtimeRefresh\(\s*authState,?\s*\)/,
+    );
+    expect(vocabularyStateSource).toContain(
+      "startVocabularyRealtimeSubscription",
+    );
+    expect(vocabularyStateSource).toContain("createVocabularyRealtimeTopic");
+    expect(vocabularyStateSource).toContain("config: { private: true }");
+    expect(vocabularyStateSource).toContain(
+      "createVocabularyRealtimeRefreshScheduler",
+    );
+  });
+
   it("renders a manual vocabulary refresh button on study views", () => {
     expect(appSource).toContain("useVocabularyManualRefresh");
     expect(appSource).toContain("VocabularyRefreshButton");
