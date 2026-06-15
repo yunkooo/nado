@@ -28,6 +28,29 @@ describe("runBackendSmoke", () => {
     expect(result.checks).toEqual(["health"]);
   });
 
+  it.each([
+    ["missing", undefined],
+    ["empty", ""],
+  ])(
+    "fails realtime smoke when access token is %s",
+    async (_label, accessToken) => {
+      const fetch = vi.fn();
+
+      await expect(
+        runBackendSmoke({
+          accessToken,
+          baseUrl: "http://api.test",
+          fetch,
+          realtime: true,
+        }),
+      ).rejects.toThrow(
+        "Realtime smoke requires NADO_SMOKE_ACCESS_TOKEN when NADO_SMOKE_REALTIME=1.",
+      );
+
+      expect(fetch).not.toHaveBeenCalled();
+    },
+  );
+
   it("checks analyze when analyze text is provided", async () => {
     const requests: Array<{ body: unknown; url: string }> = [];
 

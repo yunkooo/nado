@@ -97,6 +97,12 @@ export async function runBackendSmoke(
   const log = options.log ?? (() => undefined);
   const checks: string[] = [];
 
+  if (options.realtime && !options.accessToken?.trim()) {
+    throw new Error(
+      "Realtime smoke requires NADO_SMOKE_ACCESS_TOKEN when NADO_SMOKE_REALTIME=1.",
+    );
+  }
+
   await checkHealth(baseUrl, fetchImplementation);
   checks.push("health");
   log("health ok");
