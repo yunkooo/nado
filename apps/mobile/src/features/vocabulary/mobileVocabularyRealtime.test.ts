@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { subscribeMobileVocabularyRealtime } from "./mobileVocabularyRealtime";
+import {
+  subscribeMobileVocabularyRealtime,
+  updateMobileVocabularyRealtimeAuth,
+} from "./mobileVocabularyRealtime";
 
 type BroadcastHandler = () => void;
 
@@ -30,6 +33,19 @@ function createRealtimeClientStub() {
 }
 
 describe("subscribeMobileVocabularyRealtime", () => {
+  it("updates realtime auth without creating or removing a channel", () => {
+    const { client } = createRealtimeClientStub();
+
+    updateMobileVocabularyRealtimeAuth({
+      accessToken: "refreshed-token",
+      client,
+    });
+
+    expect(client.realtime.setAuth).toHaveBeenCalledWith("refreshed-token");
+    expect(client.channel).not.toHaveBeenCalled();
+    expect(client.removeChannel).not.toHaveBeenCalled();
+  });
+
   it("subscribes to the user's private vocabulary topic and refreshes on row broadcasts", () => {
     const { channel, client, handlers } = createRealtimeClientStub();
     const refresh = vi.fn();

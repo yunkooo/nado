@@ -22,6 +22,20 @@ type VocabularyRealtimeClient = {
   removeChannel(channel: VocabularyRealtimeChannel): unknown;
 };
 
+export function updateMobileVocabularyRealtimeAuth({
+  accessToken,
+  client,
+}: {
+  accessToken: string | null | undefined;
+  client: VocabularyRealtimeClient;
+}) {
+  if (!accessToken) {
+    return;
+  }
+
+  client.realtime.setAuth(accessToken);
+}
+
 export function subscribeMobileVocabularyRealtime({
   accessToken,
   client,
@@ -39,7 +53,7 @@ export function subscribeMobileVocabularyRealtime({
     return () => undefined;
   }
 
-  client.realtime.setAuth(accessToken);
+  updateMobileVocabularyRealtimeAuth({ accessToken, client });
 
   const channel = client.channel(topic, {
     config: { private: true },

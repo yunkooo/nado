@@ -20,7 +20,10 @@ import {
   listVocabulary,
   saveVocabularyItem,
 } from "../../api/vocabularyApi";
-import { subscribeMobileVocabularyRealtime } from "./mobileVocabularyRealtime";
+import {
+  subscribeMobileVocabularyRealtime,
+  updateMobileVocabularyRealtimeAuth,
+} from "./mobileVocabularyRealtime";
 
 export type { MobileVocabularyState } from "./mobileVocabularyState";
 
@@ -236,6 +239,23 @@ export function useMobileVocabulary(
       return;
     }
 
+    updateMobileVocabularyRealtimeAuth({
+      accessToken: authState.accessToken,
+      client: supabase,
+    });
+  }, [authState.accessToken, authState.status]);
+
+  useEffect(() => {
+    const supabase = getMobileSupabaseClient();
+
+    if (
+      !supabase ||
+      authState.status !== "authenticated" ||
+      !authState.accessToken
+    ) {
+      return;
+    }
+
     realtimeRefreshSchedulerRef.current =
       createVocabularyRealtimeRefreshScheduler({
         refresh: refreshVocabularyInBackground,
@@ -254,7 +274,6 @@ export function useMobileVocabulary(
       unsubscribe();
     };
   }, [
-    authState.accessToken,
     authState.session?.user.id,
     authState.status,
     refreshVocabularyInBackground,

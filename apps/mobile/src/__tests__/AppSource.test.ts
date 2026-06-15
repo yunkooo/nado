@@ -95,6 +95,9 @@ describe("mobile App API wiring", () => {
       "subscribeMobileVocabularyRealtime",
     );
     expect(mobileVocabularySource).toContain(
+      "updateMobileVocabularyRealtimeAuth",
+    );
+    expect(mobileVocabularySource).toContain(
       "createVocabularyRealtimeRefreshScheduler",
     );
     expect(mobileVocabularySource).toContain(
