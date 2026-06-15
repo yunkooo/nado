@@ -44,6 +44,10 @@ describe("analysis component styles", () => {
     );
     expect(wordPopoverRule).toContain("left: var(--nado-word-popover-left");
     expect(wordPopoverRule).toContain("top: var(--nado-word-popover-top");
+    expect(wordPopoverRule).toContain(
+      "max-block-size: var(--nado-word-popover-height",
+    );
+    expect(wordPopoverRule).toContain("overflow-y: auto");
     expect(wordPopoverRule).toContain("z-index: 30");
     expect(styles).not.toContain(
       ".nado-word-token-wrap:hover .nado-word-popover",

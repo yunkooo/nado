@@ -356,6 +356,40 @@ describe("analysis design system components", () => {
     expect(position.top).toBe(134);
   });
 
+  it("clamps tall vocabulary popovers to the available scrollport height", () => {
+    const position = getClampedWordPopoverPosition({
+      popoverSize: {
+        height: 260,
+        width: 220,
+      },
+      scrollportRect: {
+        bottom: 220,
+        height: 120,
+        left: 100,
+        right: 420,
+        top: 100,
+        width: 320,
+      },
+      triggerRect: {
+        bottom: 200,
+        height: 20,
+        left: 180,
+        right: 240,
+        top: 180,
+        width: 60,
+      },
+      viewportSize: {
+        height: 240,
+        width: 520,
+      },
+    });
+
+    expect(position).toMatchObject({
+      height: 96,
+      top: 112,
+    });
+  });
+
   it("shows saved vocabulary popover actions as saved disabled buttons", () => {
     const markup = renderToStaticMarkup(
       <AnalysisResult

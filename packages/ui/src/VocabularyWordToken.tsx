@@ -42,6 +42,7 @@ type ViewportSize = {
 export type WordPopoverPlacement = "bottom" | "top";
 
 export type WordPopoverPosition = {
+  height: number;
   left: number;
   placement: WordPopoverPlacement;
   top: number;
@@ -311,6 +312,7 @@ export function VocabularyWordToken({
     item.partOfSpeech,
     item.term,
     popoverRoot,
+    popoverPosition?.height,
     popoverPosition?.width,
     state,
     updatePopoverPosition,
@@ -445,6 +447,7 @@ export function getClampedWordPopoverPosition({
 
   if (shouldFlipToBottom) {
     return {
+      height,
       left,
       placement: "bottom",
       top: bottomPlacementTop,
@@ -453,6 +456,7 @@ export function getClampedWordPopoverPosition({
   }
 
   return {
+    height,
     left,
     placement: "top",
     top: clamp(
@@ -465,6 +469,7 @@ export function getClampedWordPopoverPosition({
 }
 
 type WordPopoverStyle = CSSProperties & {
+  "--nado-word-popover-height"?: string;
   "--nado-word-popover-left"?: string;
   "--nado-word-popover-top"?: string;
   "--nado-word-popover-width"?: string;
@@ -481,6 +486,7 @@ function createWordPopoverStyle(
   }
 
   return {
+    "--nado-word-popover-height": `${Math.round(position.height)}px`,
     "--nado-word-popover-left": `${Math.round(position.left)}px`,
     "--nado-word-popover-top": `${Math.round(position.top)}px`,
     "--nado-word-popover-width": `${Math.round(position.width)}px`,
@@ -560,6 +566,7 @@ function areWordPopoverPositionsEqual(
 ) {
   return (
     currentPosition?.left === nextPosition.left &&
+    currentPosition.height === nextPosition.height &&
     currentPosition.placement === nextPosition.placement &&
     currentPosition.top === nextPosition.top &&
     currentPosition.width === nextPosition.width
