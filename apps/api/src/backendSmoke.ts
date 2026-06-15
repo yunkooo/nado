@@ -337,35 +337,42 @@ async function createVocabularyRealtimeMonitor({
     .on("broadcast", { event: "UPDATE" }, () => handleEvent("UPDATE"))
     .on("broadcast", { event: "DELETE" }, () => handleEvent("DELETE"));
 
-  await new Promise<void>((resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      reject(
-        new Error(
-          `Realtime smoke channel ${topic} was not subscribed within ${timeoutMs}ms.`,
-        ),
-      );
-    }, timeoutMs);
-
-    channel.subscribe((status, error) => {
-      if (status === "SUBSCRIBED") {
-        clearTimeout(timeoutId);
-        resolve();
-        return;
-      }
-
-      if (
-        status === "CHANNEL_ERROR" ||
-        status === "CLOSED" ||
-        status === "TIMED_OUT"
-      ) {
-        clearTimeout(timeoutId);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
         reject(
-          error ??
-            new Error(`Realtime smoke channel ${topic} failed with ${status}.`),
+          new Error(
+            `Realtime smoke channel ${topic} was not subscribed within ${timeoutMs}ms.`,
+          ),
         );
-      }
+      }, timeoutMs);
+
+      channel.subscribe((status, error) => {
+        if (status === "SUBSCRIBED") {
+          clearTimeout(timeoutId);
+          resolve();
+          return;
+        }
+
+        if (
+          status === "CHANNEL_ERROR" ||
+          status === "CLOSED" ||
+          status === "TIMED_OUT"
+        ) {
+          clearTimeout(timeoutId);
+          reject(
+            error ??
+              new Error(
+                `Realtime smoke channel ${topic} failed with ${status}.`,
+              ),
+          );
+        }
+      });
     });
-  });
+  } catch (error) {
+    await client.removeChannel(channel);
+    throw error;
+  }
 
   return {
     async close() {

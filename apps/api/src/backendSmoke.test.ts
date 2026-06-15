@@ -245,9 +245,43 @@ describe("runBackendSmoke", () => {
       "vocabulary:realtime:delete",
     ]);
   });
+
+  it("removes the realtime channel when subscription times out", async () => {
+    const realtime = createRealtimeClientStub({
+      subscribe: () => undefined,
+    });
+
+    await expect(
+      runBackendSmoke({
+        accessToken: "user-token",
+        baseUrl: "http://api.test",
+        createRealtimeClient: realtime.createClient,
+        realtime: true,
+        realtimeTimeoutMs: 1,
+        realtimeUserId: "user-id",
+        supabaseAnonKey: "anon-key",
+        supabaseUrl: "http://supabase.test",
+        fetch: async () =>
+          jsonResponse({
+            service: "nado-api",
+            status: "ok",
+          }),
+      }),
+    ).rejects.toThrow(
+      "Realtime smoke channel vocabulary:user-id was not subscribed within 1ms.",
+    );
+
+    expect(realtime.client.removeChannel).toHaveBeenCalledWith(
+      realtime.channel,
+    );
+  });
 });
 
-function createRealtimeClientStub() {
+function createRealtimeClientStub({
+  subscribe = (callback) => callback?.("SUBSCRIBED"),
+}: {
+  subscribe?: (callback?: (status: string) => void) => void;
+} = {}) {
   const handlers = new Map<string, () => void>();
   const channel = {
     on: vi.fn(
@@ -257,7 +291,7 @@ function createRealtimeClientStub() {
       },
     ),
     subscribe: vi.fn((callback?: (status: string) => void) => {
-      callback?.("SUBSCRIBED");
+      subscribe(callback);
       return channel;
     }),
   };
