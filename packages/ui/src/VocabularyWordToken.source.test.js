@@ -21,4 +21,10 @@ describe("VocabularyWordToken interaction source", () => {
     expect(source).toContain("nado-word-popover--open");
     expect(source).toContain("createPortal(popover, popoverRoot)");
   });
+
+  it("does not keep popovers open from pointer focus alone", () => {
+    expect(source).toContain("isPointerFocusRef");
+    expect(source).toContain("openFocusFromKeyboard");
+    expect(source).toContain("onPointerDownCapture");
+  });
 });

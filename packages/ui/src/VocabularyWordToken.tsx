@@ -78,6 +78,7 @@ export function VocabularyWordToken({
     useState<WordPopoverPosition | null>(null);
   const [popoverRoot, setPopoverRoot] = useState<HTMLElement | null>(null);
   const hoverCloseDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isPointerFocusRef = useRef(false);
   const tokenRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLSpanElement>(null);
   const isPopoverOpen = isOpen || isHovering || hasFocusWithin;
@@ -104,6 +105,25 @@ export function VocabularyWordToken({
       hoverCloseDelayRef.current = null;
     }, WORD_POPOVER_CLOSE_DELAY_MS);
   }, [clearHoverCloseDelay]);
+
+  const trackPointerFocus = useCallback(() => {
+    isPointerFocusRef.current = true;
+    setHasFocusWithin(false);
+
+    window.setTimeout(() => {
+      isPointerFocusRef.current = false;
+    }, 0);
+  }, []);
+
+  const openFocusFromKeyboard = useCallback(() => {
+    if (isPointerFocusRef.current) {
+      isPointerFocusRef.current = false;
+      setHasFocusWithin(false);
+      return;
+    }
+
+    setHasFocusWithin(true);
+  }, []);
 
   const updatePopoverPosition = useCallback(() => {
     if (!isPopoverOpen || typeof window === "undefined") {
@@ -210,8 +230,9 @@ export function VocabularyWordToken({
         setHasFocusWithin(false);
       }}
       onFocusCapture={() => {
-        setHasFocusWithin(true);
+        openFocusFromKeyboard();
       }}
+      onPointerDownCapture={trackPointerFocus}
       onPointerEnter={openHover}
       onPointerLeave={closeHoverWithDelay}
       ref={popoverRef}
@@ -254,8 +275,9 @@ export function VocabularyWordToken({
         setHasFocusWithin(false);
       }}
       onFocusCapture={() => {
-        setHasFocusWithin(true);
+        openFocusFromKeyboard();
       }}
+      onPointerDownCapture={trackPointerFocus}
       onPointerEnter={openHover}
       onPointerLeave={closeHoverWithDelay}
     >
