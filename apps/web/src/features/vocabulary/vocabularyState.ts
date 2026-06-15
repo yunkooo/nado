@@ -446,6 +446,7 @@ export function createVocabularyRealtimeSync({
   let activeClient: VocabularyRealtimeClient | null = null;
   let activeScheduler: VocabularyRealtimeRefreshScheduler | null = null;
   let activeTopic: string | null = null;
+  let channelRemovalPromise: Promise<unknown> = Promise.resolve();
   let subscriptionSequence = 0;
 
   const removeActiveChannel = () => {
@@ -461,13 +462,17 @@ export function createVocabularyRealtimeSync({
     activeTopic = null;
 
     if (channel && client) {
-      void client.removeChannel(channel);
+      channelRemovalPromise = client
+        .removeChannel(channel)
+        .catch(() => undefined);
     }
+
+    return channelRemovalPromise;
   };
 
   const cleanup = () => {
     subscriptionSequence += 1;
-    removeActiveChannel();
+    return removeActiveChannel();
   };
 
   return {
@@ -493,7 +498,7 @@ export function createVocabularyRealtimeSync({
         return;
       }
 
-      cleanup();
+      const channelRemoval = cleanup();
 
       const client = getClient();
 
@@ -505,9 +510,15 @@ export function createVocabularyRealtimeSync({
       const requestId = subscriptionSequence;
       const scheduler = createRefreshScheduler(() => refresh(authState));
 
-      void client.realtime
-        .setAuth(authState.accessToken)
-        .then(() => {
+      void channelRemoval
+        .then(async () => {
+          if (requestId !== subscriptionSequence) {
+            scheduler.cancel();
+            return;
+          }
+
+          await client.realtime.setAuth(authState.accessToken);
+
           if (requestId !== subscriptionSequence) {
             scheduler.cancel();
             return;
@@ -543,7 +554,7 @@ export function useSyncVocabularyRealtimeForAuth(authState: AuthStateSnapshot) {
     vocabularyRealtimeSync.sync(authState);
 
     return () => {
-      vocabularyRealtimeSync.cleanup();
+      void vocabularyRealtimeSync.cleanup();
     };
   }, [authState.accessToken, authState.session?.user.id, authState.status]);
 }

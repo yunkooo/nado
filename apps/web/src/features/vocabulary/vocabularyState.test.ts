@@ -544,6 +544,37 @@ describe("vocabulary realtime sync", () => {
     expect(client.removeChannel).toHaveBeenCalledWith(channels[0]);
   });
 
+  it("waits for active realtime channel removal before resubscribing the same topic", async () => {
+    const removal = createDeferred<unknown>();
+    const { client, channels } = createFakeRealtimeClient({
+      removeChannel: () => removal.promise,
+    });
+    const sync = createVocabularyRealtimeSync({
+      getClient: () => client,
+      refresh: vi.fn(),
+    });
+
+    sync.sync(createAuthenticatedAuthState("old-token", "user-id"));
+    await flushPromises();
+
+    expect(client.channel).toHaveBeenCalledTimes(1);
+
+    sync.sync(createAuthenticatedAuthState("new-token", "user-id"));
+    await flushPromises();
+
+    expect(client.removeChannel).toHaveBeenCalledWith(channels[0]);
+    expect(client.channel).toHaveBeenCalledTimes(1);
+
+    removal.resolve("ok");
+    await flushPromises();
+
+    expect(client.channel).toHaveBeenCalledTimes(2);
+    expect(client.channel).toHaveBeenLastCalledWith("vocabulary:user-id", {
+      config: { private: true },
+    });
+    expect(channels[1]?.subscribe).toHaveBeenCalledTimes(1);
+  });
+
   it("does not subscribe when the authenticated session has no user id", async () => {
     const { client } = createFakeRealtimeClient();
     const sync = createVocabularyRealtimeSync({
@@ -595,7 +626,11 @@ function createFakeScheduler() {
   };
 }
 
-function createFakeRealtimeClient() {
+function createFakeRealtimeClient({
+  removeChannel = async () => "ok",
+}: {
+  removeChannel?: VocabularyRealtimeClient["removeChannel"];
+} = {}) {
   const channels: FakeRealtimeChannel[] = [];
   const client: VocabularyRealtimeClient = {
     channel: vi.fn((topic, options) => {
@@ -606,7 +641,7 @@ function createFakeRealtimeClient() {
     realtime: {
       setAuth: vi.fn(async () => undefined),
     },
-    removeChannel: vi.fn(async () => "ok"),
+    removeChannel: vi.fn(removeChannel),
   };
 
   return { channels, client };
@@ -647,4 +682,15 @@ async function flushPromises() {
   await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
+}
+
+function createDeferred<T>() {
+  let reject!: (reason?: unknown) => void;
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((nextResolve, nextReject) => {
+    resolve = nextResolve;
+    reject = nextReject;
+  });
+
+  return { promise, reject, resolve };
 }
