@@ -1,6 +1,11 @@
+import {
+  createVocabularyRealtimeRefreshScheduler,
+  type VocabularyRealtimeRefreshScheduler,
+} from "@nado/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 import { readMobileApiBaseUrl } from "../../api/apiConfig";
+import { getMobileSupabaseClient } from "../../auth/authClient";
 import type { MobileAuthStateSnapshot } from "../../auth/authState";
 import {
   applyDeleteVocabularyError,
@@ -15,6 +20,10 @@ import {
   listVocabulary,
   saveVocabularyItem,
 } from "../../api/vocabularyApi";
+import {
+  subscribeMobileVocabularyRealtime,
+  updateMobileVocabularyRealtimeAuth,
+} from "./mobileVocabularyRealtime";
 
 export type { MobileVocabularyState } from "./mobileVocabularyState";
 
@@ -54,6 +63,8 @@ export function useMobileVocabulary(
   const accessTokenRef = useRef<string | null>(null);
   const latestAuthStateRef = useRef(authState);
   const requestSequenceRef = useRef(0);
+  const realtimeRefreshSchedulerRef =
+    useRef<VocabularyRealtimeRefreshScheduler | null>(null);
   const statusRef = useRef<MobileVocabularyState["status"]>(
     initialVocabularyState.status,
   );
@@ -141,6 +152,22 @@ export function useMobileVocabulary(
     [setTrackedVocabularyState],
   );
 
+  const refreshVocabularyInBackground = useCallback(() => {
+    const latestAuthState = latestAuthStateRef.current;
+
+    if (
+      latestAuthState.status !== "authenticated" ||
+      !latestAuthState.accessToken
+    ) {
+      return;
+    }
+
+    return loadVocabulary(latestAuthState.accessToken, {
+      preserveCurrentOnError: true,
+      showLoading: false,
+    });
+  }, [loadVocabulary]);
+
   useEffect(() => {
     if (authState.status === "loading") {
       return;
@@ -190,31 +217,67 @@ export function useMobileVocabulary(
       return;
     }
 
-    const refreshVocabulary = () => {
-      const latestAuthState = latestAuthStateRef.current;
-
-      if (
-        latestAuthState.status !== "authenticated" ||
-        !latestAuthState.accessToken
-      ) {
-        return;
-      }
-
-      void loadVocabulary(latestAuthState.accessToken, {
-        preserveCurrentOnError: true,
-        showLoading: false,
-      });
-    };
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       if (nextAppState === "active") {
-        refreshVocabulary();
+        refreshVocabularyInBackground();
       }
     });
 
     return () => {
       subscription.remove();
     };
-  }, [isStudySurfaceActive, loadVocabulary]);
+  }, [isStudySurfaceActive, refreshVocabularyInBackground]);
+
+  useEffect(() => {
+    const supabase = getMobileSupabaseClient();
+
+    if (
+      !supabase ||
+      authState.status !== "authenticated" ||
+      !authState.accessToken
+    ) {
+      return;
+    }
+
+    updateMobileVocabularyRealtimeAuth({
+      accessToken: authState.accessToken,
+      client: supabase,
+    });
+  }, [authState.accessToken, authState.status]);
+
+  useEffect(() => {
+    const supabase = getMobileSupabaseClient();
+
+    if (
+      !supabase ||
+      authState.status !== "authenticated" ||
+      !authState.accessToken
+    ) {
+      return;
+    }
+
+    realtimeRefreshSchedulerRef.current =
+      createVocabularyRealtimeRefreshScheduler({
+        refresh: refreshVocabularyInBackground,
+      });
+
+    const unsubscribe = subscribeMobileVocabularyRealtime({
+      accessToken: authState.accessToken,
+      client: supabase,
+      onChange: () => realtimeRefreshSchedulerRef.current?.schedule(),
+      userId: authState.session?.user.id,
+    });
+
+    return () => {
+      realtimeRefreshSchedulerRef.current?.cancel();
+      realtimeRefreshSchedulerRef.current = null;
+      unsubscribe();
+    };
+  }, [
+    authState.session?.user.id,
+    authState.status,
+    refreshVocabularyInBackground,
+  ]);
 
   const deleteItem = async (itemId: string) => {
     if (authState.status !== "authenticated" || !authState.accessToken) {

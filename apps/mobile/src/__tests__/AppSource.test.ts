@@ -17,6 +17,13 @@ const mobileVocabularySource = readFileSync(
   new URL("../features/vocabulary/useMobileVocabulary.ts", import.meta.url),
   "utf8",
 );
+const mobileVocabularyRealtimeSource = readFileSync(
+  new URL(
+    "../features/vocabulary/mobileVocabularyRealtime.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 describe("mobile App API wiring", () => {
   it("submits analysis text through the mobile analyze API client", () => {
@@ -81,6 +88,33 @@ describe("mobile App API wiring", () => {
     expect(mobileVocabularySource).toContain(
       "accessTokenRef.current !== accessToken",
     );
+  });
+
+  it("subscribes mobile vocabulary to authenticated private Realtime broadcasts", () => {
+    expect(mobileVocabularySource).toContain(
+      "subscribeMobileVocabularyRealtime",
+    );
+    expect(mobileVocabularySource).toContain(
+      "updateMobileVocabularyRealtimeAuth",
+    );
+    expect(mobileVocabularySource).toContain(
+      "createVocabularyRealtimeRefreshScheduler",
+    );
+    expect(mobileVocabularySource).toContain(
+      "return loadVocabulary(latestAuthState.accessToken",
+    );
+    expect(mobileVocabularySource).toContain("realtimeRefreshSchedulerRef");
+    expect(mobileVocabularySource).toContain("authState.session?.user.id");
+    expect(mobileVocabularyRealtimeSource).toContain(
+      "createVocabularyRealtimeTopic",
+    );
+    expect(mobileVocabularyRealtimeSource).toContain(
+      "config: { private: true }",
+    );
+    expect(mobileVocabularyRealtimeSource).toContain(
+      "client.realtime.setAuth(accessToken)",
+    );
+    expect(mobileVocabularyRealtimeSource).toContain("client.removeChannel");
   });
 
   it("filters duplicate vocabulary notes from mobile vocabulary and omits review notes", () => {
