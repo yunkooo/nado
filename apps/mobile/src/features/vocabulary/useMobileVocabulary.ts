@@ -1,5 +1,6 @@
 import {
   createVocabularyRealtimeRefreshScheduler,
+  shouldRefreshVocabularyFromLifecycle,
   type VocabularyRealtimeRefreshScheduler,
 } from "@nado/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -61,6 +62,7 @@ export function useMobileVocabulary(
     initialVocabularyState,
   );
   const accessTokenRef = useRef<string | null>(null);
+  const lastLoadedAtRef = useRef<number | undefined>(undefined);
   const latestAuthStateRef = useRef(authState);
   const requestSequenceRef = useRef(0);
   const realtimeRefreshSchedulerRef =
@@ -88,9 +90,26 @@ export function useMobileVocabulary(
   const loadVocabulary = useCallback(
     async (
       accessToken: string,
-      options: { preserveCurrentOnError: boolean; showLoading: boolean },
+      options: {
+        force?: boolean;
+        preserveCurrentOnError: boolean;
+        showLoading: boolean;
+      },
     ) => {
-      const { preserveCurrentOnError, showLoading } = options;
+      const { force = false, preserveCurrentOnError, showLoading } = options;
+
+      if (
+        !force &&
+        !showLoading &&
+        !shouldRefreshVocabularyFromLifecycle({
+          isStudySurfaceActive: true,
+          lastLoadedAt: lastLoadedAtRef.current,
+          now: Date.now(),
+          status: statusRef.current,
+        })
+      ) {
+        return;
+      }
 
       if (
         !showLoading &&
@@ -125,6 +144,7 @@ export function useMobileVocabulary(
       }
 
       if (result.status === "success") {
+        lastLoadedAtRef.current = Date.now();
         setTrackedVocabularyState(() => ({
           items: result.data,
           message: null,
@@ -152,21 +172,25 @@ export function useMobileVocabulary(
     [setTrackedVocabularyState],
   );
 
-  const refreshVocabularyInBackground = useCallback(() => {
-    const latestAuthState = latestAuthStateRef.current;
+  const refreshVocabularyInBackground = useCallback(
+    (options?: { force?: boolean }) => {
+      const latestAuthState = latestAuthStateRef.current;
 
-    if (
-      latestAuthState.status !== "authenticated" ||
-      !latestAuthState.accessToken
-    ) {
-      return;
-    }
+      if (
+        latestAuthState.status !== "authenticated" ||
+        !latestAuthState.accessToken
+      ) {
+        return;
+      }
 
-    return loadVocabulary(latestAuthState.accessToken, {
-      preserveCurrentOnError: true,
-      showLoading: false,
-    });
-  }, [loadVocabulary]);
+      return loadVocabulary(latestAuthState.accessToken, {
+        force: options?.force ?? false,
+        preserveCurrentOnError: true,
+        showLoading: false,
+      });
+    },
+    [loadVocabulary],
+  );
 
   useEffect(() => {
     if (authState.status === "loading") {
@@ -176,6 +200,7 @@ export function useMobileVocabulary(
     if (authState.status !== "authenticated" || !authState.accessToken) {
       requestSequenceRef.current += 1;
       accessTokenRef.current = null;
+      lastLoadedAtRef.current = undefined;
       setTrackedVocabularyState(() => initialVocabularyState);
       return;
     }
@@ -200,15 +225,12 @@ export function useMobileVocabulary(
       return;
     }
 
-    void loadVocabulary(authState.accessToken, {
-      preserveCurrentOnError: true,
-      showLoading: false,
-    });
+    void refreshVocabularyInBackground();
   }, [
     authState.accessToken,
     authState.status,
     isStudySurfaceActive,
-    loadVocabulary,
+    refreshVocabularyInBackground,
     refreshKey,
   ]);
 
@@ -258,7 +280,7 @@ export function useMobileVocabulary(
 
     realtimeRefreshSchedulerRef.current =
       createVocabularyRealtimeRefreshScheduler({
-        refresh: refreshVocabularyInBackground,
+        refresh: () => refreshVocabularyInBackground({ force: true }),
       });
 
     const unsubscribe = subscribeMobileVocabularyRealtime({

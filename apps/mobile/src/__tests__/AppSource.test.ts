@@ -81,6 +81,10 @@ describe("mobile App API wiring", () => {
 
   it("guards mobile vocabulary refreshes against duplicate and stale requests", () => {
     expect(mobileVocabularySource).toContain("requestSequenceRef");
+    expect(mobileVocabularySource).toContain("lastLoadedAtRef");
+    expect(mobileVocabularySource).toContain(
+      "shouldRefreshVocabularyFromLifecycle",
+    );
     expect(mobileVocabularySource).toContain('statusRef.current === "loading"');
     expect(mobileVocabularySource).toContain(
       "requestId !== requestSequenceRef.current",
@@ -103,6 +107,7 @@ describe("mobile App API wiring", () => {
     expect(mobileVocabularySource).toContain(
       "return loadVocabulary(latestAuthState.accessToken",
     );
+    expect(mobileVocabularySource).toContain("{ force: true }");
     expect(mobileVocabularySource).toContain("realtimeRefreshSchedulerRef");
     expect(mobileVocabularySource).toContain("authState.session?.user.id");
     expect(mobileVocabularyRealtimeSource).toContain(

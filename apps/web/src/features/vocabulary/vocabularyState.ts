@@ -6,6 +6,8 @@ import {
   createVocabularyRealtimeTopic,
   getDistinctVocabularyNote,
   normalizeVocabularyTerm,
+  shouldRefreshVocabularyFromLifecycle,
+  VOCABULARY_LIFECYCLE_REFRESH_STALE_MS,
   type VocabularyRealtimeRefreshScheduler,
   type VocabularyItem,
 } from "@nado/shared";
@@ -70,7 +72,6 @@ type VocabularyRealtimeRefresher = (
   authState: AuthStateSnapshot,
 ) => Promise<void> | void;
 
-const VOCABULARY_REFRESH_STALE_MS = 60_000;
 const VOCABULARY_REALTIME_EVENTS: VocabularyRealtimeEvent[] = [
   "INSERT",
   "UPDATE",
@@ -178,7 +179,7 @@ export function createVocabularyAuthSync({
   getAccessToken = getCurrentAccessToken,
   listVocabulary: loadVocabulary = listVocabulary,
   now = () => Date.now(),
-  refreshStaleMs = VOCABULARY_REFRESH_STALE_MS,
+  refreshStaleMs = VOCABULARY_LIFECYCLE_REFRESH_STALE_MS,
   store = vocabularyStateStore,
 }: {
   getAccessToken?: AccessTokenProvider;
@@ -316,13 +317,13 @@ export function createVocabularyAuthSync({
 
     if (
       !force &&
-      vocabularyState.accessToken === authState.accessToken &&
-      vocabularyState.status === "ready" &&
-      isVocabularySnapshotFresh(
-        loadedAtByAccessToken.get(authState.accessToken),
-        now(),
-        refreshStaleMs,
-      )
+      !shouldRefreshVocabularyFromLifecycle({
+        isStudySurfaceActive: true,
+        lastLoadedAt: loadedAtByAccessToken.get(authState.accessToken),
+        now: now(),
+        staleMs: refreshStaleMs,
+        status: vocabularyState.status,
+      })
     ) {
       return;
     }
@@ -367,18 +368,6 @@ export function createVocabularyAuthSync({
       void startVocabularyLoad(authState.accessToken);
     },
   };
-}
-
-function isVocabularySnapshotFresh(
-  loadedAt: number | undefined,
-  currentTime: number,
-  staleMs: number,
-) {
-  if (loadedAt === undefined) {
-    return false;
-  }
-
-  return currentTime - loadedAt < staleMs;
 }
 
 const vocabularyAuthSync = createVocabularyAuthSync();

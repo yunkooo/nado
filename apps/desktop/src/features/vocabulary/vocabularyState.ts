@@ -4,6 +4,8 @@ import {
   createVocabularyRealtimeTopic,
   getDistinctVocabularyNote,
   normalizeVocabularyTerm,
+  shouldRefreshVocabularyFromLifecycle,
+  VOCABULARY_LIFECYCLE_REFRESH_STALE_MS,
   type VocabularyRealtimeRefreshScheduler,
   type VocabularyItem,
 } from "@nado/shared";
@@ -36,6 +38,7 @@ type VocabularyStateStore = ReturnType<typeof createVocabularyStateStore>;
 type VocabularyListLoader = (
   accessToken: string,
 ) => Promise<VocabularyListResult>;
+type TimestampProvider = () => number;
 type VocabularyRealtimeEvent = "DELETE" | "INSERT" | "UPDATE";
 type VocabularyRealtimeChannel = {
   on(
@@ -69,7 +72,6 @@ const initialSnapshot: VocabularyStateSnapshot = {
   status: "idle",
 };
 
-const VOCABULARY_BACKGROUND_REFRESH_STALE_MS = 60 * 1000;
 const vocabularyRealtimeEvents: VocabularyRealtimeEvent[] = [
   "INSERT",
   "UPDATE",
@@ -168,12 +170,17 @@ export function useVocabularyState(): VocabularyStateSnapshot {
 
 export function createVocabularyAuthSync({
   listVocabulary: loadVocabulary = listVocabulary,
+  now = () => Date.now(),
+  refreshStaleMs = VOCABULARY_LIFECYCLE_REFRESH_STALE_MS,
   store = vocabularyStateStore,
 }: {
   listVocabulary?: VocabularyListLoader;
+  now?: TimestampProvider;
+  refreshStaleMs?: number;
   store?: VocabularyStateStore;
 } = {}) {
   let requestSequence = 0;
+  const loadedAtByAccessToken = new Map<string, number>();
 
   async function loadVocabularyForSession(
     accessToken: string,
@@ -203,6 +210,7 @@ export function createVocabularyAuthSync({
     }
 
     if (result.status === "success") {
+      loadedAtByAccessToken.set(accessToken, now());
       store.setReady(accessToken, result.data);
       return "refreshed";
     }
@@ -243,6 +251,7 @@ export function createVocabularyAuthSync({
 
   function refresh(
     authState: AuthStateSnapshot,
+    { force = false }: { force?: boolean } = {},
   ): Promise<VocabularyRefreshResult> {
     if (authState.status !== "authenticated" || !authState.accessToken) {
       return Promise.resolve("ignored");
@@ -253,6 +262,19 @@ export function createVocabularyAuthSync({
     if (
       vocabularyState.accessToken === authState.accessToken &&
       vocabularyState.status === "loading"
+    ) {
+      return Promise.resolve("ignored");
+    }
+
+    if (
+      !force &&
+      !shouldRefreshVocabularyFromLifecycle({
+        isStudySurfaceActive: true,
+        lastLoadedAt: loadedAtByAccessToken.get(authState.accessToken),
+        now: now(),
+        staleMs: refreshStaleMs,
+        status: vocabularyState.status,
+      })
     ) {
       return Promise.resolve("ignored");
     }
@@ -289,7 +311,7 @@ export function createVocabularyAuthSync({
         }
       }
 
-      return refresh(authState);
+      return refresh(authState, { force: true });
     },
 
     sync(authState: AuthStateSnapshot) {
@@ -299,6 +321,7 @@ export function createVocabularyAuthSync({
 
       if (authState.status !== "authenticated" || !authState.accessToken) {
         requestSequence += 1;
+        loadedAtByAccessToken.clear();
         store.reset();
         return;
       }
@@ -533,25 +556,13 @@ export function useRefreshVocabularyForActiveStudySurface(
   refreshKey: unknown = isStudySurfaceActive,
 ) {
   const latestAuthStateRef = useRef(authState);
-  const lastBackgroundRefreshAtRef = useRef(0);
   latestAuthStateRef.current = authState;
 
   useEffect(() => {
-    const vocabularyState = vocabularyStateStore.getSnapshot();
-    const now = Date.now();
-
-    if (
-      !shouldRefreshActiveVocabulary({
-        isStudySurfaceActive,
-        lastRefreshAt: lastBackgroundRefreshAtRef.current,
-        now,
-        vocabularyStatus: vocabularyState.status,
-      })
-    ) {
+    if (!isStudySurfaceActive) {
       return;
     }
 
-    lastBackgroundRefreshAtRef.current = now;
     void vocabularyAuthSync.refresh(authState);
   }, [
     authState.accessToken,
@@ -566,21 +577,6 @@ export function useRefreshVocabularyForActiveStudySurface(
     }
 
     const refreshVocabulary = () => {
-      const now = Date.now();
-      const vocabularyState = vocabularyStateStore.getSnapshot();
-
-      if (
-        !shouldRefreshActiveVocabulary({
-          isStudySurfaceActive,
-          lastRefreshAt: lastBackgroundRefreshAtRef.current,
-          now,
-          vocabularyStatus: vocabularyState.status,
-        })
-      ) {
-        return;
-      }
-
-      lastBackgroundRefreshAtRef.current = now;
       void vocabularyAuthSync.refresh(latestAuthStateRef.current);
     };
     const refreshVisibleVocabulary = () => {
@@ -613,15 +609,12 @@ export function shouldRefreshActiveVocabulary({
   now: number;
   vocabularyStatus: VocabularyStateStatus;
 }) {
-  if (!isStudySurfaceActive) {
-    return false;
-  }
-
-  if (vocabularyStatus !== "ready") {
-    return true;
-  }
-
-  return now - lastRefreshAt >= VOCABULARY_BACKGROUND_REFRESH_STALE_MS;
+  return shouldRefreshVocabularyFromLifecycle({
+    isStudySurfaceActive,
+    lastLoadedAt: lastRefreshAt,
+    now,
+    status: vocabularyStatus,
+  });
 }
 
 export function shouldLoadVocabularyForSession(

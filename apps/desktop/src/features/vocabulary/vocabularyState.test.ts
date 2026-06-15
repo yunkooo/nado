@@ -256,6 +256,60 @@ describe("vocabulary state store", () => {
     });
   });
 
+  it("skips lifecycle refreshes while the ready vocabulary snapshot is fresh", async () => {
+    let currentTime = 1_000;
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => ({
+      data: [vocabularyItem],
+      status: "success" as const,
+    }));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      now: () => currentTime,
+      store,
+    });
+    const authState = createAuthenticatedAuthState();
+
+    sync.sync(authState);
+    await flushPromises();
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    await expect(sync.refresh(authState)).resolves.toBe("ignored");
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    currentTime += 60_001;
+
+    await expect(sync.refresh(authState)).resolves.toBe("refreshed");
+
+    expect(listVocabulary).toHaveBeenCalledTimes(2);
+  });
+
+  it("forces realtime refreshes even while the ready vocabulary snapshot is fresh", async () => {
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => ({
+      data: [vocabularyItem],
+      status: "success" as const,
+    }));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      now: () => 1_000,
+      store,
+    });
+    const authState = createAuthenticatedAuthState();
+
+    sync.sync(authState);
+    await flushPromises();
+    listVocabulary.mockClear();
+
+    await expect(sync.refreshAfterCurrentLoad(authState)).resolves.toBe(
+      "refreshed",
+    );
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps a ready snapshot when a background vocabulary refresh fails", async () => {
     const store = createVocabularyStateStore();
     const listVocabulary = vi.fn(async () => {
