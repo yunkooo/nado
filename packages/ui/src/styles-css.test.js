@@ -27,6 +27,37 @@ describe("analysis component styles", () => {
     );
   });
 
+  it("lets vocabulary popovers escape the result card instead of clipping them", () => {
+    const resultCardRule = readRule(".nado-result-card");
+    const sectionRule = readRule(".nado-section");
+    const wordPopoverRule = readRule(".nado-word-popover");
+    const activeWordPopoverRule = readRule(".nado-word-popover--open");
+
+    expect(resultCardRule).toContain("overflow: visible");
+    expect(resultCardRule).not.toContain("overflow: hidden");
+    expect(sectionRule).toContain("position: relative");
+    expect(wordPopoverRule).toContain("display: none");
+    expect(wordPopoverRule).not.toContain("display: grid");
+    expect(wordPopoverRule).toContain("position: fixed");
+    expect(wordPopoverRule).toContain(
+      "inline-size: var(--nado-word-popover-width",
+    );
+    expect(wordPopoverRule).toContain("left: var(--nado-word-popover-left");
+    expect(wordPopoverRule).toContain("top: var(--nado-word-popover-top");
+    expect(wordPopoverRule).toContain(
+      "max-block-size: var(--nado-word-popover-height",
+    );
+    expect(wordPopoverRule).toContain("overflow-y: auto");
+    expect(wordPopoverRule).toContain("z-index: 30");
+    expect(styles).not.toContain(
+      ".nado-word-token-wrap:hover .nado-word-popover",
+    );
+    expect(styles).not.toContain(
+      ".nado-word-token-wrap:focus-within .nado-word-popover",
+    );
+    expect(activeWordPopoverRule).toContain("display: grid");
+  });
+
   it("uses a strong active color for the composer send button", () => {
     const sendButtonRule = readRule(".nado-button--send");
 

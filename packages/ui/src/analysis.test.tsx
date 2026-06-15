@@ -8,6 +8,7 @@ import {
   ReadingChunkLine,
   type AnalysisResultData,
 } from "./index";
+import { getClampedWordPopoverPosition } from "./VocabularyWordToken";
 
 const noop = () => undefined;
 
@@ -256,6 +257,137 @@ describe("analysis design system components", () => {
     expect(markup).toContain("반복해서 이어가는 행동을 말합니다.");
     expect(markup).toContain('aria-label="habit 저장"');
     expect(markup).toContain("+ 저장");
+  });
+
+  it("clamps vocabulary popover geometry inside a narrow scrollport", () => {
+    const position = getClampedWordPopoverPosition({
+      popoverSize: {
+        height: 120,
+        width: 220,
+      },
+      scrollportRect: {
+        bottom: 500,
+        height: 400,
+        left: 100,
+        right: 260,
+        top: 100,
+        width: 160,
+      },
+      triggerRect: {
+        bottom: 150,
+        height: 24,
+        left: 108,
+        right: 132,
+        top: 126,
+        width: 24,
+      },
+      viewportSize: {
+        height: 600,
+        width: 360,
+      },
+    });
+
+    expect(position.left).toBe(112);
+    expect(position.width).toBe(136);
+    expect(position.left + position.width).toBeLessThanOrEqual(248);
+  });
+
+  it("keeps right-edge vocabulary popovers inside the scrollport", () => {
+    const position = getClampedWordPopoverPosition({
+      popoverSize: {
+        height: 120,
+        width: 220,
+      },
+      scrollportRect: {
+        bottom: 500,
+        height: 400,
+        left: 100,
+        right: 420,
+        top: 100,
+        width: 320,
+      },
+      triggerRect: {
+        bottom: 150,
+        height: 24,
+        left: 388,
+        right: 412,
+        top: 126,
+        width: 24,
+      },
+      viewportSize: {
+        height: 600,
+        width: 520,
+      },
+    });
+
+    expect(position.left).toBe(188);
+    expect(position.left + position.width).toBe(408);
+  });
+
+  it("flips vocabulary popovers below the word when the scrollport top would clip them", () => {
+    const position = getClampedWordPopoverPosition({
+      popoverSize: {
+        height: 120,
+        width: 220,
+      },
+      scrollportRect: {
+        bottom: 500,
+        height: 400,
+        left: 100,
+        right: 420,
+        top: 100,
+        width: 320,
+      },
+      triggerRect: {
+        bottom: 130,
+        height: 20,
+        left: 180,
+        right: 240,
+        top: 110,
+        width: 60,
+      },
+      viewportSize: {
+        height: 600,
+        width: 520,
+      },
+    });
+
+    expect(position.placement).toBe("bottom");
+    expect(position.top).toBe(134);
+  });
+
+  it("clamps tall vocabulary popovers to the available scrollport height", () => {
+    const position = getClampedWordPopoverPosition({
+      popoverSize: {
+        height: 260,
+        width: 220,
+      },
+      scrollportRect: {
+        bottom: 220,
+        height: 120,
+        left: 100,
+        right: 420,
+        top: 100,
+        width: 320,
+      },
+      triggerRect: {
+        bottom: 200,
+        height: 20,
+        left: 180,
+        right: 240,
+        top: 180,
+        width: 60,
+      },
+      viewportSize: {
+        height: 240,
+        width: 520,
+      },
+    });
+
+    expect(position).toMatchObject({
+      height: 96,
+      top: 112,
+    });
   });
 
   it("shows saved vocabulary popover actions as saved disabled buttons", () => {
