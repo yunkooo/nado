@@ -31,11 +31,17 @@ describe("analysis component styles", () => {
     const resultCardRule = readRule(".nado-result-card");
     const sectionRule = readRule(".nado-section");
     const wordPopoverRule = readRule(".nado-word-popover");
+    const activeWordPopoverRule = readRule(
+      ".nado-word-token-wrap:hover .nado-word-popover,\n.nado-word-token-wrap:focus-within .nado-word-popover,\n.nado-word-token-wrap--open .nado-word-popover",
+    );
 
     expect(resultCardRule).toContain("overflow: visible");
     expect(resultCardRule).not.toContain("overflow: hidden");
     expect(sectionRule).toContain("position: relative");
+    expect(wordPopoverRule).toContain("display: none");
+    expect(wordPopoverRule).not.toContain("display: grid");
     expect(wordPopoverRule).toContain("z-index: 30");
+    expect(activeWordPopoverRule).toContain("display: grid");
   });
 
   it("uses a strong active color for the composer send button", () => {

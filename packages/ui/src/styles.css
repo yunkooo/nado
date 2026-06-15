@@ -404,7 +404,7 @@
   bottom: calc(100% + 4px);
   box-shadow: 0 16px 42px rgba(32, 32, 29, 0.16);
   color: var(--nado-color-ink);
-  display: grid;
+  display: none;
   gap: 8px;
   left: 50%;
   min-width: 220px;
@@ -423,6 +423,7 @@
 .nado-word-token-wrap:hover .nado-word-popover,
 .nado-word-token-wrap:focus-within .nado-word-popover,
 .nado-word-token-wrap--open .nado-word-popover {
+  display: grid;
   opacity: 1;
   pointer-events: auto;
   transform: translate(-50%, 0);
