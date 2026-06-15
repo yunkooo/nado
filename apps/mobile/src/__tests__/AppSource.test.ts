@@ -97,6 +97,9 @@ describe("mobile App API wiring", () => {
     expect(mobileVocabularySource).toContain(
       "createVocabularyRealtimeRefreshScheduler",
     );
+    expect(mobileVocabularySource).toContain(
+      "return loadVocabulary(latestAuthState.accessToken",
+    );
     expect(mobileVocabularySource).toContain("realtimeRefreshSchedulerRef");
     expect(mobileVocabularySource).toContain("authState.session?.user.id");
     expect(mobileVocabularyRealtimeSource).toContain(

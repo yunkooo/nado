@@ -159,7 +159,7 @@ export function useMobileVocabulary(
       return;
     }
 
-    void loadVocabulary(latestAuthState.accessToken, {
+    return loadVocabulary(latestAuthState.accessToken, {
       preserveCurrentOnError: true,
       showLoading: false,
     });
