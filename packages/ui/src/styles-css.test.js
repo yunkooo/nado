@@ -27,6 +27,17 @@ describe("analysis component styles", () => {
     );
   });
 
+  it("lets vocabulary popovers escape the result card instead of clipping them", () => {
+    const resultCardRule = readRule(".nado-result-card");
+    const sectionRule = readRule(".nado-section");
+    const wordPopoverRule = readRule(".nado-word-popover");
+
+    expect(resultCardRule).toContain("overflow: visible");
+    expect(resultCardRule).not.toContain("overflow: hidden");
+    expect(sectionRule).toContain("position: relative");
+    expect(wordPopoverRule).toContain("z-index: 30");
+  });
+
   it("uses a strong active color for the composer send button", () => {
     const sendButtonRule = readRule(".nado-button--send");
 

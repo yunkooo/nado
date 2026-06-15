@@ -218,13 +218,14 @@
   border: 1px solid var(--nado-color-border);
   border-radius: var(--nado-radius-md);
   container: nado-result-card / inline-size;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .nado-result-card__header {
   align-items: center;
   background: #fbfbf8;
   border-bottom: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md) var(--nado-radius-md) 0 0;
   display: flex;
   gap: 14px;
   justify-content: space-between;
@@ -266,6 +267,7 @@
   display: grid;
   gap: 10px;
   padding: 22px;
+  position: relative;
 }
 
 .nado-section + .nado-section {
@@ -357,6 +359,13 @@
 .nado-word-token-wrap {
   display: inline-block;
   position: relative;
+  z-index: 1;
+}
+
+.nado-word-token-wrap:hover,
+.nado-word-token-wrap:focus-within,
+.nado-word-token-wrap--open {
+  z-index: 30;
 }
 
 .nado-word-token-wrap::after {
@@ -408,7 +417,7 @@
     opacity 120ms ease,
     transform 120ms ease;
   visibility: hidden;
-  z-index: 20;
+  z-index: 30;
 }
 
 .nado-word-token-wrap:hover .nado-word-popover,
