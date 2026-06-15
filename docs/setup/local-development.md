@@ -110,6 +110,8 @@ pnpm smoke:backend
 
 단어장 smoke 검증은 `NADO_SMOKE_VOCABULARY_TERM` 값으로 임시 단어를 저장한 뒤 삭제한다. 기본값은 `nado-smoke`다.
 
+단어장 Realtime broadcast까지 함께 검증하려면 `NADO_SMOKE_REALTIME=1`을 추가한다. 자세한 실행 방법과 web, desktop, mobile 크로스 플랫폼 수동 체크리스트는 [단어장 Realtime 동기화 검증](realtime-vocabulary-sync.md)을 참고한다.
+
 ## 앱 경계
 
 - `apps/web`: Next.js 웹 MVP의 첫 구현 대상

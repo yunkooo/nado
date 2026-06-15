@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { runBackendSmoke } from "./backendSmoke.js";
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -155,4 +155,126 @@ describe("runBackendSmoke", () => {
       "vocabulary:delete",
     ]);
   });
+
+  it("checks vocabulary realtime broadcasts when realtime smoke is enabled", async () => {
+    const realtime = createRealtimeClientStub();
+    const requests: Array<{
+      method: string;
+      url: string;
+    }> = [];
+
+    const result = await runBackendSmoke({
+      accessToken: "user-token",
+      baseUrl: "http://api.test",
+      createRealtimeClient: realtime.createClient,
+      realtime: true,
+      realtimeUserId: "user-id",
+      supabaseAnonKey: "anon-key",
+      supabaseUrl: "http://supabase.test",
+      fetch: async (input, init) => {
+        requests.push({
+          method: init?.method ?? "GET",
+          url: String(input),
+        });
+
+        if (String(input).endsWith("/health")) {
+          return jsonResponse({
+            service: "nado-api",
+            status: "ok",
+          });
+        }
+
+        if (init?.method === "POST") {
+          queueMicrotask(() => realtime.emit("INSERT"));
+
+          return jsonResponse({
+            item: {
+              id: "smoke-id",
+              term: "nado-smoke",
+            },
+          });
+        }
+
+        if (init?.method === "DELETE") {
+          queueMicrotask(() => realtime.emit("DELETE"));
+
+          return new Response(null, { status: 204 });
+        }
+
+        return jsonResponse({
+          items: [{ id: "smoke-id" }],
+        });
+      },
+    });
+
+    expect(realtime.client.realtime.setAuth).toHaveBeenCalledWith("user-token");
+    expect(realtime.client.channel).toHaveBeenCalledWith("vocabulary:user-id", {
+      config: { private: true },
+    });
+    expect(realtime.channel.on).toHaveBeenCalledWith(
+      "broadcast",
+      { event: "INSERT" },
+      expect.any(Function),
+    );
+    expect(realtime.channel.on).toHaveBeenCalledWith(
+      "broadcast",
+      { event: "UPDATE" },
+      expect.any(Function),
+    );
+    expect(realtime.channel.on).toHaveBeenCalledWith(
+      "broadcast",
+      { event: "DELETE" },
+      expect.any(Function),
+    );
+    expect(realtime.channel.subscribe).toHaveBeenCalledTimes(1);
+    expect(realtime.client.removeChannel).toHaveBeenCalledWith(
+      realtime.channel,
+    );
+    expect(requests.map((request) => request.method)).toEqual([
+      "GET",
+      "POST",
+      "GET",
+      "DELETE",
+    ]);
+    expect(result.checks).toEqual([
+      "health",
+      "vocabulary:save",
+      "vocabulary:realtime:save",
+      "vocabulary:list",
+      "vocabulary:delete",
+      "vocabulary:realtime:delete",
+    ]);
+  });
 });
+
+function createRealtimeClientStub() {
+  const handlers = new Map<string, () => void>();
+  const channel = {
+    on: vi.fn(
+      (type: "broadcast", filter: { event: string }, callback: () => void) => {
+        handlers.set(`${type}:${filter.event}`, callback);
+        return channel;
+      },
+    ),
+    subscribe: vi.fn((callback?: (status: string) => void) => {
+      callback?.("SUBSCRIBED");
+      return channel;
+    }),
+  };
+  const client = {
+    channel: vi.fn(() => channel),
+    realtime: {
+      setAuth: vi.fn(async () => undefined),
+    },
+    removeChannel: vi.fn(async () => "ok"),
+  };
+
+  return {
+    channel,
+    client,
+    createClient: vi.fn(() => client),
+    emit(event: string) {
+      handlers.get(`broadcast:${event}`)?.();
+    },
+  };
+}
