@@ -8,6 +8,7 @@ import { useVocabularyManualRefresh } from "../features/vocabulary/useVocabulary
 import {
   useRefreshVocabularyForActiveStudySurface,
   useSyncVocabularyForAuth,
+  useVocabularyRealtimeRefresh,
 } from "../features/vocabulary/vocabularyState";
 import { useAuthState } from "../auth/authState";
 
@@ -39,6 +40,7 @@ export function App() {
   const vocabularyRefresh = useVocabularyManualRefresh(authState);
 
   useSyncVocabularyForAuth(authState);
+  useVocabularyRealtimeRefresh(authState);
   useRefreshVocabularyForActiveStudySurface(
     authState,
     isStudySurfaceActive,

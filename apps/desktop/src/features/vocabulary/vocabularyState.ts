@@ -1,9 +1,12 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import {
+  createVocabularyRealtimeRefreshScheduler,
+  createVocabularyRealtimeTopic,
   getDistinctVocabularyNote,
   normalizeVocabularyTerm,
   type VocabularyItem,
 } from "@nado/shared";
+import { getSupabaseBrowserClient } from "../../auth/authClient";
 import type { AuthStateSnapshot } from "../../auth/authState";
 import {
   listVocabulary,
@@ -32,6 +35,28 @@ type VocabularyStateStore = ReturnType<typeof createVocabularyStateStore>;
 type VocabularyListLoader = (
   accessToken: string,
 ) => Promise<VocabularyListResult>;
+type VocabularyRealtimeEvent = "DELETE" | "INSERT" | "UPDATE";
+type VocabularyRealtimeChannel = {
+  on(
+    type: "broadcast",
+    filter: { event: VocabularyRealtimeEvent },
+    callback: () => void,
+  ): VocabularyRealtimeChannel;
+  subscribe(): VocabularyRealtimeChannel;
+};
+export type VocabularyRealtimeClient = {
+  channel(
+    topic: string,
+    options: { config: { private: true } },
+  ): VocabularyRealtimeChannel;
+  realtime: {
+    setAuth(token?: string | null): Promise<void> | void;
+  };
+  removeChannel(channel: VocabularyRealtimeChannel): Promise<unknown> | unknown;
+};
+export type VocabularyRealtimeSubscription = {
+  unsubscribe(): void;
+};
 
 const initialSnapshot: VocabularyStateSnapshot = {
   accessToken: null,
@@ -41,6 +66,11 @@ const initialSnapshot: VocabularyStateSnapshot = {
 };
 
 const VOCABULARY_BACKGROUND_REFRESH_STALE_MS = 60 * 1000;
+const vocabularyRealtimeEvents: VocabularyRealtimeEvent[] = [
+  "INSERT",
+  "UPDATE",
+  "DELETE",
+];
 
 export function createVocabularyStateStore() {
   const listeners = new Set<() => void>();
@@ -180,10 +210,64 @@ export function createVocabularyAuthSync({
     return "failed";
   }
 
+  function waitForCurrentLoadToSettle(accessToken: string) {
+    const currentState = store.getSnapshot();
+
+    if (
+      currentState.accessToken !== accessToken ||
+      currentState.status !== "loading"
+    ) {
+      return Promise.resolve(currentState.accessToken === accessToken);
+    }
+
+    return new Promise<boolean>((resolve) => {
+      const unsubscribe = store.subscribe(() => {
+        const nextState = store.getSnapshot();
+
+        if (
+          nextState.accessToken === accessToken &&
+          nextState.status === "loading"
+        ) {
+          return;
+        }
+
+        unsubscribe();
+        resolve(nextState.accessToken === accessToken);
+      });
+    });
+  }
+
+  function refresh(
+    authState: AuthStateSnapshot,
+  ): Promise<VocabularyRefreshResult> {
+    if (authState.status !== "authenticated" || !authState.accessToken) {
+      return Promise.resolve("ignored");
+    }
+
+    const vocabularyState = store.getSnapshot();
+
+    if (
+      vocabularyState.accessToken === authState.accessToken &&
+      vocabularyState.status === "loading"
+    ) {
+      return Promise.resolve("ignored");
+    }
+
+    return loadVocabularyForSession(authState.accessToken, {
+      showLoading:
+        vocabularyState.accessToken !== authState.accessToken ||
+        vocabularyState.status !== "ready",
+    });
+  }
+
   return {
-    refresh(authState: AuthStateSnapshot): Promise<VocabularyRefreshResult> {
+    refresh,
+
+    async refreshAfterCurrentLoad(
+      authState: AuthStateSnapshot,
+    ): Promise<VocabularyRefreshResult> {
       if (authState.status !== "authenticated" || !authState.accessToken) {
-        return Promise.resolve("ignored");
+        return "ignored";
       }
 
       const vocabularyState = store.getSnapshot();
@@ -192,14 +276,16 @@ export function createVocabularyAuthSync({
         vocabularyState.accessToken === authState.accessToken &&
         vocabularyState.status === "loading"
       ) {
-        return Promise.resolve("ignored");
+        const isSameSession = await waitForCurrentLoadToSettle(
+          authState.accessToken,
+        );
+
+        if (!isSameSession) {
+          return "ignored";
+        }
       }
 
-      return loadVocabularyForSession(authState.accessToken, {
-        showLoading:
-          vocabularyState.accessToken !== authState.accessToken ||
-          vocabularyState.status !== "ready",
-      });
+      return refresh(authState);
     },
 
     sync(authState: AuthStateSnapshot) {
@@ -232,10 +318,97 @@ export function refreshVocabularyForAuth(authState: AuthStateSnapshot) {
   return vocabularyAuthSync.refresh(authState);
 }
 
+export async function startVocabularyRealtimeSubscription({
+  authState,
+  client = getSupabaseBrowserClient() as VocabularyRealtimeClient | null,
+  debounceMs,
+  refresh = () => vocabularyAuthSync.refreshAfterCurrentLoad(authState),
+}: {
+  authState: AuthStateSnapshot;
+  client?: VocabularyRealtimeClient | null;
+  debounceMs?: number;
+  refresh?: () => Promise<unknown> | unknown;
+}): Promise<VocabularyRealtimeSubscription | null> {
+  if (authState.status !== "authenticated" || !authState.accessToken) {
+    return null;
+  }
+
+  const topic = createVocabularyRealtimeTopic(authState.session?.user.id);
+
+  if (!client || !topic) {
+    return null;
+  }
+
+  const refreshScheduler = createVocabularyRealtimeRefreshScheduler({
+    debounceMs,
+    refresh: () => Promise.resolve(refresh()).then(() => undefined),
+  });
+
+  await client.realtime.setAuth(authState.accessToken);
+
+  const channel = client.channel(topic, {
+    config: { private: true },
+  });
+  const scheduleRefresh = () => {
+    refreshScheduler.schedule();
+  };
+
+  for (const event of vocabularyRealtimeEvents) {
+    channel.on("broadcast", { event }, scheduleRefresh);
+  }
+
+  channel.subscribe();
+
+  let isUnsubscribed = false;
+
+  return {
+    unsubscribe() {
+      if (isUnsubscribed) {
+        return;
+      }
+
+      isUnsubscribed = true;
+      refreshScheduler.cancel();
+      void client.removeChannel(channel);
+    },
+  };
+}
+
 export function useSyncVocabularyForAuth(authState: AuthStateSnapshot) {
   useEffect(() => {
     vocabularyAuthSync.sync(authState);
   }, [authState.accessToken, authState.status]);
+}
+
+export function useVocabularyRealtimeRefresh(authState: AuthStateSnapshot) {
+  const latestAuthStateRef = useRef(authState);
+  latestAuthStateRef.current = authState;
+
+  useEffect(() => {
+    let isActive = true;
+    let subscription: VocabularyRealtimeSubscription | null = null;
+
+    void startVocabularyRealtimeSubscription({
+      authState,
+      refresh: () =>
+        vocabularyAuthSync.refreshAfterCurrentLoad(latestAuthStateRef.current),
+    }).then(
+      (nextSubscription) => {
+        if (!isActive) {
+          nextSubscription?.unsubscribe();
+          return;
+        }
+
+        subscription = nextSubscription;
+      },
+      () => undefined,
+    );
+
+    return () => {
+      isActive = false;
+      subscription?.unsubscribe();
+    };
+  }, [authState.accessToken, authState.session?.user.id, authState.status]);
 }
 
 export function useRefreshVocabularyForActiveStudySurface(
