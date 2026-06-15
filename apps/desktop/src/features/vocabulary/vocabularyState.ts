@@ -4,6 +4,7 @@ import {
   createVocabularyRealtimeTopic,
   getDistinctVocabularyNote,
   normalizeVocabularyTerm,
+  type VocabularyRealtimeRefreshScheduler,
   type VocabularyItem,
 } from "@nado/shared";
 import { getSupabaseBrowserClient } from "../../auth/authClient";
@@ -54,6 +55,9 @@ export type VocabularyRealtimeClient = {
   };
   removeChannel(channel: VocabularyRealtimeChannel): Promise<unknown> | unknown;
 };
+export type VocabularyRealtimeRefreshSchedulerFactory = (
+  refresh: () => Promise<void> | void,
+) => VocabularyRealtimeRefreshScheduler;
 export type VocabularyRealtimeSubscription = {
   unsubscribe(): void;
 };
@@ -313,6 +317,7 @@ export function createVocabularyAuthSync({
 }
 
 const vocabularyAuthSync = createVocabularyAuthSync();
+const vocabularyRealtimeSync = createVocabularyRealtimeSync();
 
 export function refreshVocabularyForAuth(authState: AuthStateSnapshot) {
   return vocabularyAuthSync.refresh(authState);
@@ -349,8 +354,11 @@ export async function startVocabularyRealtimeSubscription({
   const channel = client.channel(topic, {
     config: { private: true },
   });
+  let isUnsubscribed = false;
   const scheduleRefresh = () => {
-    refreshScheduler.schedule();
+    if (!isUnsubscribed) {
+      refreshScheduler.schedule();
+    }
   };
 
   for (const event of vocabularyRealtimeEvents) {
@@ -358,8 +366,6 @@ export async function startVocabularyRealtimeSubscription({
   }
 
   channel.subscribe();
-
-  let isUnsubscribed = false;
 
   return {
     unsubscribe() {
@@ -374,42 +380,152 @@ export async function startVocabularyRealtimeSubscription({
   };
 }
 
+export function createVocabularyRealtimeSync({
+  createRefreshScheduler = (refresh) =>
+    createVocabularyRealtimeRefreshScheduler({ refresh }),
+  getClient = () =>
+    getSupabaseBrowserClient() as VocabularyRealtimeClient | null,
+  refresh = (authState) =>
+    vocabularyAuthSync.refreshAfterCurrentLoad(authState),
+}: {
+  createRefreshScheduler?: VocabularyRealtimeRefreshSchedulerFactory;
+  getClient?: () => VocabularyRealtimeClient | null;
+  refresh?: (authState: AuthStateSnapshot) => Promise<unknown> | unknown;
+} = {}) {
+  let activeAccessToken: string | null = null;
+  let activeChannel: VocabularyRealtimeChannel | null = null;
+  let activeClient: VocabularyRealtimeClient | null = null;
+  let activeScheduler: VocabularyRealtimeRefreshScheduler | null = null;
+  let activeTopic: string | null = null;
+  let channelRemovalPromise: Promise<unknown> = Promise.resolve();
+  let subscriptionSequence = 0;
+
+  const removeActiveChannel = () => {
+    activeScheduler?.cancel();
+
+    const channel = activeChannel;
+    const client = activeClient;
+
+    activeAccessToken = null;
+    activeChannel = null;
+    activeClient = null;
+    activeScheduler = null;
+    activeTopic = null;
+
+    if (channel && client) {
+      channelRemovalPromise = Promise.resolve(
+        client.removeChannel(channel),
+      ).catch(() => undefined);
+    }
+
+    return channelRemovalPromise;
+  };
+
+  const cleanup = () => {
+    subscriptionSequence += 1;
+    return removeActiveChannel();
+  };
+
+  return {
+    cleanup,
+
+    sync(authState: AuthStateSnapshot) {
+      const topic = createVocabularyRealtimeTopic(authState.session?.user.id);
+
+      if (
+        authState.status !== "authenticated" ||
+        !authState.accessToken ||
+        !topic
+      ) {
+        cleanup();
+        return;
+      }
+
+      if (
+        activeTopic === topic &&
+        activeAccessToken === authState.accessToken &&
+        activeChannel
+      ) {
+        return;
+      }
+
+      const channelRemoval = cleanup();
+      const client = getClient();
+
+      if (!client) {
+        return;
+      }
+
+      subscriptionSequence += 1;
+      const requestId = subscriptionSequence;
+      const scheduler = createRefreshScheduler(() =>
+        Promise.resolve(refresh(authState)).then(() => undefined),
+      );
+
+      void channelRemoval
+        .then(async () => {
+          if (requestId !== subscriptionSequence) {
+            scheduler.cancel();
+            return;
+          }
+
+          await client.realtime.setAuth(authState.accessToken);
+
+          if (requestId !== subscriptionSequence) {
+            scheduler.cancel();
+            return;
+          }
+
+          const channel = client.channel(topic, {
+            config: { private: true },
+          });
+          const isCurrentSubscription = () =>
+            requestId === subscriptionSequence &&
+            activeAccessToken === authState.accessToken &&
+            activeChannel === channel &&
+            activeScheduler === scheduler &&
+            activeTopic === topic;
+
+          for (const event of vocabularyRealtimeEvents) {
+            channel.on("broadcast", { event }, () => {
+              if (isCurrentSubscription()) {
+                scheduler.schedule();
+              }
+            });
+          }
+
+          activeAccessToken = authState.accessToken;
+          activeChannel = channel;
+          activeClient = client;
+          activeScheduler = scheduler;
+          activeTopic = topic;
+
+          channel.subscribe();
+        })
+        .catch(() => {
+          scheduler.cancel();
+        });
+    },
+  };
+}
+
 export function useSyncVocabularyForAuth(authState: AuthStateSnapshot) {
   useEffect(() => {
     vocabularyAuthSync.sync(authState);
   }, [authState.accessToken, authState.status]);
 }
 
-export function useVocabularyRealtimeRefresh(authState: AuthStateSnapshot) {
-  const latestAuthStateRef = useRef(authState);
-  latestAuthStateRef.current = authState;
-
+export function useSyncVocabularyRealtimeForAuth(authState: AuthStateSnapshot) {
   useEffect(() => {
-    let isActive = true;
-    let subscription: VocabularyRealtimeSubscription | null = null;
-
-    void startVocabularyRealtimeSubscription({
-      authState,
-      refresh: () =>
-        vocabularyAuthSync.refreshAfterCurrentLoad(latestAuthStateRef.current),
-    }).then(
-      (nextSubscription) => {
-        if (!isActive) {
-          nextSubscription?.unsubscribe();
-          return;
-        }
-
-        subscription = nextSubscription;
-      },
-      () => undefined,
-    );
+    vocabularyRealtimeSync.sync(authState);
 
     return () => {
-      isActive = false;
-      subscription?.unsubscribe();
+      void vocabularyRealtimeSync.cleanup();
     };
   }, [authState.accessToken, authState.session?.user.id, authState.status]);
 }
+
+export const useVocabularyRealtimeRefresh = useSyncVocabularyRealtimeForAuth;
 
 export function useRefreshVocabularyForActiveStudySurface(
   authState: AuthStateSnapshot,
