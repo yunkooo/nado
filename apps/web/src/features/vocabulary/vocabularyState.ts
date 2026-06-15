@@ -66,7 +66,9 @@ export type VocabularyRealtimeRefreshSchedulerFactory = (
 
 type VocabularyRealtimeEvent = "DELETE" | "INSERT" | "UPDATE";
 type VocabularyRealtimeClientProvider = () => VocabularyRealtimeClient | null;
-type VocabularyRealtimeRefresher = (authState: AuthStateSnapshot) => void;
+type VocabularyRealtimeRefresher = (
+  authState: AuthStateSnapshot,
+) => Promise<void> | void;
 
 const VOCABULARY_REFRESH_STALE_MS = 60_000;
 const VOCABULARY_REALTIME_EVENTS: VocabularyRealtimeEvent[] = [
@@ -186,6 +188,7 @@ export function createVocabularyAuthSync({
   store?: VocabularyStateStore;
 } = {}) {
   let requestSequence = 0;
+  let activeLoadPromise: Promise<void> | null = null;
   let pendingForcedRefreshAccessToken: string | null = null;
   const loadedAtByAccessToken = new Map<string, number>();
 
@@ -195,7 +198,7 @@ export function createVocabularyAuthSync({
       refreshAccessToken = false,
       showLoading = true,
     }: { refreshAccessToken?: boolean; showLoading?: boolean } = {},
-  ) {
+  ): Promise<void> {
     requestSequence += 1;
     const requestId = requestSequence;
 
@@ -240,15 +243,31 @@ export function createVocabularyAuthSync({
     if (result.status === "success") {
       loadedAtByAccessToken.set(currentAccessToken, now());
       store.setReady(currentAccessToken, result.data);
-      runPendingForcedRefresh(accessToken, currentAccessToken);
-      return;
+      return runPendingForcedRefresh(accessToken, currentAccessToken);
     }
 
     if (showLoading) {
       store.setError(currentAccessToken, result.message);
     }
 
-    runPendingForcedRefresh(accessToken, currentAccessToken);
+    return runPendingForcedRefresh(accessToken, currentAccessToken);
+  }
+
+  function startVocabularyLoad(
+    accessToken: string,
+    options?: Parameters<typeof loadVocabularyForSession>[1],
+  ): Promise<void> {
+    const loadPromise: Promise<void> = loadVocabularyForSession(
+      accessToken,
+      options,
+    ).finally(() => {
+      if (activeLoadPromise === loadPromise) {
+        activeLoadPromise = null;
+      }
+    });
+
+    activeLoadPromise = loadPromise;
+    return loadPromise;
   }
 
   function queuePendingForcedRefresh(accessToken: string) {
@@ -258,7 +277,7 @@ export function createVocabularyAuthSync({
   function runPendingForcedRefresh(
     accessToken: string,
     currentAccessToken: string,
-  ) {
+  ): Promise<void> | undefined {
     if (
       pendingForcedRefreshAccessToken !== accessToken &&
       pendingForcedRefreshAccessToken !== currentAccessToken
@@ -268,7 +287,7 @@ export function createVocabularyAuthSync({
 
     pendingForcedRefreshAccessToken = null;
 
-    void loadVocabularyForSession(currentAccessToken, {
+    return startVocabularyLoad(currentAccessToken, {
       refreshAccessToken: true,
       showLoading: false,
     });
@@ -277,7 +296,7 @@ export function createVocabularyAuthSync({
   function refreshVocabulary(
     authState: AuthStateSnapshot,
     { force = false }: { force?: boolean } = {},
-  ) {
+  ): Promise<void> | undefined {
     if (authState.status !== "authenticated" || !authState.accessToken) {
       return;
     }
@@ -292,7 +311,7 @@ export function createVocabularyAuthSync({
         queuePendingForcedRefresh(authState.accessToken);
       }
 
-      return;
+      return activeLoadPromise ?? undefined;
     }
 
     if (
@@ -308,7 +327,7 @@ export function createVocabularyAuthSync({
       return;
     }
 
-    void loadVocabularyForSession(authState.accessToken, {
+    return startVocabularyLoad(authState.accessToken, {
       refreshAccessToken: true,
       showLoading:
         vocabularyState.accessToken !== authState.accessToken ||
@@ -318,11 +337,11 @@ export function createVocabularyAuthSync({
 
   return {
     refresh(authState: AuthStateSnapshot) {
-      refreshVocabulary(authState);
+      return refreshVocabulary(authState);
     },
 
     refreshNow(authState: AuthStateSnapshot) {
-      refreshVocabulary(authState, { force: true });
+      return refreshVocabulary(authState, { force: true });
     },
 
     sync(authState: AuthStateSnapshot) {
@@ -345,7 +364,7 @@ export function createVocabularyAuthSync({
         return;
       }
 
-      void loadVocabularyForSession(authState.accessToken);
+      void startVocabularyLoad(authState.accessToken);
     },
   };
 }

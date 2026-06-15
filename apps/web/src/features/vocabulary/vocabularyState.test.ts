@@ -523,6 +523,52 @@ describe("vocabulary realtime sync", () => {
     expect(refresh).toHaveBeenCalledWith(authState);
   });
 
+  it("returns the forced vocabulary refresh promise to the realtime scheduler", async () => {
+    const store = createVocabularyStateStore();
+    const request = createDeferred<VocabularyListResult>();
+    const listVocabulary = vi.fn(() => request.promise);
+    const authSync = createVocabularyAuthSync({
+      getAccessToken: async () => "session-token",
+      listVocabulary,
+      store,
+    });
+    const { client } = createFakeRealtimeClient();
+    const scheduler = createFakeScheduler();
+    const sync = createVocabularyRealtimeSync({
+      createRefreshScheduler: scheduler.factory,
+      getClient: () => client,
+      refresh: (authState) => authSync.refreshNow(authState),
+    });
+    const authState = createAuthenticatedAuthState("session-token", "user-id");
+    store.setReady("session-token", [vocabularyItem]);
+
+    sync.sync(authState);
+    await flushPromises();
+
+    const refreshPromise = scheduler.refresh?.();
+
+    if (!refreshPromise) {
+      throw new Error("Expected realtime refresh to return the load promise.");
+    }
+
+    let didSettle = false;
+    void refreshPromise.then(() => {
+      didSettle = true;
+    });
+
+    await flushPromises();
+
+    expect(didSettle).toBe(false);
+
+    request.resolve({
+      data: [vocabularyItem],
+      status: "success",
+    });
+    await refreshPromise;
+
+    expect(didSettle).toBe(true);
+  });
+
   it("removes the active realtime channel when the session changes", async () => {
     const { client, channels } = createFakeRealtimeClient();
     const scheduler = createFakeScheduler();
