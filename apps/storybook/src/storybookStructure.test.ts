@@ -243,7 +243,7 @@ export const OtherStory: Story = {
     expect(prTemplateSource).toContain("pnpm --filter @nado/storybook build");
     expect(prWorkflowSource).toContain("Storybook 검증 기준");
     expect(prWorkflowSource).toContain(
-      "CI에는 아직 Storybook build를 자동 추가하지 않는다",
+      "Storybook 전용 build는 아직 별도 필수 check로 분리하지 않았으므로",
     );
     expect(prWorkflowSource).toContain("pnpm --filter @nado/ui test");
     expect(prWorkflowSource).toContain("pnpm --filter @nado/mobile test");

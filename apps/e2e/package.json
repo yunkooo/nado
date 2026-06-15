@@ -1,0 +1,15 @@
+{
+  "name": "@nado/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "pnpm --filter @nado/shared build && playwright test",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "prettier --check playwright.config.ts tests tsconfig.json package.json"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "typescript": "^6.0.3"
+  }
+}

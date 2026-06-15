@@ -12,6 +12,8 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "lint": "turbo lint",
+    "e2e": "pnpm --filter @nado/e2e e2e",
+    "e2e:install": "pnpm --filter @nado/e2e exec playwright install --with-deps chromium",
     "format:check": "prettier --check .",
     "smoke:backend": "pnpm --filter @nado/api smoke:backend",
     "supabase:start": "pnpm exec supabase start",
