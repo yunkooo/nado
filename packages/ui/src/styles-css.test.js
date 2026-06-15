@@ -40,6 +40,12 @@ describe("analysis component styles", () => {
     expect(sectionRule).toContain("position: relative");
     expect(wordPopoverRule).toContain("display: none");
     expect(wordPopoverRule).not.toContain("display: grid");
+    expect(wordPopoverRule).toContain("position: fixed");
+    expect(wordPopoverRule).toContain(
+      "inline-size: var(--nado-word-popover-width",
+    );
+    expect(wordPopoverRule).toContain("left: var(--nado-word-popover-left");
+    expect(wordPopoverRule).toContain("top: var(--nado-word-popover-top");
     expect(wordPopoverRule).toContain("z-index: 30");
     expect(activeWordPopoverRule).toContain("display: grid");
   });

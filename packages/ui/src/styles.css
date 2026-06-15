@@ -401,18 +401,19 @@
   background: var(--nado-color-surface);
   border: 1px solid #d8d8d2;
   border-radius: 7px;
-  bottom: calc(100% + 4px);
   box-shadow: 0 16px 42px rgba(32, 32, 29, 0.16);
   color: var(--nado-color-ink);
   display: none;
   gap: 8px;
-  left: 50%;
-  min-width: 220px;
+  inline-size: var(--nado-word-popover-width, min(220px, calc(100vw - 24px)));
+  left: var(--nado-word-popover-left, 12px);
+  min-width: 0;
   opacity: 0;
   padding: 12px;
   pointer-events: none;
-  position: absolute;
-  transform: translate(-50%, 4px);
+  position: fixed;
+  top: var(--nado-word-popover-top, 12px);
+  transform: translateY(4px);
   transition:
     opacity 120ms ease,
     transform 120ms ease;
@@ -426,7 +427,7 @@
   display: grid;
   opacity: 1;
   pointer-events: auto;
-  transform: translate(-50%, 0);
+  transform: translateY(0);
   visibility: visible;
 }
 

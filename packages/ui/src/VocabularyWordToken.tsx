@@ -1,8 +1,54 @@
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type {
   VocabularyItem,
   VocabularySuggestion,
   VocabularySuggestionSaveState,
 } from "./analysisTypes";
+
+const WORD_POPOVER_MARGIN = 12;
+const WORD_POPOVER_GAP = 4;
+
+type RectLike = {
+  bottom: number;
+  height: number;
+  left: number;
+  right: number;
+  top: number;
+  width: number;
+};
+
+type SizeLike = {
+  height: number;
+  width: number;
+};
+
+type ViewportSize = {
+  height: number;
+  width: number;
+};
+
+export type WordPopoverPlacement = "bottom" | "top";
+
+export type WordPopoverPosition = {
+  left: number;
+  placement: WordPopoverPlacement;
+  top: number;
+  width: number;
+};
+
+export type WordPopoverPositionOptions = {
+  popoverSize: SizeLike;
+  scrollportRect: RectLike;
+  triggerRect: RectLike;
+  viewportSize: ViewportSize;
+};
 
 export interface VocabularyWordTokenProps {
   getVocabularySuggestionState?: (
@@ -23,20 +69,112 @@ export function VocabularyWordToken({
 }: VocabularyWordTokenProps) {
   const state = getVocabularySuggestionState?.(item) ?? "idle";
   const canSave = Boolean(onSaveVocabularySuggestion);
+  const [isHovering, setIsHovering] = useState(false);
+  const [hasFocusWithin, setHasFocusWithin] = useState(false);
+  const [popoverPosition, setPopoverPosition] =
+    useState<WordPopoverPosition | null>(null);
+  const tokenRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLSpanElement>(null);
+  const isPopoverOpen = isOpen || isHovering || hasFocusWithin;
+
+  const updatePopoverPosition = useCallback(() => {
+    if (!isPopoverOpen || typeof window === "undefined") {
+      return;
+    }
+
+    const token = tokenRef.current;
+    const popover = popoverRef.current;
+
+    if (!token || !popover) {
+      return;
+    }
+
+    const nextPosition = getClampedWordPopoverPosition({
+      popoverSize: toRectLike(popover.getBoundingClientRect()),
+      scrollportRect: getNearestScrollportRect(token),
+      triggerRect: toRectLike(token.getBoundingClientRect()),
+      viewportSize: {
+        height: window.innerHeight,
+        width: window.innerWidth,
+      },
+    });
+
+    setPopoverPosition((currentPosition) =>
+      areWordPopoverPositionsEqual(currentPosition, nextPosition)
+        ? currentPosition
+        : nextPosition,
+    );
+  }, [isPopoverOpen]);
+
+  useIsomorphicLayoutEffect(() => {
+    if (!isPopoverOpen) {
+      setPopoverPosition(null);
+      return;
+    }
+
+    updatePopoverPosition();
+  }, [
+    canSave,
+    isPopoverOpen,
+    item.contextMeaning,
+    item.meaning,
+    item.partOfSpeech,
+    item.term,
+    state,
+    updatePopoverPosition,
+  ]);
+
+  useIsomorphicLayoutEffect(() => {
+    if (!isPopoverOpen || typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener("resize", updatePopoverPosition);
+    window.addEventListener("scroll", updatePopoverPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePopoverPosition);
+      window.removeEventListener("scroll", updatePopoverPosition, true);
+    };
+  }, [isPopoverOpen, updatePopoverPosition]);
+
+  const popoverStyle = createWordPopoverStyle(popoverPosition);
 
   return (
     <span
       className={[
         "nado-word-token-wrap",
-        isOpen ? "nado-word-token-wrap--open" : undefined,
+        isPopoverOpen ? "nado-word-token-wrap--open" : undefined,
       ]
         .filter(Boolean)
         .join(" ")}
+      onBlurCapture={(event) => {
+        const nextTarget = event.relatedTarget;
+
+        if (
+          nextTarget instanceof Node &&
+          event.currentTarget.contains(nextTarget)
+        ) {
+          return;
+        }
+
+        setHasFocusWithin(false);
+      }}
+      onFocusCapture={() => {
+        setHasFocusWithin(true);
+      }}
+      onPointerEnter={() => {
+        setIsHovering(true);
+      }}
+      onPointerLeave={() => {
+        setIsHovering(false);
+      }}
     >
       <button
-        aria-expanded={isOpen ? true : undefined}
+        aria-expanded={isPopoverOpen ? true : undefined}
         aria-label={`${text} 뜻과 저장 액션 보기`}
         className="nado-word-token"
+        ref={tokenRef}
         type="button"
       >
         {text}
@@ -44,7 +182,10 @@ export function VocabularyWordToken({
       <span
         aria-label={`${item.term} 뜻과 저장 액션`}
         className="nado-word-popover"
+        data-placement={popoverPosition?.placement ?? "top"}
+        ref={popoverRef}
         role="group"
+        style={popoverStyle}
       >
         <span className="nado-word-popover__header">
           <strong>{item.term}</strong>
@@ -67,6 +208,141 @@ export function VocabularyWordToken({
         ) : null}
       </span>
     </span>
+  );
+}
+
+export function getClampedWordPopoverPosition({
+  popoverSize,
+  scrollportRect,
+  triggerRect,
+  viewportSize,
+}: WordPopoverPositionOptions): WordPopoverPosition {
+  const leftBoundary = Math.max(scrollportRect.left, 0) + WORD_POPOVER_MARGIN;
+  const rightBoundary =
+    Math.min(scrollportRect.right, viewportSize.width) - WORD_POPOVER_MARGIN;
+  const topBoundary = Math.max(scrollportRect.top, 0) + WORD_POPOVER_MARGIN;
+  const bottomBoundary =
+    Math.min(scrollportRect.bottom, viewportSize.height) - WORD_POPOVER_MARGIN;
+  const availableWidth = Math.max(0, rightBoundary - leftBoundary);
+  const width = Math.min(popoverSize.width, availableWidth);
+  const triggerCenter = triggerRect.left + triggerRect.width / 2;
+  const maxLeft = Math.max(leftBoundary, rightBoundary - width);
+  const left = clamp(triggerCenter - width / 2, leftBoundary, maxLeft);
+  const availableHeight = Math.max(0, bottomBoundary - topBoundary);
+  const height = Math.min(popoverSize.height, availableHeight);
+  const topPlacementTop = triggerRect.top - WORD_POPOVER_GAP - height;
+  const bottomPlacementTop = triggerRect.bottom + WORD_POPOVER_GAP;
+  const shouldFlipToBottom =
+    topPlacementTop < topBoundary &&
+    bottomPlacementTop + height <= bottomBoundary;
+
+  if (shouldFlipToBottom) {
+    return {
+      left,
+      placement: "bottom",
+      top: bottomPlacementTop,
+      width,
+    };
+  }
+
+  return {
+    left,
+    placement: "top",
+    top: clamp(
+      topPlacementTop,
+      topBoundary,
+      Math.max(topBoundary, bottomBoundary - height),
+    ),
+    width,
+  };
+}
+
+type WordPopoverStyle = CSSProperties & {
+  "--nado-word-popover-left"?: string;
+  "--nado-word-popover-top"?: string;
+  "--nado-word-popover-width"?: string;
+};
+
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+function createWordPopoverStyle(
+  position: WordPopoverPosition | null,
+): WordPopoverStyle | undefined {
+  if (!position) {
+    return undefined;
+  }
+
+  return {
+    "--nado-word-popover-left": `${Math.round(position.left)}px`,
+    "--nado-word-popover-top": `${Math.round(position.top)}px`,
+    "--nado-word-popover-width": `${Math.round(position.width)}px`,
+  };
+}
+
+function getNearestScrollportRect(element: HTMLElement): RectLike {
+  let currentElement = element.parentElement;
+
+  while (currentElement) {
+    const style = window.getComputedStyle(currentElement);
+
+    if (
+      isScrollableOverflow(style.overflowX) ||
+      isScrollableOverflow(style.overflowY)
+    ) {
+      return toRectLike(currentElement.getBoundingClientRect());
+    }
+
+    currentElement = currentElement.parentElement;
+  }
+
+  return {
+    bottom: window.innerHeight,
+    height: window.innerHeight,
+    left: 0,
+    right: window.innerWidth,
+    top: 0,
+    width: window.innerWidth,
+  };
+}
+
+function isScrollableOverflow(value: string) {
+  return (
+    value === "auto" ||
+    value === "scroll" ||
+    value === "hidden" ||
+    value === "clip"
+  );
+}
+
+function toRectLike(rect: DOMRect): RectLike {
+  return {
+    bottom: rect.bottom,
+    height: rect.height,
+    left: rect.left,
+    right: rect.right,
+    top: rect.top,
+    width: rect.width,
+  };
+}
+
+function clamp(value: number, min: number, max: number) {
+  if (max < min) {
+    return min;
+  }
+
+  return Math.min(Math.max(value, min), max);
+}
+
+function areWordPopoverPositionsEqual(
+  currentPosition: WordPopoverPosition | null,
+  nextPosition: WordPopoverPosition,
+) {
+  return (
+    currentPosition?.left === nextPosition.left &&
+    currentPosition.placement === nextPosition.placement &&
+    currentPosition.top === nextPosition.top &&
+    currentPosition.width === nextPosition.width
   );
 }
 
