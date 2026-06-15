@@ -421,8 +421,6 @@
   z-index: 30;
 }
 
-.nado-word-token-wrap:hover .nado-word-popover,
-.nado-word-token-wrap:focus-within .nado-word-popover,
 .nado-word-token-wrap--open .nado-word-popover {
   display: grid;
   opacity: 1;

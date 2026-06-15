@@ -32,7 +32,7 @@ describe("analysis component styles", () => {
     const sectionRule = readRule(".nado-section");
     const wordPopoverRule = readRule(".nado-word-popover");
     const activeWordPopoverRule = readRule(
-      ".nado-word-token-wrap:hover .nado-word-popover,\n.nado-word-token-wrap:focus-within .nado-word-popover,\n.nado-word-token-wrap--open .nado-word-popover",
+      ".nado-word-token-wrap--open .nado-word-popover",
     );
 
     expect(resultCardRule).toContain("overflow: visible");
@@ -47,6 +47,12 @@ describe("analysis component styles", () => {
     expect(wordPopoverRule).toContain("left: var(--nado-word-popover-left");
     expect(wordPopoverRule).toContain("top: var(--nado-word-popover-top");
     expect(wordPopoverRule).toContain("z-index: 30");
+    expect(styles).not.toContain(
+      ".nado-word-token-wrap:hover .nado-word-popover",
+    );
+    expect(styles).not.toContain(
+      ".nado-word-token-wrap:focus-within .nado-word-popover",
+    );
     expect(activeWordPopoverRule).toContain("display: grid");
   });
 
