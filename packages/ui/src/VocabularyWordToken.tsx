@@ -1,5 +1,6 @@
 import {
   type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -74,6 +75,7 @@ export function VocabularyWordToken({
   const canSave = Boolean(onSaveVocabularySuggestion);
   const [isHovering, setIsHovering] = useState(false);
   const [hasFocusWithin, setHasFocusWithin] = useState(false);
+  const [isTapOpen, setIsTapOpen] = useState(false);
   const [popoverPosition, setPopoverPosition] =
     useState<WordPopoverPosition | null>(null);
   const [popoverRoot, setPopoverRoot] = useState<HTMLElement | null>(null);
@@ -81,7 +83,7 @@ export function VocabularyWordToken({
   const isPointerFocusRef = useRef(false);
   const tokenRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLSpanElement>(null);
-  const isPopoverOpen = isOpen || isHovering || hasFocusWithin;
+  const isPopoverOpen = isOpen || isHovering || hasFocusWithin || isTapOpen;
 
   const clearHoverCloseDelay = useCallback(() => {
     if (hoverCloseDelayRef.current === null) {
@@ -106,14 +108,41 @@ export function VocabularyWordToken({
     }, WORD_POPOVER_CLOSE_DELAY_MS);
   }, [clearHoverCloseDelay]);
 
-  const trackPointerFocus = useCallback(() => {
-    isPointerFocusRef.current = true;
-    setHasFocusWithin(false);
-
-    window.setTimeout(() => {
-      isPointerFocusRef.current = false;
-    }, 0);
+  const closeTapOpen = useCallback(() => {
+    setIsTapOpen(false);
   }, []);
+
+  const openTap = useCallback(() => {
+    clearHoverCloseDelay();
+    setIsTapOpen(true);
+  }, [clearHoverCloseDelay]);
+
+  const trackPointerFocus = useCallback(
+    (event: ReactPointerEvent) => {
+      if (event.pointerType === "touch") {
+        openTap();
+        return;
+      }
+
+      if (!shouldSuppressFocusFromPointer(event.pointerType)) {
+        return;
+      }
+
+      closeTapOpen();
+      isPointerFocusRef.current = true;
+      setHasFocusWithin(false);
+
+      window.setTimeout(() => {
+        isPointerFocusRef.current = false;
+      }, 0);
+    },
+    [closeTapOpen, openTap],
+  );
+
+  const closePopoverOutsideTap = useCallback(() => {
+    closeTapOpen();
+    setHasFocusWithin(false);
+  }, [closeTapOpen]);
 
   const openFocusFromKeyboard = useCallback(() => {
     if (isPointerFocusRef.current) {
@@ -174,6 +203,37 @@ export function VocabularyWordToken({
     },
     [],
   );
+
+  useEffect(() => {
+    if (!isTapOpen || typeof document === "undefined") {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (containsPopoverFocusTarget(event.target)) {
+        return;
+      }
+
+      closePopoverOutsideTap();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      closePopoverOutsideTap();
+      tokenRef.current?.blur();
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closePopoverOutsideTap, containsPopoverFocusTarget, isTapOpen]);
 
   useIsomorphicLayoutEffect(() => {
     if (!isPopoverOpen) {
@@ -397,6 +457,10 @@ function getWordPopoverSize(popover: HTMLElement): SizeLike {
     height: Math.max(rect.height, popover.scrollHeight),
     width: WORD_POPOVER_WIDTH,
   };
+}
+
+function shouldSuppressFocusFromPointer(pointerType: string) {
+  return pointerType === "mouse" || pointerType === "pen";
 }
 
 function isScrollableOverflow(value: string) {

@@ -27,4 +27,13 @@ describe("VocabularyWordToken interaction source", () => {
     expect(source).toContain("openFocusFromKeyboard");
     expect(source).toContain("onPointerDownCapture");
   });
+
+  it("keeps touch tap popovers open until the user leaves that popover", () => {
+    expect(source).toContain("isTapOpen");
+    expect(source).toContain("openTap");
+    expect(source).toContain("closeTapOpen");
+    expect(source).toContain(
+      "shouldSuppressFocusFromPointer(event.pointerType)",
+    );
+  });
 });
