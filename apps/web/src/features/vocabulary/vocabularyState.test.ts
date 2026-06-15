@@ -386,6 +386,58 @@ describe("vocabulary state store", () => {
     });
   });
 
+  it("queues a forced vocabulary refresh that arrives while the same token is loading", async () => {
+    const store = createVocabularyStateStore();
+    const refreshedItem = {
+      ...vocabularyItem,
+      id: "row_2",
+      term: "before",
+    };
+    const firstRequest: {
+      resolve?: (result: VocabularyListResult) => void;
+    } = {};
+    const listVocabulary = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<VocabularyListResult>((resolve) => {
+            firstRequest.resolve = resolve;
+          }),
+      )
+      .mockResolvedValueOnce({
+        data: [refreshedItem],
+        status: "success" as const,
+      });
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+    const authState = createAuthenticatedAuthState("session-token", "user-id");
+
+    sync.sync(authState);
+    sync.refreshNow(authState);
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    if (!firstRequest.resolve) {
+      throw new Error("Expected the first vocabulary request to start.");
+    }
+
+    firstRequest.resolve({
+      data: [vocabularyItem],
+      status: "success",
+    });
+    await flushPromises();
+    await flushPromises();
+
+    expect(listVocabulary).toHaveBeenCalledTimes(2);
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [refreshedItem],
+      status: "ready",
+    });
+  });
+
   it("keeps a ready snapshot when a background vocabulary refresh fails", async () => {
     const store = createVocabularyStateStore();
     const listVocabulary = vi.fn(async () => {

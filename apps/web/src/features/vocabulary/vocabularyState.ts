@@ -186,6 +186,7 @@ export function createVocabularyAuthSync({
   store?: VocabularyStateStore;
 } = {}) {
   let requestSequence = 0;
+  let pendingForcedRefreshAccessToken: string | null = null;
   const loadedAtByAccessToken = new Map<string, number>();
 
   async function loadVocabularyForSession(
@@ -239,12 +240,38 @@ export function createVocabularyAuthSync({
     if (result.status === "success") {
       loadedAtByAccessToken.set(currentAccessToken, now());
       store.setReady(currentAccessToken, result.data);
+      runPendingForcedRefresh(accessToken, currentAccessToken);
       return;
     }
 
     if (showLoading) {
       store.setError(currentAccessToken, result.message);
     }
+
+    runPendingForcedRefresh(accessToken, currentAccessToken);
+  }
+
+  function queuePendingForcedRefresh(accessToken: string) {
+    pendingForcedRefreshAccessToken = accessToken;
+  }
+
+  function runPendingForcedRefresh(
+    accessToken: string,
+    currentAccessToken: string,
+  ) {
+    if (
+      pendingForcedRefreshAccessToken !== accessToken &&
+      pendingForcedRefreshAccessToken !== currentAccessToken
+    ) {
+      return;
+    }
+
+    pendingForcedRefreshAccessToken = null;
+
+    void loadVocabularyForSession(currentAccessToken, {
+      refreshAccessToken: true,
+      showLoading: false,
+    });
   }
 
   function refreshVocabulary(
@@ -261,6 +288,10 @@ export function createVocabularyAuthSync({
       vocabularyState.accessToken === authState.accessToken &&
       vocabularyState.status === "loading"
     ) {
+      if (force) {
+        queuePendingForcedRefresh(authState.accessToken);
+      }
+
       return;
     }
 
@@ -301,6 +332,7 @@ export function createVocabularyAuthSync({
 
       if (authState.status !== "authenticated" || !authState.accessToken) {
         requestSequence += 1;
+        pendingForcedRefreshAccessToken = null;
         store.reset();
         return;
       }
