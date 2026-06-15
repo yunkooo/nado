@@ -90,4 +90,26 @@ describe("Supabase migrations", () => {
       "on conflict on constraint vocabulary_items_user_id_normalized_term_type_key",
     );
   });
+
+  it("broadcasts vocabulary row changes to private user topics", () => {
+    const migrationSql = readdirSync(migrationsDir)
+      .filter((file) => file.endsWith(".sql"))
+      .sort()
+      .map((file) => readFileSync(join(migrationsDir, file), "utf8"))
+      .join("\n");
+
+    expect(migrationSql).toContain(
+      'create policy "Users can receive their vocabulary broadcasts"',
+    );
+    expect(migrationSql).toContain(
+      "and (select realtime.topic()) =\n      'vocabulary:' || ((select auth.uid())::text)",
+    );
+    expect(migrationSql).toContain(
+      "create or replace function public.broadcast_vocabulary_item_changes",
+    );
+    expect(migrationSql).toContain("realtime.broadcast_changes");
+    expect(migrationSql).toContain(
+      "create trigger handle_vocabulary_item_realtime_changes",
+    );
+  });
 });
