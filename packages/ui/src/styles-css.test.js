@@ -31,9 +31,7 @@ describe("analysis component styles", () => {
     const resultCardRule = readRule(".nado-result-card");
     const sectionRule = readRule(".nado-section");
     const wordPopoverRule = readRule(".nado-word-popover");
-    const activeWordPopoverRule = readRule(
-      ".nado-word-token-wrap--open .nado-word-popover",
-    );
+    const activeWordPopoverRule = readRule(".nado-word-popover--open");
 
     expect(resultCardRule).toContain("overflow: visible");
     expect(resultCardRule).not.toContain("overflow: hidden");

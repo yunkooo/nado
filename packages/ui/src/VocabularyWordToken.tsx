@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import type {
   VocabularyItem,
   VocabularySuggestion,
@@ -14,6 +15,8 @@ import type {
 
 const WORD_POPOVER_MARGIN = 12;
 const WORD_POPOVER_GAP = 4;
+const WORD_POPOVER_WIDTH = 220;
+const WORD_POPOVER_CLOSE_DELAY_MS = 120;
 
 type RectLike = {
   bottom: number;
@@ -73,9 +76,34 @@ export function VocabularyWordToken({
   const [hasFocusWithin, setHasFocusWithin] = useState(false);
   const [popoverPosition, setPopoverPosition] =
     useState<WordPopoverPosition | null>(null);
+  const [popoverRoot, setPopoverRoot] = useState<HTMLElement | null>(null);
+  const hoverCloseDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tokenRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLSpanElement>(null);
   const isPopoverOpen = isOpen || isHovering || hasFocusWithin;
+
+  const clearHoverCloseDelay = useCallback(() => {
+    if (hoverCloseDelayRef.current === null) {
+      return;
+    }
+
+    clearTimeout(hoverCloseDelayRef.current);
+    hoverCloseDelayRef.current = null;
+  }, []);
+
+  const openHover = useCallback(() => {
+    clearHoverCloseDelay();
+    setIsHovering(true);
+  }, [clearHoverCloseDelay]);
+
+  const closeHoverWithDelay = useCallback(() => {
+    clearHoverCloseDelay();
+
+    hoverCloseDelayRef.current = setTimeout(() => {
+      setIsHovering(false);
+      hoverCloseDelayRef.current = null;
+    }, WORD_POPOVER_CLOSE_DELAY_MS);
+  }, [clearHoverCloseDelay]);
 
   const updatePopoverPosition = useCallback(() => {
     if (!isPopoverOpen || typeof window === "undefined") {
@@ -90,7 +118,7 @@ export function VocabularyWordToken({
     }
 
     const nextPosition = getClampedWordPopoverPosition({
-      popoverSize: toRectLike(popover.getBoundingClientRect()),
+      popoverSize: getWordPopoverSize(popover),
       scrollportRect: getNearestScrollportRect(token),
       triggerRect: toRectLike(token.getBoundingClientRect()),
       viewportSize: {
@@ -98,13 +126,34 @@ export function VocabularyWordToken({
         width: window.innerWidth,
       },
     });
-
     setPopoverPosition((currentPosition) =>
       areWordPopoverPositionsEqual(currentPosition, nextPosition)
         ? currentPosition
         : nextPosition,
     );
   }, [isPopoverOpen]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    setPopoverRoot(document.body);
+  }, []);
+
+  const containsPopoverFocusTarget = useCallback(
+    (target: EventTarget | null) => {
+      if (!(target instanceof Node)) {
+        return false;
+      }
+
+      return (
+        Boolean(tokenRef.current?.contains(target)) ||
+        Boolean(popoverRef.current?.contains(target))
+      );
+    },
+    [],
+  );
 
   useIsomorphicLayoutEffect(() => {
     if (!isPopoverOpen) {
@@ -120,6 +169,8 @@ export function VocabularyWordToken({
     item.meaning,
     item.partOfSpeech,
     item.term,
+    popoverRoot,
+    popoverPosition?.width,
     state,
     updatePopoverPosition,
   ]);
@@ -138,7 +189,54 @@ export function VocabularyWordToken({
     };
   }, [isPopoverOpen, updatePopoverPosition]);
 
+  useEffect(() => clearHoverCloseDelay, [clearHoverCloseDelay]);
+
   const popoverStyle = createWordPopoverStyle(popoverPosition);
+  const popover = (
+    <span
+      aria-label={`${item.term} 뜻과 저장 액션`}
+      className={[
+        "nado-word-popover",
+        isPopoverOpen ? "nado-word-popover--open" : undefined,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      data-placement={popoverPosition?.placement ?? "top"}
+      onBlurCapture={(event) => {
+        if (containsPopoverFocusTarget(event.relatedTarget)) {
+          return;
+        }
+
+        setHasFocusWithin(false);
+      }}
+      onFocusCapture={() => {
+        setHasFocusWithin(true);
+      }}
+      onPointerEnter={openHover}
+      onPointerLeave={closeHoverWithDelay}
+      ref={popoverRef}
+      role="group"
+      style={popoverStyle}
+    >
+      <span className="nado-word-popover__header">
+        <strong>{item.term}</strong>
+        {item.partOfSpeech ? <span>{item.partOfSpeech}</span> : null}
+      </span>
+      <span className="nado-word-popover__meaning">{item.meaning}</span>
+      <span className="nado-word-popover__context">{item.contextMeaning}</span>
+      {canSave ? (
+        <button
+          aria-label={getSaveActionLabel(item.term, state)}
+          className="nado-word-popover__save"
+          disabled={state !== "idle"}
+          onClick={() => onSaveVocabularySuggestion?.(item)}
+          type="button"
+        >
+          {getSaveActionText(state)}
+        </button>
+      ) : null}
+    </span>
+  );
 
   return (
     <span
@@ -149,12 +247,7 @@ export function VocabularyWordToken({
         .filter(Boolean)
         .join(" ")}
       onBlurCapture={(event) => {
-        const nextTarget = event.relatedTarget;
-
-        if (
-          nextTarget instanceof Node &&
-          event.currentTarget.contains(nextTarget)
-        ) {
+        if (containsPopoverFocusTarget(event.relatedTarget)) {
           return;
         }
 
@@ -163,12 +256,8 @@ export function VocabularyWordToken({
       onFocusCapture={() => {
         setHasFocusWithin(true);
       }}
-      onPointerEnter={() => {
-        setIsHovering(true);
-      }}
-      onPointerLeave={() => {
-        setIsHovering(false);
-      }}
+      onPointerEnter={openHover}
+      onPointerLeave={closeHoverWithDelay}
     >
       <button
         aria-expanded={isPopoverOpen ? true : undefined}
@@ -179,34 +268,7 @@ export function VocabularyWordToken({
       >
         {text}
       </button>
-      <span
-        aria-label={`${item.term} 뜻과 저장 액션`}
-        className="nado-word-popover"
-        data-placement={popoverPosition?.placement ?? "top"}
-        ref={popoverRef}
-        role="group"
-        style={popoverStyle}
-      >
-        <span className="nado-word-popover__header">
-          <strong>{item.term}</strong>
-          {item.partOfSpeech ? <span>{item.partOfSpeech}</span> : null}
-        </span>
-        <span className="nado-word-popover__meaning">{item.meaning}</span>
-        <span className="nado-word-popover__context">
-          {item.contextMeaning}
-        </span>
-        {canSave ? (
-          <button
-            aria-label={getSaveActionLabel(item.term, state)}
-            className="nado-word-popover__save"
-            disabled={state !== "idle"}
-            onClick={() => onSaveVocabularySuggestion?.(item)}
-            type="button"
-          >
-            {getSaveActionText(state)}
-          </button>
-        ) : null}
-      </span>
+      {popoverRoot ? createPortal(popover, popoverRoot) : popover}
     </span>
   );
 }
@@ -303,6 +365,15 @@ function getNearestScrollportRect(element: HTMLElement): RectLike {
     right: window.innerWidth,
     top: 0,
     width: window.innerWidth,
+  };
+}
+
+function getWordPopoverSize(popover: HTMLElement): SizeLike {
+  const rect = popover.getBoundingClientRect();
+
+  return {
+    height: Math.max(rect.height, popover.scrollHeight),
+    width: WORD_POPOVER_WIDTH,
   };
 }
 

@@ -421,7 +421,7 @@
   z-index: 30;
 }
 
-.nado-word-token-wrap--open .nado-word-popover {
+.nado-word-popover--open {
   display: grid;
   opacity: 1;
   pointer-events: auto;
