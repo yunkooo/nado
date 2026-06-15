@@ -185,7 +185,7 @@ describe("runBackendSmoke", () => {
         }
 
         if (init?.method === "POST") {
-          queueMicrotask(() => realtime.emit("INSERT"));
+          queueMicrotask(() => realtime.emit("INSERT", "smoke-id"));
 
           return jsonResponse({
             item: {
@@ -196,7 +196,7 @@ describe("runBackendSmoke", () => {
         }
 
         if (init?.method === "DELETE") {
-          queueMicrotask(() => realtime.emit("DELETE"));
+          queueMicrotask(() => realtime.emit("DELETE", "smoke-id"));
 
           return new Response(null, { status: 204 });
         }
@@ -246,6 +246,58 @@ describe("runBackendSmoke", () => {
     ]);
   });
 
+  it("ignores realtime broadcasts for other vocabulary items", async () => {
+    const realtime = createRealtimeClientStub();
+
+    await expect(
+      runBackendSmoke({
+        accessToken: "user-token",
+        baseUrl: "http://api.test",
+        createRealtimeClient: realtime.createClient,
+        realtime: true,
+        realtimeTimeoutMs: 1,
+        realtimeUserId: "user-id",
+        supabaseAnonKey: "anon-key",
+        supabaseUrl: "http://supabase.test",
+        fetch: async (input, init) => {
+          if (String(input).endsWith("/health")) {
+            return jsonResponse({
+              service: "nado-api",
+              status: "ok",
+            });
+          }
+
+          if (init?.method === "POST") {
+            queueMicrotask(() => realtime.emit("INSERT", "other-id"));
+
+            return jsonResponse({
+              item: {
+                id: "smoke-id",
+                term: "nado-smoke",
+              },
+            });
+          }
+
+          if (init?.method === "DELETE") {
+            queueMicrotask(() => realtime.emit("DELETE", "other-id"));
+
+            return new Response(null, { status: 204 });
+          }
+
+          return jsonResponse({
+            items: [{ id: "smoke-id" }],
+          });
+        },
+      }),
+    ).rejects.toThrow(
+      "Realtime smoke did not receive INSERT or UPDATE for smoke-id within 1ms.",
+    );
+
+    expect(realtime.client.removeChannel).toHaveBeenCalledWith(
+      realtime.channel,
+    );
+  });
+
   it("removes the realtime channel when subscription times out", async () => {
     const realtime = createRealtimeClientStub({
       subscribe: () => undefined,
@@ -282,10 +334,14 @@ function createRealtimeClientStub({
 }: {
   subscribe?: (callback?: (status: string) => void) => void;
 } = {}) {
-  const handlers = new Map<string, () => void>();
+  const handlers = new Map<string, (payload: unknown) => void>();
   const channel = {
     on: vi.fn(
-      (type: "broadcast", filter: { event: string }, callback: () => void) => {
+      (
+        type: "broadcast",
+        filter: { event: string },
+        callback: (payload: unknown) => void,
+      ) => {
         handlers.set(`${type}:${filter.event}`, callback);
         return channel;
       },
@@ -307,8 +363,13 @@ function createRealtimeClientStub({
     channel,
     client,
     createClient: vi.fn(() => client),
-    emit(event: string) {
-      handlers.get(`broadcast:${event}`)?.();
+    emit(event: string, itemId = "smoke-id") {
+      handlers.get(`broadcast:${event}`)?.({
+        payload:
+          event === "DELETE"
+            ? { old_record: { id: itemId } }
+            : { record: { id: itemId } },
+      });
     },
   };
 }

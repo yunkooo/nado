@@ -43,11 +43,19 @@ type RealtimeSmokeChannel = {
   on(
     type: "broadcast",
     filter: { event: RealtimeSmokeEvent },
-    callback: () => void,
+    callback: (payload: RealtimeSmokeBroadcastPayload) => void,
   ): RealtimeSmokeChannel;
   subscribe(
     callback?: (status: RealtimeSmokeSubscribeStatus, error?: Error) => void,
   ): RealtimeSmokeChannel;
+};
+
+type RealtimeSmokeBroadcastPayload = {
+  payload?: unknown;
+  record?: unknown;
+  old?: unknown;
+  old_record?: unknown;
+  new?: unknown;
 };
 
 type RealtimeSmokeClient = {
@@ -68,7 +76,10 @@ type RealtimeSmokeClientFactory = (
 
 type VocabularyRealtimeMonitor = {
   close(): Promise<void>;
-  waitForAny(events: RealtimeSmokeEvent[]): Promise<RealtimeSmokeEvent>;
+  waitForAny(
+    events: RealtimeSmokeEvent[],
+    itemId: string,
+  ): Promise<RealtimeSmokeEvent>;
 };
 
 const DEFAULT_BASE_URL = "http://localhost:4000";
@@ -123,7 +134,7 @@ export async function runBackendSmoke(
       log("vocabulary save ok");
 
       if (realtimeMonitor) {
-        await realtimeMonitor.waitForAny(["INSERT", "UPDATE"]);
+        await realtimeMonitor.waitForAny(["INSERT", "UPDATE"], itemId);
         checks.push("vocabulary:realtime:save");
         log("vocabulary realtime save ok");
       }
@@ -147,7 +158,7 @@ export async function runBackendSmoke(
       log("vocabulary delete ok");
 
       if (realtimeMonitor) {
-        await realtimeMonitor.waitForAny(["DELETE"]);
+        await realtimeMonitor.waitForAny(["DELETE"], itemId);
         checks.push("vocabulary:realtime:delete");
         log("vocabulary realtime delete ok");
       }
@@ -311,19 +322,29 @@ async function createVocabularyRealtimeMonitor({
   const client = createClient(supabaseUrl, supabaseAnonKey);
   await client.realtime.setAuth(accessToken);
 
-  const receivedEvents = new Set<RealtimeSmokeEvent>();
+  const receivedEvents = new Set<string>();
   const waiters = new Set<{
     events: RealtimeSmokeEvent[];
+    itemId: string;
     reject(error: Error): void;
     resolve(event: RealtimeSmokeEvent): void;
     timeoutId: ReturnType<typeof setTimeout>;
   }>();
 
-  const handleEvent = (event: RealtimeSmokeEvent) => {
-    receivedEvents.add(event);
+  const handleEvent = (
+    event: RealtimeSmokeEvent,
+    payload: RealtimeSmokeBroadcastPayload,
+  ) => {
+    const itemId = getRealtimeSmokePayloadItemId(event, payload);
+
+    if (!itemId) {
+      return;
+    }
+
+    receivedEvents.add(createRealtimeSmokeEventKey(event, itemId));
 
     for (const waiter of [...waiters]) {
-      if (waiter.events.includes(event)) {
+      if (waiter.itemId === itemId && waiter.events.includes(event)) {
         clearTimeout(waiter.timeoutId);
         waiters.delete(waiter);
         waiter.resolve(event);
@@ -333,9 +354,15 @@ async function createVocabularyRealtimeMonitor({
 
   const channel = client
     .channel(topic, { config: { private: true } })
-    .on("broadcast", { event: "INSERT" }, () => handleEvent("INSERT"))
-    .on("broadcast", { event: "UPDATE" }, () => handleEvent("UPDATE"))
-    .on("broadcast", { event: "DELETE" }, () => handleEvent("DELETE"));
+    .on("broadcast", { event: "INSERT" }, (payload) =>
+      handleEvent("INSERT", payload),
+    )
+    .on("broadcast", { event: "UPDATE" }, (payload) =>
+      handleEvent("UPDATE", payload),
+    )
+    .on("broadcast", { event: "DELETE" }, (payload) =>
+      handleEvent("DELETE", payload),
+    );
 
   try {
     await new Promise<void>((resolve, reject) => {
@@ -384,9 +411,9 @@ async function createVocabularyRealtimeMonitor({
       waiters.clear();
       await client.removeChannel(channel);
     },
-    waitForAny(events) {
+    waitForAny(events, itemId) {
       const alreadyReceivedEvent = events.find((event) =>
-        receivedEvents.has(event),
+        receivedEvents.has(createRealtimeSmokeEventKey(event, itemId)),
       );
 
       if (alreadyReceivedEvent) {
@@ -396,6 +423,7 @@ async function createVocabularyRealtimeMonitor({
       return new Promise((resolve, reject) => {
         let waiter: {
           events: RealtimeSmokeEvent[];
+          itemId: string;
           reject(error: Error): void;
           resolve(event: RealtimeSmokeEvent): void;
           timeoutId: ReturnType<typeof setTimeout>;
@@ -404,12 +432,13 @@ async function createVocabularyRealtimeMonitor({
           waiters.delete(waiter);
           reject(
             new Error(
-              `Realtime smoke did not receive ${events.join(" or ")} within ${timeoutMs}ms.`,
+              `Realtime smoke did not receive ${events.join(" or ")} for ${itemId} within ${timeoutMs}ms.`,
             ),
           );
         }, timeoutMs);
         waiter = {
           events,
+          itemId,
           reject,
           resolve,
           timeoutId,
@@ -419,6 +448,36 @@ async function createVocabularyRealtimeMonitor({
       });
     },
   };
+}
+
+function createRealtimeSmokeEventKey(
+  event: RealtimeSmokeEvent,
+  itemId: string,
+): string {
+  return `${event}:${itemId}`;
+}
+
+function getRealtimeSmokePayloadItemId(
+  event: RealtimeSmokeEvent,
+  payload: RealtimeSmokeBroadcastPayload,
+): string | null {
+  const body = (
+    isRecord(payload.payload) ? payload.payload : payload
+  ) as JsonRecord;
+  const recordKeys =
+    event === "DELETE"
+      ? ["old_record", "old", "record", "new"]
+      : ["record", "new", "old_record", "old"];
+
+  for (const key of recordKeys) {
+    const record = body[key];
+
+    if (isRecord(record) && typeof record.id === "string") {
+      return record.id;
+    }
+  }
+
+  return typeof body.id === "string" ? body.id : null;
 }
 
 function createDefaultRealtimeClient(
