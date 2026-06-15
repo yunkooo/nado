@@ -342,8 +342,15 @@ export function createVocabularyAuthSync({
 const vocabularyAuthSync = createVocabularyAuthSync();
 const vocabularyRealtimeSync = createVocabularyRealtimeSync();
 
-export function refreshVocabularyForAuth(authState: AuthStateSnapshot) {
-  return vocabularyAuthSync.refresh(authState);
+export type VocabularyRefreshOptions = {
+  force?: boolean;
+};
+
+export function refreshVocabularyForAuth(
+  authState: AuthStateSnapshot,
+  options?: VocabularyRefreshOptions,
+) {
+  return vocabularyAuthSync.refresh(authState, options);
 }
 
 export async function startVocabularyRealtimeSubscription({
