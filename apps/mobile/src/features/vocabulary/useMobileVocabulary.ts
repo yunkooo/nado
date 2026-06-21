@@ -10,6 +10,7 @@ import { getMobileSupabaseClient } from "../../auth/authClient";
 import type { MobileAuthStateSnapshot } from "../../auth/authState";
 import {
   applyDeleteVocabularyError,
+  applyLoadVocabularyError,
   createMobileVocabularySuggestionKey,
   isMobileVocabularySuggestionSaved,
   upsertMobileVocabularyItem,
@@ -158,19 +159,10 @@ export function useMobileVocabulary(
       }
 
       setTrackedVocabularyState((currentState) => {
-        if (preserveCurrentOnError && currentState.items.length > 0) {
-          return {
-            ...currentState,
-            message: result.message,
-            status: "ready",
-          };
-        }
-
-        return {
-          items: [],
+        return applyLoadVocabularyError(currentState, {
           message: result.message,
-          status: "error",
-        };
+          preserveCurrentOnError,
+        });
       });
     },
     [setTrackedVocabularyState],
