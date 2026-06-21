@@ -139,6 +139,62 @@ describe("createOpenAIAnalysisService", () => {
     expect(body.model).toBe("gpt-5.4-mini");
   });
 
+  it("normalizes predicate adverb chunks so repeated platform analyses keep stable boundaries", async () => {
+    const responseWithSplitPredicate = {
+      ...sampleAnalyzeResponse,
+      result: {
+        ...sampleAnalyzeResponse.result,
+        translation: "의미 있는 변화는 종종 조용히 시작됩니다.",
+        sentences: [
+          {
+            ...sampleAnalyzeResponse.result.sentences[0],
+            source: "That meaningful change often begins quietly.",
+            translation: "의미 있는 변화는 종종 조용히 시작됩니다.",
+            chunks: [
+              {
+                english: "That meaningful change",
+                literalTranslation: "의미 있는 변화가",
+                role: "주어 역할을 합니다.",
+              },
+              {
+                english: "often begins quietly",
+                literalTranslation: "종종 조용히 시작됩니다",
+                role: "빈도 부사와 동사가 이어지는 서술부입니다.",
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const service = createOpenAIAnalysisService({
+      apiKey: "test-api-key",
+      fetch: async () =>
+        new Response(
+          JSON.stringify({
+            output_text: JSON.stringify(responseWithSplitPredicate),
+          }),
+          { status: 200 },
+        ),
+    });
+
+    await expect(
+      service.analyze("That meaningful change often begins quietly."),
+    ).resolves.toMatchObject({
+      result: {
+        sentences: [
+          {
+            chunks: [
+              {
+                english: "That meaningful change often begins quietly",
+                literalTranslation: "의미 있는 변화가 종종 조용히 시작됩니다",
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
   it("requires an OpenAI API key before making a request", async () => {
     let calls = 0;
     const service = createOpenAIAnalysisService({

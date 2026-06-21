@@ -1,5 +1,5 @@
 import { analyzeResponseJsonSchema, analyzeResponseSchema } from "@nado/shared";
-import type { AnalyzeResponse } from "@nado/shared";
+import type { AnalysisChunk, AnalyzeResponse } from "@nado/shared";
 import { UpstreamTimeoutError } from "../../shared/errors/httpErrors.js";
 
 type FetchLike = (
@@ -124,7 +124,62 @@ async function parseAnalysisResponse(
     );
   }
 
-  return parsedAnalysis.data;
+  return normalizeAnalysisChunks(parsedAnalysis.data);
+}
+
+function normalizeAnalysisChunks(analysis: AnalyzeResponse): AnalyzeResponse {
+  if (analysis.status === "not_analyzable") {
+    return analysis;
+  }
+
+  return {
+    ...analysis,
+    result: {
+      ...analysis.result,
+      sentences: analysis.result.sentences.map((sentence) => ({
+        ...sentence,
+        chunks: mergePredicateAdverbChunks(sentence.chunks),
+      })),
+    },
+  };
+}
+
+const predicateAdverbChunkPattern =
+  /^(?:always|usually|often|sometimes|rarely|seldom|frequently|regularly|generally|typically|normally|occasionally|never)\b/i;
+const sentenceBoundaryPattern = /[.!?;:]$/;
+
+function mergePredicateAdverbChunks(chunks: AnalysisChunk[]): AnalysisChunk[] {
+  const normalizedChunks: AnalysisChunk[] = [];
+
+  for (const chunk of chunks) {
+    const previousChunk = normalizedChunks.at(-1);
+
+    if (
+      previousChunk &&
+      shouldMergePredicateAdverbChunk(previousChunk, chunk)
+    ) {
+      normalizedChunks[normalizedChunks.length - 1] = {
+        english: `${previousChunk.english} ${chunk.english}`,
+        literalTranslation: `${previousChunk.literalTranslation} ${chunk.literalTranslation}`,
+        role: `${previousChunk.role} ${chunk.role}`,
+      };
+      continue;
+    }
+
+    normalizedChunks.push(chunk);
+  }
+
+  return normalizedChunks;
+}
+
+function shouldMergePredicateAdverbChunk(
+  previousChunk: AnalysisChunk,
+  currentChunk: AnalysisChunk,
+) {
+  return (
+    !sentenceBoundaryPattern.test(previousChunk.english.trim()) &&
+    predicateAdverbChunkPattern.test(currentChunk.english.trim())
+  );
 }
 
 async function readJson(response: Response): Promise<unknown> {
