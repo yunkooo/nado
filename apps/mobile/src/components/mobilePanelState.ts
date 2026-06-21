@@ -51,12 +51,15 @@ export function getMobileStatePanelCopy(
 
   if (state === "loading") {
     return {
-      eyebrow: "확인 중",
+      eyebrow: "불러오는 중",
       message:
         type === "vocabulary"
-          ? "단어장 데이터를 불러오기 전에 계정 상태를 먼저 확인합니다."
-          : "복습 카드를 불러오기 전에 계정 상태를 먼저 확인합니다.",
-      title: "로그인 세션을 확인하고 있어요",
+          ? "저장한 단어와 표현을 가져오고 있어요."
+          : "저장한 단어로 복습 카드를 준비하고 있어요.",
+      title:
+        type === "vocabulary"
+          ? "단어장을 불러오고 있어요"
+          : "복습 카드를 불러오고 있어요",
     };
   }
 

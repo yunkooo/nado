@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import {
   MAX_ANALYSIS_TEXT_LENGTH,
+  createVocabularyMeaningRenderKey,
   getDistinctVocabularyNote,
 } from "@nado/shared";
 import {
@@ -515,24 +516,22 @@ function VocabularyPage({
   vocabularyState: MobileVocabularyState;
 }) {
   const panelState = getMobileVocabularyPanelState(authStatus, vocabularyState);
+  const isSummaryAvailable = panelState === "empty" || panelState === "list";
 
   return (
     <View style={styles.pageStack}>
       <View style={styles.pageHeader}>
         <View style={styles.pageTitleGroup}>
-          <Text style={styles.eyebrow}>My vocabulary</Text>
-          <Text style={styles.pageTitle}>저장한 단어를 확인해요</Text>
+          <Text style={styles.eyebrow}>Vocabulary</Text>
+          <Text style={styles.pageTitle}>단어장</Text>
         </View>
-        <Text style={styles.pageDescription}>
-          분석에서 저장한 단어와 표현을 한곳에 모아둡니다.
-        </Text>
       </View>
 
       <View style={styles.pageLayout}>
         <View style={styles.summaryItem} accessibilityLabel="단어장 요약">
           <Text style={styles.summaryLabel}>저장 항목</Text>
           <Text style={styles.summaryValue}>
-            {panelState === "list" ? String(vocabularyState.items.length) : "-"}
+            {isSummaryAvailable ? String(vocabularyState.items.length) : "-"}
           </Text>
         </View>
 
@@ -541,11 +540,14 @@ function VocabularyPage({
             <>
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionTitleGroup}>
-                  <Text style={styles.eyebrow}>Saved items</Text>
+                  <Text style={styles.eyebrow}>My vocabulary</Text>
                   <Text style={styles.sectionTitle}>
-                    분석에서 저장한 항목이에요
+                    저장한 단어를 확인해요
                   </Text>
                 </View>
+                <Text style={styles.sectionMeta}>
+                  분석에서 저장한 항목이에요
+                </Text>
               </View>
 
               {vocabularyState.items.map((item) => (
@@ -557,14 +559,21 @@ function VocabularyPage({
                     </View>
                   </View>
                   <View style={styles.meaningList}>
-                    {item.meanings.map((meaning) => {
+                    {item.meanings.map((meaning, meaningIndex) => {
                       const meaningDisplayNote = getDistinctVocabularyNote(
                         meaning.note,
                         [meaning.meaning],
                       );
 
                       return (
-                        <View key={meaning.meaning} style={styles.meaningCard}>
+                        <View
+                          key={createVocabularyMeaningRenderKey(
+                            item.id,
+                            meaning,
+                            meaningIndex,
+                          )}
+                          style={styles.meaningCard}
+                        >
                           <Text style={styles.meaningText}>
                             {meaning.meaning}
                           </Text>
@@ -648,6 +657,7 @@ function ReviewPage({
     <View style={styles.pageStack}>
       <View style={styles.pageHeader}>
         <View style={styles.pageTitleGroup}>
+          <Text style={styles.eyebrow}>Review</Text>
           <Text style={styles.pageTitle}>복습</Text>
         </View>
       </View>
@@ -687,21 +697,20 @@ function ReviewPage({
             </View>
 
             <View style={styles.reviewCard}>
+              <Text style={styles.eyebrow}>My flashcard</Text>
               <Text style={styles.reviewMeta}>
                 {currentCardIndex + 1} / {vocabularyState.items.length}
               </Text>
-              <Text style={styles.eyebrow}>My flashcard</Text>
               <Text style={styles.reviewTerm}>{currentCard.prompt}</Text>
               {isAnswerRevealed ? (
                 <Text style={styles.reviewAnswer}>{currentCard.answer}</Text>
               ) : (
-                <View
+                <Text
                   accessibilityLabel="정답이 가려져 있습니다"
-                  style={styles.reviewAnswerBlur}
+                  style={[styles.reviewAnswer, styles.reviewAnswerHidden]}
                 >
-                  <View style={styles.reviewAnswerBlurLineWide} />
-                  <View style={styles.reviewAnswerBlurLineNarrow} />
-                </View>
+                  {currentCard.answer}
+                </Text>
               )}
             </View>
 
