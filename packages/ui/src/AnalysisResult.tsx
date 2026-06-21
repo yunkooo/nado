@@ -28,14 +28,12 @@ export function AnalysisResult({
   result,
 }: AnalysisResultProps) {
   return (
-    <ResultCard
-      description="자연스러운 번역, 문장별 끊어읽기 직역, 문법 포인트, 단어 추천을 한 번에 제공합니다."
-      meta="200자 이내 기본 분석"
-      title="분석 결과"
-    >
-      <Section title="전체 자연스러운 번역">
-        <TranslationBlock paragraphs={result.translation} />
-      </Section>
+    <ResultCard title="분석 결과">
+      <section aria-label="자연스러운 번역" className="nado-section">
+        <div className="nado-section__body">
+          <TranslationBlock paragraphs={result.translation} />
+        </div>
+      </section>
       <Section title="번역 포인트">
         <TranslationNotes notes={result.translationNotes} />
       </Section>

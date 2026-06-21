@@ -174,6 +174,37 @@ describe("analysis design system components", () => {
     expect(markup).not.toContain('<button class="nado-chip"');
   });
 
+  it("omits analysis result helper copy from the result header", () => {
+    const markup = renderToStaticMarkup(
+      <AnalysisResult result={analysisFixture} />,
+    );
+
+    expect(markup).toContain("분석 결과");
+    expect(markup).not.toContain(
+      "자연스러운 번역, 문장별 끊어읽기 직역, 문법 포인트, 단어 추천을 한 번에 제공합니다.",
+    );
+    expect(markup).not.toContain("200자 이내 기본 분석");
+  });
+
+  it("does not repeat the translation point section title as a note label", () => {
+    const markup = renderToStaticMarkup(
+      <AnalysisResult
+        result={{
+          ...analysisFixture,
+          translationNotes: [
+            {
+              note: "문맥에 맞춰 부드러운 한국어 어순으로 옮깁니다.",
+              term: "번역 포인트",
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(markup.match(/번역 포인트/g)).toHaveLength(1);
+    expect(markup).toContain("문맥에 맞춰 부드러운 한국어 어순으로 옮깁니다.");
+  });
+
   it("shows saved vocabulary suggestions as saved disabled buttons", () => {
     const markup = renderToStaticMarkup(
       <AnalysisResult
@@ -411,10 +442,14 @@ describe("analysis design system components", () => {
       <AnalysisResult result={analysisFixture} />,
     );
 
-    expect(markup).toContain("전체 자연스러운 번역");
+    expect(markup).not.toContain("전체 자연스러운 번역");
+    expect(markup).toContain('aria-label="자연스러운 번역"');
     expect(markup).toContain("번역 포인트");
     expect(markup).toContain("문장별 분석");
     expect(markup).toContain("우선 저장 추천");
+    expect(markup).toContain(
+      "우리는 읽기 습관을 만들려고 하고 있지만, 준비 과정이 계속 방해가 되고 있다.",
+    );
     expect(markup).toContain("are trying to");
     expect(markup).toContain("준비 과정");
   });

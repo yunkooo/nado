@@ -93,12 +93,43 @@ export interface TranslationNotesProps {
 export function TranslationNotes({ notes }: TranslationNotesProps) {
   return (
     <ul className="nado-note-list">
-      {notes.map((note) => (
-        <li className="nado-note-list__item" key={`${note.term}-${note.note}`}>
-          <strong className="nado-note-list__term">{note.term}</strong>
-          <span className="nado-note-list__text">{note.note}</span>
-        </li>
-      ))}
+      {notes.map((note) => {
+        const display = getVisibleTranslationNoteParts(note);
+
+        if (!display.term && !display.note) {
+          return null;
+        }
+
+        return (
+          <li
+            className="nado-note-list__item"
+            key={`${note.term}-${note.note}`}
+          >
+            {display.term ? (
+              <strong className="nado-note-list__term">{display.term}</strong>
+            ) : null}
+            {display.note ? (
+              <span className="nado-note-list__text">{display.note}</span>
+            ) : null}
+          </li>
+        );
+      })}
     </ul>
   );
+}
+
+const TRANSLATION_POINT_SECTION_TITLE = "번역 포인트";
+
+function getVisibleTranslationNoteParts(note: TranslationNote) {
+  const trimmedTerm = note.term.trim();
+  const trimmedNote = note.note.trim();
+
+  return {
+    note:
+      trimmedNote.length > 0 && trimmedNote !== trimmedTerm ? note.note : null,
+    term:
+      trimmedTerm.length > 0 && trimmedTerm !== TRANSLATION_POINT_SECTION_TITLE
+        ? note.term
+        : null,
+  };
 }
