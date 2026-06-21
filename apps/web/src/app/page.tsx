@@ -13,8 +13,7 @@ import { useVocabularySuggestionSaver } from "../features/analysis/useVocabulary
 import { VocabularySaveStatus } from "../features/analysis/VocabularySaveStatus";
 import { useVocabularyState } from "../features/vocabulary/vocabularyState";
 
-const inputDisclosure =
-  "입력한 문장은 AI 분석을 위해 전송되며, 단어장에는 원문 문장을 저장하지 않습니다.";
+const inputDisclosure = "입력문은 분석에만 사용되며 저장되지 않습니다.";
 
 export default function HomePage() {
   const {

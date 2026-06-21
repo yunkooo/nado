@@ -154,8 +154,7 @@ function WebAnalysisSurface({
       </section>
       <footer className="nado-composer-wrap">
         <p className="nado-input-disclosure">
-          입력한 문장은 AI 분석을 위해 전송되며, 단어장에는 원문 문장을 저장하지
-          않습니다.
+          입력문은 분석에만 사용되며 저장되지 않습니다.
         </p>
         <InputComposer
           maxLength={MAX_ANALYSIS_TEXT_LENGTH}

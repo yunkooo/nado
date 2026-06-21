@@ -102,6 +102,10 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 18,
   },
+  composerWrap: {
+    gap: 10,
+    width: "100%",
+  },
   composerFooter: {
     alignItems: "center",
     flexDirection: "row",
@@ -169,10 +173,11 @@ export const styles = StyleSheet.create({
     lineHeight: 16,
     textTransform: "uppercase",
   },
-  helperText: {
+  inputDisclosure: {
     color: mobileColors.inkMuted,
     fontSize: 12,
     lineHeight: 18,
+    width: "100%",
   },
   grammarExplanation: {
     color: mobileColors.inkMuted,

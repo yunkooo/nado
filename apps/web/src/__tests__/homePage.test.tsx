@@ -57,7 +57,7 @@ describe("HomePage", () => {
     const markup = renderToStaticMarkup(createElement(HomePage));
 
     expect(markup).toContain("기본 분석");
-    expect(markup).toContain("입력한 문장은 AI 분석을 위해 전송되며");
+    expect(markup).toContain("입력문은 분석에만 사용되며 저장되지 않습니다.");
     expect(markup).toContain('aria-label="분석 요청"');
     expect(markup).not.toContain("nado-empty-result");
     expect(markup).not.toContain("아직 분석 결과가 없어요");

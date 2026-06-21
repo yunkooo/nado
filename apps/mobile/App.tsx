@@ -213,50 +213,52 @@ export default function App() {
 
         <View style={styles.bottomArea}>
           {activeTab === "analysis" ? (
-            <View style={styles.composer}>
+            <View style={styles.composerWrap}>
               {composerState.helperText ? (
-                <Text style={styles.helperText}>
+                <Text style={styles.inputDisclosure}>
                   {composerState.helperText}
                 </Text>
               ) : null}
-              <TextInput
-                accessibilityLabel={ANALYSIS_INPUT_ACCESSIBILITY_LABEL}
-                multiline
-                maxLength={MAX_ANALYSIS_TEXT_LENGTH}
-                onChangeText={handleTextChange}
-                placeholder={composerState.placeholderText}
-                placeholderTextColor={mobileColors.inkMuted}
-                style={[styles.input, styles.inputFocusReset]}
-                textAlignVertical="top"
-                value={text}
-              />
-              <View style={styles.composerFooter}>
-                <View style={styles.composerMeta}>
-                  <Text style={styles.composerLabel}>기본 분석</Text>
-                  <Text style={styles.count}>{composerState.countLabel}</Text>
-                </View>
-                <Pressable
-                  accessibilityLabel="분석 요청"
-                  accessibilityRole="button"
-                  disabled={isAnalyzeDisabled}
-                  onPress={handleAnalyzePress}
-                  style={({ pressed }) => [
-                    styles.analyzeButton,
-                    isAnalyzeDisabled ? styles.analyzeButtonDisabled : null,
-                    pressed && !isAnalyzeDisabled ? styles.pressed : null,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.analyzeButtonText,
-                      isAnalyzeDisabled
-                        ? styles.analyzeButtonTextDisabled
-                        : null,
+              <View style={styles.composer}>
+                <TextInput
+                  accessibilityLabel={ANALYSIS_INPUT_ACCESSIBILITY_LABEL}
+                  multiline
+                  maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+                  onChangeText={handleTextChange}
+                  placeholder={composerState.placeholderText}
+                  placeholderTextColor={mobileColors.inkMuted}
+                  style={[styles.input, styles.inputFocusReset]}
+                  textAlignVertical="top"
+                  value={text}
+                />
+                <View style={styles.composerFooter}>
+                  <View style={styles.composerMeta}>
+                    <Text style={styles.composerLabel}>기본 분석</Text>
+                    <Text style={styles.count}>{composerState.countLabel}</Text>
+                  </View>
+                  <Pressable
+                    accessibilityLabel="분석 요청"
+                    accessibilityRole="button"
+                    disabled={isAnalyzeDisabled}
+                    onPress={handleAnalyzePress}
+                    style={({ pressed }) => [
+                      styles.analyzeButton,
+                      isAnalyzeDisabled ? styles.analyzeButtonDisabled : null,
+                      pressed && !isAnalyzeDisabled ? styles.pressed : null,
                     ]}
                   >
-                    {isAnalysisLoading ? "..." : "↑"}
-                  </Text>
-                </Pressable>
+                    <Text
+                      style={[
+                        styles.analyzeButtonText,
+                        isAnalyzeDisabled
+                          ? styles.analyzeButtonTextDisabled
+                          : null,
+                      ]}
+                    >
+                      {isAnalysisLoading ? "..." : "↑"}
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
           ) : null}
