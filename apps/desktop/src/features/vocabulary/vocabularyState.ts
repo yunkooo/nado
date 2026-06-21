@@ -268,6 +268,7 @@ export function createVocabularyAuthSync({
 
     if (
       !force &&
+      vocabularyState.accessToken === authState.accessToken &&
       !shouldRefreshVocabularyFromLifecycle({
         isStudySurfaceActive: true,
         lastLoadedAt: loadedAtByAccessToken.get(authState.accessToken),

@@ -286,6 +286,50 @@ describe("vocabulary state store", () => {
     expect(listVocabulary).toHaveBeenCalledTimes(2);
   });
 
+  it("refreshes when a fresh token timestamp belongs to a different ready snapshot", async () => {
+    let currentTime = 1_000;
+    const store = createVocabularyStateStore();
+    const firstAccountItem = {
+      ...vocabularyItem,
+      id: "row_a",
+      term: "account-a",
+    };
+    const secondAccountItem = {
+      ...vocabularyItem,
+      id: "row_b",
+      term: "account-b",
+    };
+    const listVocabulary = vi.fn(async () => ({
+      data: [firstAccountItem],
+      status: "success" as const,
+    }));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      now: () => currentTime,
+      store,
+    });
+    const firstAccountAuthState = createAuthenticatedAuthState("token-a");
+
+    sync.sync(firstAccountAuthState);
+    await flushPromises();
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    store.setReady("token-b", [secondAccountItem]);
+    currentTime += 1_000;
+
+    await expect(sync.refresh(firstAccountAuthState)).resolves.toBe(
+      "refreshed",
+    );
+
+    expect(listVocabulary).toHaveBeenCalledTimes(2);
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "token-a",
+      items: [firstAccountItem],
+      status: "ready",
+    });
+  });
+
   it("forces realtime refreshes even while the ready vocabulary snapshot is fresh", async () => {
     const store = createVocabularyStateStore();
     const listVocabulary = vi.fn(async () => ({
