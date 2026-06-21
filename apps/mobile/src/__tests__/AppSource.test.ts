@@ -92,7 +92,9 @@ describe("mobile App API wiring", () => {
     );
     expect(authClientSource).toContain("react-native-url-polyfill/auto");
     expect(authClientSource).toContain("storage: AsyncStorage");
-    expect(authClientSource).toContain("detectSessionInUrl: false");
+    expect(authClientSource).toContain(
+      'detectSessionInUrl: platformOS === "web"',
+    );
     expect(authClientSource).toContain("skipBrowserRedirect");
     expect(authClientSource).toContain("completeMobileAuthFromCallbackUrl");
     expect(authStateSource).toContain("Linking.getInitialURL");

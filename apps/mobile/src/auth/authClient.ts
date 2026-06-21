@@ -23,6 +23,7 @@ export type MobileAuthConfig = {
   anonKey: string | undefined;
   url: string | undefined;
 };
+type MobilePlatformOS = typeof Platform.OS;
 
 let mobileSupabaseClient: SupabaseClient | null = null;
 export const NADO_MOBILE_AUTH_CALLBACK_URL = "nado://auth/callback";
@@ -74,18 +75,30 @@ export function getMobileSupabaseClient(): SupabaseClient | null {
   const { anonKey, url } = config;
 
   if (!mobileSupabaseClient) {
-    mobileSupabaseClient = createClient(url, anonKey, {
-      auth: {
-        ...(Platform.OS !== "web" ? { storage: AsyncStorage } : {}),
-        autoRefreshToken: true,
-        detectSessionInUrl: false,
-        lock: processLock,
-        persistSession: true,
-      },
-    });
+    mobileSupabaseClient = createClient(
+      url,
+      anonKey,
+      createMobileSupabaseAuthOptions(),
+    );
   }
 
   return mobileSupabaseClient;
+}
+
+export function createMobileSupabaseAuthOptions({
+  platformOS = Platform.OS,
+}: {
+  platformOS?: MobilePlatformOS;
+} = {}) {
+  return {
+    auth: {
+      ...(platformOS !== "web" ? { storage: AsyncStorage } : {}),
+      autoRefreshToken: true,
+      detectSessionInUrl: platformOS === "web",
+      lock: processLock,
+      persistSession: true,
+    },
+  };
 }
 
 export async function signInWithGoogle() {
