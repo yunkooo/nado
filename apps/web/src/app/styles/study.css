@@ -89,15 +89,18 @@
 }
 
 .nado-vocabulary-refresh__button {
+  align-items: center;
   background: var(--nado-color-surface);
   border: 1px solid var(--nado-color-border);
   border-radius: var(--nado-radius-md);
   color: var(--nado-color-ink);
+  display: inline-flex;
   font: inherit;
-  font-size: 0.8125rem;
-  font-weight: 800;
+  height: 36px;
+  justify-content: center;
   min-height: 36px;
-  padding: 0 12px;
+  padding: 0;
+  width: 36px;
 }
 
 .nado-vocabulary-refresh__button:not(:disabled) {
@@ -107,6 +110,10 @@
 .nado-vocabulary-refresh__button:disabled {
   color: var(--nado-color-ink-muted);
   opacity: 0.72;
+}
+
+.nado-vocabulary-refresh__icon {
+  display: block;
 }
 
 .nado-vocabulary-refresh__message {

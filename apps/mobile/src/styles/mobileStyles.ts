@@ -334,8 +334,10 @@ export const styles = StyleSheet.create({
     width: "100%",
   },
   pageHeader: {
-    alignItems: "stretch",
-    gap: mobileSpacing.sm,
+    alignItems: "center",
+    flexDirection: "row",
+    gap: mobileSpacing.md,
+    justifyContent: "space-between",
   },
   pageStack: {
     alignSelf: "stretch",
@@ -377,6 +379,30 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800",
     textAlign: "center",
+  },
+  refreshButton: {
+    alignItems: "center",
+    backgroundColor: mobileColors.surface,
+    borderColor: mobileColors.border,
+    borderRadius: mobileRadius.md,
+    borderWidth: 1,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  refreshButtonDisabled: {
+    opacity: 0.58,
+  },
+  refreshButtonIcon: {
+    color: mobileColors.inkMuted,
+    fontSize: 21,
+    fontWeight: "700",
+    height: 36,
+    includeFontPadding: false,
+    lineHeight: 36,
+    textAlign: "center",
+    transform: [{ translateX: -0.5 }, { translateY: -1 }],
+    width: 36,
   },
   reviewCard: {
     alignItems: "center",

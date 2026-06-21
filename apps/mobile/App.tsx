@@ -195,13 +195,17 @@ export default function App() {
             <VocabularyPage
               authStatus={authState.status}
               deletingItemId={vocabularyActions.deletingItemId}
+              isRefreshing={vocabularyActions.isRefreshing}
               onDeleteItem={vocabularyActions.deleteItem}
+              onRefresh={vocabularyActions.refreshVocabulary}
               vocabularyState={vocabularyState}
             />
           ) : null}
           {activeTab === "review" ? (
             <ReviewPage
               authStatus={authState.status}
+              isRefreshing={vocabularyActions.isRefreshing}
+              onRefresh={vocabularyActions.refreshVocabulary}
               vocabularyState={vocabularyState}
             />
           ) : null}
@@ -521,16 +525,24 @@ function StatusCard({
 function VocabularyPage({
   authStatus,
   deletingItemId,
+  isRefreshing,
   onDeleteItem,
+  onRefresh,
   vocabularyState,
 }: {
   authStatus: MobileAuthState["status"];
   deletingItemId: string | null;
+  isRefreshing: boolean;
   onDeleteItem: (itemId: string) => void;
+  onRefresh: () => void;
   vocabularyState: MobileVocabularyState;
 }) {
   const panelState = getMobileVocabularyPanelState(authStatus, vocabularyState);
   const isSummaryAvailable = panelState === "empty" || panelState === "list";
+  const isRefreshDisabled =
+    authStatus !== "authenticated" ||
+    isRefreshing ||
+    vocabularyState.status === "loading";
 
   return (
     <View style={styles.pageStack}>
@@ -539,6 +551,11 @@ function VocabularyPage({
           <Text style={styles.eyebrow}>Vocabulary</Text>
           <Text style={styles.pageTitle}>단어장</Text>
         </View>
+        <MobileRefreshButton
+          isDisabled={isRefreshDisabled}
+          isRefreshing={isRefreshing}
+          onRefresh={onRefresh}
+        />
       </View>
 
       <View style={styles.pageLayout}>
@@ -636,9 +653,13 @@ function VocabularyPage({
 
 function ReviewPage({
   authStatus,
+  isRefreshing,
+  onRefresh,
   vocabularyState,
 }: {
   authStatus: MobileAuthState["status"];
+  isRefreshing: boolean;
+  onRefresh: () => void;
   vocabularyState: MobileVocabularyState;
 }) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -646,6 +667,10 @@ function ReviewPage({
   const [direction, setDirection] =
     useState<ReviewDirection>("english-to-korean");
   const panelState = getMobileVocabularyPanelState(authStatus, vocabularyState);
+  const isRefreshDisabled =
+    authStatus !== "authenticated" ||
+    isRefreshing ||
+    vocabularyState.status === "loading";
   const currentItem = vocabularyState.items[currentCardIndex] ?? null;
   const currentCard = currentItem
     ? getReviewCard(currentItem, direction)
@@ -674,6 +699,11 @@ function ReviewPage({
           <Text style={styles.eyebrow}>Review</Text>
           <Text style={styles.pageTitle}>복습</Text>
         </View>
+        <MobileRefreshButton
+          isDisabled={isRefreshDisabled}
+          isRefreshing={isRefreshing}
+          onRefresh={onRefresh}
+        />
       </View>
 
       <View style={styles.pageLayout}>
@@ -757,6 +787,33 @@ function ReviewPage({
         )}
       </View>
     </View>
+  );
+}
+
+function MobileRefreshButton({
+  isDisabled,
+  isRefreshing,
+  onRefresh,
+}: {
+  isDisabled: boolean;
+  isRefreshing: boolean;
+  onRefresh: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityLabel="단어장 새로고침"
+      accessibilityRole="button"
+      accessibilityState={{ busy: isRefreshing, disabled: isDisabled }}
+      disabled={isDisabled}
+      onPress={onRefresh}
+      style={({ pressed }) => [
+        styles.refreshButton,
+        isDisabled ? styles.refreshButtonDisabled : null,
+        pressed && !isDisabled ? styles.pressed : null,
+      ]}
+    >
+      <Text style={styles.refreshButtonIcon}>↻</Text>
+    </Pressable>
   );
 }
 

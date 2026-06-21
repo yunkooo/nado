@@ -205,17 +205,18 @@ textarea {
 
 .nado-vocabulary-refresh__button {
   appearance: none;
+  align-items: center;
   background: var(--nado-color-surface);
   border: 1px solid var(--nado-color-border);
   border-radius: var(--nado-radius-sm);
   color: var(--nado-color-ink);
   cursor: pointer;
-  font: inherit;
-  font-size: 0.875rem;
-  font-weight: 700;
-  line-height: 1.2;
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
   min-height: 36px;
-  padding: 0 14px;
+  padding: 0;
+  width: 36px;
 }
 
 .nado-vocabulary-refresh__button:hover:not(:disabled) {
@@ -225,6 +226,10 @@ textarea {
 .nado-vocabulary-refresh__button:disabled {
   cursor: not-allowed;
   opacity: 0.58;
+}
+
+.nado-vocabulary-refresh__icon {
+  display: block;
 }
 
 .nado-vocabulary-refresh__message {

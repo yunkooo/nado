@@ -15,8 +15,9 @@ describe("VocabularyRefreshButton", () => {
     );
 
     expect(markup).toContain('aria-label="단어장 새로고침"');
-    expect(markup).toContain("새로고침");
+    expect(markup).toContain("nado-vocabulary-refresh__icon");
     expect(markup).toContain("nado-vocabulary-refresh");
+    expect(markup).not.toContain(">새로고침<");
   });
 
   it("keeps the refresh button disabled while a manual refresh is running", () => {
@@ -31,7 +32,8 @@ describe("VocabularyRefreshButton", () => {
 
     expect(markup).toContain("disabled");
     expect(markup).toContain('aria-busy="true"');
-    expect(markup).toContain("새로고침 중");
+    expect(markup).toContain("nado-vocabulary-refresh__icon");
+    expect(markup).not.toContain(">새로고침 중<");
   });
 
   it("shows refresh failures without replacing the current screen", () => {
