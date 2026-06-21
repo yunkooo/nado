@@ -18,6 +18,7 @@ import {
   parseAnalyzeRequest,
   resetVocabularyPaginationScroll,
   saveVocabularyRequestSchema,
+  shouldRefreshVocabularyFromLifecycle,
 } from "./index";
 
 describe("parseAnalyzeRequest", () => {
@@ -327,6 +328,41 @@ describe("analyzeResponseSchema", () => {
 });
 
 describe("vocabulary realtime helpers", () => {
+  it("refreshes lifecycle vocabulary only when the active snapshot is stale or not ready", () => {
+    expect(
+      shouldRefreshVocabularyFromLifecycle({
+        isStudySurfaceActive: false,
+        lastLoadedAt: undefined,
+        now: 120_000,
+        status: "ready",
+      }),
+    ).toBe(false);
+    expect(
+      shouldRefreshVocabularyFromLifecycle({
+        isStudySurfaceActive: true,
+        lastLoadedAt: 90_000,
+        now: 120_000,
+        status: "ready",
+      }),
+    ).toBe(false);
+    expect(
+      shouldRefreshVocabularyFromLifecycle({
+        isStudySurfaceActive: true,
+        lastLoadedAt: 30_000,
+        now: 120_000,
+        status: "ready",
+      }),
+    ).toBe(true);
+    expect(
+      shouldRefreshVocabularyFromLifecycle({
+        isStudySurfaceActive: true,
+        lastLoadedAt: 90_000,
+        now: 120_000,
+        status: "error",
+      }),
+    ).toBe(true);
+  });
+
   it("creates a user-scoped vocabulary realtime topic", () => {
     expect(createVocabularyRealtimeTopic(" user-id ")).toBe(
       "vocabulary:user-id",

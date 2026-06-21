@@ -17,6 +17,7 @@ export type VocabularyListResult =
 
 export type DeleteVocabularyResult =
   | { status: "success" }
+  | { message: string; status: "not-found" }
   | { message: string; status: "error" };
 
 export type SaveVocabularyResult =
@@ -93,6 +94,16 @@ export async function deleteVocabularyItem(
     return {
       message: DELETE_VOCABULARY_ERROR_MESSAGE,
       status: "error",
+    };
+  }
+
+  if (response.status === 404) {
+    return {
+      message: readErrorMessage(
+        await readJson(response),
+        DELETE_VOCABULARY_ERROR_MESSAGE,
+      ),
+      status: "not-found",
     };
   }
 

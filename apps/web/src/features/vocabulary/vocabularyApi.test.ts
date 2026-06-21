@@ -75,6 +75,28 @@ describe("vocabularyApi", () => {
     expect(result).toEqual({ status: "success" });
   });
 
+  it("marks a missing vocabulary item delete as already removed", async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json(
+        {
+          error: {
+            message: "단어장 항목을 찾을 수 없습니다.",
+          },
+        },
+        { status: 404 },
+      ),
+    );
+
+    const result = await deleteVocabularyItem("row_1", "session-token", {
+      fetcher,
+    });
+
+    expect(result).toEqual({
+      message: "단어장 항목을 찾을 수 없습니다.",
+      status: "not-found",
+    });
+  });
+
   it("saves a vocabulary item with an authenticated bearer token", async () => {
     const fetcher = vi.fn(async () =>
       Response.json({

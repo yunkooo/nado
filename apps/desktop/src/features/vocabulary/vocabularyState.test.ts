@@ -4,11 +4,14 @@ import type { VocabularyListResult } from "../../api/vocabularyApi";
 import type { AuthStateSnapshot } from "../../auth/authState";
 import {
   createVocabularyAuthSync,
+  createVocabularyRealtimeSync,
   createVocabularyStateStore,
   isVocabularySuggestionSaved,
   startVocabularyRealtimeSubscription,
   shouldRefreshActiveVocabulary,
   shouldLoadVocabularyForSession,
+  type VocabularyRealtimeClient,
+  type VocabularyRealtimeRefreshSchedulerFactory,
 } from "./vocabularyState";
 
 const vocabularyItem: VocabularyItem = {
@@ -253,6 +256,164 @@ describe("vocabulary state store", () => {
     });
   });
 
+  it("skips lifecycle refreshes while the ready vocabulary snapshot is fresh", async () => {
+    let currentTime = 1_000;
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => ({
+      data: [vocabularyItem],
+      status: "success" as const,
+    }));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      now: () => currentTime,
+      store,
+    });
+    const authState = createAuthenticatedAuthState();
+
+    sync.sync(authState);
+    await flushPromises();
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    await expect(sync.refresh(authState)).resolves.toBe("ignored");
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    currentTime += 60_001;
+
+    await expect(sync.refresh(authState)).resolves.toBe("refreshed");
+
+    expect(listVocabulary).toHaveBeenCalledTimes(2);
+  });
+
+  it("refreshes when a fresh token timestamp belongs to a different ready snapshot", async () => {
+    let currentTime = 1_000;
+    const store = createVocabularyStateStore();
+    const firstAccountItem = {
+      ...vocabularyItem,
+      id: "row_a",
+      term: "account-a",
+    };
+    const secondAccountItem = {
+      ...vocabularyItem,
+      id: "row_b",
+      term: "account-b",
+    };
+    const listVocabulary = vi.fn(async () => ({
+      data: [firstAccountItem],
+      status: "success" as const,
+    }));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      now: () => currentTime,
+      store,
+    });
+    const firstAccountAuthState = createAuthenticatedAuthState("token-a");
+
+    sync.sync(firstAccountAuthState);
+    await flushPromises();
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    store.setReady("token-b", [secondAccountItem]);
+    currentTime += 1_000;
+
+    await expect(sync.refresh(firstAccountAuthState)).resolves.toBe(
+      "refreshed",
+    );
+
+    expect(listVocabulary).toHaveBeenCalledTimes(2);
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "token-a",
+      items: [firstAccountItem],
+      status: "ready",
+    });
+  });
+
+  it("keeps stale lifecycle background refreshes single-flight", async () => {
+    let currentTime = 1_000;
+    let resolveStaleRefresh: (result: VocabularyListResult) => void = () =>
+      undefined;
+    const store = createVocabularyStateStore();
+    const staleItem = {
+      ...vocabularyItem,
+      id: "row_stale",
+      term: "stale",
+    };
+    const refreshedItem = {
+      ...vocabularyItem,
+      id: "row_refreshed",
+      term: "refreshed",
+    };
+    const listVocabulary = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [staleItem],
+        status: "success" as const,
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise<VocabularyListResult>((resolve) => {
+            resolveStaleRefresh = resolve;
+          }),
+      )
+      .mockRejectedValueOnce(new Error("duplicate refresh failed"));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      now: () => currentTime,
+      store,
+    });
+    const authState = createAuthenticatedAuthState("session-token");
+
+    sync.sync(authState);
+    await flushPromises();
+    listVocabulary.mockClear();
+    currentTime += 60_001;
+
+    const firstRefresh = sync.refresh(authState);
+    const duplicateRefresh = sync.refresh(authState);
+
+    expect(duplicateRefresh).toBe(firstRefresh);
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    resolveStaleRefresh({
+      data: [refreshedItem],
+      status: "success",
+    });
+
+    await expect(firstRefresh).resolves.toBe("refreshed");
+    await expect(duplicateRefresh).resolves.toBe("refreshed");
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [refreshedItem],
+      status: "ready",
+    });
+  });
+
+  it("forces realtime refreshes even while the ready vocabulary snapshot is fresh", async () => {
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => ({
+      data: [vocabularyItem],
+      status: "success" as const,
+    }));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      now: () => 1_000,
+      store,
+    });
+    const authState = createAuthenticatedAuthState();
+
+    sync.sync(authState);
+    await flushPromises();
+    listVocabulary.mockClear();
+
+    await expect(sync.refreshAfterCurrentLoad(authState)).resolves.toBe(
+      "refreshed",
+    );
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps a ready snapshot when a background vocabulary refresh fails", async () => {
     const store = createVocabularyStateStore();
     const listVocabulary = vi.fn(async () => {
@@ -341,6 +502,64 @@ describe("vocabulary state store", () => {
     });
   });
 
+  it("returns a queued realtime refresh promise while the same token is loading", async () => {
+    let resolveInitialLoad: (result: VocabularyListResult) => void = () =>
+      undefined;
+    const refreshedItem = {
+      ...vocabularyItem,
+      id: "row_2",
+      term: "afterwards",
+    };
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi
+      .fn(
+        async (_accessToken: string): Promise<VocabularyListResult> => ({
+          data: [refreshedItem],
+          status: "success",
+        }),
+      )
+      .mockImplementationOnce(
+        (_accessToken: string) =>
+          new Promise<VocabularyListResult>((resolve) => {
+            resolveInitialLoad = resolve;
+          }),
+      );
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+    const authState = createAuthenticatedAuthState();
+
+    sync.sync(authState);
+
+    const realtimeRefresh = sync.refreshAfterCurrentLoad(authState);
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    let didSettle = false;
+    void realtimeRefresh.then(() => {
+      didSettle = true;
+    });
+
+    await flushPromises();
+    expect(didSettle).toBe(false);
+
+    resolveInitialLoad({
+      data: [vocabularyItem],
+      status: "success",
+    });
+
+    await realtimeRefresh;
+
+    expect(didSettle).toBe(true);
+    expect(listVocabulary).toHaveBeenCalledTimes(2);
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [refreshedItem],
+      status: "ready",
+    });
+  });
+
   it("skips manual refreshes when the user is not authenticated", async () => {
     const store = createVocabularyStateStore();
     const listVocabulary = vi.fn(async () => ({
@@ -411,18 +630,21 @@ describe("vocabulary state store", () => {
     expect(realtime.client.channel).toHaveBeenCalledWith("vocabulary:user_1", {
       config: { private: true },
     });
-    expect(realtime.channel.subscribe).toHaveBeenCalledTimes(1);
-    expect(realtime.channel.on).toHaveBeenCalledWith(
+    const channel = realtime.channels[0];
+
+    expect(channel).toBeDefined();
+    expect(channel?.subscribe).toHaveBeenCalledTimes(1);
+    expect(channel?.on).toHaveBeenCalledWith(
       "broadcast",
       { event: "INSERT" },
       expect.any(Function),
     );
-    expect(realtime.channel.on).toHaveBeenCalledWith(
+    expect(channel?.on).toHaveBeenCalledWith(
       "broadcast",
       { event: "UPDATE" },
       expect.any(Function),
     );
-    expect(realtime.channel.on).toHaveBeenCalledWith(
+    expect(channel?.on).toHaveBeenCalledWith(
       "broadcast",
       { event: "DELETE" },
       expect.any(Function),
@@ -479,6 +701,60 @@ describe("vocabulary state store", () => {
 
     expect(realtime.client.channel).not.toHaveBeenCalled();
   });
+
+  it("waits for active realtime channel removal before resubscribing the same topic", async () => {
+    const removal = createDeferred<unknown>();
+    const realtime = createFakeRealtimeClient({
+      removeChannel: () => removal.promise,
+    });
+    const sync = createVocabularyRealtimeSync({
+      getClient: () => realtime.client,
+      refresh: vi.fn(),
+    });
+
+    sync.sync(createAuthenticatedAuthState("old-token"));
+    await flushPromises();
+
+    expect(realtime.client.channel).toHaveBeenCalledTimes(1);
+
+    sync.sync(createAuthenticatedAuthState("new-token"));
+    await flushPromises();
+
+    expect(realtime.client.removeChannel).toHaveBeenCalledWith(
+      realtime.channels[0],
+    );
+    expect(realtime.client.channel).toHaveBeenCalledTimes(1);
+
+    removal.resolve("ok");
+    await flushPromises();
+
+    expect(realtime.client.channel).toHaveBeenCalledTimes(2);
+    expect(realtime.client.channel).toHaveBeenLastCalledWith(
+      "vocabulary:user_1",
+      {
+        config: { private: true },
+      },
+    );
+    expect(realtime.channels[1]?.subscribe).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores broadcasts from a cleaned-up realtime channel", async () => {
+    const realtime = createFakeRealtimeClient();
+    const scheduler = createFakeScheduler();
+    const sync = createVocabularyRealtimeSync({
+      createRefreshScheduler: scheduler.factory,
+      getClient: () => realtime.client,
+      refresh: vi.fn(),
+    });
+
+    sync.sync(createAuthenticatedAuthState());
+    await flushPromises();
+    sync.cleanup();
+
+    realtime.channels[0]?.emit("INSERT");
+
+    expect(scheduler.schedule).not.toHaveBeenCalled();
+  });
 });
 
 async function flushPromises() {
@@ -486,11 +762,13 @@ async function flushPromises() {
   await Promise.resolve();
 }
 
-function createAuthenticatedAuthState(): AuthStateSnapshot {
+function createAuthenticatedAuthState(
+  accessToken = "session-token",
+): AuthStateSnapshot {
   return {
-    accessToken: "session-token",
+    accessToken,
     session: {
-      access_token: "session-token",
+      access_token: accessToken,
       user: {
         id: "user_1",
       },
@@ -499,30 +777,90 @@ function createAuthenticatedAuthState(): AuthStateSnapshot {
   } as AuthStateSnapshot;
 }
 
-function createFakeRealtimeClient() {
+function createFakeScheduler() {
+  const scheduler = {
+    cancel: vi.fn(),
+    isScheduled: vi.fn(() => false),
+    schedule: vi.fn(),
+  };
+  let refresh: (() => Promise<void> | void) | undefined;
+  const factory: VocabularyRealtimeRefreshSchedulerFactory = (nextRefresh) => {
+    refresh = nextRefresh;
+    return scheduler;
+  };
+
+  return {
+    ...scheduler,
+    factory,
+    get refresh() {
+      return refresh;
+    },
+  };
+}
+
+function createFakeRealtimeClient({
+  removeChannel = async () => "ok",
+}: {
+  removeChannel?: VocabularyRealtimeClient["removeChannel"];
+} = {}) {
+  const channels: FakeRealtimeChannel[] = [];
+  const client: VocabularyRealtimeClient = {
+    channel: vi.fn((topic, options) => {
+      const channel = createFakeRealtimeChannel(topic, options);
+      channels.push(channel);
+      return channel;
+    }),
+    realtime: {
+      setAuth: vi.fn(async () => undefined),
+    },
+    removeChannel: vi.fn(removeChannel),
+  };
+
+  return {
+    get channel() {
+      return channels[0];
+    },
+    channels,
+    client,
+    emit(event: FakeBroadcastEvent) {
+      channels[0]?.emit(event);
+    },
+  };
+}
+
+type FakeBroadcastEvent = "DELETE" | "INSERT" | "UPDATE";
+type FakeRealtimeChannel = ReturnType<typeof createFakeRealtimeChannel>;
+
+function createFakeRealtimeChannel(
+  topic: string,
+  options: { config: { private: true } },
+) {
   const handlers = new Map<string, () => void>();
   const channel = {
+    emit(event: string) {
+      handlers.get(event)?.();
+    },
     on: vi.fn(
       (_type: "broadcast", filter: { event: string }, handler: () => void) => {
         handlers.set(filter.event, handler);
         return channel;
       },
     ),
+    options,
     subscribe: vi.fn(() => channel),
-  };
-  const client = {
-    channel: vi.fn(() => channel),
-    realtime: {
-      setAuth: vi.fn(async () => undefined),
-    },
-    removeChannel: vi.fn(async () => "ok"),
+    topic,
   };
 
-  return {
-    channel,
-    client,
-    emit(event: string) {
-      handlers.get(event)?.();
-    },
-  };
+  return channel;
+}
+
+function createDeferred<T>() {
+  let reject!: (reason?: unknown) => void;
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((nextResolve, nextReject) => {
+    resolve = nextResolve;
+    reject = nextReject;
+  });
+
+  return { promise, reject, resolve };
 }

@@ -90,13 +90,11 @@ describe("Desktop App source", () => {
   });
 
   it("subscribes to desktop vocabulary realtime updates after authentication", () => {
-    expect(appSource).toContain("useVocabularyRealtimeRefresh");
+    expect(appSource).toContain("useSyncVocabularyRealtimeForAuth");
     expect(appSource).toMatch(
-      /useVocabularyRealtimeRefresh\(\s*authState,?\s*\)/,
+      /useSyncVocabularyRealtimeForAuth\(\s*authState,?\s*\)/,
     );
-    expect(vocabularyStateSource).toContain(
-      "startVocabularyRealtimeSubscription",
-    );
+    expect(vocabularyStateSource).toContain("createVocabularyRealtimeSync");
     expect(vocabularyStateSource).toContain("createVocabularyRealtimeTopic");
     expect(vocabularyStateSource).toContain("config: { private: true }");
     expect(vocabularyStateSource).toContain(

@@ -92,6 +92,26 @@ describe("desktop vocabularyApi", () => {
     });
   });
 
+  it("marks a missing vocabulary item delete as already removed", async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json(
+        {
+          error: {
+            message: "단어장 항목을 찾을 수 없습니다.",
+          },
+        },
+        { status: 404 },
+      ),
+    );
+
+    await expect(
+      deleteVocabularyItem("row_1", "session-token", { fetcher }),
+    ).resolves.toEqual({
+      message: "단어장 항목을 찾을 수 없습니다.",
+      status: "not-found",
+    });
+  });
+
   it("returns a delete-specific fallback message when deleting vocabulary fails", async () => {
     const fetcher = vi.fn(async () => {
       throw new TypeError("fetch failed");

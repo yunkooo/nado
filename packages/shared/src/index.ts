@@ -85,6 +85,7 @@ export const vocabularyItemSchema = z.object({
 export const VOCABULARY_PAGE_SIZE = 10;
 export const VOCABULARY_REALTIME_TOPIC_PREFIX = "vocabulary:";
 export const VOCABULARY_REALTIME_REFRESH_DEBOUNCE_MS = 300;
+export const VOCABULARY_LIFECYCLE_REFRESH_STALE_MS = 60 * 1000;
 
 export type VocabularyPaginationResult<T> = {
   currentPage: number;
@@ -106,6 +107,34 @@ export type VocabularyRealtimeRefreshScheduler = {
   isScheduled(): boolean;
   schedule(): void;
 };
+
+export function shouldRefreshVocabularyFromLifecycle({
+  isStudySurfaceActive,
+  lastLoadedAt,
+  now,
+  staleMs = VOCABULARY_LIFECYCLE_REFRESH_STALE_MS,
+  status,
+}: {
+  isStudySurfaceActive: boolean;
+  lastLoadedAt: number | undefined;
+  now: number;
+  staleMs?: number;
+  status: "error" | "idle" | "loading" | "ready";
+}) {
+  if (!isStudySurfaceActive) {
+    return false;
+  }
+
+  if (status !== "ready") {
+    return true;
+  }
+
+  if (lastLoadedAt === undefined) {
+    return true;
+  }
+
+  return now - lastLoadedAt >= staleMs;
+}
 
 export function createVocabularyRealtimeTopic(
   userId: string | null | undefined,

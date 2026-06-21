@@ -29,7 +29,7 @@ export function useVocabularyManualRefresh(authState: AuthStateSnapshot) {
     }
 
     setStatus("refreshing");
-    const result = await refreshVocabularyForAuth(authState);
+    const result = await refreshVocabularyForAuth(authState, { force: true });
     setStatus(result === "failed" ? "error" : "idle");
   };
 
