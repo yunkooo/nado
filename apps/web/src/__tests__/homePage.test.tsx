@@ -17,6 +17,14 @@ const pageSource = readFileSync(
   new URL("../app/page.tsx", import.meta.url),
   "utf8",
 );
+const vocabularyPageSource = readFileSync(
+  new URL("../app/vocabulary/page.tsx", import.meta.url),
+  "utf8",
+);
+const reviewPageSource = readFileSync(
+  new URL("../app/review/page.tsx", import.meta.url),
+  "utf8",
+);
 const appShellSource = readFileSync(
   new URL("../components/AppShell.tsx", import.meta.url),
   "utf8",
@@ -34,6 +42,13 @@ const useVocabularySaveNoticeDismissSource = readFileSync(
 );
 const vocabularyStateSource = readFileSync(
   new URL("../features/vocabulary/vocabularyState.ts", import.meta.url),
+  "utf8",
+);
+const useVocabularyManualRefreshSource = readFileSync(
+  new URL(
+    "../features/vocabulary/useVocabularyManualRefresh.ts",
+    import.meta.url,
+  ),
   "utf8",
 );
 
@@ -176,6 +191,14 @@ describe("HomePage", () => {
     expect(vocabularyStateSource).toContain('window.addEventListener("focus"');
     expect(vocabularyStateSource).toContain(
       'document.addEventListener("visibilitychange"',
+    );
+  });
+
+  it("exposes a manual vocabulary refresh control for study pages", () => {
+    expect(vocabularyPageSource).toContain("VocabularyRefreshControl");
+    expect(reviewPageSource).toContain("VocabularyRefreshControl");
+    expect(useVocabularyManualRefreshSource).toContain(
+      "refreshVocabularyForAuth(authState, { force: true })",
     );
   });
 

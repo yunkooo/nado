@@ -18,6 +18,7 @@ import {
   parseAnalyzeRequest,
   resetVocabularyPaginationScroll,
   saveVocabularyRequestSchema,
+  shouldStartVocabularyManualRefresh,
   shouldRefreshVocabularyFromLifecycle,
 } from "./index";
 
@@ -328,6 +329,44 @@ describe("analyzeResponseSchema", () => {
 });
 
 describe("vocabulary realtime helpers", () => {
+  it("allows the first manual vocabulary refresh and throttles rapid repeats", () => {
+    expect(
+      shouldStartVocabularyManualRefresh({
+        isRefreshing: false,
+        lastStartedAt: undefined,
+        now: 10_000,
+        throttleMs: 2_000,
+      }),
+    ).toBe(true);
+    expect(
+      shouldStartVocabularyManualRefresh({
+        isRefreshing: false,
+        lastStartedAt: 9_000,
+        now: 10_000,
+        throttleMs: 2_000,
+      }),
+    ).toBe(false);
+    expect(
+      shouldStartVocabularyManualRefresh({
+        isRefreshing: false,
+        lastStartedAt: 8_000,
+        now: 10_000,
+        throttleMs: 2_000,
+      }),
+    ).toBe(true);
+  });
+
+  it("blocks manual vocabulary refreshes while another one is in flight", () => {
+    expect(
+      shouldStartVocabularyManualRefresh({
+        isRefreshing: true,
+        lastStartedAt: undefined,
+        now: 10_000,
+        throttleMs: 2_000,
+      }),
+    ).toBe(false);
+  });
+
   it("refreshes lifecycle vocabulary only when the active snapshot is stale or not ready", () => {
     expect(
       shouldRefreshVocabularyFromLifecycle({

@@ -1,6 +1,8 @@
 import {
   createVocabularyRealtimeRefreshScheduler,
+  shouldStartVocabularyManualRefresh,
   shouldRefreshVocabularyFromLifecycle,
+  VOCABULARY_MANUAL_REFRESH_THROTTLE_MS,
   type VocabularyRealtimeRefreshScheduler,
 } from "@nado/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -10,6 +12,7 @@ import { getMobileSupabaseClient } from "../../auth/authClient";
 import type { MobileAuthStateSnapshot } from "../../auth/authState";
 import {
   applyDeleteVocabularyError,
+  applyLoadVocabularyError,
   createMobileVocabularySuggestionKey,
   isMobileVocabularySuggestionSaved,
   upsertMobileVocabularyItem,
@@ -35,6 +38,8 @@ export type MobileVocabularyActions = {
   getSuggestionState(
     suggestion: MobileVocabularySuggestion,
   ): "idle" | "saved" | "saving";
+  isRefreshing: boolean;
+  refreshVocabulary(): Promise<void>;
   saveMessage: string | null;
   saveSuggestion(suggestion: MobileVocabularySuggestion): Promise<void>;
 };
@@ -55,6 +60,7 @@ export function useMobileVocabulary(
 ): [MobileVocabularyState, MobileVocabularyActions] {
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [savingSuggestionKey, setSavingSuggestionKey] = useState<string | null>(
     null,
   );
@@ -63,8 +69,10 @@ export function useMobileVocabulary(
   );
   const accessTokenRef = useRef<string | null>(null);
   const lastLoadedAtRef = useRef<number | undefined>(undefined);
+  const lastManualRefreshStartedAtRef = useRef<number | undefined>(undefined);
   const latestAuthStateRef = useRef(authState);
   const requestSequenceRef = useRef(0);
+  const isRefreshingRef = useRef(false);
   const realtimeRefreshSchedulerRef =
     useRef<VocabularyRealtimeRefreshScheduler | null>(null);
   const statusRef = useRef<MobileVocabularyState["status"]>(
@@ -154,19 +162,10 @@ export function useMobileVocabulary(
       }
 
       setTrackedVocabularyState((currentState) => {
-        if (preserveCurrentOnError && currentState.items.length > 0) {
-          return {
-            ...currentState,
-            message: result.message,
-            status: "ready",
-          };
-        }
-
-        return {
-          items: [],
+        return applyLoadVocabularyError(currentState, {
           message: result.message,
-          status: "error",
-        };
+          preserveCurrentOnError,
+        });
       });
     },
     [setTrackedVocabularyState],
@@ -192,6 +191,38 @@ export function useMobileVocabulary(
     [loadVocabulary],
   );
 
+  const refreshVocabulary = useCallback(async () => {
+    const now = Date.now();
+
+    if (
+      !shouldStartVocabularyManualRefresh({
+        isRefreshing: isRefreshingRef.current,
+        lastStartedAt: lastManualRefreshStartedAtRef.current,
+        now,
+        throttleMs: VOCABULARY_MANUAL_REFRESH_THROTTLE_MS,
+      })
+    ) {
+      return;
+    }
+
+    const refreshPromise = refreshVocabularyInBackground({ force: true });
+
+    if (!refreshPromise) {
+      return;
+    }
+
+    isRefreshingRef.current = true;
+    lastManualRefreshStartedAtRef.current = now;
+    setIsRefreshing(true);
+
+    try {
+      await refreshPromise;
+    } finally {
+      isRefreshingRef.current = false;
+      setIsRefreshing(false);
+    }
+  }, [refreshVocabularyInBackground]);
+
   useEffect(() => {
     if (authState.status === "loading") {
       return;
@@ -201,6 +232,9 @@ export function useMobileVocabulary(
       requestSequenceRef.current += 1;
       accessTokenRef.current = null;
       lastLoadedAtRef.current = undefined;
+      lastManualRefreshStartedAtRef.current = undefined;
+      isRefreshingRef.current = false;
+      setIsRefreshing(false);
       setTrackedVocabularyState(() => initialVocabularyState);
       return;
     }
@@ -392,6 +426,8 @@ export function useMobileVocabulary(
       deleteItem,
       deletingItemId,
       getSuggestionState,
+      isRefreshing,
+      refreshVocabulary,
       saveMessage,
       saveSuggestion,
     },

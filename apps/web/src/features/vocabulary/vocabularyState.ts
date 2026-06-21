@@ -23,6 +23,7 @@ import {
 } from "./vocabularyApi";
 
 export type VocabularyStateStatus = "idle" | "loading" | "ready" | "error";
+export type VocabularyRefreshResult = "failed" | "ignored" | "refreshed";
 
 export type VocabularyStateSnapshot = {
   accessToken: string | null;
@@ -70,7 +71,7 @@ type VocabularyRealtimeEvent = "DELETE" | "INSERT" | "UPDATE";
 type VocabularyRealtimeClientProvider = () => VocabularyRealtimeClient | null;
 type VocabularyRealtimeRefresher = (
   authState: AuthStateSnapshot,
-) => Promise<void> | void;
+) => Promise<unknown> | unknown;
 
 const VOCABULARY_REALTIME_EVENTS: VocabularyRealtimeEvent[] = [
   "INSERT",
@@ -189,7 +190,7 @@ export function createVocabularyAuthSync({
   store?: VocabularyStateStore;
 } = {}) {
   let requestSequence = 0;
-  let activeLoadPromise: Promise<void> | null = null;
+  let activeLoadPromise: Promise<VocabularyRefreshResult> | null = null;
   let pendingForcedRefreshAccessToken: string | null = null;
   const loadedAtByAccessToken = new Map<string, number>();
 
@@ -199,7 +200,7 @@ export function createVocabularyAuthSync({
       refreshAccessToken = false,
       showLoading = true,
     }: { refreshAccessToken?: boolean; showLoading?: boolean } = {},
-  ): Promise<void> {
+  ): Promise<VocabularyRefreshResult> {
     requestSequence += 1;
     const requestId = requestSequence;
 
@@ -216,7 +217,7 @@ export function createVocabularyAuthSync({
       );
 
       if (requestId !== requestSequence) {
-        return;
+        return "ignored";
       }
 
       if (showLoading && currentAccessToken !== accessToken) {
@@ -238,34 +239,38 @@ export function createVocabularyAuthSync({
         currentState.accessToken !== currentAccessToken) ||
       (showLoading && currentState.status !== "loading")
     ) {
-      return;
+      return "ignored";
     }
 
     if (result.status === "success") {
       loadedAtByAccessToken.set(currentAccessToken, now());
       store.setReady(currentAccessToken, result.data);
-      return runPendingForcedRefresh(accessToken, currentAccessToken);
+      return (
+        (await runPendingForcedRefresh(accessToken, currentAccessToken)) ??
+        "refreshed"
+      );
     }
 
     if (showLoading) {
       store.setError(currentAccessToken, result.message);
     }
 
-    return runPendingForcedRefresh(accessToken, currentAccessToken);
+    return (
+      (await runPendingForcedRefresh(accessToken, currentAccessToken)) ??
+      "failed"
+    );
   }
 
   function startVocabularyLoad(
     accessToken: string,
     options?: Parameters<typeof loadVocabularyForSession>[1],
-  ): Promise<void> {
-    const loadPromise: Promise<void> = loadVocabularyForSession(
-      accessToken,
-      options,
-    ).finally(() => {
-      if (activeLoadPromise === loadPromise) {
-        activeLoadPromise = null;
-      }
-    });
+  ): Promise<VocabularyRefreshResult> {
+    const loadPromise: Promise<VocabularyRefreshResult> =
+      loadVocabularyForSession(accessToken, options).finally(() => {
+        if (activeLoadPromise === loadPromise) {
+          activeLoadPromise = null;
+        }
+      });
 
     activeLoadPromise = loadPromise;
     return loadPromise;
@@ -278,7 +283,7 @@ export function createVocabularyAuthSync({
   function runPendingForcedRefresh(
     accessToken: string,
     currentAccessToken: string,
-  ): Promise<void> | undefined {
+  ): Promise<VocabularyRefreshResult> | undefined {
     if (
       pendingForcedRefreshAccessToken !== accessToken &&
       pendingForcedRefreshAccessToken !== currentAccessToken
@@ -297,7 +302,7 @@ export function createVocabularyAuthSync({
   function refreshVocabulary(
     authState: AuthStateSnapshot,
     { force = false }: { force?: boolean } = {},
-  ): Promise<void> | undefined {
+  ): Promise<VocabularyRefreshResult> | undefined {
     if (authState.status !== "authenticated" || !authState.accessToken) {
       return;
     }
@@ -326,7 +331,7 @@ export function createVocabularyAuthSync({
         status: vocabularyState.status,
       })
     ) {
-      return;
+      return Promise.resolve("ignored");
     }
 
     return startVocabularyLoad(authState.accessToken, {
@@ -439,6 +444,19 @@ export function useRefreshVocabularyForActiveStudySurface(
   }, [isStudySurfaceActive]);
 }
 
+export type VocabularyRefreshOptions = {
+  force?: boolean;
+};
+
+export function refreshVocabularyForAuth(
+  authState: AuthStateSnapshot,
+  options?: VocabularyRefreshOptions,
+) {
+  return options?.force
+    ? vocabularyAuthSync.refreshNow(authState)
+    : vocabularyAuthSync.refresh(authState);
+}
+
 export function createVocabularyRealtimeSync({
   createRefreshScheduler = (refresh) =>
     createVocabularyRealtimeRefreshScheduler({ refresh }),
@@ -517,7 +535,9 @@ export function createVocabularyRealtimeSync({
 
       subscriptionSequence += 1;
       const requestId = subscriptionSequence;
-      const scheduler = createRefreshScheduler(() => refresh(authState));
+      const scheduler = createRefreshScheduler(() =>
+        Promise.resolve(refresh(authState)).then(() => undefined),
+      );
 
       void channelRemoval
         .then(async () => {

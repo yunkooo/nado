@@ -86,6 +86,7 @@ export const VOCABULARY_PAGE_SIZE = 10;
 export const VOCABULARY_REALTIME_TOPIC_PREFIX = "vocabulary:";
 export const VOCABULARY_REALTIME_REFRESH_DEBOUNCE_MS = 300;
 export const VOCABULARY_LIFECYCLE_REFRESH_STALE_MS = 60 * 1000;
+export const VOCABULARY_MANUAL_REFRESH_THROTTLE_MS = 2 * 1000;
 
 export type VocabularyPaginationResult<T> = {
   currentPage: number;
@@ -134,6 +135,28 @@ export function shouldRefreshVocabularyFromLifecycle({
   }
 
   return now - lastLoadedAt >= staleMs;
+}
+
+export function shouldStartVocabularyManualRefresh({
+  isRefreshing,
+  lastStartedAt,
+  now,
+  throttleMs = VOCABULARY_MANUAL_REFRESH_THROTTLE_MS,
+}: {
+  isRefreshing: boolean;
+  lastStartedAt: number | undefined;
+  now: number;
+  throttleMs?: number;
+}) {
+  if (isRefreshing) {
+    return false;
+  }
+
+  if (lastStartedAt === undefined) {
+    return true;
+  }
+
+  return now - lastStartedAt >= Math.max(0, throttleMs);
 }
 
 export function createVocabularyRealtimeTopic(

@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AuthStateSnapshot } from "../../auth/authState";
+import type { AuthStateSnapshot } from "../auth/authState";
 import type { useVocabularyManualRefresh as useVocabularyManualRefreshType } from "./useVocabularyManualRefresh";
 
 type ManualRefreshState = ReturnType<typeof useVocabularyManualRefreshType>;

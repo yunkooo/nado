@@ -3,7 +3,7 @@ import {
   VOCABULARY_MANUAL_REFRESH_THROTTLE_MS,
 } from "@nado/shared";
 import { useEffect, useRef, useState } from "react";
-import type { AuthStateSnapshot } from "../../auth/authState";
+import type { AuthStateSnapshot } from "../auth/authState";
 import {
   refreshVocabularyForAuth,
   useVocabularyState,

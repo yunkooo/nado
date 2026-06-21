@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import {
   Pressable,
   Platform,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -70,6 +71,14 @@ export default function App() {
   const composerState = getAnalysisComposerState(text);
   const isAnalysisLoading = analysisState.status === "loading";
   const isAnalyzeDisabled = composerState.isSubmitDisabled || isAnalysisLoading;
+  const studyRefreshControl = isStudyTabActive ? (
+    <RefreshControl
+      colors={[mobileColors.primary]}
+      onRefresh={vocabularyActions.refreshVocabulary}
+      refreshing={vocabularyActions.isRefreshing}
+      tintColor={mobileColors.inkMuted}
+    />
+  ) : undefined;
 
   useEffect(() => {
     if (!vocabularyActions.saveMessage) {
@@ -158,6 +167,7 @@ export default function App() {
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          refreshControl={studyRefreshControl}
         >
           {authActionMessage ? (
             <StatusCard

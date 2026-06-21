@@ -18,6 +18,34 @@ export function applyDeleteVocabularyError(
   };
 }
 
+export function applyLoadVocabularyError(
+  currentState: MobileVocabularyState,
+  {
+    message,
+    preserveCurrentOnError,
+  }: {
+    message: string;
+    preserveCurrentOnError: boolean;
+  },
+): MobileVocabularyState {
+  if (
+    preserveCurrentOnError &&
+    (currentState.status === "ready" || currentState.items.length > 0)
+  ) {
+    return {
+      ...currentState,
+      message,
+      status: "ready",
+    };
+  }
+
+  return {
+    items: [],
+    message,
+    status: "error",
+  };
+}
+
 export function upsertMobileVocabularyItem(
   currentState: MobileVocabularyState,
   item: VocabularyItem,

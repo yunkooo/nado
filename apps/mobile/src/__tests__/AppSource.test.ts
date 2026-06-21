@@ -79,6 +79,27 @@ describe("mobile App API wiring", () => {
     expect(mobileVocabularySource).toContain('nextAppState === "active"');
   });
 
+  it("supports manual pull-to-refresh on mobile study tabs", () => {
+    expect(appSource).toContain("RefreshControl");
+    expect(appSource).toContain("refreshControl={");
+    expect(appSource).toContain("vocabularyActions.isRefreshing");
+    expect(appSource).toContain("vocabularyActions.refreshVocabulary");
+    expect(mobileVocabularySource).toContain("isRefreshing");
+    expect(mobileVocabularySource).toContain(
+      "refreshVocabularyInBackground({ force: true })",
+    );
+  });
+
+  it("throttles manual pull-to-refresh without changing realtime or lifecycle refreshes", () => {
+    expect(mobileVocabularySource).toContain(
+      "shouldStartVocabularyManualRefresh",
+    );
+    expect(mobileVocabularySource).toContain(
+      "VOCABULARY_MANUAL_REFRESH_THROTTLE_MS",
+    );
+    expect(mobileVocabularySource).toContain("lastManualRefreshStartedAtRef");
+  });
+
   it("guards mobile vocabulary refreshes against duplicate and stale requests", () => {
     expect(mobileVocabularySource).toContain("requestSequenceRef");
     expect(mobileVocabularySource).toContain("lastLoadedAtRef");

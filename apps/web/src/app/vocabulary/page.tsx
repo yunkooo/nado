@@ -1,5 +1,6 @@
 import { AppShell } from "../../components/AppShell";
 import { VocabularyFlow } from "../../features/vocabulary/VocabularyFlow";
+import { VocabularyRefreshControl } from "../../features/vocabulary/VocabularyRefreshControl";
 
 export default function VocabularyPage() {
   return (
@@ -11,6 +12,7 @@ export default function VocabularyPage() {
               <p className="nado-eyebrow">Vocabulary</p>
               <h1 className="nado-page-title">단어장</h1>
             </div>
+            <VocabularyRefreshControl />
           </header>
 
           <VocabularyFlow />
