@@ -1,6 +1,8 @@
 import {
   createVocabularyRealtimeRefreshScheduler,
+  shouldStartVocabularyManualRefresh,
   shouldRefreshVocabularyFromLifecycle,
+  VOCABULARY_MANUAL_REFRESH_THROTTLE_MS,
   type VocabularyRealtimeRefreshScheduler,
 } from "@nado/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -67,6 +69,7 @@ export function useMobileVocabulary(
   );
   const accessTokenRef = useRef<string | null>(null);
   const lastLoadedAtRef = useRef<number | undefined>(undefined);
+  const lastManualRefreshStartedAtRef = useRef<number | undefined>(undefined);
   const latestAuthStateRef = useRef(authState);
   const requestSequenceRef = useRef(0);
   const isRefreshingRef = useRef(false);
@@ -189,7 +192,16 @@ export function useMobileVocabulary(
   );
 
   const refreshVocabulary = useCallback(async () => {
-    if (isRefreshingRef.current) {
+    const now = Date.now();
+
+    if (
+      !shouldStartVocabularyManualRefresh({
+        isRefreshing: isRefreshingRef.current,
+        lastStartedAt: lastManualRefreshStartedAtRef.current,
+        now,
+        throttleMs: VOCABULARY_MANUAL_REFRESH_THROTTLE_MS,
+      })
+    ) {
       return;
     }
 
@@ -200,6 +212,7 @@ export function useMobileVocabulary(
     }
 
     isRefreshingRef.current = true;
+    lastManualRefreshStartedAtRef.current = now;
     setIsRefreshing(true);
 
     try {
@@ -219,6 +232,9 @@ export function useMobileVocabulary(
       requestSequenceRef.current += 1;
       accessTokenRef.current = null;
       lastLoadedAtRef.current = undefined;
+      lastManualRefreshStartedAtRef.current = undefined;
+      isRefreshingRef.current = false;
+      setIsRefreshing(false);
       setTrackedVocabularyState(() => initialVocabularyState);
       return;
     }

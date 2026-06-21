@@ -51,4 +51,26 @@ describe("useVocabularyManualRefresh", () => {
       force: true,
     });
   });
+
+  it("throttles rapid manual refresh repeats", async () => {
+    const { useVocabularyManualRefresh } =
+      (await import("./useVocabularyManualRefresh")) as {
+        useVocabularyManualRefresh: typeof useVocabularyManualRefreshType;
+      };
+    let refreshVocabulary: ManualRefreshState["refreshVocabulary"] = async () =>
+      undefined;
+
+    function ManualRefreshHarness() {
+      refreshVocabulary =
+        useVocabularyManualRefresh(authState).refreshVocabulary;
+      return null;
+    }
+
+    renderToStaticMarkup(createElement(ManualRefreshHarness));
+
+    await refreshVocabulary?.();
+    await refreshVocabulary?.();
+
+    expect(refreshVocabularyForAuth).toHaveBeenCalledTimes(1);
+  });
 });

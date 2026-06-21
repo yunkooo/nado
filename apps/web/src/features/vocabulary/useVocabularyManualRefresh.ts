@@ -1,4 +1,8 @@
-import { useEffect, useState } from "react";
+import {
+  shouldStartVocabularyManualRefresh,
+  VOCABULARY_MANUAL_REFRESH_THROTTLE_MS,
+} from "@nado/shared";
+import { useEffect, useRef, useState } from "react";
 import type { AuthStateSnapshot } from "../auth/authState";
 import {
   refreshVocabularyForAuth,
@@ -11,6 +15,8 @@ type VocabularyManualRefreshStatus = "error" | "idle" | "refreshing";
 
 export function useVocabularyManualRefresh(authState: AuthStateSnapshot) {
   const vocabularyState = useVocabularyState();
+  const isRefreshInFlightRef = useRef(false);
+  const lastManualRefreshStartedAtRef = useRef<number | undefined>(undefined);
   const [status, setStatus] = useState<VocabularyManualRefreshStatus>("idle");
   const isRefreshing = status === "refreshing";
   const isDisabled =
@@ -20,6 +26,8 @@ export function useVocabularyManualRefresh(authState: AuthStateSnapshot) {
     !authState.accessToken;
 
   useEffect(() => {
+    isRefreshInFlightRef.current = false;
+    lastManualRefreshStartedAtRef.current = undefined;
     setStatus("idle");
   }, [authState.accessToken, authState.status]);
 
@@ -28,9 +36,29 @@ export function useVocabularyManualRefresh(authState: AuthStateSnapshot) {
       return;
     }
 
+    const now = Date.now();
+
+    if (
+      !shouldStartVocabularyManualRefresh({
+        isRefreshing: isRefreshInFlightRef.current,
+        lastStartedAt: lastManualRefreshStartedAtRef.current,
+        now,
+        throttleMs: VOCABULARY_MANUAL_REFRESH_THROTTLE_MS,
+      })
+    ) {
+      return;
+    }
+
+    isRefreshInFlightRef.current = true;
+    lastManualRefreshStartedAtRef.current = now;
     setStatus("refreshing");
-    const result = await refreshVocabularyForAuth(authState, { force: true });
-    setStatus(result === "failed" ? "error" : "idle");
+
+    try {
+      const result = await refreshVocabularyForAuth(authState, { force: true });
+      setStatus(result === "failed" ? "error" : "idle");
+    } finally {
+      isRefreshInFlightRef.current = false;
+    }
   };
 
   return {
