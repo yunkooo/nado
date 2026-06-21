@@ -1,6 +1,8 @@
-import { Fragment, useEffect, useState } from "react";
-import type { ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
+import type { ElementRef, ReactNode } from "react";
 import {
+  Dimensions,
+  Modal,
   Pressable,
   Platform,
   RefreshControl,
@@ -10,6 +12,10 @@ import {
   Text,
   TextInput,
   View,
+  type GestureResponderEvent,
+  type LayoutChangeEvent,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 import {
   MAX_ANALYSIS_TEXT_LENGTH,
@@ -24,6 +30,13 @@ import {
   mobileTabs,
 } from "./src/features/analysis/analysisScreen";
 import { getVisibleMobileTranslationNoteParts } from "./src/features/analysis/translationNotes";
+import {
+  MOBILE_WORD_POPOVER_DEFAULT_HEIGHT,
+  MOBILE_WORD_POPOVER_DEFAULT_WIDTH,
+  getMobileWordPopoverPosition,
+  type MobileWordPopoverRect,
+  type MobileWordPopoverSize,
+} from "./src/features/analysis/wordPopoverPlacement";
 import { signInWithGoogle, signOut } from "./src/auth/authClient";
 import { useMobileAuthState } from "./src/auth/authState";
 import { analyzeText } from "./src/api/analysisApi";
@@ -54,6 +67,15 @@ import {
 } from "./src/features/vocabulary/useMobileVocabulary";
 
 type AnalysisState = AnalyzeTextResult | { status: "idle" | "loading" };
+
+type MobileVocabularyPopoverSelection = {
+  item: MobileVocabularyItem;
+  triggerRect: MobileWordPopoverRect;
+};
+
+type MobileVocabularySelectionHandler = (
+  selection: MobileVocabularyPopoverSelection | null,
+) => void;
 
 const configuredMobileApiBaseUrl = readMobileApiBaseUrl();
 const configuredMobileApiPlatform = Platform.OS;
@@ -329,14 +351,14 @@ function AnalysisResultPanel({
   getSuggestionState: MobileVocabularyActions["getSuggestionState"];
   onSaveSuggestion: MobileVocabularyActions["saveSuggestion"];
 }) {
-  const [selectedVocabularyKey, setSelectedVocabularyKey] = useState<
-    string | null
-  >(null);
+  const [selectedVocabularyPopover, setSelectedVocabularyPopover] =
+    useState<MobileVocabularyPopoverSelection | null>(null);
+  const selectedVocabularyKey = selectedVocabularyPopover?.item.key ?? null;
   const sourceText =
     analysisState.status === "success" ? analysisState.data.sourceText : null;
 
   useEffect(() => {
-    setSelectedVocabularyKey(null);
+    setSelectedVocabularyPopover(null);
   }, [sourceText]);
 
   if (analysisState.status === "idle") {
@@ -415,10 +437,8 @@ function AnalysisResultPanel({
           <View style={styles.sentenceList}>
             {result.sentences.map((sentence) => (
               <MobileSentenceAnalysisCard
-                getSuggestionState={getSuggestionState}
                 key={`${sentence.indexLabel}-${sentence.naturalTranslation}`}
-                onSaveSuggestion={onSaveSuggestion}
-                onSelectVocabularyKey={setSelectedVocabularyKey}
+                onSelectVocabulary={setSelectedVocabularyPopover}
                 selectedVocabularyKey={selectedVocabularyKey}
                 sentence={sentence}
                 vocabularyItemByKey={vocabularyItemByKey}
@@ -465,21 +485,25 @@ function AnalysisResultPanel({
           </View>
         </ResultSection>
       </View>
+      {selectedVocabularyPopover ? (
+        <MobileVocabularyWordPopover
+          getSuggestionState={getSuggestionState}
+          onClose={() => setSelectedVocabularyPopover(null)}
+          onSaveSuggestion={onSaveSuggestion}
+          selection={selectedVocabularyPopover}
+        />
+      ) : null}
     </View>
   );
 }
 
 function MobileSentenceAnalysisCard({
-  getSuggestionState,
-  onSaveSuggestion,
-  onSelectVocabularyKey,
+  onSelectVocabulary,
   selectedVocabularyKey,
   sentence,
   vocabularyItemByKey,
 }: {
-  getSuggestionState: MobileVocabularyActions["getSuggestionState"];
-  onSaveSuggestion: MobileVocabularyActions["saveSuggestion"];
-  onSelectVocabularyKey: (vocabularyKey: string | null) => void;
+  onSelectVocabulary: MobileVocabularySelectionHandler;
   selectedVocabularyKey: string | null;
   sentence: MobileSentenceAnalysis;
   vocabularyItemByKey: Map<string, MobileVocabularyItem>;
@@ -503,7 +527,7 @@ function MobileSentenceAnalysisCard({
       <View style={styles.chunkLine}>
         {sentence.chunks.map((chunk, index) => {
           const renderedText = renderMobileVocabularyAwareText({
-            onSelectVocabularyKey,
+            onSelectVocabulary,
             selectedVocabularyKey,
             startTokenIndex: tokenIndex,
             text: chunk.english,
@@ -526,13 +550,6 @@ function MobileSentenceAnalysisCard({
                   <View style={styles.chunkEnglishLine}>
                     {renderedText.parts}
                   </View>
-                  {renderedText.selectedVocabularyItem ? (
-                    <MobileVocabularyWordCard
-                      getSuggestionState={getSuggestionState}
-                      item={renderedText.selectedVocabularyItem}
-                      onSaveSuggestion={onSaveSuggestion}
-                    />
-                  ) : null}
                   <Text style={styles.chunkKorean}>{chunk.korean}</Text>
                 </View>
               </View>
@@ -573,11 +590,15 @@ function MobileSentenceAnalysisCard({
 function MobileVocabularyWordCard({
   getSuggestionState,
   item,
+  onLayout,
   onSaveSuggestion,
+  style,
 }: {
   getSuggestionState: MobileVocabularyActions["getSuggestionState"];
   item: MobileVocabularyItem;
+  onLayout?: (event: LayoutChangeEvent) => void;
   onSaveSuggestion: MobileVocabularyActions["saveSuggestion"];
+  style?: StyleProp<ViewStyle>;
 }) {
   const suggestionState = getSuggestionState(item);
   const isSaveDisabled = suggestionState !== "idle";
@@ -585,7 +606,8 @@ function MobileVocabularyWordCard({
   return (
     <View
       accessibilityLabel={`${item.term} 뜻과 저장 액션`}
-      style={styles.wordDefinitionCard}
+      onLayout={onLayout}
+      style={[styles.wordDefinitionCard, style]}
     >
       <View style={styles.wordDefinitionHeader}>
         <Text style={styles.wordDefinitionTerm}>{item.term}</Text>
@@ -622,8 +644,76 @@ function MobileVocabularyWordCard({
   );
 }
 
+function MobileVocabularyWordPopover({
+  getSuggestionState,
+  onClose,
+  onSaveSuggestion,
+  selection,
+}: {
+  getSuggestionState: MobileVocabularyActions["getSuggestionState"];
+  onClose: () => void;
+  onSaveSuggestion: MobileVocabularyActions["saveSuggestion"];
+  selection: MobileVocabularyPopoverSelection;
+}) {
+  const [popoverSize, setPopoverSize] = useState<MobileWordPopoverSize>({
+    height: MOBILE_WORD_POPOVER_DEFAULT_HEIGHT,
+    width: MOBILE_WORD_POPOVER_DEFAULT_WIDTH,
+  });
+  const viewportSize = Dimensions.get("window");
+  const popoverPosition = getMobileWordPopoverPosition({
+    popoverSize,
+    triggerRect: selection.triggerRect,
+    viewportSize,
+  });
+
+  const handlePopoverLayout = (event: LayoutChangeEvent) => {
+    const { height, width } = event.nativeEvent.layout;
+    const nextSize = {
+      height: Math.max(1, Math.round(height)),
+      width: Math.max(1, Math.round(width)),
+    };
+
+    if (
+      nextSize.height === Math.round(popoverSize.height) &&
+      nextSize.width === Math.round(popoverSize.width)
+    ) {
+      return;
+    }
+
+    setPopoverSize(nextSize);
+  };
+
+  return (
+    <Modal animationType="none" onRequestClose={onClose} transparent visible>
+      <View pointerEvents="box-none" style={styles.wordPopoverOverlay}>
+        <Pressable
+          accessibilityLabel="단어 뜻 닫기"
+          accessibilityRole="button"
+          onPress={onClose}
+          style={styles.wordPopoverDismissLayer}
+        />
+        <MobileVocabularyWordCard
+          getSuggestionState={getSuggestionState}
+          item={selection.item}
+          onLayout={handlePopoverLayout}
+          onSaveSuggestion={onSaveSuggestion}
+          style={[
+            styles.wordDefinitionPopoverCard,
+            {
+              left: popoverPosition.left,
+              maxHeight: popoverPosition.height,
+              top: popoverPosition.top,
+              width: popoverPosition.width,
+            },
+          ]}
+        />
+      </View>
+    </Modal>
+  );
+}
+
 type MobileVocabularyAwareTextOptions = {
-  onSelectVocabularyKey: (vocabularyKey: string | null) => void;
+  onSelectVocabulary: MobileVocabularySelectionHandler;
   selectedVocabularyKey: string | null;
   startTokenIndex: number;
   text: string;
@@ -634,7 +724,7 @@ type MobileVocabularyAwareTextOptions = {
 const englishWordPattern = /[A-Za-z]+(?:['’-][A-Za-z]+)*/g;
 
 function renderMobileVocabularyAwareText({
-  onSelectVocabularyKey,
+  onSelectVocabulary,
   selectedVocabularyKey,
   startTokenIndex,
   text,
@@ -676,22 +766,14 @@ function renderMobileVocabularyAwareText({
       }
 
       parts.push(
-        <Pressable
+        <MobileVocabularyWordToken
           accessibilityLabel={`${word} 뜻과 저장 액션 보기`}
-          accessibilityRole="button"
-          accessibilityState={{ expanded: isSelected }}
+          isSelected={isSelected}
+          item={vocabularyItem}
           key={`word-${word}-${matchIndex}`}
-          onPress={() => {
-            onSelectVocabularyKey(isSelected ? null : vocabularyItem.key);
-          }}
-          style={({ pressed }) => [
-            styles.wordToken,
-            isSelected ? styles.wordTokenActive : null,
-            pressed ? styles.pressed : null,
-          ]}
-        >
-          <Text style={styles.chunkEnglish}>{word}</Text>
-        </Pressable>,
+          onSelectVocabulary={onSelectVocabulary}
+          text={word}
+        />,
       );
     } else {
       parts.push(
@@ -725,6 +807,75 @@ function renderMobileVocabularyAwareText({
       ),
     selectedVocabularyItem,
   };
+}
+
+function MobileVocabularyWordToken({
+  accessibilityLabel,
+  isSelected,
+  item,
+  onSelectVocabulary,
+  text,
+}: {
+  accessibilityLabel: string;
+  isSelected: boolean;
+  item: MobileVocabularyItem;
+  onSelectVocabulary: MobileVocabularySelectionHandler;
+  text: string;
+}) {
+  const tokenRef = useRef<ElementRef<typeof Pressable>>(null);
+
+  const handlePress = (event: GestureResponderEvent) => {
+    if (isSelected) {
+      onSelectVocabulary(null);
+      return;
+    }
+
+    const fallbackRect = {
+      height: 28,
+      width: Math.max(24, text.length * 12),
+      x: Math.max(0, event.nativeEvent.pageX - 12),
+      y: Math.max(0, event.nativeEvent.pageY - 14),
+    };
+
+    const token = tokenRef.current as {
+      measureInWindow?: (
+        callback: (x: number, y: number, width: number, height: number) => void,
+      ) => void;
+    } | null;
+
+    if (typeof token?.measureInWindow === "function") {
+      token.measureInWindow((x, y, width, height) => {
+        onSelectVocabulary({
+          item,
+          triggerRect:
+            width > 0 && height > 0 ? { height, width, x, y } : fallbackRect,
+        });
+      });
+      return;
+    }
+
+    onSelectVocabulary({
+      item,
+      triggerRect: fallbackRect,
+    });
+  };
+
+  return (
+    <Pressable
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      accessibilityState={{ expanded: isSelected }}
+      onPress={handlePress}
+      ref={tokenRef}
+      style={({ pressed }) => [
+        styles.wordToken,
+        isSelected ? styles.wordTokenActive : null,
+        pressed ? styles.pressed : null,
+      ]}
+    >
+      <Text style={styles.chunkEnglish}>{text}</Text>
+    </Pressable>
+  );
 }
 
 function findMatchingSentenceToken(
@@ -887,9 +1038,6 @@ function VocabularyPage({
                     저장한 단어를 확인해요
                   </Text>
                 </View>
-                <Text style={styles.sectionMeta}>
-                  분석에서 저장한 항목이에요
-                </Text>
               </View>
 
               {vocabularyState.items.map((item) => (
@@ -1057,16 +1205,20 @@ function ReviewPage({
                 {currentCardIndex + 1} / {vocabularyState.items.length}
               </Text>
               <Text style={styles.reviewTerm}>{currentCard.prompt}</Text>
-              {isAnswerRevealed ? (
-                <Text style={styles.reviewAnswer}>{currentCard.answer}</Text>
-              ) : (
-                <Text
-                  accessibilityLabel="정답이 가려져 있습니다"
-                  style={[styles.reviewAnswer, styles.reviewAnswerHidden]}
-                >
-                  {currentCard.answer}
-                </Text>
-              )}
+              <Text
+                accessibilityElementsHidden={
+                  isAnswerRevealed ? undefined : true
+                }
+                importantForAccessibility={
+                  isAnswerRevealed ? "auto" : "no-hide-descendants"
+                }
+                style={[
+                  styles.reviewAnswer,
+                  isAnswerRevealed ? styles.reviewAnswerRevealed : null,
+                ]}
+              >
+                {currentCard.answer}
+              </Text>
             </View>
 
             <View style={styles.reviewActions}>

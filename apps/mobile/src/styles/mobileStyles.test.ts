@@ -53,9 +53,19 @@ describe("mobile shared style tokens", () => {
     expect(mobileStylesSource).toContain("paddingHorizontal: mobileSpacing.md");
   });
 
-  it("floats the mobile word definition card without changing chunk layout", () => {
+  it("renders the mobile word definition card as an anchored overlay", () => {
+    const wordDefinitionCardStyle = mobileStylesSource.match(
+      /wordDefinitionCard:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+    const wordDefinitionPopoverCardStyle = mobileStylesSource.match(
+      /wordDefinitionPopoverCard:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+
     expect(mobileStylesSource).toContain("wordDefinitionCard");
-    expect(mobileStylesSource).toContain('position: "absolute"');
+    expect(wordDefinitionCardStyle).toContain('alignSelf: "stretch"');
+    expect(mobileStylesSource).toContain("wordPopoverOverlay");
+    expect(wordDefinitionPopoverCardStyle).toContain('position: "absolute"');
+    expect(wordDefinitionPopoverCardStyle).toContain("zIndex: 40");
     expect(mobileStylesSource).toContain("chunkUnitActive");
     expect(mobileStylesSource).toContain("sentenceCardActive");
   });
@@ -74,5 +84,25 @@ describe("mobile shared style tokens", () => {
     expect(mobileStylesSource).toContain("suggestionText");
     expect(mobileStylesSource).toContain("flexShrink: 1");
     expect(mobileStylesSource).toContain("minWidth: 0");
+  });
+
+  it("matches the web and desktop review answer colors", () => {
+    const reviewAnswerStyle = mobileStylesSource.match(
+      /reviewAnswer:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+    const reviewAnswerRevealedStyle = mobileStylesSource.match(
+      /reviewAnswerRevealed:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+
+    expect(mobileStylesSource).not.toContain("reviewAnswerHiddenBox");
+    expect(mobileStylesSource).not.toContain("reviewAnswerHidden");
+    expect(reviewAnswerStyle).toContain('backgroundColor: "#f6f8ff"');
+    expect(reviewAnswerStyle).toContain('borderColor: "#d5dbea"');
+    expect(reviewAnswerStyle).toContain("color: mobileColors.inkMuted");
+    expect(reviewAnswerStyle).toContain('filter: "blur(5px)"');
+    expect(reviewAnswerStyle).toContain('userSelect: "none"');
+    expect(reviewAnswerRevealedStyle).toContain('filter: "none"');
+    expect(reviewAnswerRevealedStyle).toContain('userSelect: "auto"');
+    expect(mobileStylesSource).not.toContain("textShadowRadius: 6");
   });
 });

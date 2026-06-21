@@ -187,6 +187,21 @@ describe("mobile App API wiring", () => {
     expect(appSource).not.toContain("styles.reviewNote");
   });
 
+  it("does not show the saved-from-analysis helper copy in mobile vocabulary", () => {
+    expect(appSource).not.toContain("분석에서 저장한 항목이에요");
+  });
+
+  it("renders review answers with the same base-and-revealed modifier pattern as web and desktop", () => {
+    expect(appSource).not.toContain("styles.reviewAnswerHiddenBox");
+    expect(appSource).not.toContain(
+      'accessibilityLabel="정답이 가려져 있습니다"',
+    );
+    expect(appSource).toContain("accessibilityElementsHidden");
+    expect(appSource).toContain(
+      "isAnswerRevealed ? styles.reviewAnswerRevealed : null",
+    );
+  });
+
   it("renders tappable sentence vocabulary tokens with save actions", () => {
     expect(appSource).toContain("MobileSentenceAnalysisCard");
     expect(appSource).toContain("MobileVocabularyWordCard");
@@ -198,12 +213,17 @@ describe("mobile App API wiring", () => {
     expect(appSource).toContain("styles.wordTokenActive");
   });
 
-  it("renders the selected vocabulary card near the tapped chunk", () => {
+  it("renders the selected vocabulary card as a measured top-or-bottom popover", () => {
     expect(appSource).toContain("renderedText.selectedVocabularyItem");
+    expect(appSource).toContain("MobileVocabularyWordPopover");
+    expect(appSource).toContain("getMobileWordPopoverPosition");
+    expect(appSource).toContain("measureInWindow");
+    expect(appSource).toContain("selectedVocabularyPopover");
     expect(appSource).toContain("selectedVocabularyItem = vocabularyItem");
     expect(appSource).toContain("styles.sentenceCardActive");
     expect(appSource).toContain("styles.chunkUnitActive");
     expect(appSource).not.toContain("const selectedItem =");
+    expect(appSource).not.toContain("selectedVocabularyItemForCard");
   });
 
   it("renders mobile reading chunks in the same slash-separated flow as web and desktop", () => {
