@@ -330,6 +330,66 @@ describe("vocabulary state store", () => {
     });
   });
 
+  it("keeps stale lifecycle background refreshes single-flight", async () => {
+    let currentTime = 1_000;
+    let resolveStaleRefresh: (result: VocabularyListResult) => void = () =>
+      undefined;
+    const store = createVocabularyStateStore();
+    const staleItem = {
+      ...vocabularyItem,
+      id: "row_stale",
+      term: "stale",
+    };
+    const refreshedItem = {
+      ...vocabularyItem,
+      id: "row_refreshed",
+      term: "refreshed",
+    };
+    const listVocabulary = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [staleItem],
+        status: "success" as const,
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise<VocabularyListResult>((resolve) => {
+            resolveStaleRefresh = resolve;
+          }),
+      )
+      .mockRejectedValueOnce(new Error("duplicate refresh failed"));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      now: () => currentTime,
+      store,
+    });
+    const authState = createAuthenticatedAuthState("session-token");
+
+    sync.sync(authState);
+    await flushPromises();
+    listVocabulary.mockClear();
+    currentTime += 60_001;
+
+    const firstRefresh = sync.refresh(authState);
+    const duplicateRefresh = sync.refresh(authState);
+
+    expect(duplicateRefresh).toBe(firstRefresh);
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    resolveStaleRefresh({
+      data: [refreshedItem],
+      status: "success",
+    });
+
+    await expect(firstRefresh).resolves.toBe("refreshed");
+    await expect(duplicateRefresh).resolves.toBe("refreshed");
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [refreshedItem],
+      status: "ready",
+    });
+  });
+
   it("forces realtime refreshes even while the ready vocabulary snapshot is fresh", async () => {
     const store = createVocabularyStateStore();
     const listVocabulary = vi.fn(async () => ({

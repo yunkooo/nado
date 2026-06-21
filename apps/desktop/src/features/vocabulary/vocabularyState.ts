@@ -180,6 +180,10 @@ export function createVocabularyAuthSync({
   store?: VocabularyStateStore;
 } = {}) {
   let requestSequence = 0;
+  let activeLifecycleRefresh: {
+    accessToken: string;
+    promise: Promise<VocabularyRefreshResult>;
+  } | null = null;
   const loadedAtByAccessToken = new Map<string, number>();
 
   async function loadVocabularyForSession(
@@ -280,11 +284,35 @@ export function createVocabularyAuthSync({
       return Promise.resolve("ignored");
     }
 
-    return loadVocabularyForSession(authState.accessToken, {
-      showLoading:
-        vocabularyState.accessToken !== authState.accessToken ||
-        vocabularyState.status !== "ready",
+    const showLoading =
+      vocabularyState.accessToken !== authState.accessToken ||
+      vocabularyState.status !== "ready";
+
+    if (
+      !force &&
+      !showLoading &&
+      activeLifecycleRefresh?.accessToken === authState.accessToken
+    ) {
+      return activeLifecycleRefresh.promise;
+    }
+
+    const refreshPromise = loadVocabularyForSession(authState.accessToken, {
+      showLoading,
     });
+
+    if (!force && !showLoading) {
+      activeLifecycleRefresh = {
+        accessToken: authState.accessToken,
+        promise: refreshPromise,
+      };
+      void refreshPromise.finally(() => {
+        if (activeLifecycleRefresh?.promise === refreshPromise) {
+          activeLifecycleRefresh = null;
+        }
+      });
+    }
+
+    return refreshPromise;
   }
 
   return {
@@ -322,6 +350,7 @@ export function createVocabularyAuthSync({
 
       if (authState.status !== "authenticated" || !authState.accessToken) {
         requestSequence += 1;
+        activeLifecycleRefresh = null;
         loadedAtByAccessToken.clear();
         store.reset();
         return;
