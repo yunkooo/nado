@@ -912,7 +912,7 @@ function readSuggestionSavePrefix(state: "idle" | "saved" | "saving") {
   }
 
   if (state === "saved") {
-    return "저장됨";
+    return "✓";
   }
 
   return "+";
@@ -924,7 +924,7 @@ function readSuggestionSaveActionText(state: "idle" | "saved" | "saving") {
   }
 
   if (state === "saved") {
-    return "저장됨";
+    return "✓";
   }
 
   return "+ 저장";

@@ -231,4 +231,10 @@ describe("mobile App API wiring", () => {
     expect(appSource).toContain("index < sentence.chunks.length - 1");
     expect(appSource).toContain("<Fragment");
   });
+
+  it("uses a check mark instead of visible saved text for disabled saved actions", () => {
+    expect(appSource).toContain('return "✓"');
+    expect(appSource).not.toContain('return "저장됨"');
+    expect(appSource).toContain("return `${term} 저장됨`");
+  });
 });

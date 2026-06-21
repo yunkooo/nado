@@ -74,7 +74,7 @@ function getSavePrefix(state: VocabularySuggestionSaveState) {
   }
 
   if (state === "saved") {
-    return "저장됨";
+    return "✓";
   }
 
   return "+";

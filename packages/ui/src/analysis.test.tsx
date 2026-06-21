@@ -205,7 +205,7 @@ describe("analysis design system components", () => {
     expect(markup).toContain("문맥에 맞춰 부드러운 한국어 어순으로 옮깁니다.");
   });
 
-  it("shows saved vocabulary suggestions as saved disabled buttons", () => {
+  it("shows saved vocabulary suggestions as checked disabled buttons", () => {
     const markup = renderToStaticMarkup(
       <AnalysisResult
         getVocabularySuggestionState={() => "saved"}
@@ -216,7 +216,10 @@ describe("analysis design system components", () => {
 
     expect(markup).toContain('<button class="nado-chip"');
     expect(markup).toContain('aria-label="setup: 준비 과정 저장됨"');
-    expect(markup).toContain('<span class="nado-chip__prefix">저장됨</span>');
+    expect(markup).toContain('<span class="nado-chip__prefix">✓</span>');
+    expect(markup).not.toContain(
+      '<span class="nado-chip__prefix">저장됨</span>',
+    );
     expect(markup).not.toContain('<span class="nado-chip__prefix">+</span>');
     expect(markup).toContain("disabled");
   });
@@ -421,7 +424,7 @@ describe("analysis design system components", () => {
     });
   });
 
-  it("shows saved vocabulary popover actions as saved disabled buttons", () => {
+  it("shows saved vocabulary popover actions as checked disabled buttons", () => {
     const markup = renderToStaticMarkup(
       <AnalysisResult
         activeVocabularyKey="habit"
@@ -432,7 +435,8 @@ describe("analysis design system components", () => {
     );
 
     expect(markup).toContain('aria-label="habit 저장됨"');
-    expect(markup).toContain("저장됨");
+    expect(markup).toContain(">✓</button>");
+    expect(markup).not.toContain(">저장됨</button>");
     expect(markup).toContain("disabled");
     expect(markup).not.toContain("+ 저장");
   });
