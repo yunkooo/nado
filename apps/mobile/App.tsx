@@ -140,6 +140,13 @@ export default function App() {
       <View style={styles.shell}>
         <View style={styles.topbar}>
           <View style={styles.brandGroup}>
+            <View
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={styles.logoMark}
+            >
+              <Text style={styles.logoMarkText}>n</Text>
+            </View>
             <Text style={styles.logo}>nado</Text>
           </View>
           <Pressable
@@ -220,8 +227,12 @@ export default function App() {
                 value={text}
               />
               <View style={styles.composerFooter}>
-                <Text style={styles.count}>{composerState.countLabel}</Text>
+                <View style={styles.composerMeta}>
+                  <Text style={styles.composerLabel}>기본 분석</Text>
+                  <Text style={styles.count}>{composerState.countLabel}</Text>
+                </View>
                 <Pressable
+                  accessibilityLabel="분석 요청"
                   accessibilityRole="button"
                   disabled={isAnalyzeDisabled}
                   onPress={handleAnalyzePress}
@@ -239,7 +250,7 @@ export default function App() {
                         : null,
                     ]}
                   >
-                    {isAnalysisLoading ? "분석 중" : "분석"}
+                    {isAnalysisLoading ? "..." : "↑"}
                   </Text>
                 </Pressable>
               </View>
@@ -310,12 +321,7 @@ function AnalysisResultPanel({
   }
 
   if (analysisState.status === "loading") {
-    return (
-      <StatusCard
-        message="입력한 문장을 분석 서버로 전송하고 있어요."
-        title="분석 중이에요"
-      />
-    );
+    return <StatusCard message="분석 중이에요." title={null} />;
   }
 
   if (
@@ -339,120 +345,124 @@ function AnalysisResultPanel({
   const sourceSample = getAnalysisSourceSampleState(result.sourceText);
 
   return (
-    <View style={styles.resultArea}>
-      <View style={styles.resultHeader}>
-        <View style={styles.resultTitleGroup}>
-          <Text style={styles.resultTitle}>분석 결과</Text>
-          <Text style={styles.resultDescription}>
-            자연스러운 번역, 문장별 끊어읽기 직역, 문법 포인트, 단어 추천을 한
-            번에 제공합니다.
-          </Text>
-        </View>
-        <Text style={styles.resultMeta}>200자 이내 기본 분석</Text>
-      </View>
-
+    <View style={styles.analysisResultStack}>
       <View accessibilityLabel="입력한 문장" style={styles.sourceSample}>
         <Text style={styles.sourceSampleText}>{sourceSample.text}</Text>
         <Text style={styles.sourceSampleCount}>{sourceSample.countLabel}</Text>
       </View>
 
-      <ResultSection title="전체 자연스러운 번역">
-        <Text style={styles.resultTranslation}>{result.translation}</Text>
-      </ResultSection>
-
-      <ResultSection title="번역 포인트">
-        <View style={styles.translationNoteList}>
-          {result.translationNotes.map((note) => (
-            <View key={`${note.term}-${note.note}`} style={styles.noteItem}>
-              <Text style={styles.noteTerm}>{note.term}</Text>
-              <Text style={styles.noteText}>{note.note}</Text>
-            </View>
-          ))}
+      <View style={styles.resultArea}>
+        <View style={styles.resultHeader}>
+          <View style={styles.resultTitleGroup}>
+            <Text style={styles.resultTitle}>분석 결과</Text>
+            <Text style={styles.resultDescription}>
+              자연스러운 번역, 문장별 끊어읽기 직역, 문법 포인트, 단어 추천을 한
+              번에 제공합니다.
+            </Text>
+          </View>
+          <Text style={styles.resultMeta}>200자 이내 기본 분석</Text>
         </View>
-      </ResultSection>
 
-      <ResultSection title="문장별 분석">
-        <View style={styles.sentenceList}>
-          {result.sentences.map((sentence) => (
-            <View
-              key={`${sentence.indexLabel}-${sentence.naturalTranslation}`}
-              style={styles.sentenceCard}
-            >
-              <Text style={styles.sentenceIndex}>{sentence.indexLabel}</Text>
-              <View style={styles.chunkLine}>
-                {sentence.chunks.map((chunk, index) => (
-                  <View
-                    key={`${chunk.english}-${chunk.korean}-${index}`}
-                    style={styles.chunkUnit}
-                  >
-                    <View style={styles.chunkContent}>
-                      <Text style={styles.chunkEnglish}>{chunk.english}</Text>
-                      <Text style={styles.chunkKorean}>{chunk.korean}</Text>
-                    </View>
-                  </View>
-                ))}
+        <ResultSection title="전체 자연스러운 번역">
+          <Text style={styles.resultTranslation}>{result.translation}</Text>
+        </ResultSection>
+
+        <ResultSection title="번역 포인트">
+          <View style={styles.translationNoteList}>
+            {result.translationNotes.map((note) => (
+              <View key={`${note.term}-${note.note}`} style={styles.noteItem}>
+                <Text style={styles.noteTerm}>{note.term}</Text>
+                <Text style={styles.noteText}>{note.note}</Text>
               </View>
-              <Text style={styles.sentenceTranslation}>
-                {sentence.naturalTranslation}
-              </Text>
-              {sentence.grammarPoints.length > 0 ? (
-                <View style={styles.grammarList}>
-                  {sentence.grammarPoints.map((point) => (
+            ))}
+          </View>
+        </ResultSection>
+
+        <ResultSection title="문장별 분석">
+          <View style={styles.sentenceList}>
+            {result.sentences.map((sentence) => (
+              <View
+                key={`${sentence.indexLabel}-${sentence.naturalTranslation}`}
+                style={styles.sentenceCard}
+              >
+                <Text style={styles.sentenceIndex}>{sentence.indexLabel}</Text>
+                <View style={styles.chunkLine}>
+                  {sentence.chunks.map((chunk, index) => (
                     <View
-                      key={`${point.target}-${point.explanation}`}
-                      style={styles.grammarItem}
+                      key={`${chunk.english}-${chunk.korean}-${index}`}
+                      style={styles.chunkUnit}
                     >
-                      <Text style={styles.grammarTarget}>{point.target}</Text>
-                      <Text style={styles.grammarType}>{point.type}</Text>
-                      <Text style={styles.grammarExplanation}>
-                        {point.explanation}
-                      </Text>
+                      <View style={styles.chunkContent}>
+                        <Text style={styles.chunkEnglish}>{chunk.english}</Text>
+                        <Text style={styles.chunkKorean}>{chunk.korean}</Text>
+                      </View>
                     </View>
                   ))}
                 </View>
-              ) : null}
-            </View>
-          ))}
-        </View>
-      </ResultSection>
-
-      <ResultSection title="우선 저장 추천">
-        <View style={styles.suggestionList}>
-          {result.vocabularySuggestions.map((suggestion) => {
-            const suggestionState = getSuggestionState(suggestion);
-            const isSavingDisabled = suggestionState !== "idle";
-
-            return (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ disabled: isSavingDisabled }}
-                disabled={isSavingDisabled}
-                key={`${suggestion.term}-${suggestion.meaning}`}
-                onPress={() => {
-                  void onSaveSuggestion(suggestion);
-                }}
-                style={({ pressed }) => [
-                  styles.suggestionChip,
-                  suggestionState === "saved"
-                    ? styles.suggestionChipSaved
-                    : null,
-                  suggestionState === "saving"
-                    ? styles.suggestionChipSaving
-                    : null,
-                  pressed && !isSavingDisabled ? styles.pressed : null,
-                ]}
-              >
-                <Text style={styles.suggestionPrefix}>
-                  {readSuggestionSavePrefix(suggestionState)}
+                <Text style={styles.sentenceTranslation}>
+                  {sentence.naturalTranslation}
                 </Text>
-                <Text style={styles.suggestionText}>
-                  {suggestion.term} · {suggestion.meaning}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </ResultSection>
+                {sentence.grammarPoints.length > 0 ? (
+                  <View style={styles.grammarList}>
+                    {sentence.grammarPoints.map((point) => (
+                      <View
+                        key={`${point.target}-${point.explanation}`}
+                        style={styles.grammarItem}
+                      >
+                        <Text style={styles.grammarTarget}>{point.target}</Text>
+                        <View style={styles.grammarDescription}>
+                          <Text style={styles.grammarType}>{point.type}</Text>
+                          <Text style={styles.grammarExplanation}>
+                            {point.explanation}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        </ResultSection>
+
+        <ResultSection isLast title="우선 저장 추천">
+          <View style={styles.suggestionList}>
+            {result.vocabularySuggestions.map((suggestion) => {
+              const suggestionState = getSuggestionState(suggestion);
+              const isSavingDisabled = suggestionState !== "idle";
+
+              return (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isSavingDisabled }}
+                  disabled={isSavingDisabled}
+                  key={`${suggestion.term}-${suggestion.meaning}`}
+                  onPress={() => {
+                    void onSaveSuggestion(suggestion);
+                  }}
+                  style={({ pressed }) => [
+                    styles.suggestionChip,
+                    suggestionState === "saved"
+                      ? styles.suggestionChipSaved
+                      : null,
+                    suggestionState === "saving"
+                      ? styles.suggestionChipSaving
+                      : null,
+                    pressed && !isSavingDisabled ? styles.pressed : null,
+                  ]}
+                >
+                  <Text style={styles.suggestionPrefix}>
+                    {readSuggestionSavePrefix(suggestionState)}
+                  </Text>
+                  <Text style={styles.suggestionText}>
+                    {suggestion.term} · {suggestion.meaning}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </ResultSection>
+      </View>
     </View>
   );
 }
@@ -471,13 +481,17 @@ function readSuggestionSavePrefix(state: "idle" | "saved" | "saving") {
 
 function ResultSection({
   children,
+  isLast = false,
   title,
 }: {
   children: ReactNode;
+  isLast?: boolean;
   title: string;
 }) {
   return (
-    <View style={styles.resultSection}>
+    <View
+      style={[styles.resultSection, isLast ? styles.resultSectionLast : null]}
+    >
       <Text style={styles.sectionTitle}>{title}</Text>
       {children}
     </View>
@@ -490,7 +504,7 @@ function StatusCard({
   tone = "neutral",
 }: {
   message: string;
-  title: string;
+  title: string | null;
   tone?: "error" | "neutral";
 }) {
   return (
@@ -498,7 +512,7 @@ function StatusCard({
       accessibilityRole={tone === "error" ? "alert" : undefined}
       style={styles.statusCard}
     >
-      <Text style={styles.statusTitle}>{title}</Text>
+      {title ? <Text style={styles.statusTitle}>{title}</Text> : null}
       <Text style={styles.statusText}>{message}</Text>
     </View>
   );
