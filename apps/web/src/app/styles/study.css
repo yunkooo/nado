@@ -81,6 +81,43 @@
   line-height: 1;
 }
 
+.nado-vocabulary-refresh {
+  align-items: flex-end;
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
+.nado-vocabulary-refresh__button {
+  background: var(--nado-color-surface);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  color: var(--nado-color-ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.nado-vocabulary-refresh__button:not(:disabled) {
+  cursor: pointer;
+}
+
+.nado-vocabulary-refresh__button:disabled {
+  color: var(--nado-color-ink-muted);
+  opacity: 0.72;
+}
+
+.nado-vocabulary-refresh__message {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1.4;
+  margin: 0;
+  text-align: right;
+}
+
 .nado-vocabulary-flow,
 .nado-vocabulary-layout,
 .nado-review-layout {
@@ -332,6 +369,15 @@
   .nado-vocabulary-item header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .nado-vocabulary-refresh {
+    align-items: stretch;
+    justify-items: stretch;
+  }
+
+  .nado-vocabulary-refresh__message {
+    text-align: left;
   }
 
   .nado-vocabulary-list {

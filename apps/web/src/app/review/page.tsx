@@ -1,5 +1,6 @@
 import { AppShell } from "../../components/AppShell";
 import { ReviewFlow } from "../../features/review/ReviewFlow";
+import { VocabularyRefreshControl } from "../../features/vocabulary/VocabularyRefreshControl";
 
 export default function ReviewPage() {
   return (
@@ -11,6 +12,7 @@ export default function ReviewPage() {
               <p className="nado-eyebrow">Review</p>
               <h1 className="nado-page-title">복습</h1>
             </div>
+            <VocabularyRefreshControl />
           </header>
 
           <ReviewFlow />

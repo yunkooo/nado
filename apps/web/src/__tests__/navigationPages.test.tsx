@@ -15,6 +15,8 @@ describe("navigation pages", () => {
     expect(markup).not.toContain("로그인하면 실제 단어장을 불러와요");
     expect(markup).not.toContain("로그인 전에는 목업 데이터로 흐름");
     expect(markup).toContain("nado-vocabulary-summary");
+    expect(markup).toContain("nado-vocabulary-refresh");
+    expect(markup).toContain("새로고침");
     expect(markup).toContain("저장 항목");
     expect(markup).toContain("로그인 상태를 확인하고 있어요");
     expect(markup).not.toContain(">3</strong>");
@@ -38,6 +40,8 @@ describe("navigation pages", () => {
     expect(markup).toContain('href="/review"');
     expect(markup).toContain('aria-current="page"');
     expect(markup).toContain("복습");
+    expect(markup).toContain("nado-vocabulary-refresh");
+    expect(markup).toContain("새로고침");
     expect(markup).not.toContain("로그인하면 내 단어장으로 복습해요");
     expect(markup).not.toContain("로그인 전에는 목업 데이터로 정답");
     expect(markup).toContain("로그인 상태를 확인하고 있어요");

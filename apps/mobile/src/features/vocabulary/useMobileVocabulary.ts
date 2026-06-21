@@ -35,6 +35,8 @@ export type MobileVocabularyActions = {
   getSuggestionState(
     suggestion: MobileVocabularySuggestion,
   ): "idle" | "saved" | "saving";
+  isRefreshing: boolean;
+  refreshVocabulary(): Promise<void>;
   saveMessage: string | null;
   saveSuggestion(suggestion: MobileVocabularySuggestion): Promise<void>;
 };
@@ -55,6 +57,7 @@ export function useMobileVocabulary(
 ): [MobileVocabularyState, MobileVocabularyActions] {
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [savingSuggestionKey, setSavingSuggestionKey] = useState<string | null>(
     null,
   );
@@ -65,6 +68,7 @@ export function useMobileVocabulary(
   const lastLoadedAtRef = useRef<number | undefined>(undefined);
   const latestAuthStateRef = useRef(authState);
   const requestSequenceRef = useRef(0);
+  const isRefreshingRef = useRef(false);
   const realtimeRefreshSchedulerRef =
     useRef<VocabularyRealtimeRefreshScheduler | null>(null);
   const statusRef = useRef<MobileVocabularyState["status"]>(
@@ -191,6 +195,28 @@ export function useMobileVocabulary(
     },
     [loadVocabulary],
   );
+
+  const refreshVocabulary = useCallback(async () => {
+    if (isRefreshingRef.current) {
+      return;
+    }
+
+    const refreshPromise = refreshVocabularyInBackground({ force: true });
+
+    if (!refreshPromise) {
+      return;
+    }
+
+    isRefreshingRef.current = true;
+    setIsRefreshing(true);
+
+    try {
+      await refreshPromise;
+    } finally {
+      isRefreshingRef.current = false;
+      setIsRefreshing(false);
+    }
+  }, [refreshVocabularyInBackground]);
 
   useEffect(() => {
     if (authState.status === "loading") {
@@ -392,6 +418,8 @@ export function useMobileVocabulary(
       deleteItem,
       deletingItemId,
       getSuggestionState,
+      isRefreshing,
+      refreshVocabulary,
       saveMessage,
       saveSuggestion,
     },
