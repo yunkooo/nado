@@ -19,6 +19,7 @@ export type MobileAnalysisSummary = {
   translation: string;
   translationNotes: MobileTranslationNote[];
   vocabularyCountLabel: string;
+  vocabularyItems: MobileVocabularyItem[];
   vocabularySuggestions: MobileVocabularySuggestion[];
 };
 
@@ -43,6 +44,12 @@ export type MobileSentenceAnalysis = {
   grammarPoints: MobileGrammarPoint[];
   indexLabel: string;
   naturalTranslation: string;
+  tokens: MobileSentenceToken[];
+};
+
+export type MobileSentenceToken = {
+  text: string;
+  vocabularyKey: string | null;
 };
 
 export type MobileVocabularySuggestion = {
@@ -50,6 +57,13 @@ export type MobileVocabularySuggestion = {
   note?: string;
   term: string;
   type: "phrase" | "word";
+};
+
+export type MobileVocabularyItem = MobileVocabularySuggestion & {
+  baseForm: string;
+  contextMeaning: string;
+  key: string;
+  partOfSpeech: string | null;
 };
 
 export type AnalyzeTextResult =
@@ -153,6 +167,10 @@ function mapAnalysisResult(
       })),
       indexLabel: `문장 ${index + 1}`,
       naturalTranslation: sentence.translation,
+      tokens: sentence.tokens.map((token) => ({
+        text: token.text,
+        vocabularyKey: token.vocabularyKey,
+      })),
     })),
     sentenceCountLabel: `문장 ${result.sentences.length}개`,
     sourceText,
@@ -168,6 +186,16 @@ function mapAnalysisResult(
       })),
     ],
     vocabularyCountLabel: `저장 후보 ${readVocabularyCount(result)}개`,
+    vocabularyItems: result.vocabularyItems.map((item) => ({
+      baseForm: item.baseForm,
+      contextMeaning: item.contextMeaning,
+      key: item.key,
+      meaning: item.meaning,
+      note: item.contextMeaning,
+      partOfSpeech: item.partOfSpeech,
+      term: item.term,
+      type: item.type,
+    })),
     vocabularySuggestions: readVocabularySuggestions(result),
   };
 }

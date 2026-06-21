@@ -52,4 +52,27 @@ describe("mobile shared style tokens", () => {
     expect(mobileStylesSource).toContain("gap: mobileSpacing.sm");
     expect(mobileStylesSource).toContain("paddingHorizontal: mobileSpacing.md");
   });
+
+  it("floats the mobile word definition card without changing chunk layout", () => {
+    expect(mobileStylesSource).toContain("wordDefinitionCard");
+    expect(mobileStylesSource).toContain('position: "absolute"');
+    expect(mobileStylesSource).toContain("chunkUnitActive");
+    expect(mobileStylesSource).toContain("sentenceCardActive");
+  });
+
+  it("keeps mobile reading chunks in a wrapping row flow", () => {
+    expect(mobileStylesSource).toContain("chunkLine");
+    expect(mobileStylesSource).toContain('flexDirection: "row"');
+    expect(mobileStylesSource).toContain('flexWrap: "wrap"');
+    expect(mobileStylesSource).toContain("chunkSlash");
+    expect(mobileStylesSource).toContain("flexShrink: 1");
+  });
+
+  it("allows long mobile vocabulary suggestions to wrap within the screen", () => {
+    expect(mobileStylesSource).toContain("suggestionChip");
+    expect(mobileStylesSource).toContain('maxWidth: "100%"');
+    expect(mobileStylesSource).toContain("suggestionText");
+    expect(mobileStylesSource).toContain("flexShrink: 1");
+    expect(mobileStylesSource).toContain("minWidth: 0");
+  });
 });

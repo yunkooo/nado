@@ -33,11 +33,43 @@ describe("mobile App API wiring", () => {
     expect(appSource).toContain('setText("")');
   });
 
+  it("keeps the analyze button icon stable while analysis is loading", () => {
+    expect(appSource).toContain(
+      "const isAnalyzeVisuallyDisabled = composerState.isSubmitDisabled;",
+    );
+    expect(appSource).not.toContain('isAnalysisLoading ? "..." : "↑"');
+    expect(appSource).not.toContain(">...</Text>");
+  });
+
+  it("keeps the analysis composer in the scroll content instead of the fixed bottom area", () => {
+    const scrollViewStart = appSource.indexOf("<ScrollView");
+    const scrollViewEnd = appSource.indexOf("</ScrollView>");
+    const composerWrap = appSource.indexOf("styles.composerWrap");
+    const bottomArea = appSource.indexOf("styles.bottomArea");
+
+    expect(composerWrap).toBeGreaterThan(scrollViewStart);
+    expect(composerWrap).toBeLessThan(scrollViewEnd);
+    expect(composerWrap).toBeLessThan(bottomArea);
+  });
+
   it("renders analyzed source text with a bottom-right character count", () => {
     expect(appSource).toContain("getAnalysisSourceSampleState");
     expect(appSource).toContain("styles.sourceSample");
     expect(appSource).toContain("styles.sourceSampleText");
     expect(appSource).toContain("styles.sourceSampleCount");
+  });
+
+  it("does not render analysis result helper copy on mobile", () => {
+    expect(appSource).not.toContain(
+      "자연스러운 번역, 문장별 끊어읽기 직역, 문법 포인트, 단어 추천을 한",
+    );
+    expect(appSource).not.toContain("200자 이내 기본 분석");
+  });
+
+  it("renders the natural translation without a visible section title on mobile", () => {
+    expect(appSource).not.toContain('title="전체 자연스러운 번역"');
+    expect(appSource).toContain('accessibilityLabel="자연스러운 번역"');
+    expect(appSource).toContain("styles.resultTranslation");
   });
 
   it("uses the shared mobile API base URL for configured backends", () => {
@@ -151,5 +183,30 @@ describe("mobile App API wiring", () => {
     expect(appSource).toContain("meaningDisplayNote");
     expect(appSource).not.toContain("currentCard.note");
     expect(appSource).not.toContain("styles.reviewNote");
+  });
+
+  it("renders tappable sentence vocabulary tokens with save actions", () => {
+    expect(appSource).toContain("MobileSentenceAnalysisCard");
+    expect(appSource).toContain("MobileVocabularyWordCard");
+    expect(appSource).toContain("renderMobileVocabularyAwareText");
+    expect(appSource).toContain("vocabularyItemByKey");
+    expect(appSource).toContain("selectedVocabularyKey");
+    expect(appSource).toContain("onSaveSuggestion(item)");
+    expect(appSource).toContain("styles.wordDefinitionCard");
+    expect(appSource).toContain("styles.wordTokenActive");
+  });
+
+  it("renders the selected vocabulary card near the tapped chunk", () => {
+    expect(appSource).toContain("renderedText.selectedVocabularyItem");
+    expect(appSource).toContain("selectedVocabularyItem = vocabularyItem");
+    expect(appSource).toContain("styles.sentenceCardActive");
+    expect(appSource).toContain("styles.chunkUnitActive");
+    expect(appSource).not.toContain("const selectedItem =");
+  });
+
+  it("renders mobile reading chunks in the same slash-separated flow as web and desktop", () => {
+    expect(appSource).toContain("styles.chunkSlash");
+    expect(appSource).toContain("index < sentence.chunks.length - 1");
+    expect(appSource).toContain("<Fragment");
   });
 });

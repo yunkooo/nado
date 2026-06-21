@@ -53,7 +53,12 @@ describe("analyzeText", () => {
                 },
               ],
               source: "I was wondering if you could help me.",
-              tokens: [],
+              tokens: [
+                { text: "I", vocabularyKey: null },
+                { text: "was", vocabularyKey: null },
+                { text: "wondering", vocabularyKey: "wonder" },
+                { text: "if", vocabularyKey: null },
+              ],
               translation: "도와주실 수 있는지 궁금합니다.",
             },
           ],
@@ -116,6 +121,12 @@ describe("analyzeText", () => {
             ],
             indexLabel: "문장 1",
             naturalTranslation: "도와주실 수 있는지 궁금합니다.",
+            tokens: [
+              { text: "I", vocabularyKey: null },
+              { text: "was", vocabularyKey: null },
+              { text: "wondering", vocabularyKey: "wonder" },
+              { text: "if", vocabularyKey: null },
+            ],
           },
         ],
         sentenceCountLabel: "문장 1개",
@@ -132,6 +143,18 @@ describe("analyzeText", () => {
           },
         ],
         vocabularyCountLabel: "저장 후보 1개",
+        vocabularyItems: [
+          {
+            baseForm: "wonder",
+            contextMeaning: "무언가를 알고 싶어 하는 상태를 나타냅니다.",
+            key: "wonder",
+            meaning: "궁금해하다",
+            note: "무언가를 알고 싶어 하는 상태를 나타냅니다.",
+            partOfSpeech: "동사",
+            term: "wondering",
+            type: "word",
+          },
+        ],
         vocabularySuggestions: [
           {
             meaning: "궁금해하다",

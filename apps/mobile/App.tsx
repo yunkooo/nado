@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Pressable,
@@ -23,6 +23,7 @@ import {
   getAnalysisSourceSampleState,
   mobileTabs,
 } from "./src/features/analysis/analysisScreen";
+import { getVisibleMobileTranslationNoteParts } from "./src/features/analysis/translationNotes";
 import { signInWithGoogle, signOut } from "./src/auth/authClient";
 import { useMobileAuthState } from "./src/auth/authState";
 import { analyzeText } from "./src/api/analysisApi";
@@ -34,7 +35,11 @@ import {
   type ReviewDirection,
 } from "./src/features/review/reviewHelpers";
 import type { MobileTabKey } from "./src/features/analysis/analysisScreen";
-import type { AnalyzeTextResult } from "./src/api/analysisApi";
+import type {
+  AnalyzeTextResult,
+  MobileSentenceAnalysis,
+  MobileVocabularyItem,
+} from "./src/api/analysisApi";
 import { mobileColors, styles } from "./src/styles/mobileStyles";
 import {
   getMobileStatePanelCopy,
@@ -72,6 +77,7 @@ export default function App() {
   const composerState = getAnalysisComposerState(text);
   const isAnalysisLoading = analysisState.status === "loading";
   const isAnalyzeDisabled = composerState.isSubmitDisabled || isAnalysisLoading;
+  const isAnalyzeVisuallyDisabled = composerState.isSubmitDisabled;
   const studyRefreshControl = isStudyTabActive ? (
     <RefreshControl
       colors={[mobileColors.primary]}
@@ -191,27 +197,6 @@ export default function App() {
               onSaveSuggestion={vocabularyActions.saveSuggestion}
             />
           ) : null}
-          {activeTab === "vocabulary" ? (
-            <VocabularyPage
-              authStatus={authState.status}
-              deletingItemId={vocabularyActions.deletingItemId}
-              isRefreshing={vocabularyActions.isRefreshing}
-              onDeleteItem={vocabularyActions.deleteItem}
-              onRefresh={vocabularyActions.refreshVocabulary}
-              vocabularyState={vocabularyState}
-            />
-          ) : null}
-          {activeTab === "review" ? (
-            <ReviewPage
-              authStatus={authState.status}
-              isRefreshing={vocabularyActions.isRefreshing}
-              onRefresh={vocabularyActions.refreshVocabulary}
-              vocabularyState={vocabularyState}
-            />
-          ) : null}
-        </ScrollView>
-
-        <View style={styles.bottomArea}>
           {activeTab === "analysis" ? (
             <View style={styles.composerWrap}>
               {composerState.helperText ? (
@@ -243,26 +228,48 @@ export default function App() {
                     onPress={handleAnalyzePress}
                     style={({ pressed }) => [
                       styles.analyzeButton,
-                      isAnalyzeDisabled ? styles.analyzeButtonDisabled : null,
+                      isAnalyzeVisuallyDisabled
+                        ? styles.analyzeButtonDisabled
+                        : null,
                       pressed && !isAnalyzeDisabled ? styles.pressed : null,
                     ]}
                   >
                     <Text
                       style={[
                         styles.analyzeButtonText,
-                        isAnalyzeDisabled
+                        isAnalyzeVisuallyDisabled
                           ? styles.analyzeButtonTextDisabled
                           : null,
                       ]}
                     >
-                      {isAnalysisLoading ? "..." : "↑"}
+                      ↑
                     </Text>
                   </Pressable>
                 </View>
               </View>
             </View>
           ) : null}
+          {activeTab === "vocabulary" ? (
+            <VocabularyPage
+              authStatus={authState.status}
+              deletingItemId={vocabularyActions.deletingItemId}
+              isRefreshing={vocabularyActions.isRefreshing}
+              onDeleteItem={vocabularyActions.deleteItem}
+              onRefresh={vocabularyActions.refreshVocabulary}
+              vocabularyState={vocabularyState}
+            />
+          ) : null}
+          {activeTab === "review" ? (
+            <ReviewPage
+              authStatus={authState.status}
+              isRefreshing={vocabularyActions.isRefreshing}
+              onRefresh={vocabularyActions.refreshVocabulary}
+              vocabularyState={vocabularyState}
+            />
+          ) : null}
+        </ScrollView>
 
+        <View style={styles.bottomArea}>
           <View style={styles.tabbar} accessibilityRole="tablist">
             {mobileTabs.map((tab) => {
               const selected = tab.key === activeTab;
@@ -322,6 +329,16 @@ function AnalysisResultPanel({
   getSuggestionState: MobileVocabularyActions["getSuggestionState"];
   onSaveSuggestion: MobileVocabularyActions["saveSuggestion"];
 }) {
+  const [selectedVocabularyKey, setSelectedVocabularyKey] = useState<
+    string | null
+  >(null);
+  const sourceText =
+    analysisState.status === "success" ? analysisState.data.sourceText : null;
+
+  useEffect(() => {
+    setSelectedVocabularyKey(null);
+  }, [sourceText]);
+
   if (analysisState.status === "idle") {
     return null;
   }
@@ -349,6 +366,9 @@ function AnalysisResultPanel({
 
   const result = analysisState.data;
   const sourceSample = getAnalysisSourceSampleState(result.sourceText);
+  const vocabularyItemByKey = new Map(
+    result.vocabularyItems.map((item) => [item.key, item]),
+  );
 
   return (
     <View style={styles.analysisResultStack}>
@@ -361,72 +381,48 @@ function AnalysisResultPanel({
         <View style={styles.resultHeader}>
           <View style={styles.resultTitleGroup}>
             <Text style={styles.resultTitle}>분석 결과</Text>
-            <Text style={styles.resultDescription}>
-              자연스러운 번역, 문장별 끊어읽기 직역, 문법 포인트, 단어 추천을 한
-              번에 제공합니다.
-            </Text>
           </View>
-          <Text style={styles.resultMeta}>200자 이내 기본 분석</Text>
         </View>
 
-        <ResultSection title="전체 자연스러운 번역">
+        <View accessibilityLabel="자연스러운 번역" style={styles.resultSection}>
           <Text style={styles.resultTranslation}>{result.translation}</Text>
-        </ResultSection>
+        </View>
 
         <ResultSection title="번역 포인트">
           <View style={styles.translationNoteList}>
-            {result.translationNotes.map((note) => (
-              <View key={`${note.term}-${note.note}`} style={styles.noteItem}>
-                <Text style={styles.noteTerm}>{note.term}</Text>
-                <Text style={styles.noteText}>{note.note}</Text>
-              </View>
-            ))}
+            {result.translationNotes.map((note) => {
+              const display = getVisibleMobileTranslationNoteParts(note);
+
+              if (!display.term && !display.note) {
+                return null;
+              }
+
+              return (
+                <View key={`${note.term}-${note.note}`} style={styles.noteItem}>
+                  {display.term ? (
+                    <Text style={styles.noteTerm}>{display.term}</Text>
+                  ) : null}
+                  {display.note ? (
+                    <Text style={styles.noteText}>{display.note}</Text>
+                  ) : null}
+                </View>
+              );
+            })}
           </View>
         </ResultSection>
 
         <ResultSection title="문장별 분석">
           <View style={styles.sentenceList}>
             {result.sentences.map((sentence) => (
-              <View
+              <MobileSentenceAnalysisCard
+                getSuggestionState={getSuggestionState}
                 key={`${sentence.indexLabel}-${sentence.naturalTranslation}`}
-                style={styles.sentenceCard}
-              >
-                <Text style={styles.sentenceIndex}>{sentence.indexLabel}</Text>
-                <View style={styles.chunkLine}>
-                  {sentence.chunks.map((chunk, index) => (
-                    <View
-                      key={`${chunk.english}-${chunk.korean}-${index}`}
-                      style={styles.chunkUnit}
-                    >
-                      <View style={styles.chunkContent}>
-                        <Text style={styles.chunkEnglish}>{chunk.english}</Text>
-                        <Text style={styles.chunkKorean}>{chunk.korean}</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-                <Text style={styles.sentenceTranslation}>
-                  {sentence.naturalTranslation}
-                </Text>
-                {sentence.grammarPoints.length > 0 ? (
-                  <View style={styles.grammarList}>
-                    {sentence.grammarPoints.map((point) => (
-                      <View
-                        key={`${point.target}-${point.explanation}`}
-                        style={styles.grammarItem}
-                      >
-                        <Text style={styles.grammarTarget}>{point.target}</Text>
-                        <View style={styles.grammarDescription}>
-                          <Text style={styles.grammarType}>{point.type}</Text>
-                          <Text style={styles.grammarExplanation}>
-                            {point.explanation}
-                          </Text>
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
-              </View>
+                onSaveSuggestion={onSaveSuggestion}
+                onSelectVocabularyKey={setSelectedVocabularyKey}
+                selectedVocabularyKey={selectedVocabularyKey}
+                sentence={sentence}
+                vocabularyItemByKey={vocabularyItemByKey}
+              />
             ))}
           </View>
         </ResultSection>
@@ -473,6 +469,292 @@ function AnalysisResultPanel({
   );
 }
 
+function MobileSentenceAnalysisCard({
+  getSuggestionState,
+  onSaveSuggestion,
+  onSelectVocabularyKey,
+  selectedVocabularyKey,
+  sentence,
+  vocabularyItemByKey,
+}: {
+  getSuggestionState: MobileVocabularyActions["getSuggestionState"];
+  onSaveSuggestion: MobileVocabularyActions["saveSuggestion"];
+  onSelectVocabularyKey: (vocabularyKey: string | null) => void;
+  selectedVocabularyKey: string | null;
+  sentence: MobileSentenceAnalysis;
+  vocabularyItemByKey: Map<string, MobileVocabularyItem>;
+}) {
+  let tokenIndex = 0;
+  const isSelectedSentence = Boolean(
+    selectedVocabularyKey &&
+    sentence.tokens.some(
+      (token) => token.vocabularyKey === selectedVocabularyKey,
+    ),
+  );
+
+  return (
+    <View
+      style={[
+        styles.sentenceCard,
+        isSelectedSentence ? styles.sentenceCardActive : null,
+      ]}
+    >
+      <Text style={styles.sentenceIndex}>{sentence.indexLabel}</Text>
+      <View style={styles.chunkLine}>
+        {sentence.chunks.map((chunk, index) => {
+          const renderedText = renderMobileVocabularyAwareText({
+            onSelectVocabularyKey,
+            selectedVocabularyKey,
+            startTokenIndex: tokenIndex,
+            text: chunk.english,
+            tokens: sentence.tokens,
+            vocabularyItemByKey,
+          });
+          tokenIndex = renderedText.nextTokenIndex;
+
+          return (
+            <Fragment key={`${chunk.english}-${chunk.korean}-${index}`}>
+              <View
+                style={[
+                  styles.chunkUnit,
+                  renderedText.selectedVocabularyItem
+                    ? styles.chunkUnitActive
+                    : null,
+                ]}
+              >
+                <View style={styles.chunkContent}>
+                  <View style={styles.chunkEnglishLine}>
+                    {renderedText.parts}
+                  </View>
+                  {renderedText.selectedVocabularyItem ? (
+                    <MobileVocabularyWordCard
+                      getSuggestionState={getSuggestionState}
+                      item={renderedText.selectedVocabularyItem}
+                      onSaveSuggestion={onSaveSuggestion}
+                    />
+                  ) : null}
+                  <Text style={styles.chunkKorean}>{chunk.korean}</Text>
+                </View>
+              </View>
+              {index < sentence.chunks.length - 1 ? (
+                <Text accessibilityElementsHidden style={styles.chunkSlash}>
+                  /
+                </Text>
+              ) : null}
+            </Fragment>
+          );
+        })}
+      </View>
+      <Text style={styles.sentenceTranslation}>
+        {sentence.naturalTranslation}
+      </Text>
+      {sentence.grammarPoints.length > 0 ? (
+        <View style={styles.grammarList}>
+          {sentence.grammarPoints.map((point) => (
+            <View
+              key={`${point.target}-${point.explanation}`}
+              style={styles.grammarItem}
+            >
+              <Text style={styles.grammarTarget}>{point.target}</Text>
+              <View style={styles.grammarDescription}>
+                <Text style={styles.grammarType}>{point.type}</Text>
+                <Text style={styles.grammarExplanation}>
+                  {point.explanation}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function MobileVocabularyWordCard({
+  getSuggestionState,
+  item,
+  onSaveSuggestion,
+}: {
+  getSuggestionState: MobileVocabularyActions["getSuggestionState"];
+  item: MobileVocabularyItem;
+  onSaveSuggestion: MobileVocabularyActions["saveSuggestion"];
+}) {
+  const suggestionState = getSuggestionState(item);
+  const isSaveDisabled = suggestionState !== "idle";
+
+  return (
+    <View
+      accessibilityLabel={`${item.term} 뜻과 저장 액션`}
+      style={styles.wordDefinitionCard}
+    >
+      <View style={styles.wordDefinitionHeader}>
+        <Text style={styles.wordDefinitionTerm}>{item.term}</Text>
+        {item.partOfSpeech ? (
+          <Text style={styles.wordDefinitionPartOfSpeech}>
+            {item.partOfSpeech}
+          </Text>
+        ) : null}
+      </View>
+      <Text style={styles.wordDefinitionMeaning}>{item.meaning}</Text>
+      <Text style={styles.wordDefinitionContext}>{item.contextMeaning}</Text>
+      <Pressable
+        accessibilityLabel={readSuggestionSaveActionLabel(
+          item.term,
+          suggestionState,
+        )}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isSaveDisabled }}
+        disabled={isSaveDisabled}
+        onPress={() => {
+          void onSaveSuggestion(item);
+        }}
+        style={({ pressed }) => [
+          styles.wordDefinitionSaveButton,
+          isSaveDisabled ? styles.wordDefinitionSaveButtonDisabled : null,
+          pressed && !isSaveDisabled ? styles.pressed : null,
+        ]}
+      >
+        <Text style={styles.wordDefinitionSaveButtonText}>
+          {readSuggestionSaveActionText(suggestionState)}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+type MobileVocabularyAwareTextOptions = {
+  onSelectVocabularyKey: (vocabularyKey: string | null) => void;
+  selectedVocabularyKey: string | null;
+  startTokenIndex: number;
+  text: string;
+  tokens: MobileSentenceAnalysis["tokens"];
+  vocabularyItemByKey: Map<string, MobileVocabularyItem>;
+};
+
+const englishWordPattern = /[A-Za-z]+(?:['’-][A-Za-z]+)*/g;
+
+function renderMobileVocabularyAwareText({
+  onSelectVocabularyKey,
+  selectedVocabularyKey,
+  startTokenIndex,
+  text,
+  tokens,
+  vocabularyItemByKey,
+}: MobileVocabularyAwareTextOptions) {
+  const parts: ReactNode[] = [];
+  let selectedVocabularyItem: MobileVocabularyItem | null = null;
+  let tokenIndex = startTokenIndex;
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(englishWordPattern)) {
+    const word = match[0];
+    const matchIndex = match.index ?? 0;
+
+    if (matchIndex > lastIndex) {
+      parts.push(
+        <Text
+          key={`plain-${lastIndex}-${matchIndex}`}
+          style={styles.chunkEnglish}
+        >
+          {text.slice(lastIndex, matchIndex)}
+        </Text>,
+      );
+    }
+
+    const tokenMatch = findMatchingSentenceToken(tokens, tokenIndex, word);
+    tokenIndex = tokenMatch.nextTokenIndex;
+    const vocabularyKey = tokenMatch.token?.vocabularyKey;
+    const vocabularyItem = vocabularyKey
+      ? vocabularyItemByKey.get(vocabularyKey)
+      : undefined;
+
+    if (vocabularyItem) {
+      const isSelected = vocabularyItem.key === selectedVocabularyKey;
+
+      if (isSelected) {
+        selectedVocabularyItem = vocabularyItem;
+      }
+
+      parts.push(
+        <Pressable
+          accessibilityLabel={`${word} 뜻과 저장 액션 보기`}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: isSelected }}
+          key={`word-${word}-${matchIndex}`}
+          onPress={() => {
+            onSelectVocabularyKey(isSelected ? null : vocabularyItem.key);
+          }}
+          style={({ pressed }) => [
+            styles.wordToken,
+            isSelected ? styles.wordTokenActive : null,
+            pressed ? styles.pressed : null,
+          ]}
+        >
+          <Text style={styles.chunkEnglish}>{word}</Text>
+        </Pressable>,
+      );
+    } else {
+      parts.push(
+        <Text key={`word-${word}-${matchIndex}`} style={styles.chunkEnglish}>
+          {word}
+        </Text>,
+      );
+    }
+
+    lastIndex = matchIndex + word.length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(
+      <Text
+        key={`plain-${lastIndex}-${text.length}`}
+        style={styles.chunkEnglish}
+      >
+        {text.slice(lastIndex)}
+      </Text>,
+    );
+  }
+
+  return {
+    nextTokenIndex: tokenIndex,
+    parts:
+      parts.length > 0 ? (
+        parts
+      ) : (
+        <Text style={styles.chunkEnglish}>{text}</Text>
+      ),
+    selectedVocabularyItem,
+  };
+}
+
+function findMatchingSentenceToken(
+  tokens: MobileSentenceAnalysis["tokens"],
+  startIndex: number,
+  word: string,
+) {
+  const normalizedWord = normalizeVocabularyMatchText(word);
+
+  for (let index = startIndex; index < tokens.length; index += 1) {
+    if (
+      normalizeVocabularyMatchText(tokens[index]?.text ?? "") === normalizedWord
+    ) {
+      return {
+        nextTokenIndex: index + 1,
+        token: tokens[index],
+      };
+    }
+  }
+
+  return {
+    nextTokenIndex: startIndex,
+    token: undefined,
+  };
+}
+
+function normalizeVocabularyMatchText(text: string) {
+  return text.normalize("NFKC").toLocaleLowerCase("en-US");
+}
+
 function readSuggestionSavePrefix(state: "idle" | "saved" | "saving") {
   if (state === "saving") {
     return "저장 중";
@@ -483,6 +765,33 @@ function readSuggestionSavePrefix(state: "idle" | "saved" | "saving") {
   }
 
   return "+";
+}
+
+function readSuggestionSaveActionText(state: "idle" | "saved" | "saving") {
+  if (state === "saving") {
+    return "저장 중";
+  }
+
+  if (state === "saved") {
+    return "저장됨";
+  }
+
+  return "+ 저장";
+}
+
+function readSuggestionSaveActionLabel(
+  term: string,
+  state: "idle" | "saved" | "saving",
+) {
+  if (state === "saving") {
+    return `${term} 저장 중`;
+  }
+
+  if (state === "saved") {
+    return `${term} 저장됨`;
+  }
+
+  return `${term} 저장`;
 }
 
 function ResultSection({
