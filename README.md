@@ -150,6 +150,8 @@ pnpm smoke:backend
 
 `NADO_SMOKE_ANALYZE_TEXT`와 `NADO_SMOKE_ACCESS_TOKEN`을 설정하면 분석, 단어장 저장, 목록, 삭제까지 실제 HTTP 경로로 확인할 수 있습니다.
 
+`NADO_SMOKE_REALTIME=1`을 추가하면 단어장 저장과 삭제가 Supabase Realtime broadcast로 수신되는지도 함께 확인합니다. 크로스 플랫폼 수동 검증 절차는 [단어장 Realtime 동기화 검증](docs/setup/realtime-vocabulary-sync.md)을 참고합니다.
+
 ## 설계 특징
 
 - **AI 응답 검증**: structured output, schema validation, retry, timeout, error state를 API 계층에서 다룹니다.
@@ -165,3 +167,4 @@ pnpm smoke:backend
 - [최소 MVP 기능 PRD](docs/prd/02-minimum-mvp.md)
 - [확장 기능 PRD](docs/prd/03-expansion.md)
 - [로컬 개발 세팅](docs/setup/local-development.md)
+- [단어장 Realtime 동기화 검증](docs/setup/realtime-vocabulary-sync.md)
