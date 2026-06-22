@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { ElementRef, ReactNode } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Dimensions,
   Modal,
@@ -18,9 +19,13 @@ import {
   type ViewStyle,
 } from "react-native";
 import {
+  ANALYSIS_MODELS,
+  DEFAULT_ANALYSIS_MODEL_ID,
   MAX_ANALYSIS_TEXT_LENGTH,
+  analysisModelIdSchema,
   createVocabularyMeaningRenderKey,
   getDistinctVocabularyNote,
+  type AnalysisModelId,
 } from "@nado/shared";
 import {
   ANALYSIS_INPUT_ACCESSIBILITY_LABEL,
@@ -79,9 +84,13 @@ type MobileVocabularySelectionHandler = (
 
 const configuredMobileApiBaseUrl = readMobileApiBaseUrl();
 const configuredMobileApiPlatform = Platform.OS;
+const MOBILE_ANALYSIS_MODEL_STORAGE_KEY = "nado.mobile.analysis-model.v1";
 
 export default function App() {
   const [text, setText] = useState(INITIAL_ANALYSIS_TEXT);
+  const [selectedAnalysisModel, setSelectedAnalysisModel] =
+    useState<AnalysisModelId>(DEFAULT_ANALYSIS_MODEL_ID);
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [analysisState, setAnalysisState] = useState<AnalysisState>({
     status: "idle",
   });
@@ -100,6 +109,9 @@ export default function App() {
   const isAnalysisLoading = analysisState.status === "loading";
   const isAnalyzeDisabled = composerState.isSubmitDisabled || isAnalysisLoading;
   const isAnalyzeVisuallyDisabled = composerState.isSubmitDisabled;
+  const selectedAnalysisModelLabel =
+    ANALYSIS_MODELS.find((model) => model.id === selectedAnalysisModel)
+      ?.label ?? ANALYSIS_MODELS[0].label;
   const studyRefreshControl = isStudyTabActive ? (
     <RefreshControl
       colors={[mobileColors.primary]}
@@ -108,6 +120,22 @@ export default function App() {
       tintColor={mobileColors.inkMuted}
     />
   ) : undefined;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void AsyncStorage.getItem(MOBILE_ANALYSIS_MODEL_STORAGE_KEY).then(
+      (value) => {
+        if (isMounted && isAnalysisModelId(value)) {
+          setSelectedAnalysisModel(value);
+        }
+      },
+    );
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!vocabularyActions.saveMessage) {
@@ -140,6 +168,12 @@ export default function App() {
     }
   };
 
+  const handleSelectAnalysisModel = (modelId: AnalysisModelId) => {
+    setSelectedAnalysisModel(modelId);
+    setIsModelSelectorOpen(false);
+    void AsyncStorage.setItem(MOBILE_ANALYSIS_MODEL_STORAGE_KEY, modelId);
+  };
+
   const handleAnalyzePress = async () => {
     const trimmedText = text.trim();
 
@@ -153,6 +187,7 @@ export default function App() {
       accessToken: authState.accessToken,
       apiBaseUrl: configuredMobileApiBaseUrl,
       apiPlatform: configuredMobileApiPlatform,
+      model: selectedAnalysisModel,
     });
 
     setAnalysisState(nextAnalysisState);
@@ -240,7 +275,19 @@ export default function App() {
                 />
                 <View style={styles.composerFooter}>
                   <View style={styles.composerMeta}>
-                    <Text style={styles.composerLabel}>기본 분석</Text>
+                    <Pressable
+                      accessibilityLabel="AI 모델 선택"
+                      accessibilityRole="button"
+                      onPress={() => setIsModelSelectorOpen(true)}
+                      style={({ pressed }) => [
+                        styles.modelSelectButton,
+                        pressed ? styles.pressed : null,
+                      ]}
+                    >
+                      <Text style={styles.modelSelectText}>
+                        {selectedAnalysisModelLabel}
+                      </Text>
+                    </Pressable>
                     <Text style={styles.count}>{composerState.countLabel}</Text>
                   </View>
                   <Pressable
@@ -337,9 +384,77 @@ export default function App() {
             </View>
           </View>
         ) : null}
+        <AnalysisModelSelector
+          onClose={() => setIsModelSelectorOpen(false)}
+          onSelect={handleSelectAnalysisModel}
+          selectedModel={selectedAnalysisModel}
+          visible={isModelSelectorOpen}
+        />
       </View>
     </SafeAreaView>
   );
+}
+
+function AnalysisModelSelector({
+  onClose,
+  onSelect,
+  selectedModel,
+  visible,
+}: {
+  onClose: () => void;
+  onSelect: (modelId: AnalysisModelId) => void;
+  selectedModel: AnalysisModelId;
+  visible: boolean;
+}) {
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={onClose}
+      transparent
+      visible={visible}
+    >
+      <View style={styles.modelSelectorOverlay}>
+        <Pressable
+          accessibilityLabel="AI 모델 선택 닫기"
+          accessibilityRole="button"
+          onPress={onClose}
+          style={styles.modelSelectorDismissLayer}
+        />
+        <View accessibilityRole="menu" style={styles.modelSelectorCard}>
+          {ANALYSIS_MODELS.map((model) => {
+            const selected = model.id === selectedModel;
+
+            return (
+              <Pressable
+                accessibilityRole="menuitem"
+                accessibilityState={{ selected }}
+                key={model.id}
+                onPress={() => onSelect(model.id)}
+                style={({ pressed }) => [
+                  styles.modelSelectorOption,
+                  selected ? styles.modelSelectorOptionActive : null,
+                  pressed ? styles.pressed : null,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.modelSelectorOptionText,
+                    selected ? styles.modelSelectorOptionTextActive : null,
+                  ]}
+                >
+                  {model.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function isAnalysisModelId(value: unknown): value is AnalysisModelId {
+  return analysisModelIdSchema.safeParse(value).success;
 }
 
 function AnalysisResultPanel({

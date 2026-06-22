@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import {
+  ANALYSIS_MODELS,
   MAX_ANALYSIS_TEXT_LENGTH,
   countAnalysisTextCharacters,
   hasUnsupportedAnalysisTextCharacters,
   normalizeAnalysisText,
+  type AnalysisModelId,
 } from "@nado/shared";
 import {
   AnalysisResult,
@@ -33,6 +35,7 @@ export function AnalysisFlow() {
   const {
     snapshot: {
       analysisState,
+      selectedAnalysisModel,
       text,
       vocabularySaveMessage,
       vocabularySaveStates,
@@ -95,6 +98,7 @@ export function AnalysisFlow() {
     const nextAnalysisState = await analyzeText(nextText, {
       accessToken: await getCurrentAccessToken(),
       apiBaseUrl,
+      model: selectedAnalysisModel,
     });
 
     if (nextAnalysisState.status === "success") {
@@ -102,6 +106,14 @@ export function AnalysisFlow() {
     }
 
     analysisStore.setAnalysisState(nextAnalysisState);
+  };
+
+  const handleModelChange = (value: string) => {
+    if (!ANALYSIS_MODELS.some((model) => model.id === value)) {
+      return;
+    }
+
+    analysisStore.setSelectedAnalysisModel(value as AnalysisModelId);
   };
 
   const handleSaveVocabularySuggestion = (suggestion: VocabularySuggestion) => {
@@ -257,7 +269,10 @@ export function AnalysisFlow() {
         <p className="desktop-input-disclosure">{inputDisclosure}</p>
         <InputComposer
           maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+          modelOptions={ANALYSIS_MODELS}
+          modelValue={selectedAnalysisModel}
           onSubmit={handleSubmitAnalysis}
+          onModelChange={handleModelChange}
           onValueChange={analysisStore.setText}
           placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
           submitAriaLabel="분석 요청"

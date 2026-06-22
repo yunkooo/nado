@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared";
 import {
   createAnalysisStateStore,
   type AnalysisPageSnapshot,
@@ -32,6 +33,7 @@ function createSuccessSnapshot(): AnalysisPageSnapshot {
       status: "success",
     },
     text: "I leave home.",
+    selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
     vocabularySaveMessage: null,
     vocabularySaveStates: {},
   };
@@ -168,6 +170,7 @@ describe("analysis state store", () => {
       analysisState: {
         status: "idle",
       },
+      selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
       text: "",
       vocabularySaveMessage: null,
       vocabularySaveStates: {},
@@ -193,6 +196,7 @@ describe("analysis state store", () => {
       analysisState: {
         status: "idle",
       },
+      selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
       text: "",
       vocabularySaveMessage: null,
       vocabularySaveStates: {},
@@ -212,10 +216,28 @@ describe("analysis state store", () => {
       analysisState: {
         status: "idle",
       },
+      selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
       text: "",
       vocabularySaveMessage: null,
       vocabularySaveStates: {},
     });
     expect(storage.removeItem).toHaveBeenCalledWith("nado.analysis-state.v1");
+  });
+
+  it("persists the selected analysis model separately from the same-tab snapshot", () => {
+    const snapshotStorage = createStorage();
+    const modelStorage = createStorage();
+    const store = createAnalysisStateStore({
+      getModelStorage: () => modelStorage,
+      getStorage: () => snapshotStorage,
+    });
+
+    store.setSelectedAnalysisModel("z-ai/glm-5.2");
+
+    expect(store.getSnapshot().selectedAnalysisModel).toBe("z-ai/glm-5.2");
+    expect(modelStorage.setItem).toHaveBeenCalledWith(
+      "nado.analysis-model.v1",
+      "z-ai/glm-5.2",
+    );
   });
 });

@@ -179,6 +179,24 @@
   font-weight: 700;
 }
 
+.nado-composer__model-select {
+  appearance: none;
+  background: var(--nado-color-surface-muted);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  color: var(--nado-color-ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  min-height: 32px;
+  padding: 0 26px 0 10px;
+}
+
+.nado-composer__model-select:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--nado-color-primary), white 68%);
+  outline-offset: 2px;
+}
+
 .nado-composer__count {
   color: var(--nado-color-ink-muted);
   font-size: 0.8125rem;
