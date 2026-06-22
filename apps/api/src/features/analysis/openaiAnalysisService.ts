@@ -33,7 +33,7 @@ const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
 const DEFAULT_OPENROUTER_ENDPOINT =
   "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_OPENAI_TIMEOUT_MS = 30_000;
-const DEFAULT_OPENROUTER_TIMEOUT_MS = 90_000;
+const DEFAULT_OPENROUTER_TIMEOUT_MS = 150_000;
 
 const ANALYSIS_INSTRUCTIONS = [
   "당신은 한국인 영어 학습자를 돕는 영어 독해 분석기입니다.",

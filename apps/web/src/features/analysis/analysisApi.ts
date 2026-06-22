@@ -27,7 +27,7 @@ const ANALYZE_ERROR_MESSAGE =
 const ANALYZE_TIMEOUT_MESSAGE =
   "분석 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.";
 const ANALYZE_REQUEST_TIMEOUT_MS = 35_000;
-const ANALYZE_OPENROUTER_REQUEST_TIMEOUT_MS = 95_000;
+const ANALYZE_OPENROUTER_REQUEST_TIMEOUT_MS = 155_000;
 
 export async function analyzeText(
   text: string,
@@ -36,7 +36,7 @@ export async function analyzeText(
   const trimmedText = text.trim();
   const model = options.model ?? DEFAULT_ANALYSIS_MODEL_ID;
   const fetchResult = await fetchWithTimeout(
-    "/api/analyze",
+    resolveAnalyzeApiUrl(),
     {
       body: JSON.stringify({
         model,
@@ -171,4 +171,14 @@ function resolveAnalyzeRequestTimeoutMs(model: AnalysisModelId): number {
   return isOpenRouterAnalysisModelId(model)
     ? ANALYZE_OPENROUTER_REQUEST_TIMEOUT_MS
     : ANALYZE_REQUEST_TIMEOUT_MS;
+}
+
+function resolveAnalyzeApiUrl(): string {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+
+  if (!apiBaseUrl) {
+    return "/api/analyze";
+  }
+
+  return `${apiBaseUrl.replace(/\/+$/, "")}/api/analyze`;
 }

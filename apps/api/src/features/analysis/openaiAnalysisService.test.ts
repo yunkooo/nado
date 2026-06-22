@@ -401,6 +401,46 @@ describe("createOpenAIAnalysisService", () => {
     await assertion;
   });
 
+  it("keeps the default OpenRouter timeout above slow GLM responses", async () => {
+    vi.useFakeTimers();
+    let aborted = false;
+    const service = createOpenAIAnalysisService({
+      openRouterApiKey: "test-openrouter-key",
+      fetch: async (_input, init) => {
+        const signal = init?.signal;
+
+        return {
+          ok: true,
+          json: () =>
+            new Promise((_resolve, reject) => {
+              if (signal instanceof AbortSignal) {
+                signal.addEventListener("abort", () => {
+                  aborted = true;
+                  reject(new DOMException("Request aborted", "AbortError"));
+                });
+              }
+            }),
+        } as Response;
+      },
+    });
+
+    const resultPromise = service.analyze({
+      text: "Careful state design makes interface bugs easier to find.",
+      model: "z-ai/glm-5.2",
+    });
+    const assertion = expect(resultPromise).rejects.toMatchObject({
+      code: "analysis_timeout",
+      status: 504,
+    });
+
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(aborted).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(30_001);
+    expect(aborted).toBe(true);
+    await assertion;
+  });
+
   it("retries once when structured output is malformed", async () => {
     let calls = 0;
     const service = createOpenAIAnalysisService({

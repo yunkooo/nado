@@ -3,7 +3,15 @@ import { DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared";
 import { analyzeText } from "./analysisApi";
 
 describe("analyzeText", () => {
+  const originalPublicApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
   afterEach(() => {
+    if (originalPublicApiBaseUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    } else {
+      process.env.NEXT_PUBLIC_API_BASE_URL = originalPublicApiBaseUrl;
+    }
+
     vi.useRealTimers();
   });
 
@@ -313,6 +321,28 @@ describe("analyzeText", () => {
     });
   });
 
+  it("uses the public API base URL when one is configured", async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:4000/";
+    const fetcher = vi.fn(async () =>
+      Response.json({
+        reason: "영어 문장으로 분석하기 어려운 입력입니다.",
+        status: "not_analyzable",
+      }),
+    );
+
+    await analyzeText("I was wondering if you could help me.", { fetcher });
+
+    expect(fetcher).toHaveBeenCalledWith("http://localhost:4000/api/analyze", {
+      body: JSON.stringify({
+        model: DEFAULT_ANALYSIS_MODEL_ID,
+        text: "I was wondering if you could help me.",
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+      signal: expect.any(AbortSignal),
+    });
+  });
+
   it("returns a timeout message when the analyze request is aborted", async () => {
     const fetcher = vi.fn(async () => {
       throw new DOMException("Aborted", "AbortError");
@@ -392,7 +422,7 @@ describe("analyzeText", () => {
       model: "z-ai/glm-5.2",
     });
 
-    await vi.advanceTimersByTimeAsync(80_000);
+    await vi.advanceTimersByTimeAsync(120_000);
 
     expect(aborted).toBe(false);
     resolveResponse?.(
