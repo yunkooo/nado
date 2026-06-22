@@ -40,6 +40,13 @@ const expectStoryExportBlockToContain = (
 ) => {
   expect(getStoryExportBlock(source, exportName)).toContain(expected);
 };
+const expectSharedImport = (source: string, exportName: string) => {
+  expect(source).toMatch(
+    new RegExp(
+      `import\\s*{[^}]*\\b${escapeRegExp(exportName)}\\b[^}]*}\\s*from\\s*"@nado/shared"`,
+    ),
+  );
+};
 
 const packageJson = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
@@ -224,12 +231,10 @@ export const OtherStory: Story = {
     );
     const inputComposerSource = readUiStorySource("InputComposer.stories.tsx");
 
-    expect(analysisInputSampleSource).toContain(
-      'import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared"',
-    );
-    expect(inputComposerSource).toContain(
-      'import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared"',
-    );
+    expectSharedImport(analysisInputSampleSource, "MAX_ANALYSIS_TEXT_LENGTH");
+    expectSharedImport(inputComposerSource, "MAX_ANALYSIS_TEXT_LENGTH");
+    expectSharedImport(inputComposerSource, "ANALYSIS_MODELS");
+    expectSharedImport(inputComposerSource, "DEFAULT_ANALYSIS_MODEL_ID");
     expect(analysisInputSampleSource).not.toContain(
       "MAX_STORY_ANALYSIS_TEXT_LENGTH",
     );
