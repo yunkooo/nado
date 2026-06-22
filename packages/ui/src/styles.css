@@ -73,7 +73,9 @@
 }
 
 .nado-button {
-  border-radius: var(--nado-button-radius, var(--nado-radius-md));
+  --nado-button-radius: var(--nado-radius-md);
+
+  border-radius: var(--nado-button-radius);
   min-height: var(--nado-button-size-md-height);
 }
 
@@ -87,7 +89,9 @@
 }
 
 .nado-button--icon {
-  border-radius: var(--nado-button-size-icon-radius, var(--nado-radius-pill));
+  --nado-button-size-icon-radius: var(--nado-radius-pill);
+
+  border-radius: var(--nado-button-size-icon-radius);
   flex: 0 0 var(--nado-button-size-icon-width);
   font-size: 1.125rem;
   height: var(--nado-button-size-icon-height);
@@ -97,27 +101,37 @@
 }
 
 .nado-button--primary {
-  background: var(--nado-button-primary-background, var(--nado-color-primary));
-  color: var(--nado-button-primary-foreground, var(--nado-color-primary-ink));
+  --nado-button-primary-background: var(--nado-color-primary);
+  --nado-button-primary-foreground: var(--nado-color-primary-ink);
+
+  background: var(--nado-button-primary-background);
+  color: var(--nado-button-primary-foreground);
 }
 
 .nado-button--secondary {
-  background: var(
-    --nado-button-secondary-background,
-    var(--nado-color-surface-muted)
-  );
-  border-color: var(--nado-button-secondary-border, var(--nado-color-border));
-  color: var(--nado-button-secondary-foreground, var(--nado-color-ink));
+  --nado-button-secondary-background: var(--nado-color-surface-muted);
+  --nado-button-secondary-border: var(--nado-color-border);
+  --nado-button-secondary-foreground: var(--nado-color-ink);
+
+  background: var(--nado-button-secondary-background);
+  border-color: var(--nado-button-secondary-border);
+  color: var(--nado-button-secondary-foreground);
 }
 
 .nado-button--ghost {
-  background: var(--nado-button-ghost-background, transparent);
-  color: var(--nado-button-ghost-foreground, var(--nado-color-primary));
+  --nado-button-ghost-background: transparent;
+  --nado-button-ghost-foreground: var(--nado-color-primary);
+
+  background: var(--nado-button-ghost-background);
+  color: var(--nado-button-ghost-foreground);
 }
 
 .nado-button--send {
-  background: var(--nado-button-primary-background, var(--nado-color-primary));
-  color: var(--nado-button-primary-foreground, var(--nado-color-primary-ink));
+  --nado-button-send-background: var(--nado-color-primary);
+  --nado-button-send-foreground: var(--nado-color-primary-ink);
+
+  background: var(--nado-button-send-background);
+  color: var(--nado-button-send-foreground);
 }
 
 .nado-chip {

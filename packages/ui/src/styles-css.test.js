@@ -3,6 +3,17 @@ import { describe, expect, it } from "vitest";
 import { tokens } from "@nado/tokens";
 
 const styles = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
+const cssTokenValue = (value) =>
+  new Map([
+    [tokens.color.primary, "var(--nado-color-primary)"],
+    [tokens.color.primaryInk, "var(--nado-color-primary-ink)"],
+    [tokens.color.surfaceMuted, "var(--nado-color-surface-muted)"],
+    [tokens.color.border, "var(--nado-color-border)"],
+    [tokens.color.ink, "var(--nado-color-ink)"],
+    [tokens.radius.md, "var(--nado-radius-md)"],
+    [tokens.radius.pill, "var(--nado-radius-pill)"],
+    ["transparent", "transparent"],
+  ]).get(value) ?? value;
 
 describe("analysis component styles", () => {
   it("uses result-card container queries for embedded narrow layouts", () => {
@@ -60,22 +71,25 @@ describe("analysis component styles", () => {
   });
 
   it("uses a strong active color for the composer send button", () => {
-    const rootRule = readRule(":root");
-    const buttonRule = readRule(".nado-button");
+    const buttonTokens = tokens.component.button;
     const sendButtonRule = readRule(".nado-button--send");
 
-    expect(rootRule).not.toContain("--nado-button-primary-background:");
-    expect(rootRule).not.toContain("--nado-button-send-background:");
-    expect(buttonRule).not.toContain("--nado-button-primary-background:");
     expect(sendButtonRule).toContain(
-      "background: var(--nado-button-primary-background, var(--nado-color-primary))",
+      `--nado-button-send-background: ${cssTokenValue(buttonTokens.send.background)}`,
     );
     expect(sendButtonRule).toContain(
-      "color: var(--nado-button-primary-foreground, var(--nado-color-primary-ink))",
+      `--nado-button-send-foreground: ${cssTokenValue(buttonTokens.send.foreground)}`,
+    );
+    expect(sendButtonRule).toContain(
+      "background: var(--nado-button-send-background)",
+    );
+    expect(sendButtonRule).toContain(
+      "color: var(--nado-button-send-foreground)",
     );
   });
 
   it("keeps button styles aligned with component tokens", () => {
+    const buttonTokens = tokens.component.button;
     const rootRule = readRule(":root");
     const buttonRule = readRule(".nado-button");
     const smButtonRule = readRule(".nado-button--sm");
@@ -86,23 +100,44 @@ describe("analysis component styles", () => {
     const ghostButtonRule = readRule(".nado-button--ghost");
     const sendButtonRule = readRule(".nado-button--send");
 
-    expect(rootRule).toContain(
-      `--nado-button-size-md-height: ${tokens.component.button.size.md.height}`,
-    );
-    expect(rootRule).toContain(
-      `--nado-radius-pill: ${tokens.component.button.size.icon.radius}`,
-    );
-    expect(rootRule).not.toContain("--nado-button-radius:");
-    expect(rootRule).not.toContain("--nado-button-primary-background:");
-    expect(rootRule).not.toContain("--nado-button-secondary-background:");
-    expect(rootRule).not.toContain("--nado-button-size-icon-radius:");
-    expect(rootRule).not.toContain("--nado-button-ghost-foreground:");
-    expect(rootRule).not.toContain("--nado-button-send-background:");
-
-    expect(buttonRule).not.toContain("--nado-button-radius:");
     expect(buttonRule).toContain(
-      "border-radius: var(--nado-button-radius, var(--nado-radius-md))",
+      `--nado-button-radius: ${cssTokenValue(buttonTokens.radius)}`,
     );
+    expect(primaryButtonRule).toContain(
+      `--nado-button-primary-background: ${cssTokenValue(buttonTokens.primary.background)}`,
+    );
+    expect(primaryButtonRule).toContain(
+      `--nado-button-primary-foreground: ${cssTokenValue(buttonTokens.primary.foreground)}`,
+    );
+    expect(secondaryButtonRule).toContain(
+      `--nado-button-secondary-background: ${cssTokenValue(buttonTokens.secondary.background)}`,
+    );
+    expect(secondaryButtonRule).toContain(
+      `--nado-button-secondary-border: ${cssTokenValue(buttonTokens.secondary.border)}`,
+    );
+    expect(secondaryButtonRule).toContain(
+      `--nado-button-secondary-foreground: ${cssTokenValue(buttonTokens.secondary.foreground)}`,
+    );
+    expect(ghostButtonRule).toContain(
+      `--nado-button-ghost-background: ${cssTokenValue(buttonTokens.ghost.background)}`,
+    );
+    expect(ghostButtonRule).toContain(
+      `--nado-button-ghost-foreground: ${cssTokenValue(buttonTokens.ghost.foreground)}`,
+    );
+    expect(sendButtonRule).toContain(
+      `--nado-button-send-background: ${cssTokenValue(buttonTokens.send.background)}`,
+    );
+    expect(sendButtonRule).toContain(
+      `--nado-button-send-foreground: ${cssTokenValue(buttonTokens.send.foreground)}`,
+    );
+    expect(rootRule).toContain(
+      `--nado-button-size-md-height: ${buttonTokens.size.md.height}`,
+    );
+    expect(iconButtonRule).toContain(
+      `--nado-button-size-icon-radius: ${cssTokenValue(buttonTokens.size.icon.radius)}`,
+    );
+
+    expect(buttonRule).toContain("border-radius: var(--nado-button-radius)");
     expect(buttonRule).toContain(
       "min-height: var(--nado-button-size-md-height)",
     );
@@ -113,7 +148,7 @@ describe("analysis component styles", () => {
       "padding: 0 var(--nado-button-size-md-padding-x)",
     );
     expect(iconButtonRule).toContain(
-      "border-radius: var(--nado-button-size-icon-radius, var(--nado-radius-pill))",
+      "border-radius: var(--nado-button-size-icon-radius)",
     );
     expect(iconButtonRule).toContain(
       "height: var(--nado-button-size-icon-height)",
@@ -122,22 +157,22 @@ describe("analysis component styles", () => {
       "width: var(--nado-button-size-icon-width)",
     );
     expect(primaryButtonRule).toContain(
-      "background: var(--nado-button-primary-background, var(--nado-color-primary))",
+      "background: var(--nado-button-primary-background)",
     );
     expect(primaryButtonRule).toContain(
-      "color: var(--nado-button-primary-foreground, var(--nado-color-primary-ink))",
+      "color: var(--nado-button-primary-foreground)",
     );
     expect(secondaryButtonRule).toContain(
-      "border-color: var(--nado-button-secondary-border, var(--nado-color-border))",
+      "border-color: var(--nado-button-secondary-border)",
     );
     expect(ghostButtonRule).toContain(
-      "background: var(--nado-button-ghost-background, transparent)",
+      "background: var(--nado-button-ghost-background)",
     );
     expect(sendButtonRule).toContain(
-      "background: var(--nado-button-primary-background, var(--nado-color-primary))",
+      "background: var(--nado-button-send-background)",
     );
     expect(sendButtonRule).toContain(
-      "color: var(--nado-button-primary-foreground, var(--nado-color-primary-ink))",
+      "color: var(--nado-button-send-foreground)",
     );
   });
 
