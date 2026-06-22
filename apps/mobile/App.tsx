@@ -287,6 +287,7 @@ export default function App() {
                       <Text style={styles.modelSelectText}>
                         {selectedAnalysisModelLabel}
                       </Text>
+                      <View style={styles.modelSelectChevron} />
                     </Pressable>
                     <Text style={styles.count}>{composerState.countLabel}</Text>
                   </View>

@@ -86,6 +86,24 @@ describe("mobile shared style tokens", () => {
     expect(mobileStylesSource).toContain("minWidth: 0");
   });
 
+  it("shows a chevron affordance in the mobile model selector trigger", () => {
+    const modelSelectButtonStyle = mobileStylesSource.match(
+      /modelSelectButton:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+    const modelSelectChevronStyle = mobileStylesSource.match(
+      /modelSelectChevron:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+
+    expect(modelSelectButtonStyle).toContain('flexDirection: "row"');
+    expect(modelSelectButtonStyle).toContain("gap: 8");
+    expect(modelSelectChevronStyle).toContain(
+      "borderRightColor: mobileColors.inkMuted",
+    );
+    expect(modelSelectChevronStyle).toContain(
+      'transform: [{ rotate: "45deg" }]',
+    );
+  });
+
   it("matches the web and desktop review answer colors", () => {
     const reviewAnswerStyle = mobileStylesSource.match(
       /reviewAnswer:\s*{(?<body>[\s\S]*?)\n  },/,

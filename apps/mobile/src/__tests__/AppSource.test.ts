@@ -41,6 +41,7 @@ describe("mobile App API wiring", () => {
     expect(appSource).toContain("setSelectedAnalysisModel");
     expect(appSource).toContain("nado.mobile.analysis-model.v1");
     expect(appSource).toContain('accessibilityLabel="AI 모델 선택"');
+    expect(appSource).toContain("styles.modelSelectChevron");
     expect(appSource).not.toContain("기본 분석");
   });
 
