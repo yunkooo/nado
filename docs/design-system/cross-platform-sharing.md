@@ -87,7 +87,7 @@ Mobile은 React Native라 DOM className, CSS variable, hover 같은 개념을 �
 | Semantic token  | 제품 의미를 가진 값   | `color.primary`, `color.surface`, `color.inkMuted`                | 대부분의 컴포넌트               |
 | Component token | 특정 컴포넌트 상태 값 | `button.primary.background`, `reviewCard.answer.hiddenBackground` | Web/RN parity가 중요한 컴포넌트 |
 
-현재 프로젝트에서는 primitive와 semantic이 섞여 있다. 당장 큰 마이그레이션을 하기보다, 새 UI나 parity가 중요한 UI부터 component token을 추가하는 방식이 안전하다.
+현재 프로젝트에서는 primitive와 semantic이 섞여 있고, component token은 `button`부터 시작한다. 당장 큰 마이그레이션을 하기보다, 새 UI나 parity가 중요한 UI부터 component token을 넓히는 방식이 안전하다.
 
 ## Package 역할
 
@@ -98,13 +98,15 @@ Mobile은 React Native라 DOM className, CSS variable, hover 같은 개념을 �
 현재 역할:
 
 - 공통 color, radius, spacing, shadow token 제공
+- Button component token 제공
 - React Native용 `nativeTokens` adapter 제공
 - Web length token과 RN number token의 차이를 흡수
+- Component token 안의 CSS pixel 값도 React Native에서는 number로 변환
 
 다음 개선 후보:
 
 - CSS custom property output을 token에서 생성
-- component token 추가
+- chip, reviewCard 같은 component token 확대
 - token 변경 시 Web/Desktop/Mobile demo에서 같은 변경이 보이는지 확인하는 테스트 추가
 
 ### `@nado/ui`
@@ -217,7 +219,7 @@ Storybook for React Native는 아직 이 저장소에 설정되어 있지 않으
 
 이 문서는 전략 정리까지만 다룬다. 실제 구현은 다음 issue로 나눈다.
 
-- `@nado/tokens`에 component token 구조 추가 검토
+- `@nado/tokens` component token을 chip, reviewCard로 확대
 - `@nado/ui/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
 - Mobile `mobileStyles`가 주요 반복 UI에서 `nativeTokens`를 계속 사용하는지 점검
 - `@nado/ui-native` 최소 API 설계
