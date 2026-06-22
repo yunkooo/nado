@@ -3,17 +3,25 @@ import { describe, expect, it } from "vitest";
 import { tokens } from "@nado/tokens";
 
 const styles = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
+const cssPrimitiveTokenEntries = [
+  ["--nado-color-primary", tokens.color.primary],
+  ["--nado-color-primary-ink", tokens.color.primaryInk],
+  ["--nado-color-surface-muted", tokens.color.surfaceMuted],
+  ["--nado-color-border", tokens.color.border],
+  ["--nado-color-ink", tokens.color.ink],
+  ["--nado-radius-md", tokens.radius.md],
+  ["--nado-radius-pill", tokens.radius.pill],
+];
+const cssPrimitiveReferences = new Map(
+  cssPrimitiveTokenEntries.map(([variableName, value]) => [
+    value,
+    `var(${variableName})`,
+  ]),
+);
 const cssTokenValue = (value) =>
-  new Map([
-    [tokens.color.primary, "var(--nado-color-primary)"],
-    [tokens.color.primaryInk, "var(--nado-color-primary-ink)"],
-    [tokens.color.surfaceMuted, "var(--nado-color-surface-muted)"],
-    [tokens.color.border, "var(--nado-color-border)"],
-    [tokens.color.ink, "var(--nado-color-ink)"],
-    [tokens.radius.md, "var(--nado-radius-md)"],
-    [tokens.radius.pill, "var(--nado-radius-pill)"],
-    ["transparent", "transparent"],
-  ]).get(value) ?? value;
+  value === "transparent"
+    ? "transparent"
+    : (cssPrimitiveReferences.get(value) ?? value);
 
 describe("analysis component styles", () => {
   it("uses result-card container queries for embedded narrow layouts", () => {
@@ -100,6 +108,10 @@ describe("analysis component styles", () => {
     const ghostButtonRule = readRule(".nado-button--ghost");
     const sendButtonRule = readRule(".nado-button--send");
 
+    for (const [variableName, tokenValue] of cssPrimitiveTokenEntries) {
+      expect(rootRule).toContain(`${variableName}: ${tokenValue}`);
+    }
+
     expect(buttonRule).toContain(
       `--nado-button-radius: ${cssTokenValue(buttonTokens.radius)}`,
     );
@@ -131,7 +143,25 @@ describe("analysis component styles", () => {
       `--nado-button-send-foreground: ${cssTokenValue(buttonTokens.send.foreground)}`,
     );
     expect(rootRule).toContain(
+      `--nado-button-size-sm-height: ${buttonTokens.size.sm.height}`,
+    );
+    expect(rootRule).toContain(
+      `--nado-button-size-sm-padding-x: ${buttonTokens.size.sm.paddingX}`,
+    );
+    expect(rootRule).toContain(
       `--nado-button-size-md-height: ${buttonTokens.size.md.height}`,
+    );
+    expect(rootRule).toContain(
+      `--nado-button-size-md-padding-x: ${buttonTokens.size.md.paddingX}`,
+    );
+    expect(rootRule).toContain(
+      `--nado-button-size-icon-height: ${buttonTokens.size.icon.height}`,
+    );
+    expect(rootRule).toContain(
+      `--nado-button-size-icon-padding-x: ${buttonTokens.size.icon.paddingX}`,
+    );
+    expect(rootRule).toContain(
+      `--nado-button-size-icon-width: ${buttonTokens.size.icon.width}`,
     );
     expect(iconButtonRule).toContain(
       `--nado-button-size-icon-radius: ${cssTokenValue(buttonTokens.size.icon.radius)}`,
