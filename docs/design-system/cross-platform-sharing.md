@@ -186,12 +186,23 @@ Storybook for React Native는 아직 이 저장소에 설정되어 있지 않으
 | React Native Testing Library | 후속 후보 | 컴포넌트 state와 accessibility 확인    | RN 공통 컴포넌트가 생길 때                          |
 | Maestro                      | 후속 후보 | 실제 앱 흐름과 터치 interaction 확인   | onboarding, analysis, vocabulary flow가 안정화될 때 |
 
+도구별 판단 기준은 다음처럼 나눈다.
+
+| 후보                         | 현재 사용 가능 여부                                   | 확인 범위                                      | 우선순위와 한계                                                                                                 |
+| ---------------------------- | ----------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Expo 기반 Mobile Design Demo | 사용 가능. `@nado/mobile`의 Expo app에서 확인한다.    | 실제 RN 화면, token 반영, touch 상태           | 지금 바로 쓸 수 있는 1순위 경로다. 단, demo screen을 만들기 전에는 기존 화면에서 수동 확인해야 한다.            |
+| Storybook for React Native   | 미설치. 현재 repo의 Storybook은 React Vite 기반이다.  | RN 공통 컴포넌트의 variant/state catalog       | 현재 검증 표면이 아니라 후속 도입 후보다. `@nado/ui-native`나 RN 공통 컴포넌트가 생긴 뒤 도입 효과가 커진다.    |
+| React Native Testing Library | 미설치. 현재 mobile tests는 Vitest 중심이다.          | RN 컴포넌트 렌더링, accessibility, press state | 시각 preview 도구가 아니라 컴포넌트 동작 회귀 방지 도구다. 공통 RN 컴포넌트 API가 생긴 뒤 테스트 기준으로 둔다. |
+| Maestro 또는 E2E             | 미설치. 현재 E2E는 Web Playwright 앱으로 분리돼 있다. | 실제 앱 실행 흐름, navigation, touch flow      | 디자인 token 자체보다 사용자 흐름 검증에 맞다. 주요 모바일 플로우가 안정화된 뒤 smoke 수준부터 도입을 검토한다. |
+
 추천 순서:
 
 1. `@nado/tokens` 변경으로 디자인 값을 공유한다.
 2. Mobile RN 컴포넌트가 `nativeTokens`를 사용하도록 만든다.
 3. 현재는 Expo app과 mobile tests로 변경 결과를 확인한다.
-4. Storybook for React Native를 도입한 뒤에는 story로 주요 RN 컴포넌트 상태를 고정한다.
+4. RN 공통 컴포넌트가 생기면 React Native Testing Library로 state와 accessibility 계약을 먼저 고정한다.
+5. Storybook for React Native를 도입한 뒤에는 story로 주요 RN 컴포넌트 상태를 고정한다.
+6. 앱 단위 회귀가 필요해지면 Maestro 또는 RN E2E로 핵심 touch flow를 smoke test로 확인한다.
 
 즉, 지금 당장 후속 모바일 디자인 변경자가 실행할 수 있는 경로는 Expo app과 mobile tests다. Storybook for RN은 준비된 경로가 아니라 다음 도입 후보로 문서화한다.
 
@@ -214,6 +225,18 @@ Storybook for React Native는 아직 이 저장소에 설정되어 있지 않으
 - 현재는 Expo app 또는 mobile tests에서 같은 token 변경이 확인된다.
 - Storybook for RN 도입 후에는 Mobile story에서도 같은 token 변경이 보인다.
 - 각 플랫폼에서 구현은 달라도 variant/state 이름은 동일하다.
+
+### 최소 token demo 흐름
+
+token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 첫 흐름은 다음 정도로 제한한다.
+
+1. `@nado/tokens`에서 `color.primary`, `radius.md`, `spacing.md` 중 하나만 바꾸는 작은 변경을 만든다.
+2. Web/Desktop은 `apps/storybook`의 `Foundations`, `WebSurface`, `DesktopSurface`에서 변경된 색상, radius, spacing이 보이는지 확인한다.
+3. Mobile은 Expo app의 분석 입력 또는 단어장 화면처럼 `mobileStyles`가 `nativeTokens`를 통과해 쓰는 화면에서 같은 변경이 보이는지 확인한다.
+4. 자동 검증은 현재 가능한 범위에서 `packages/tokens` test와 `@nado/mobile` test를 실행해 CSS pixel token이 RN number token으로 변환되는 계약과 mobile style import 계약을 확인한다.
+5. Storybook for React Native가 도입된 뒤에는 같은 demo를 RN story로 옮겨 Web/Desktop Storybook과 나란히 비교한다.
+
+이 demo의 목적은 완성된 모바일 디자인 QA 자동화가 아니라, token-first 전략이 실제 세 플랫폼 표면에서 끊기지 않는지 가장 작은 단위로 확인하는 것이다.
 
 ## 후속 작업 후보
 
