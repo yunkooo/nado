@@ -24,12 +24,12 @@ Mobile React Native UI
 
 ## 현재 공유 구조
 
-| 영역      | 현재 공유하는 것                                  | 별도 구현하는 것                                   | 검증 위치              |
-| --------- | ------------------------------------------------- | -------------------------------------------------- | ---------------------- |
-| Web       | `@nado/ui`, `@nado/tokens`, `@nado/ui/styles.css` | Web app surface와 Next.js 연결                     | Web app, Storybook     |
-| Desktop   | `@nado/ui`, `@nado/tokens`, `@nado/ui/styles.css` | Desktop shell, Tauri 연결, desktop surface         | Desktop app, Storybook |
-| Mobile    | `@nado/tokens/react-native`                       | React Native 화면, `StyleSheet`, touch interaction | Expo app, mobile tests |
-| Storybook | Web/Desktop UI 상태 확인, mock surface            | 실제 API/Auth/Supabase 연결                        | `apps/storybook`       |
+| 영역      | 현재 공유하는 것                                  | 별도 구현하는 것                                   | 검증 위치                                |
+| --------- | ------------------------------------------------- | -------------------------------------------------- | ---------------------------------------- |
+| Web       | `@nado/ui`, `@nado/tokens`, `@nado/ui/styles.css` | Web app surface와 Next.js 연결                     | Web app, Storybook                       |
+| Desktop   | `@nado/ui`, `@nado/tokens`, `@nado/ui/styles.css` | Desktop shell, Tauri 연결, desktop surface         | Desktop app, Storybook                   |
+| Mobile    | `@nado/tokens/react-native`                       | React Native 화면, `StyleSheet`, touch interaction | Storybook for RN, Expo app, mobile tests |
+| Storybook | Web/Desktop UI 상태 확인, mock surface            | 실제 API/Auth/Supabase 연결                        | `apps/storybook`                         |
 
 Storybook은 디자인 시스템의 원본이 아니다. Storybook은 `@nado/ui`와 mock surface가 기대한 상태로 보이는지 확인하는 preview/verification layer다.
 
@@ -74,7 +74,8 @@ Mobile은 React Native라 DOM className, CSS variable, hover 같은 개념을 �
 3. Web/Desktop의 `@nado/ui`가 token을 사용하고 있는지 확인한다.
 4. Mobile의 `mobileStyles` 또는 향후 `@nado/ui-native`가 `nativeTokens`를 사용하고 있는지 확인한다.
 5. Storybook에서 Web/Desktop 상태를 확인한다.
-6. Expo app 또는 mobile demo screen에서 Mobile 상태를 확인한다.
+6. Storybook for React Native에서 Mobile 컴포넌트 상태를 확인한다.
+7. 실제 앱 흐름이나 native module 의존성이 있는 경우 Expo app에서 한 번 더 확인한다.
 
 ## Token layer 제안
 
@@ -169,16 +170,25 @@ Storybook을 기본 검증 표면으로 사용한다.
 
 ### Mobile
 
-Storybook만으로 RN UI를 충분히 검증하기 어렵다. Mobile은 다음 흐름을 우선 후보로 둔다.
+Mobile은 Storybook for React Native를 기본 검증 표면 후보로 둔다.
 
-| 도구                         | 역할                                 | 도입 기준                                           |
-| ---------------------------- | ------------------------------------ | --------------------------------------------------- |
-| Expo demo screen             | RN 디자인을 사람이 빠르게 확인       | token parity demo부터 시작                          |
-| React Native Testing Library | 컴포넌트 state와 accessibility 확인  | RN 공통 컴포넌트가 생길 때                          |
-| Maestro                      | 실제 앱 흐름과 터치 interaction 확인 | onboarding, analysis, vocabulary flow가 안정화될 때 |
-| Storybook for React Native   | RN 컴포넌트 catalog                  | RN 공통 컴포넌트 수가 충분히 늘어날 때              |
+이때 Storybook for RN은 디자인 값의 원본이 아니다. 디자인 값의 원본은 계속 `@nado/tokens`이고, Storybook for RN은 RN 컴포넌트가 그 token과 state 규칙을 잘 따르는지 확인하는 공간이다.
 
-현재 단계에서는 Expo 기반 demo screen이 가장 작고 현실적인 시작점이다.
+| 도구                         | 역할                                   | 도입 기준                                                 |
+| ---------------------------- | -------------------------------------- | --------------------------------------------------------- |
+| Storybook for React Native   | RN 컴포넌트 catalog와 state 확인       | Mobile 공통 컴포넌트를 만들기 시작할 때                   |
+| Expo demo screen             | 실제 앱 안에서 RN 디자인을 빠르게 확인 | native module, navigation, 실제 앱 shell 확인이 필요할 때 |
+| React Native Testing Library | 컴포넌트 state와 accessibility 확인    | RN 공통 컴포넌트가 생길 때                                |
+| Maestro                      | 실제 앱 흐름과 터치 interaction 확인   | onboarding, analysis, vocabulary flow가 안정화될 때       |
+
+추천 순서:
+
+1. `@nado/tokens` 변경으로 디자인 값을 공유한다.
+2. Mobile RN 컴포넌트가 `nativeTokens`를 사용하도록 만든다.
+3. Storybook for React Native story로 주요 상태를 고정한다.
+4. Expo app에서는 실제 화면 흐름, navigation, native module 의존성만 추가 확인한다.
+
+즉, RN 컴포넌트 단위의 디자인 확인은 Storybook for RN을 우선하고, Expo demo screen은 앱 통합 확인이나 아주 가벼운 수동 데모에 사용한다.
 
 ## Demo 후보
 
@@ -196,7 +206,8 @@ Storybook만으로 RN UI를 충분히 검증하기 어렵다. Mobile은 다음 �
 
 - Web Storybook에서 변경이 보인다.
 - Desktop Storybook surface에서 변경이 보인다.
-- Mobile Expo demo screen에서 같은 token 변경이 보인다.
+- Mobile Storybook for RN story에서 같은 token 변경이 보인다.
+- 실제 앱 통합 확인이 필요한 경우 Expo app에서도 같은 token 변경이 보인다.
 - 각 플랫폼에서 구현은 달라도 variant/state 이름은 동일하다.
 
 ## 후속 작업 후보
@@ -207,9 +218,16 @@ Storybook만으로 RN UI를 충분히 검증하기 어렵다. Mobile은 다음 �
 - `@nado/ui/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
 - Mobile `mobileStyles`가 주요 반복 UI에서 `nativeTokens`를 계속 사용하는지 점검
 - `@nado/ui-native` 최소 API 설계
-- Mobile token parity demo screen 추가
+- Storybook for React Native 도입 방식 검토
+- Mobile token parity story 추가
+- 필요한 경우 Mobile token parity demo screen 추가
 - token 변경이 Web/Desktop/Mobile에 반영되는 demo 구성
 - RN 검증 도구 비교와 도입 기준 정리
+
+## 참고 링크
+
+- [Storybook for React Native](https://github.com/storybookjs/react-native)
+- [Storybook React Native Web 문서](https://storybook.js.org/docs/get-started/frameworks/react-native-web-vite)
 
 ## 정리
 
