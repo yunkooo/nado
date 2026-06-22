@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared";
 import { analyzeText } from "./analysisApi";
 
 describe("analyzeText", () => {
@@ -81,7 +82,10 @@ describe("analyzeText", () => {
     );
 
     expect(fetcher).toHaveBeenCalledWith("/api/analyze", {
-      body: JSON.stringify({ text: "I was wondering if you could help me." }),
+      body: JSON.stringify({
+        model: DEFAULT_ANALYSIS_MODEL_ID,
+        text: "I was wondering if you could help me.",
+      }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
       signal: expect.any(AbortSignal),
@@ -292,10 +296,14 @@ describe("analyzeText", () => {
     await analyzeText("I was wondering if you could help me.", {
       accessToken: "session-token",
       fetcher,
+      model: "z-ai/glm-5.2",
     });
 
     expect(fetcher).toHaveBeenCalledWith("/api/analyze", {
-      body: JSON.stringify({ text: "I was wondering if you could help me." }),
+      body: JSON.stringify({
+        model: "z-ai/glm-5.2",
+        text: "I was wondering if you could help me.",
+      }),
       headers: {
         Authorization: "Bearer session-token",
         "Content-Type": "application/json",

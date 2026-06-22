@@ -1,6 +1,8 @@
 import {
+  DEFAULT_ANALYSIS_MODEL_ID,
   analyzeResponseSchema,
   normalizeAnalysisText,
+  type AnalysisModelId,
   type AnalysisResult as ApiAnalysisResult,
 } from "@nado/shared";
 import {
@@ -75,6 +77,7 @@ export type AnalyzeTextOptions = {
   apiBaseUrl?: string;
   apiPlatform?: MobileApiPlatform | string;
   fetcher?: Fetcher;
+  model?: AnalysisModelId;
 };
 
 const ANALYZE_ERROR_MESSAGE =
@@ -95,7 +98,10 @@ export async function analyzeText(
     response = await fetcher(
       resolveAnalyzeApiUrl(options.apiBaseUrl, options.apiPlatform),
       {
-        body: JSON.stringify({ text: trimmedText }),
+        body: JSON.stringify({
+          model: options.model ?? DEFAULT_ANALYSIS_MODEL_ID,
+          text: trimmedText,
+        }),
         headers: createAnalyzeHeaders(options.accessToken),
         method: "POST",
       },

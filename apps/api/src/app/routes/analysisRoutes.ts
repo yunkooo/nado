@@ -74,7 +74,10 @@ export function createAnalysisRoutes({
 
       try {
         const analysis = analyzeResponseSchema.parse(
-          await analyzeService.analyze(input.text),
+          await analyzeService.analyze({
+            model: input.model,
+            text: input.text,
+          }),
         );
 
         return response.json(analysis);

@@ -1,5 +1,7 @@
 import {
+  DEFAULT_ANALYSIS_MODEL_ID,
   analyzeResponseSchema,
+  type AnalysisModelId,
   type AnalysisResult as ApiAnalysisResult,
 } from "@nado/shared";
 import type { AnalysisResultData } from "@nado/ui";
@@ -16,6 +18,7 @@ export type AnalyzeTextResult =
 
 export type AnalyzeTextOptions = ApiRequestOptions & {
   accessToken?: string | null;
+  model?: AnalysisModelId;
 };
 
 const ANALYZE_ERROR_MESSAGE =
@@ -32,7 +35,10 @@ export async function analyzeText(
   const fetchResult = await fetchWithTimeout(
     "/api/analyze",
     {
-      body: JSON.stringify({ text: trimmedText }),
+      body: JSON.stringify({
+        model: options.model ?? DEFAULT_ANALYSIS_MODEL_ID,
+        text: trimmedText,
+      }),
       headers: createAnalyzeHeaders(options.accessToken),
       method: "POST",
     },

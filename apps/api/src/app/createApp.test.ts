@@ -59,6 +59,7 @@ function isAddressInfo(
 describe("parseAnalyzeInput", () => {
   it("accepts a trimmed English input", () => {
     expect(parseAnalyzeInput({ text: "  I am learning English.  " })).toEqual({
+      model: "moonshotai/kimi-k2.7-code",
       ok: true,
       text: "I am learning English.",
     });
@@ -190,11 +191,11 @@ describe("app", () => {
   });
 
   it("returns a structured analyze response for valid input", async () => {
-    let receivedText = "";
+    let receivedInput: { model?: string; text: string } | undefined;
     const app = createApp({
       analyzeService: {
-        analyze: async (text) => {
-          receivedText = text;
+        analyze: async (input) => {
+          receivedInput = input;
 
           return {
             status: "analyzable",
@@ -244,6 +245,7 @@ describe("app", () => {
 
     const response = await request(app, "/api/analyze", {
       body: JSON.stringify({
+        model: "z-ai/glm-5.2",
         text: "  I was wondering if you could help me.  ",
       }),
       headers: { "Content-Type": "application/json" },
@@ -257,7 +259,10 @@ describe("app", () => {
         translation: "도와주실 수 있는지 궁금합니다.",
       },
     });
-    expect(receivedText).toBe("I was wondering if you could help me.");
+    expect(receivedInput).toEqual({
+      model: "z-ai/glm-5.2",
+      text: "I was wondering if you could help me.",
+    });
   });
 
   it("does not call the analyze service for locally rejected input", async () => {
