@@ -54,6 +54,10 @@ const component = {
       background: "transparent",
       foreground: color.primary,
     },
+    send: {
+      background: color.primary,
+      foreground: color.primaryInk,
+    },
     size: {
       sm: {
         height: "32px",
@@ -66,6 +70,7 @@ const component = {
       icon: {
         height: "38px",
         paddingX: "0px",
+        radius: radius.pill,
         width: "38px",
       },
     },

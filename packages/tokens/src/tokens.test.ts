@@ -41,9 +41,17 @@ describe("@nado/tokens", () => {
       border: tokens.color.border,
       foreground: tokens.color.ink,
     });
+    expect(tokens.component.button.send).toEqual(
+      tokens.component.button.primary,
+    );
     expect(tokens.component.button.size.md).toMatchObject({
       height: "40px",
       paddingX: "16px",
+    });
+    expect(tokens.component.button.size.icon).toMatchObject({
+      height: "38px",
+      radius: tokens.radius.pill,
+      width: "38px",
     });
   });
 
@@ -57,8 +65,16 @@ describe("@nado/tokens", () => {
         height: 40,
         paddingX: 16,
       },
+      icon: {
+        height: 38,
+        radius: 999,
+        width: 38,
+      },
     });
     expect(nativeTokens.component.button.primary.background).toBe(
+      tokens.color.primary,
+    );
+    expect(nativeTokens.component.button.send.background).toBe(
       tokens.color.primary,
     );
   });
