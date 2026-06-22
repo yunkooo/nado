@@ -5,6 +5,7 @@ import {
   countAnalysisTextCharacters,
   hasUnsupportedAnalysisTextCharacters,
   normalizeAnalysisText,
+  type AnalysisModelId,
 } from "@nado/shared";
 import { analyzeText } from "./analysisApi";
 import type { AnalysisState, AnalysisStateStore } from "./analysisState";
@@ -12,12 +13,14 @@ import { getCurrentAccessToken } from "../auth/authClient";
 
 type UseAnalysisSubmissionOptions = {
   analysisState: AnalysisState;
+  selectedAnalysisModel: AnalysisModelId;
   store: AnalysisStateStore;
   text: string;
 };
 
 export function useAnalysisSubmission({
   analysisState,
+  selectedAnalysisModel,
   store,
   text,
 }: UseAnalysisSubmissionOptions) {
@@ -39,6 +42,7 @@ export function useAnalysisSubmission({
     store.setVocabularySaveStates({});
     const nextAnalysisState = await analyzeText(nextText, {
       accessToken: await getCurrentAccessToken(),
+      model: selectedAnalysisModel,
     });
 
     if (nextAnalysisState.status === "success") {

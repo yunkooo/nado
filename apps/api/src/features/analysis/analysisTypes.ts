@@ -1,11 +1,16 @@
-import type { AnalyzeResponse } from "@nado/shared";
+import type { AnalysisModelId, AnalyzeResponse } from "@nado/shared";
 import type {
   AnalysisUsageDecision,
   UsageIdentity,
 } from "./analysisUsageService.js";
 
+export type AnalyzeServiceInput = {
+  model?: AnalysisModelId;
+  text: string;
+};
+
 export type AnalyzeService = {
-  analyze(text: string): Promise<AnalyzeResponse>;
+  analyze(input: AnalyzeServiceInput): Promise<AnalyzeResponse>;
 };
 
 export type AnalysisUsageService = {

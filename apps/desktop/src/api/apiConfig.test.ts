@@ -6,10 +6,19 @@ import {
 } from "./apiConfig";
 
 describe("desktop API config", () => {
-  it("keeps development API calls relative for the Vite proxy", () => {
+  it("uses the configured API base URL in development to avoid slow proxy requests", () => {
     expect(
       resolveDesktopApiBaseUrl({
         configuredApiBaseUrl: "https://api.example.com",
+        isDev: true,
+      }),
+    ).toBe("https://api.example.com");
+  });
+
+  it("keeps development API calls relative only when no API base URL is configured", () => {
+    expect(
+      resolveDesktopApiBaseUrl({
+        configuredApiBaseUrl: undefined,
         isDev: true,
       }),
     ).toBeUndefined();

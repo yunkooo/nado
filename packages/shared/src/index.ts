@@ -2,6 +2,38 @@ import { z } from "zod";
 
 export const MAX_ANALYSIS_TEXT_LENGTH = 200;
 
+export const ANALYSIS_MODELS = [
+  {
+    id: "moonshotai/kimi-k2.7-code",
+    label: "Kimi K2.7 Code",
+    provider: "openrouter",
+  },
+  {
+    id: "z-ai/glm-5.2",
+    label: "GLM 5.2",
+    provider: "openrouter",
+  },
+  {
+    id: "gpt-5.4-mini",
+    label: "GPT 5.4 mini",
+    provider: "openai",
+  },
+] as const;
+
+export const DEFAULT_ANALYSIS_MODEL_ID = ANALYSIS_MODELS[0].id;
+export const analysisModelIdSchema = z.enum([
+  "moonshotai/kimi-k2.7-code",
+  "z-ai/glm-5.2",
+  "gpt-5.4-mini",
+]);
+export type AnalysisModelId = z.infer<typeof analysisModelIdSchema>;
+
+export function isOpenRouterAnalysisModelId(modelId: AnalysisModelId): boolean {
+  return ANALYSIS_MODELS.some(
+    (model) => model.id === modelId && model.provider === "openrouter",
+  );
+}
+
 const allowedAnalysisTextPattern = /^[A-Za-z0-9 \t\n\r.,!?'"’“”()\[\]\-:;]+$/u;
 const allowedControlCharactersPattern = /[\t\n\r]/g;
 const controlOrFormatCharactersPattern = /[\p{Cc}\p{Cf}]/u;
@@ -64,6 +96,7 @@ const analysisTextSchema = z
 export const vocabularyTypeSchema = z.enum(["word", "phrase"]);
 
 export const analyzeRequestSchema = z.object({
+  model: analysisModelIdSchema.default(DEFAULT_ANALYSIS_MODEL_ID),
   text: analysisTextSchema,
 });
 

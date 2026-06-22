@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared";
 import { analyzeText, resolveAnalyzeApiUrl } from "./analysisApi";
 
 describe("resolveAnalyzeApiUrl", () => {
@@ -97,7 +98,10 @@ describe("analyzeText", () => {
     );
 
     expect(fetcher).toHaveBeenCalledWith("http://127.0.0.1:8787/api/analyze", {
-      body: JSON.stringify({ text: "I was wondering if you could help me." }),
+      body: JSON.stringify({
+        model: DEFAULT_ANALYSIS_MODEL_ID,
+        text: "I was wondering if you could help me.",
+      }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
     });
@@ -199,10 +203,14 @@ describe("analyzeText", () => {
       accessToken: "session-token",
       apiBaseUrl: "http://127.0.0.1:8787",
       fetcher,
+      model: "z-ai/glm-5.2",
     });
 
     expect(fetcher).toHaveBeenCalledWith("http://127.0.0.1:8787/api/analyze", {
-      body: JSON.stringify({ text: "I was wondering if you could help me." }),
+      body: JSON.stringify({
+        model: "z-ai/glm-5.2",
+        text: "I was wondering if you could help me.",
+      }),
       headers: {
         Authorization: "Bearer session-token",
         "Content-Type": "application/json",

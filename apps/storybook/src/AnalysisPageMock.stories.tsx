@@ -1,5 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
+import {
+  ANALYSIS_MODELS,
+  DEFAULT_ANALYSIS_MODEL_ID,
+  MAX_ANALYSIS_TEXT_LENGTH,
+} from "@nado/shared";
 import { AnalysisResult, InputComposer, InputSample } from "@nado/ui";
 import { analysisMock } from "../../../packages/ui/src/analysisStoryFixtures";
 
@@ -20,10 +24,6 @@ function AnalysisPageMockView() {
         </nav>
       </aside>
       <main className="storybook-analysis-main">
-        <header className="storybook-analysis-topbar">
-          <strong>기본 분석</strong>
-          <span>모드 선택 없이 자동으로 학습 흐름 적용</span>
-        </header>
         <section className="storybook-analysis-workspace">
           <div className="storybook-analysis-page">
             <InputSample
@@ -37,7 +37,10 @@ function AnalysisPageMockView() {
         <footer className="storybook-analysis-composer">
           <InputComposer
             maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+            modelOptions={ANALYSIS_MODELS}
+            modelValue={DEFAULT_ANALYSIS_MODEL_ID}
             onSubmit={() => undefined}
+            onModelChange={() => undefined}
             onValueChange={() => undefined}
             placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
             submitAriaLabel="분석 요청"

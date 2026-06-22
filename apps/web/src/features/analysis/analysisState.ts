@@ -1,6 +1,11 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import {
+  DEFAULT_ANALYSIS_MODEL_ID,
+  analysisModelIdSchema,
+  type AnalysisModelId,
+} from "@nado/shared";
 import type {
   AnalysisResultData,
   VocabularySuggestionSaveState,
@@ -12,6 +17,7 @@ export type AnalysisState = AnalyzeTextResult | { status: "idle" | "loading" };
 
 export type AnalysisPageSnapshot = {
   analysisState: AnalysisState;
+  selectedAnalysisModel: AnalysisModelId;
   text: string;
   vocabularySaveMessage: VocabularySaveNotice | null;
   vocabularySaveStates: Record<string, VocabularySuggestionSaveState>;
@@ -23,18 +29,21 @@ export type AnalysisStateStorage = Pick<
 >;
 
 export type AnalysisStateStoreOptions = {
+  getModelStorage?: () => AnalysisStateStorage | null;
   getStorage?: () => AnalysisStateStorage | null;
 };
 
 export type AnalysisStateStore = ReturnType<typeof createAnalysisStateStore>;
 
 const STORAGE_KEY = "nado.analysis-state.v1";
+const MODEL_STORAGE_KEY = "nado.analysis-model.v1";
 const STORAGE_VERSION = 1;
 
 const initialSnapshot: AnalysisPageSnapshot = {
   analysisState: {
     status: "idle",
   },
+  selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
   text: "",
   vocabularySaveMessage: null,
   vocabularySaveStates: {},
@@ -44,6 +53,7 @@ export function createAnalysisStateStore(
   options: AnalysisStateStoreOptions = {},
 ) {
   const getStorage = options.getStorage ?? getSessionStorage;
+  const getModelStorage = options.getModelStorage ?? getLocalStorage;
   const listeners = new Set<() => void>();
   let snapshot = initialSnapshot;
   let hasRestoredPersistedSnapshot = false;
@@ -88,12 +98,25 @@ export function createAnalysisStateStore(
     hasRestoredPersistedSnapshot = true;
 
     const persistedSnapshot = readPersistedSnapshot(getStorage);
+    const persistedModel = readPersistedAnalysisModel(getModelStorage);
 
     if (!persistedSnapshot) {
+      if (persistedModel) {
+        snapshot = {
+          ...snapshot,
+          selectedAnalysisModel: persistedModel,
+        };
+        notify();
+      }
+
       return;
     }
 
-    snapshot = persistedSnapshot;
+    snapshot = {
+      ...persistedSnapshot,
+      selectedAnalysisModel:
+        persistedModel ?? persistedSnapshot.selectedAnalysisModel,
+    };
     notify();
   };
 
@@ -116,6 +139,14 @@ export function createAnalysisStateStore(
       setSnapshot({
         ...snapshot,
         analysisState,
+      });
+    },
+
+    setSelectedAnalysisModel(selectedAnalysisModel: AnalysisModelId) {
+      persistSelectedAnalysisModel(selectedAnalysisModel, getModelStorage);
+      setSnapshot({
+        ...snapshot,
+        selectedAnalysisModel,
       });
     },
 
@@ -216,6 +247,9 @@ function createPersistedSnapshot(
       nextSnapshot.analysisState.status === "loading"
         ? initialSnapshot.analysisState
         : nextSnapshot.analysisState,
+    selectedAnalysisModel: isAnalysisModelId(nextSnapshot.selectedAnalysisModel)
+      ? nextSnapshot.selectedAnalysisModel
+      : DEFAULT_ANALYSIS_MODEL_ID,
     vocabularySaveMessage: null,
     vocabularySaveStates: {},
   };
@@ -227,6 +261,53 @@ function getSessionStorage(): AnalysisStateStorage | null {
   }
 
   return window.sessionStorage;
+}
+
+function getLocalStorage(): AnalysisStateStorage | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.localStorage;
+}
+
+function readPersistedAnalysisModel(
+  getStorage: () => AnalysisStateStorage | null,
+): AnalysisModelId | null {
+  const storage = getStorage();
+
+  if (!storage) {
+    return null;
+  }
+
+  try {
+    const value = storage.getItem(MODEL_STORAGE_KEY);
+
+    return isAnalysisModelId(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistSelectedAnalysisModel(
+  selectedAnalysisModel: AnalysisModelId,
+  getStorage: () => AnalysisStateStorage | null,
+) {
+  const storage = getStorage();
+
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(MODEL_STORAGE_KEY, selectedAnalysisModel);
+  } catch {
+    try {
+      storage.removeItem(MODEL_STORAGE_KEY);
+    } catch {
+      // Storage can be disabled in private contexts. In-memory state remains usable.
+    }
+  }
 }
 
 function isPersistedSnapshot(value: unknown): value is {
@@ -245,6 +326,8 @@ function isAnalysisPageSnapshot(value: unknown): value is AnalysisPageSnapshot {
     isRecord(value) &&
     typeof value.text === "string" &&
     isAnalysisState(value.analysisState) &&
+    (value.selectedAnalysisModel === undefined ||
+      isAnalysisModelId(value.selectedAnalysisModel)) &&
     (value.vocabularySaveMessage === null ||
       isVocabularySaveNotice(value.vocabularySaveMessage)) &&
     isVocabularySaveStates(value.vocabularySaveStates)
@@ -390,6 +473,10 @@ function isVocabularySaveNotice(value: unknown): value is VocabularySaveNotice {
     typeof value.text === "string" &&
     (value.tone === "error" || value.tone === "success")
   );
+}
+
+function isAnalysisModelId(value: unknown): value is AnalysisModelId {
+  return analysisModelIdSchema.safeParse(value).success;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

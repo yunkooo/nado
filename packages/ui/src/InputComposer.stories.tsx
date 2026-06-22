@@ -1,6 +1,10 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
+import {
+  ANALYSIS_MODELS,
+  DEFAULT_ANALYSIS_MODEL_ID,
+  MAX_ANALYSIS_TEXT_LENGTH,
+} from "@nado/shared";
 import { InputComposer, type InputComposerProps } from "@nado/ui";
 
 const meta = {
@@ -36,9 +40,11 @@ function ComposerPreview({ initialValue, ...props }: ComposerPreviewProps) {
 export const Empty: Story = {
   args: {
     actionLabel: "↑",
-    label: "기본 분석",
     maxLength: MAX_ANALYSIS_TEXT_LENGTH,
+    modelOptions: ANALYSIS_MODELS,
+    modelValue: DEFAULT_ANALYSIS_MODEL_ID,
     onSubmit: () => undefined,
+    onModelChange: () => undefined,
     onValueChange: () => undefined,
     placeholder: "영어 문장이나 짧은 문단을 붙여넣으세요",
     submitAriaLabel: "분석 요청",
@@ -62,6 +68,9 @@ export const Basic: Story = {
     <ComposerPreview
       initialValue="I was wondering if you could help me keep this habit."
       maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+      modelOptions={ANALYSIS_MODELS}
+      modelValue={DEFAULT_ANALYSIS_MODEL_ID}
+      onModelChange={() => undefined}
       placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
       submitAriaLabel="분석 요청"
     />
@@ -80,6 +89,9 @@ export const TextAction: Story = {
       actionLabel="분석"
       initialValue="I need help understanding this sentence."
       maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+      modelOptions={ANALYSIS_MODELS}
+      modelValue={DEFAULT_ANALYSIS_MODEL_ID}
+      onModelChange={() => undefined}
       placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
       submitAriaLabel="분석 요청"
     />
@@ -100,6 +112,9 @@ export const NearLimit: Story = {
         MAX_ANALYSIS_TEXT_LENGTH - 12,
       )}
       maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+      modelOptions={ANALYSIS_MODELS}
+      modelValue={DEFAULT_ANALYSIS_MODEL_ID}
+      onModelChange={() => undefined}
       placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
       submitAriaLabel="분석 요청"
     />
@@ -119,6 +134,9 @@ export const LongInput: Story = {
         6,
       )}
       maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+      modelOptions={ANALYSIS_MODELS}
+      modelValue={DEFAULT_ANALYSIS_MODEL_ID}
+      onModelChange={() => undefined}
       placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
       submitAriaLabel="분석 요청"
     />

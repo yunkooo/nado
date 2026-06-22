@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { ANALYSIS_MODELS, DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared";
 import {
   AnalysisResult,
   Chip,
@@ -85,9 +86,11 @@ describe("analysis design system components", () => {
   it("renders disabled composer submit state for empty input", () => {
     const markup = renderToStaticMarkup(
       <InputComposer
-        label="기본 분석"
         maxLength={200}
+        modelOptions={ANALYSIS_MODELS}
+        modelValue={DEFAULT_ANALYSIS_MODEL_ID}
         onSubmit={noop}
+        onModelChange={noop}
         onValueChange={noop}
         placeholder="영어 문장을 붙여넣으세요"
         submitAriaLabel="분석 요청"
@@ -95,7 +98,10 @@ describe("analysis design system components", () => {
       />,
     );
 
-    expect(markup).toContain("기본 분석");
+    expect(markup).toContain("Kimi K2.7 Code");
+    expect(markup).toContain("GLM 5.2");
+    expect(markup).toContain("GPT 5.4 mini");
+    expect(markup).not.toContain("기본 분석");
     expect(markup).toContain("0 / 200");
     expect(markup).toContain("disabled");
     expect(markup).toContain('aria-label="분석 요청"');
@@ -104,9 +110,11 @@ describe("analysis design system components", () => {
   it("counts normalized code points for the composer display", () => {
     const markup = renderToStaticMarkup(
       <InputComposer
-        label="기본 분석"
         maxLength={1}
+        modelOptions={ANALYSIS_MODELS}
+        modelValue={DEFAULT_ANALYSIS_MODEL_ID}
         onSubmit={noop}
+        onModelChange={noop}
         onValueChange={noop}
         placeholder="영어 문장을 붙여넣으세요"
         value="  𝐀  "
@@ -140,9 +148,11 @@ describe("analysis design system components", () => {
     const markup = renderToStaticMarkup(
       <InputComposer
         actionLabel="분석"
-        label="기본 분석"
         maxLength={200}
+        modelOptions={ANALYSIS_MODELS}
+        modelValue={DEFAULT_ANALYSIS_MODEL_ID}
         onSubmit={noop}
+        onModelChange={noop}
         onValueChange={noop}
         placeholder="영어 문장을 붙여넣으세요"
         value="I need help."

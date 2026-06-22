@@ -30,7 +30,19 @@ describe("mobile App API wiring", () => {
     expect(appSource).toContain("analyzeText");
     expect(appSource).toContain('setAnalysisState({ status: "loading" })');
     expect(appSource).toContain("await analyzeText");
+    expect(appSource).toContain("model: selectedAnalysisModel");
     expect(appSource).toContain('setText("")');
+  });
+
+  it("renders and persists the mobile analysis model selector", () => {
+    expect(appSource).toContain("@react-native-async-storage/async-storage");
+    expect(appSource).toContain("ANALYSIS_MODELS");
+    expect(appSource).toContain("selectedAnalysisModel");
+    expect(appSource).toContain("setSelectedAnalysisModel");
+    expect(appSource).toContain("nado.mobile.analysis-model.v1");
+    expect(appSource).toContain('accessibilityLabel="AI 모델 선택"');
+    expect(appSource).toContain("styles.modelSelectChevron");
+    expect(appSource).not.toContain("기본 분석");
   });
 
   it("keeps the analyze button icon stable while analysis is loading", () => {

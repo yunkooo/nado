@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  ANALYSIS_MODELS,
   MAX_ANALYSIS_TEXT_LENGTH,
   countAnalysisTextCharacters,
+  type AnalysisModelId,
 } from "@nado/shared";
 import { AnalysisResult, InputComposer, InputSample } from "@nado/ui";
 import { AppShell } from "../components/AppShell";
@@ -19,6 +21,7 @@ export default function HomePage() {
   const {
     snapshot: {
       analysisState,
+      selectedAnalysisModel,
       text,
       vocabularySaveMessage,
       vocabularySaveStates,
@@ -28,6 +31,7 @@ export default function HomePage() {
   const vocabularyState = useVocabularyState();
   const handleSubmitAnalysis = useAnalysisSubmission({
     analysisState,
+    selectedAnalysisModel,
     store: analysisStore,
     text,
   });
@@ -42,6 +46,13 @@ export default function HomePage() {
 
   useVocabularySaveNoticeDismiss(vocabularySaveMessage, analysisStore);
   const hasAnalysisResult = analysisState.status === "success";
+  const handleModelChange = (value: string) => {
+    if (!ANALYSIS_MODELS.some((model) => model.id === value)) {
+      return;
+    }
+
+    analysisStore.setSelectedAnalysisModel(value as AnalysisModelId);
+  };
 
   return (
     <AppShell activeItem="analysis" workspaceLabel="분석 화면">
@@ -89,7 +100,10 @@ export default function HomePage() {
         <p className="nado-input-disclosure">{inputDisclosure}</p>
         <InputComposer
           maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+          modelOptions={ANALYSIS_MODELS}
+          modelValue={selectedAnalysisModel}
           onSubmit={handleSubmitAnalysis}
+          onModelChange={handleModelChange}
           onValueChange={analysisStore.setText}
           placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
           submitAriaLabel="분석 요청"

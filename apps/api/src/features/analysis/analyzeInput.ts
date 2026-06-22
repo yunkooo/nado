@@ -1,7 +1,8 @@
 import { analyzeRequestSchema } from "@nado/shared";
+import type { AnalysisModelId } from "@nado/shared";
 
 export type AnalyzeInputResult =
-  | { ok: true; text: string }
+  | { model: AnalysisModelId; ok: true; text: string }
   | { code: "invalid_input"; issues: string[]; ok: false };
 
 export function parseAnalyzeInput(input: unknown): AnalyzeInputResult {
@@ -16,6 +17,7 @@ export function parseAnalyzeInput(input: unknown): AnalyzeInputResult {
   }
 
   return {
+    model: parsed.data.model,
     ok: true,
     text: parsed.data.text,
   };

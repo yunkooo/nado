@@ -16,11 +16,13 @@ export function resolveDesktopApiBaseUrl({
   configuredApiBaseUrl: string | undefined;
   isDev: boolean;
 }) {
+  const normalizedBaseUrl = normalizeHttpBaseUrl(baseUrl);
+
   if (isDev) {
-    return undefined;
+    return normalizedBaseUrl;
   }
 
-  return normalizeHttpBaseUrl(baseUrl) ?? NADO_PRODUCTION_API_BASE_URL;
+  return normalizedBaseUrl ?? NADO_PRODUCTION_API_BASE_URL;
 }
 
 export function resolveApiUrl(

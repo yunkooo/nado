@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import {
+  ANALYSIS_MODELS,
+  DEFAULT_ANALYSIS_MODEL_ID,
   MAX_ANALYSIS_TEXT_LENGTH,
   countAnalysisTextCharacters,
 } from "@nado/shared";
@@ -158,7 +160,10 @@ function WebAnalysisSurface({
         </p>
         <InputComposer
           maxLength={MAX_ANALYSIS_TEXT_LENGTH}
+          modelOptions={ANALYSIS_MODELS}
+          modelValue={DEFAULT_ANALYSIS_MODEL_ID}
           onSubmit={() => undefined}
+          onModelChange={() => undefined}
           onValueChange={() => undefined}
           placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
           submitAriaLabel="분석 요청"

@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  ANALYSIS_MODELS,
+  DEFAULT_ANALYSIS_MODEL_ID,
   MAX_ANALYSIS_TEXT_LENGTH,
+  analysisModelIdSchema,
   analyzeResponseJsonSchema,
   analyzeResponseSchema,
   countAnalysisTextCharacters,
@@ -9,6 +12,7 @@ import {
   createVocabularyMeaningRenderKey,
   getDistinctVocabularyNote,
   hasUnsupportedAnalysisTextCharacters,
+  isOpenRouterAnalysisModelId,
   isVocabularyRealtimeTopicForUser,
   isLikelyEnglishLearningText,
   moveVocabularyPage,
@@ -31,8 +35,45 @@ describe("parseAnalyzeRequest", () => {
     expect(
       parseAnalyzeRequest({ text: "  I was wondering if you could help.  " }),
     ).toEqual({
+      model: DEFAULT_ANALYSIS_MODEL_ID,
       text: "I was wondering if you could help.",
     });
+  });
+
+  it("defines Kimi as the default analysis model and exposes all selectable models", () => {
+    expect(DEFAULT_ANALYSIS_MODEL_ID).toBe("moonshotai/kimi-k2.7-code");
+    expect(ANALYSIS_MODELS.map((model) => model.label)).toEqual([
+      "Kimi K2.7 Code",
+      "GLM 5.2",
+      "GPT 5.4 mini",
+    ]);
+    expect(isOpenRouterAnalysisModelId("moonshotai/kimi-k2.7-code")).toBe(true);
+    expect(isOpenRouterAnalysisModelId("z-ai/glm-5.2")).toBe(true);
+    expect(isOpenRouterAnalysisModelId("gpt-5.4-mini")).toBe(false);
+  });
+
+  it("accepts supported analysis model ids", () => {
+    expect(
+      parseAnalyzeRequest({
+        model: "z-ai/glm-5.2",
+        text: "I was wondering if you could help.",
+      }),
+    ).toEqual({
+      model: "z-ai/glm-5.2",
+      text: "I was wondering if you could help.",
+    });
+  });
+
+  it("rejects unsupported analysis model ids", () => {
+    expect(() =>
+      parseAnalyzeRequest({
+        model: "unknown/model",
+        text: "I was wondering if you could help.",
+      }),
+    ).toThrow();
+    expect(analysisModelIdSchema.safeParse("unknown/model").success).toBe(
+      false,
+    );
   });
 
   it("rejects blank analysis text", () => {
@@ -49,6 +90,7 @@ describe("parseAnalyzeRequest", () => {
 
   it("normalizes compatible unicode before validating text", () => {
     expect(parseAnalyzeRequest({ text: "  Ｉ leave home．  " })).toEqual({
+      model: DEFAULT_ANALYSIS_MODEL_ID,
       text: "I leave home.",
     });
   });

@@ -1,8 +1,17 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared";
 import { analyzeText } from "./analysisApi";
 
 describe("analyzeText", () => {
+  const originalPublicApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
   afterEach(() => {
+    if (originalPublicApiBaseUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    } else {
+      process.env.NEXT_PUBLIC_API_BASE_URL = originalPublicApiBaseUrl;
+    }
+
     vi.useRealTimers();
   });
 
@@ -81,7 +90,10 @@ describe("analyzeText", () => {
     );
 
     expect(fetcher).toHaveBeenCalledWith("/api/analyze", {
-      body: JSON.stringify({ text: "I was wondering if you could help me." }),
+      body: JSON.stringify({
+        model: DEFAULT_ANALYSIS_MODEL_ID,
+        text: "I was wondering if you could help me.",
+      }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
       signal: expect.any(AbortSignal),
@@ -292,14 +304,40 @@ describe("analyzeText", () => {
     await analyzeText("I was wondering if you could help me.", {
       accessToken: "session-token",
       fetcher,
+      model: "z-ai/glm-5.2",
     });
 
     expect(fetcher).toHaveBeenCalledWith("/api/analyze", {
-      body: JSON.stringify({ text: "I was wondering if you could help me." }),
+      body: JSON.stringify({
+        model: "z-ai/glm-5.2",
+        text: "I was wondering if you could help me.",
+      }),
       headers: {
         Authorization: "Bearer session-token",
         "Content-Type": "application/json",
       },
+      method: "POST",
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it("uses the public API base URL when one is configured", async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:4000/";
+    const fetcher = vi.fn(async () =>
+      Response.json({
+        reason: "영어 문장으로 분석하기 어려운 입력입니다.",
+        status: "not_analyzable",
+      }),
+    );
+
+    await analyzeText("I was wondering if you could help me.", { fetcher });
+
+    expect(fetcher).toHaveBeenCalledWith("http://localhost:4000/api/analyze", {
+      body: JSON.stringify({
+        model: DEFAULT_ANALYSIS_MODEL_ID,
+        text: "I was wondering if you could help me.",
+      }),
+      headers: { "Content-Type": "application/json" },
       method: "POST",
       signal: expect.any(AbortSignal),
     });
@@ -344,6 +382,47 @@ describe("analyzeText", () => {
     });
 
     await vi.advanceTimersByTimeAsync(25_000);
+
+    expect(aborted).toBe(false);
+    resolveResponse?.(
+      Response.json({
+        reason: "영어 문장으로 분석하기 어려운 입력입니다.",
+        status: "not_analyzable",
+      }),
+    );
+
+    await expect(resultPromise).resolves.toEqual({
+      message: "영어 문장으로 분석하기 어려운 입력입니다.",
+      status: "not_analyzable",
+    });
+  });
+
+  it("waits longer for OpenRouter analysis models", async () => {
+    vi.useFakeTimers();
+    let aborted = false;
+    let resolveResponse: ((response: Response) => void) | undefined;
+    const fetcher = vi.fn(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const signal = init?.signal;
+
+        if (signal instanceof AbortSignal) {
+          signal.addEventListener("abort", () => {
+            aborted = true;
+          });
+        }
+
+        return new Promise<Response>((resolve) => {
+          resolveResponse = resolve;
+        });
+      },
+    );
+
+    const resultPromise = analyzeText("I was wondering if you could help me.", {
+      fetcher,
+      model: "z-ai/glm-5.2",
+    });
+
+    await vi.advanceTimersByTimeAsync(120_000);
 
     expect(aborted).toBe(false);
     resolveResponse?.(

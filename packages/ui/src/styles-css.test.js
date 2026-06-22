@@ -65,6 +65,16 @@ describe("analysis component styles", () => {
     expect(sendButtonRule).toContain("color: var(--nado-color-primary-ink)");
   });
 
+  it("shows the composer model select affordance with a chevron", () => {
+    const modelSelectRule = readRule(".nado-composer__model-select");
+
+    expect(modelSelectRule).toContain("appearance: none");
+    expect(modelSelectRule).toContain("background-image: url(");
+    expect(modelSelectRule).toContain("background-position: right 10px center");
+    expect(modelSelectRule).toContain("background-repeat: no-repeat");
+    expect(modelSelectRule).toContain("padding: 0 34px 0 10px");
+  });
+
   it("centers submitted input text while pinning the count to the lower right", () => {
     const inputSampleRule = readRule(".nado-input-sample");
     const inputTextRule = readRule(".nado-input-sample__text");
