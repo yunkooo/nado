@@ -23,8 +23,6 @@
   --nado-button-secondary-foreground: var(--nado-color-ink);
   --nado-button-ghost-background: transparent;
   --nado-button-ghost-foreground: var(--nado-color-primary);
-  --nado-button-send-background: var(--nado-button-primary-background);
-  --nado-button-send-foreground: var(--nado-button-primary-foreground);
   --nado-button-size-sm-height: 32px;
   --nado-button-size-sm-padding-x: 12px;
   --nado-button-size-md-height: 40px;
@@ -124,8 +122,8 @@
 }
 
 .nado-button--send {
-  background: var(--nado-button-send-background);
-  color: var(--nado-button-send-foreground);
+  background: var(--nado-button-primary-background);
+  color: var(--nado-button-primary-foreground);
 }
 
 .nado-chip {

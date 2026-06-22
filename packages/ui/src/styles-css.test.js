@@ -66,14 +66,12 @@ describe("analysis component styles", () => {
     expect(rootRule).toContain(
       "--nado-button-primary-background: var(--nado-color-primary)",
     );
-    expect(rootRule).toContain(
-      "--nado-button-send-background: var(--nado-button-primary-background)",
+    expect(rootRule).not.toContain("--nado-button-send-background:");
+    expect(sendButtonRule).toContain(
+      "background: var(--nado-button-primary-background)",
     );
     expect(sendButtonRule).toContain(
-      "background: var(--nado-button-send-background)",
-    );
-    expect(sendButtonRule).toContain(
-      "color: var(--nado-button-send-foreground)",
+      "color: var(--nado-button-primary-foreground)",
     );
   });
 
@@ -94,9 +92,7 @@ describe("analysis component styles", () => {
     expect(rootRule).toContain(
       `--nado-button-size-icon-radius: ${tokens.component.button.size.icon.radius}`,
     );
-    expect(rootRule).toContain(
-      "--nado-button-send-background: var(--nado-button-primary-background)",
-    );
+    expect(rootRule).not.toContain("--nado-button-send-background:");
 
     expect(buttonRule).toContain("border-radius: var(--nado-button-radius)");
     expect(buttonRule).toContain(
@@ -130,10 +126,10 @@ describe("analysis component styles", () => {
       "background: var(--nado-button-ghost-background)",
     );
     expect(sendButtonRule).toContain(
-      "background: var(--nado-button-send-background)",
+      "background: var(--nado-button-primary-background)",
     );
     expect(sendButtonRule).toContain(
-      "color: var(--nado-button-send-foreground)",
+      "color: var(--nado-button-primary-foreground)",
     );
   });
 
