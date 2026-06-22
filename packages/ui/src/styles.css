@@ -116,8 +116,8 @@
 }
 
 .nado-button--send {
-  background: var(--nado-button-primary-background, var(--nado-color-primary));
-  color: var(--nado-button-primary-foreground, var(--nado-color-primary-ink));
+  background: var(--nado-button-send-background, var(--nado-color-primary));
+  color: var(--nado-button-send-foreground, var(--nado-color-primary-ink));
 }
 
 .nado-chip {

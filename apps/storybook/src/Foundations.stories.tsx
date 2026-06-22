@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { tokens } from "@nado/ui";
+import { Button, tokens } from "@nado/ui";
 
 const colorEntries = [
   ["Canvas", tokens.color.canvas],
@@ -12,6 +12,25 @@ const colorEntries = [
   ["Blue", tokens.color.blue],
   ["Red", tokens.color.red],
 ];
+
+const buttonTokenEntries = [
+  ["primary.background", tokens.component.button.primary.background],
+  ["primary.foreground", tokens.component.button.primary.foreground],
+  ["secondary.background", tokens.component.button.secondary.background],
+  ["secondary.border", tokens.component.button.secondary.border],
+  ["secondary.foreground", tokens.component.button.secondary.foreground],
+  ["send.background", tokens.component.button.send.background],
+  ["send.foreground", tokens.component.button.send.foreground],
+  ["radius", tokens.component.button.radius],
+] as const;
+
+const buttonSizeEntries = [
+  ["md height", tokens.component.button.size.md.height],
+  ["md paddingX", tokens.component.button.size.md.paddingX],
+  ["icon width", tokens.component.button.size.icon.width],
+  ["icon height", tokens.component.button.size.icon.height],
+  ["icon radius", tokens.component.button.size.icon.radius],
+] as const;
 
 const meta = {
   title: "Foundations/Tokens",
@@ -44,6 +63,34 @@ export const Tokens: Story = {
           <div style={{ borderRadius: tokens.radius.sm }}>sm</div>
           <div style={{ borderRadius: tokens.radius.md }}>md</div>
           <div style={{ borderRadius: tokens.radius.pill }}>pill</div>
+        </div>
+      </section>
+      <section>
+        <h2>Button component</h2>
+        <div className="storybook-button-token-demo">
+          <div className="storybook-button-token-row">
+            <Button>Primary</Button>
+            <Button variant="secondary">Secondary</Button>
+            <Button aria-label="분석 요청" size="icon" variant="send">
+              ↑
+            </Button>
+          </div>
+          <div className="storybook-component-token-grid">
+            {buttonTokenEntries.map(([name, value]) => (
+              <div className="storybook-component-token" key={name}>
+                <strong>{name}</strong>
+                <code>{value}</code>
+              </div>
+            ))}
+          </div>
+          <div className="storybook-component-size-row">
+            {buttonSizeEntries.map(([name, value]) => (
+              <div className="storybook-component-size" key={name}>
+                <span>{name}</span>
+                <code>{value}</code>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
       <section>

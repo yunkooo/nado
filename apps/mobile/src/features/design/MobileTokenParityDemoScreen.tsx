@@ -32,7 +32,8 @@ export function MobileTokenParityDemoScreen() {
         <View style={styles.sectionTitleGroup}>
           <Text style={styles.sectionTitle}>Button contract</Text>
           <Text style={styles.panelText}>
-            primary/secondary variant와 md size가 component token을 따라갑니다.
+            primary/secondary/send variant와 md/icon size가 component token을
+            따라갑니다.
           </Text>
         </View>
         <View style={styles.designDemoButtonRow}>
@@ -41,6 +42,12 @@ export function MobileTokenParityDemoScreen() {
           </View>
           <View style={styles.designDemoSecondaryButton}>
             <Text style={styles.designDemoSecondaryButtonText}>Secondary</Text>
+          </View>
+          <View
+            accessibilityLabel="Send icon token sample"
+            style={styles.designDemoSendIconButton}
+          >
+            <Text style={styles.designDemoSendIconButtonText}>↗</Text>
           </View>
         </View>
       </View>

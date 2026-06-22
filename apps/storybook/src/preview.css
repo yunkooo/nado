@@ -86,6 +86,52 @@ body {
   width: 112px;
 }
 
+.storybook-button-token-demo {
+  display: grid;
+  gap: 14px;
+}
+
+.storybook-button-token-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.storybook-component-token-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.storybook-component-token,
+.storybook-component-size {
+  background: var(--nado-color-surface);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.storybook-component-token strong,
+.storybook-component-size span {
+  color: var(--nado-color-ink);
+  font-size: 0.8125rem;
+}
+
+.storybook-component-token code,
+.storybook-component-size code {
+  color: var(--nado-color-ink-muted);
+  font-size: 0.78rem;
+}
+
+.storybook-component-size-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .storybook-type-sample {
   background: var(--nado-color-surface);
   border: 1px solid var(--nado-color-border);
