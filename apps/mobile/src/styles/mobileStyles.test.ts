@@ -112,6 +112,39 @@ describe("mobile shared style tokens", () => {
     );
   });
 
+  it("backs the mobile token parity demo surface with shared native tokens", () => {
+    const demoSurfaceStyle = mobileStylesSource.match(
+      /designDemoSurface:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+    const demoPrimarySwatchStyle = mobileStylesSource.match(
+      /designDemoPrimarySwatch:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+    const demoPrimaryButtonStyle = mobileStylesSource.match(
+      /designDemoPrimaryButton:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+
+    expect(demoSurfaceStyle ?? "").toContain(
+      "backgroundColor: mobileColors.surface",
+    );
+    expect(demoSurfaceStyle ?? "").toContain("borderRadius: mobileRadius.md");
+    expect(demoSurfaceStyle ?? "").toContain("gap: mobileSpacing.md");
+    expect(demoPrimarySwatchStyle ?? "").toContain(
+      "backgroundColor: mobileColors.primary",
+    );
+    expect(demoPrimarySwatchStyle ?? "").toContain(
+      "borderRadius: mobileRadius.md",
+    );
+    expect(demoPrimaryButtonStyle ?? "").toContain(
+      "backgroundColor: mobileButtonTokens.primary.background",
+    );
+    expect(demoPrimaryButtonStyle ?? "").toContain(
+      "borderRadius: mobileButtonTokens.radius",
+    );
+    expect(demoPrimaryButtonStyle ?? "").toContain(
+      "minHeight: mobileButtonTokens.size.md.height",
+    );
+  });
+
   it("renders the mobile word definition card as an anchored overlay", () => {
     const wordDefinitionCardStyle = mobileStylesSource.match(
       /wordDefinitionCard:\s*{(?<body>[\s\S]*?)\n  },/,

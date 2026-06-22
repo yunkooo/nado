@@ -64,6 +64,16 @@ describe("mobile App API wiring", () => {
     expect(composerWrap).toBeLessThan(bottomArea);
   });
 
+  it("mounts the mobile design demo only when the explicit demo flag exposes it", () => {
+    expect(appSource).toContain("MobileTokenParityDemoScreen");
+    expect(appSource).toContain("readMobileDesignDemoEnabled");
+    expect(appSource).toMatch(
+      /getMobileTabs\(\{\s*showDesignDemo:\s*isMobileDesignDemoEnabled,\s*\}\)/,
+    );
+    expect(appSource).toContain('activeTab === "designDemo"');
+    expect(appSource).not.toContain('label: "디자인"');
+  });
+
   it("renders analyzed source text with a bottom-right character count", () => {
     expect(appSource).toContain("getAnalysisSourceSampleState");
     expect(appSource).toContain("styles.sourceSample");
