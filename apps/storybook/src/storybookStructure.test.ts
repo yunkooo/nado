@@ -284,8 +284,12 @@ export const OtherStory: Story = {
     expect(foundationsSource).toContain("tokens.component.button");
     expect(foundationsSource).toContain("storybook-component-token-grid");
     expect(mobileDemoSource).toContain("Button contract");
+    expect(mobileDemoSource).toContain("designDemoSendIconButton");
     expect(mobileStylesSource).toContain(
       "backgroundColor: mobileButtonTokens.primary.background",
+    );
+    expect(mobileStylesSource).toContain(
+      "backgroundColor: mobileButtonTokens.send.background",
     );
     expect(tokenParityDemoSource).toContain("Foundations/Tokens");
     expect(tokenParityDemoSource).toContain("UI/Button");

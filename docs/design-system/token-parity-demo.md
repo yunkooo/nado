@@ -40,7 +40,7 @@ EXPO_PUBLIC_NADO_MOBILE_DESIGN_DEMO=1 pnpm --filter @nado/mobile dev
 1. Expo app을 연다.
 2. 하단 tab에서 `디자인`을 선택한다.
 3. `Primary color` 영역에서 `nativeTokens.color.primary`, `nativeTokens.color.surfaceMuted` 반영을 확인한다.
-4. `Button contract` 영역에서 `nativeTokens.component.button.primary`, `secondary`, `size.md`, `radius` 반영을 확인한다.
+4. `Button contract` 영역에서 `nativeTokens.component.button.primary`, `secondary`, `send`, `size.md`, `size.icon`, `radius` 반영을 확인한다.
 
 ## 자동 검증
 

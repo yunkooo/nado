@@ -278,6 +278,23 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800",
   },
+  designDemoSendIconButton: {
+    alignItems: "center",
+    backgroundColor: mobileButtonTokens.send.background,
+    borderRadius: mobileButtonTokens.size.icon.radius,
+    height: mobileButtonTokens.size.icon.height,
+    justifyContent: "center",
+    minHeight: mobileButtonTokens.size.icon.height,
+    minWidth: mobileButtonTokens.size.icon.width,
+    paddingHorizontal: mobileButtonTokens.size.icon.paddingX,
+    width: mobileButtonTokens.size.icon.width,
+  },
+  designDemoSendIconButtonText: {
+    color: mobileButtonTokens.send.foreground,
+    fontSize: 18,
+    fontWeight: "800",
+    lineHeight: 22,
+  },
   designDemoSurface: {
     backgroundColor: mobileColors.surface,
     borderColor: mobileColors.border,
