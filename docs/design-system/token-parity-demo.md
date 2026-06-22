@@ -52,6 +52,7 @@ pnpm --filter @nado/ui test
 pnpm --filter @nado/storybook test
 pnpm --filter @nado/storybook typecheck
 pnpm --filter @nado/storybook lint
+pnpm --filter @nado/storybook build
 pnpm --filter @nado/mobile test
 git diff --check
 ```
@@ -61,6 +62,7 @@ git diff --check
 - `@nado/tokens` test는 CSS pixel token이 React Native number token으로 변환되는지 확인한다.
 - `@nado/ui` test는 Web/Desktop Button CSS가 component token 계약을 따르는지 확인한다.
 - Storybook 구조 테스트는 `Foundations/Tokens`가 button component token을 보여주는지 확인한다.
+- Storybook build는 등록된 story가 production build에서 실제로 번들링되는지 확인한다.
 - Mobile test는 `mobileStyles`가 `@nado/tokens/react-native`와 `mobileButtonTokens`를 쓰는지 확인한다.
 
 ## 관련 파일
