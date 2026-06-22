@@ -83,11 +83,13 @@ describe("analysis component styles", () => {
 
     expect(sendButtonRule).not.toContain("--nado-button-send-background:");
     expect(sendButtonRule).not.toContain("--nado-button-send-foreground:");
-    expect(sendButtonRule).toMatch(
-      /background:\s*var\(\s*--nado-button-send-background,\s*var\(--nado-button-primary-background,\s*var\(--nado-color-primary\)\)\s*\)/,
+    expect(sendButtonRule).not.toContain("--nado-button-primary-background");
+    expect(sendButtonRule).not.toContain("--nado-button-primary-foreground");
+    expect(sendButtonRule).toContain(
+      `background: var(--nado-button-send-background, ${cssTokenValue(tokens.component.button.send.background)})`,
     );
-    expect(sendButtonRule).toMatch(
-      /color:\s*var\(\s*--nado-button-send-foreground,\s*var\(--nado-button-primary-foreground,\s*var\(--nado-color-primary-ink\)\)\s*\)/,
+    expect(sendButtonRule).toContain(
+      `color: var(--nado-button-send-foreground, ${cssTokenValue(tokens.component.button.send.foreground)})`,
     );
   });
 
@@ -192,11 +194,11 @@ describe("analysis component styles", () => {
     expect(ghostButtonRule).toContain(
       `color: var(--nado-button-ghost-foreground, ${cssTokenValue(buttonTokens.ghost.foreground)})`,
     );
-    expect(sendButtonRule).toMatch(
-      /background:\s*var\(\s*--nado-button-send-background,\s*var\(--nado-button-primary-background,\s*var\(--nado-color-primary\)\)\s*\)/,
+    expect(sendButtonRule).toContain(
+      `background: var(--nado-button-send-background, ${cssTokenValue(buttonTokens.send.background)})`,
     );
-    expect(sendButtonRule).toMatch(
-      /color:\s*var\(\s*--nado-button-send-foreground,\s*var\(--nado-button-primary-foreground,\s*var\(--nado-color-primary-ink\)\)\s*\)/,
+    expect(sendButtonRule).toContain(
+      `color: var(--nado-button-send-foreground, ${cssTokenValue(buttonTokens.send.foreground)})`,
     );
   });
 
