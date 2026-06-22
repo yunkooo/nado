@@ -248,6 +248,16 @@ describe("createOpenAIAnalysisService", () => {
             saveLabel: "interface bugs",
           },
           {
+            key: "interface",
+            term: "interface",
+            baseForm: "interface",
+            type: "word",
+            partOfSpeech: "noun",
+            meaning: "인터페이스",
+            contextMeaning: "사용자와 맞닿는 화면 또는 접점을 뜻합니다.",
+            saveLabel: "interface",
+          },
+          {
             key: "faster",
             term: "faster",
             baseForm: "fast",
@@ -289,7 +299,7 @@ describe("createOpenAIAnalysisService", () => {
             tokens: [
               { text: "state", vocabularyKey: "state" },
               { text: "design", vocabularyKey: "existing-design" },
-              { text: "interface", vocabularyKey: "interface-bugs" },
+              { text: "interface", vocabularyKey: "interface" },
               { text: "bugs", vocabularyKey: "interface-bugs" },
               { text: "faster", vocabularyKey: "faster" },
             ],

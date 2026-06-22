@@ -372,7 +372,13 @@ function supplementSentenceTokens({
 }
 
 function createVocabularyKeyByWord(vocabularyItems: AnalysisVocabularyItem[]) {
-  const vocabularyKeyByWord = new Map<string, string>();
+  const vocabularyKeyCandidateByWord = new Map<
+    string,
+    {
+      priority: number;
+      vocabularyKey: string;
+    }
+  >();
 
   for (const item of vocabularyItems) {
     for (const candidate of [item.term, item.baseForm, item.saveLabel]) {
@@ -380,32 +386,68 @@ function createVocabularyKeyByWord(vocabularyItems: AnalysisVocabularyItem[]) {
       const firstWord = words[0];
 
       if (item.type === "word" && firstWord && words.length === 1) {
-        setVocabularyKeyCandidate(vocabularyKeyByWord, firstWord, item.key);
+        setVocabularyKeyCandidate({
+          priority: vocabularyCandidatePriority.word,
+          vocabularyKey: item.key,
+          vocabularyKeyCandidateByWord,
+          word: firstWord,
+        });
         continue;
       }
 
       if (item.type === "phrase") {
         for (const word of words) {
           if (shouldIndexPhraseWord(word)) {
-            setVocabularyKeyCandidate(vocabularyKeyByWord, word, item.key);
+            setVocabularyKeyCandidate({
+              priority: vocabularyCandidatePriority.phrase,
+              vocabularyKey: item.key,
+              vocabularyKeyCandidateByWord,
+              word,
+            });
           }
         }
       }
     }
   }
 
-  return vocabularyKeyByWord;
+  return new Map(
+    Array.from(vocabularyKeyCandidateByWord, ([word, candidate]) => [
+      word,
+      candidate.vocabularyKey,
+    ]),
+  );
 }
 
-function setVocabularyKeyCandidate(
-  vocabularyKeyByWord: Map<string, string>,
-  word: string,
-  vocabularyKey: string,
-) {
-  const normalizedWord = normalizeVocabularyMatchText(word);
+const vocabularyCandidatePriority = {
+  phrase: 1,
+  word: 2,
+} as const;
 
-  if (!vocabularyKeyByWord.has(normalizedWord)) {
-    vocabularyKeyByWord.set(normalizedWord, vocabularyKey);
+function setVocabularyKeyCandidate({
+  priority,
+  vocabularyKey,
+  vocabularyKeyCandidateByWord,
+  word,
+}: {
+  priority: number;
+  vocabularyKey: string;
+  vocabularyKeyCandidateByWord: Map<
+    string,
+    {
+      priority: number;
+      vocabularyKey: string;
+    }
+  >;
+  word: string;
+}) {
+  const normalizedWord = normalizeVocabularyMatchText(word);
+  const existingCandidate = vocabularyKeyCandidateByWord.get(normalizedWord);
+
+  if (!existingCandidate || priority > existingCandidate.priority) {
+    vocabularyKeyCandidateByWord.set(normalizedWord, {
+      priority,
+      vocabularyKey,
+    });
   }
 }
 
