@@ -240,4 +240,17 @@ describe("analysis state store", () => {
       "z-ai/glm-5.2",
     );
   });
+
+  it("keeps the selected analysis model in memory when persistence fails", () => {
+    const modelStorage = createStorage();
+    modelStorage.setItem.mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+    const store = createAnalysisStateStore({
+      getModelStorage: () => modelStorage,
+    });
+
+    expect(() => store.setSelectedAnalysisModel("z-ai/glm-5.2")).not.toThrow();
+    expect(store.getSnapshot().selectedAnalysisModel).toBe("z-ai/glm-5.2");
+  });
 });

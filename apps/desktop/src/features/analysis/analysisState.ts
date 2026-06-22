@@ -140,7 +140,7 @@ export function createAnalysisStateStore(
     },
 
     setSelectedAnalysisModel(selectedAnalysisModel: AnalysisModelId) {
-      getModelStorage()?.setItem(MODEL_STORAGE_KEY, selectedAnalysisModel);
+      persistSelectedAnalysisModel(selectedAnalysisModel, getModelStorage);
       setSnapshot({
         ...snapshot,
         selectedAnalysisModel,
@@ -277,6 +277,27 @@ function readPersistedAnalysisModel(
     return isAnalysisModelId(value) ? value : null;
   } catch {
     return null;
+  }
+}
+
+function persistSelectedAnalysisModel(
+  selectedAnalysisModel: AnalysisModelId,
+  getStorage: () => AnalysisStateStorage | null,
+) {
+  const storage = getStorage();
+
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(MODEL_STORAGE_KEY, selectedAnalysisModel);
+  } catch {
+    try {
+      storage.removeItem(MODEL_STORAGE_KEY);
+    } catch {
+      // Storage can be disabled in private contexts. In-memory state remains usable.
+    }
   }
 }
 
