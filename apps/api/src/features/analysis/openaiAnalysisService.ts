@@ -180,6 +180,9 @@ async function analyzeWithOpenRouter({
             },
           ],
           model,
+          provider: {
+            require_parameters: true,
+          },
           response_format: {
             json_schema: {
               name: "nado_analysis_response",

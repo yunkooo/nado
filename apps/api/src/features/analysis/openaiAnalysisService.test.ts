@@ -171,6 +171,9 @@ describe("createOpenAIAnalysisService", () => {
       },
       type: "json_schema",
     });
+    expect(body.provider).toEqual({
+      require_parameters: true,
+    });
   });
 
   it("normalizes predicate adverb chunks so repeated platform analyses keep stable boundaries", async () => {
