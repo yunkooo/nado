@@ -291,6 +291,7 @@ export const OtherStory: Story = {
     expect(tokenParityDemoSource).toContain("UI/Button");
     expect(tokenParityDemoSource).toContain("Mobile Design Demo");
     expect(tokenParityDemoSource).toContain("pnpm --filter @nado/tokens test");
+    expect(tokenParityDemoSource).toContain("pnpm --filter @nado/ui test");
     expect(tokenParityDemoSource).toContain(
       "EXPO_PUBLIC_NADO_MOBILE_DESIGN_DEMO=1",
     );
