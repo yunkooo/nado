@@ -24,6 +24,9 @@ describe("mobile shared style tokens", () => {
     expect(mobileStylesSource).toContain(
       "export const mobileSpacing = nativeTokens.spacing;",
     );
+    expect(mobileStylesSource).toContain(
+      "export const mobileButtonTokens = nativeTokens.component.button;",
+    );
   });
 
   it("keeps core mobile color aliases backed by shared color tokens", () => {
@@ -51,6 +54,62 @@ describe("mobile shared style tokens", () => {
     expect(mobileStylesSource).toContain("borderRadius: mobileRadius.pill");
     expect(mobileStylesSource).toContain("gap: mobileSpacing.sm");
     expect(mobileStylesSource).toContain("paddingHorizontal: mobileSpacing.md");
+  });
+
+  it("keeps the analyze icon button backed by send icon component tokens", () => {
+    const analyzeButtonStyle = mobileStylesSource.match(
+      /analyzeButton:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+    const analyzeButtonTextStyle = mobileStylesSource.match(
+      /analyzeButtonText:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+
+    expect(analyzeButtonStyle).toContain(
+      "backgroundColor: mobileButtonTokens.send.background",
+    );
+    expect(analyzeButtonStyle).toContain(
+      "borderRadius: mobileButtonTokens.size.icon.radius",
+    );
+    expect(analyzeButtonStyle).toContain(
+      "height: mobileButtonTokens.size.icon.height",
+    );
+    expect(analyzeButtonStyle).toContain(
+      "minHeight: mobileButtonTokens.size.icon.height",
+    );
+    expect(analyzeButtonStyle).toContain(
+      "minWidth: mobileButtonTokens.size.icon.width",
+    );
+    expect(analyzeButtonStyle).toContain(
+      "width: mobileButtonTokens.size.icon.width",
+    );
+    expect(analyzeButtonTextStyle).toContain(
+      "color: mobileButtonTokens.send.foreground",
+    );
+  });
+
+  it("keeps the primary action button backed by primary md component tokens", () => {
+    const primaryButtonStyle = mobileStylesSource.match(
+      /primaryButton:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+    const primaryButtonTextStyle = mobileStylesSource.match(
+      /primaryButtonText:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+
+    expect(primaryButtonStyle).toContain(
+      "backgroundColor: mobileButtonTokens.primary.background",
+    );
+    expect(primaryButtonStyle).toContain(
+      "borderRadius: mobileButtonTokens.radius",
+    );
+    expect(primaryButtonStyle).toContain(
+      "minHeight: mobileButtonTokens.size.md.height",
+    );
+    expect(primaryButtonStyle).toContain(
+      "paddingHorizontal: mobileButtonTokens.size.md.paddingX",
+    );
+    expect(primaryButtonTextStyle).toContain(
+      "color: mobileButtonTokens.primary.foreground",
+    );
   });
 
   it("renders the mobile word definition card as an anchored overlay", () => {

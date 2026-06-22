@@ -16,23 +16,24 @@ export const mobileColors = {
 
 export const mobileRadius = nativeTokens.radius;
 export const mobileSpacing = nativeTokens.spacing;
+export const mobileButtonTokens = nativeTokens.component.button;
 
 export const styles = StyleSheet.create({
   analyzeButton: {
     alignItems: "center",
-    backgroundColor: mobileColors.primary,
-    borderRadius: mobileRadius.pill,
-    height: 38,
+    backgroundColor: mobileButtonTokens.send.background,
+    borderRadius: mobileButtonTokens.size.icon.radius,
+    height: mobileButtonTokens.size.icon.height,
     justifyContent: "center",
-    minHeight: 38,
-    minWidth: 38,
-    width: 38,
+    minHeight: mobileButtonTokens.size.icon.height,
+    minWidth: mobileButtonTokens.size.icon.width,
+    width: mobileButtonTokens.size.icon.width,
   },
   analyzeButtonDisabled: {
     backgroundColor: mobileColors.sidebarActive,
   },
   analyzeButtonText: {
-    color: mobileColors.primaryInk,
+    color: mobileButtonTokens.send.foreground,
     fontSize: 18,
     fontWeight: "800",
     lineHeight: 22,
@@ -471,14 +472,14 @@ export const styles = StyleSheet.create({
   },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: mobileColors.primary,
-    borderRadius: mobileRadius.md,
+    backgroundColor: mobileButtonTokens.primary.background,
+    borderRadius: mobileButtonTokens.radius,
     justifyContent: "center",
-    minHeight: 40,
-    paddingHorizontal: mobileSpacing.lg,
+    minHeight: mobileButtonTokens.size.md.height,
+    paddingHorizontal: mobileButtonTokens.size.md.paddingX,
   },
   primaryButtonText: {
-    color: mobileColors.primaryInk,
+    color: mobileButtonTokens.primary.foreground,
     fontSize: 14,
     fontWeight: "800",
     textAlign: "center",
