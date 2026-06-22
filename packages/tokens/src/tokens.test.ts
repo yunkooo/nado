@@ -42,7 +42,7 @@ describe("@nado/tokens", () => {
       foreground: tokens.color.ink,
     });
     expect(tokens.component.button.size.md).toMatchObject({
-      height: "38px",
+      height: "40px",
       paddingX: "16px",
     });
   });
@@ -54,7 +54,7 @@ describe("@nado/tokens", () => {
         paddingX: 12,
       },
       md: {
-        height: 38,
+        height: 40,
         paddingX: 16,
       },
     });

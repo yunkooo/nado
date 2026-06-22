@@ -60,7 +60,7 @@ const component = {
         paddingX: spacing.md,
       },
       md: {
-        height: "38px",
+        height: "40px",
         paddingX: spacing.lg,
       },
       icon: {
