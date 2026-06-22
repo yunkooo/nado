@@ -46,12 +46,19 @@ const sampleAnalyzeResponse = {
 
 describe("createOpenAIAnalysisService", () => {
   const originalOpenAITimeoutMs = process.env.OPENAI_TIMEOUT_MS;
+  const originalOpenRouterTimeoutMs = process.env.OPENROUTER_TIMEOUT_MS;
 
   afterEach(() => {
     if (originalOpenAITimeoutMs === undefined) {
       delete process.env.OPENAI_TIMEOUT_MS;
     } else {
       process.env.OPENAI_TIMEOUT_MS = originalOpenAITimeoutMs;
+    }
+
+    if (originalOpenRouterTimeoutMs === undefined) {
+      delete process.env.OPENROUTER_TIMEOUT_MS;
+    } else {
+      process.env.OPENROUTER_TIMEOUT_MS = originalOpenRouterTimeoutMs;
     }
 
     vi.useRealTimers();
@@ -311,6 +318,84 @@ describe("createOpenAIAnalysisService", () => {
     });
 
     await vi.advanceTimersByTimeAsync(21);
+
+    expect(aborted).toBe(true);
+    await assertion;
+  });
+
+  it("keeps the OpenRouter timeout active while reading the response body", async () => {
+    vi.useFakeTimers();
+    let aborted = false;
+    const service = createOpenAIAnalysisService({
+      openRouterApiKey: "test-openrouter-key",
+      fetch: async (_input, init) => {
+        const signal = init?.signal;
+
+        return {
+          ok: true,
+          json: () =>
+            new Promise((_resolve, reject) => {
+              if (signal instanceof AbortSignal) {
+                signal.addEventListener("abort", () => {
+                  aborted = true;
+                  reject(new DOMException("Request aborted", "AbortError"));
+                });
+              }
+            }),
+        } as Response;
+      },
+      timeoutMs: 10,
+    });
+
+    const resultPromise = service.analyze({
+      text: "Careful state design makes interface bugs easier to find.",
+      model: "z-ai/glm-5.2",
+    });
+    const assertion = expect(resultPromise).rejects.toMatchObject({
+      code: "analysis_timeout",
+      status: 504,
+    });
+
+    await vi.advanceTimersByTimeAsync(11);
+
+    expect(aborted).toBe(true);
+    await assertion;
+  });
+
+  it("uses OPENROUTER_TIMEOUT_MS for OpenRouter response body reads", async () => {
+    process.env.OPENROUTER_TIMEOUT_MS = "40";
+    vi.useFakeTimers();
+    let aborted = false;
+    const service = createOpenAIAnalysisService({
+      openRouterApiKey: "test-openrouter-key",
+      fetch: async (_input, init) => {
+        const signal = init?.signal;
+
+        return {
+          ok: true,
+          json: () =>
+            new Promise((_resolve, reject) => {
+              if (signal instanceof AbortSignal) {
+                signal.addEventListener("abort", () => {
+                  aborted = true;
+                  reject(new DOMException("Request aborted", "AbortError"));
+                });
+              }
+            }),
+        } as Response;
+      },
+    });
+
+    const resultPromise = service.analyze({
+      text: "Careful state design makes interface bugs easier to find.",
+      model: "z-ai/glm-5.2",
+    });
+    const assertion = expect(resultPromise).rejects.toMatchObject({
+      code: "analysis_timeout",
+      status: 504,
+    });
+
+    await vi.advanceTimersByTimeAsync(41);
 
     expect(aborted).toBe(true);
     await assertion;

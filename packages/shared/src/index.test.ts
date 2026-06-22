@@ -12,6 +12,7 @@ import {
   createVocabularyMeaningRenderKey,
   getDistinctVocabularyNote,
   hasUnsupportedAnalysisTextCharacters,
+  isOpenRouterAnalysisModelId,
   isVocabularyRealtimeTopicForUser,
   isLikelyEnglishLearningText,
   moveVocabularyPage,
@@ -46,6 +47,9 @@ describe("parseAnalyzeRequest", () => {
       "GLM 5.2",
       "GPT 5.4 mini",
     ]);
+    expect(isOpenRouterAnalysisModelId("moonshotai/kimi-k2.7-code")).toBe(true);
+    expect(isOpenRouterAnalysisModelId("z-ai/glm-5.2")).toBe(true);
+    expect(isOpenRouterAnalysisModelId("gpt-5.4-mini")).toBe(false);
   });
 
   it("accepts supported analysis model ids", () => {

@@ -26,6 +26,13 @@ export const analysisModelIdSchema = z.enum([
   "z-ai/glm-5.2",
   "gpt-5.4-mini",
 ]);
+export type AnalysisModelId = z.infer<typeof analysisModelIdSchema>;
+
+export function isOpenRouterAnalysisModelId(modelId: AnalysisModelId): boolean {
+  return ANALYSIS_MODELS.some(
+    (model) => model.id === modelId && model.provider === "openrouter",
+  );
+}
 
 const allowedAnalysisTextPattern = /^[A-Za-z0-9 \t\n\r.,!?'"’“”()\[\]\-:;]+$/u;
 const allowedControlCharactersPattern = /[\t\n\r]/g;
@@ -657,7 +664,6 @@ export const errorCodeSchema = z.enum([
 ]);
 
 export type AnalyzeRequest = z.infer<typeof analyzeRequestSchema>;
-export type AnalysisModelId = z.infer<typeof analysisModelIdSchema>;
 export type VocabularyType = z.infer<typeof vocabularyTypeSchema>;
 export type VocabularyMeaning = z.infer<typeof vocabularyMeaningSchema>;
 export type VocabularyItem = z.infer<typeof vocabularyItemSchema>;

@@ -367,6 +367,47 @@ describe("analyzeText", () => {
     });
   });
 
+  it("waits longer for OpenRouter analysis models", async () => {
+    vi.useFakeTimers();
+    let aborted = false;
+    let resolveResponse: ((response: Response) => void) | undefined;
+    const fetcher = vi.fn(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const signal = init?.signal;
+
+        if (signal instanceof AbortSignal) {
+          signal.addEventListener("abort", () => {
+            aborted = true;
+          });
+        }
+
+        return new Promise<Response>((resolve) => {
+          resolveResponse = resolve;
+        });
+      },
+    );
+
+    const resultPromise = analyzeText("I was wondering if you could help me.", {
+      fetcher,
+      model: "z-ai/glm-5.2",
+    });
+
+    await vi.advanceTimersByTimeAsync(80_000);
+
+    expect(aborted).toBe(false);
+    resolveResponse?.(
+      Response.json({
+        reason: "영어 문장으로 분석하기 어려운 입력입니다.",
+        status: "not_analyzable",
+      }),
+    );
+
+    await expect(resultPromise).resolves.toEqual({
+      message: "영어 문장으로 분석하기 어려운 입력입니다.",
+      status: "not_analyzable",
+    });
+  });
+
   it("returns an error message when the analyze request cannot be sent", async () => {
     const fetcher = vi.fn(async () => {
       throw new TypeError("fetch failed");

@@ -2,6 +2,7 @@ import {
   DEFAULT_ANALYSIS_MODEL_ID,
   analyzeResponseJsonSchema,
   analyzeResponseSchema,
+  isOpenRouterAnalysisModelId,
 } from "@nado/shared";
 import type {
   AnalysisChunk,
@@ -23,6 +24,7 @@ export type OpenAIAnalysisServiceOptions = {
   model?: string;
   openRouterApiKey?: string;
   openRouterEndpoint?: string;
+  openRouterTimeoutMs?: number;
   timeoutMs?: number;
 };
 
@@ -31,6 +33,7 @@ const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
 const DEFAULT_OPENROUTER_ENDPOINT =
   "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_OPENAI_TIMEOUT_MS = 30_000;
+const DEFAULT_OPENROUTER_TIMEOUT_MS = 90_000;
 
 const ANALYSIS_INSTRUCTIONS = [
   "당신은 한국인 영어 학습자를 돕는 영어 독해 분석기입니다.",
@@ -53,10 +56,15 @@ export function createOpenAIAnalysisService(
   const fetchImplementation = options.fetch ?? globalThis.fetch;
   const model =
     options.model ?? process.env.OPENAI_MODEL ?? DEFAULT_OPENAI_MODEL;
-  const timeoutMs =
+  const openAITimeoutMs =
     options.timeoutMs ??
-    readOpenAITimeoutMs(process.env.OPENAI_TIMEOUT_MS) ??
+    readTimeoutMs(process.env.OPENAI_TIMEOUT_MS, "OPENAI_TIMEOUT_MS") ??
     DEFAULT_OPENAI_TIMEOUT_MS;
+  const openRouterTimeoutMs =
+    options.openRouterTimeoutMs ??
+    options.timeoutMs ??
+    readTimeoutMs(process.env.OPENROUTER_TIMEOUT_MS, "OPENROUTER_TIMEOUT_MS") ??
+    DEFAULT_OPENROUTER_TIMEOUT_MS;
 
   return {
     async analyze(input: AnalyzeRequest): Promise<AnalyzeResponse> {
@@ -69,7 +77,7 @@ export function createOpenAIAnalysisService(
           fetchImplementation,
           model: requestedModel,
           text: input.text,
-          timeoutMs,
+          timeoutMs: openRouterTimeoutMs,
         });
       }
 
@@ -81,11 +89,10 @@ export function createOpenAIAnalysisService(
         const abortController = new AbortController();
         const timeoutId = globalThis.setTimeout(() => {
           abortController.abort();
-        }, timeoutMs);
-        let response: Response;
+        }, openAITimeoutMs);
 
         try {
-          response = await fetchImplementation(endpoint, {
+          const response = await fetchImplementation(endpoint, {
             body: JSON.stringify({
               input: input.text,
               instructions: ANALYSIS_INSTRUCTIONS,
@@ -107,6 +114,24 @@ export function createOpenAIAnalysisService(
             method: "POST",
             signal: abortController.signal,
           });
+
+          if (!response.ok) {
+            throw new Error("OpenAI request failed.");
+          }
+
+          try {
+            return await parseAnalysisResponse(response);
+          } catch (error) {
+            if (isAbortError(error)) {
+              throw error;
+            }
+
+            if (attempt === 0 && error instanceof StructuredOutputError) {
+              continue;
+            }
+
+            throw error;
+          }
         } catch (error) {
           if (isAbortError(error)) {
             throw new UpstreamTimeoutError(
@@ -118,20 +143,6 @@ export function createOpenAIAnalysisService(
           throw error;
         } finally {
           globalThis.clearTimeout(timeoutId);
-        }
-
-        if (!response.ok) {
-          throw new Error("OpenAI request failed.");
-        }
-
-        try {
-          return await parseAnalysisResponse(response);
-        } catch (error) {
-          if (attempt === 0 && error instanceof StructuredOutputError) {
-            continue;
-          }
-
-          throw error;
         }
       }
 
@@ -164,10 +175,9 @@ async function analyzeWithOpenRouter({
     const timeoutId = globalThis.setTimeout(() => {
       abortController.abort();
     }, timeoutMs);
-    let response: Response;
 
     try {
-      response = await fetchImplementation(endpoint, {
+      const response = await fetchImplementation(endpoint, {
         body: JSON.stringify({
           messages: [
             {
@@ -199,6 +209,24 @@ async function analyzeWithOpenRouter({
         method: "POST",
         signal: abortController.signal,
       });
+
+      if (!response.ok) {
+        throw new Error("OpenRouter request failed.");
+      }
+
+      try {
+        return await parseOpenRouterAnalysisResponse(response);
+      } catch (error) {
+        if (isAbortError(error)) {
+          throw error;
+        }
+
+        if (attempt === 0 && error instanceof StructuredOutputError) {
+          continue;
+        }
+
+        throw error;
+      }
     } catch (error) {
       if (isAbortError(error)) {
         throw new UpstreamTimeoutError(
@@ -210,20 +238,6 @@ async function analyzeWithOpenRouter({
       throw error;
     } finally {
       globalThis.clearTimeout(timeoutId);
-    }
-
-    if (!response.ok) {
-      throw new Error("OpenRouter request failed.");
-    }
-
-    try {
-      return await parseOpenRouterAnalysisResponse(response);
-    } catch (error) {
-      if (attempt === 0 && error instanceof StructuredOutputError) {
-        continue;
-      }
-
-      throw error;
     }
   }
 
@@ -322,7 +336,11 @@ function shouldMergePredicateAdverbChunk(
 async function readJson(response: Response): Promise<unknown> {
   try {
     return await response.json();
-  } catch {
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
+
     throw new StructuredOutputError("OpenAI response was not valid JSON.");
   }
 }
@@ -424,7 +442,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function isOpenRouterAnalysisModel(
   model: AnalysisModelId,
 ): model is Exclude<AnalysisModelId, "gpt-5.4-mini"> {
-  return model !== "gpt-5.4-mini";
+  return isOpenRouterAnalysisModelId(model);
 }
 
 class StructuredOutputError extends Error {}
@@ -433,7 +451,10 @@ function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
 }
 
-function readOpenAITimeoutMs(value: string | undefined): number | undefined {
+function readTimeoutMs(
+  value: string | undefined,
+  envName: string,
+): number | undefined {
   if (value === undefined || value.trim().length === 0) {
     return undefined;
   }
@@ -441,7 +462,7 @@ function readOpenAITimeoutMs(value: string | undefined): number | undefined {
   const timeoutMs = Number(value);
 
   if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
-    throw new Error("OPENAI_TIMEOUT_MS must be a positive integer.");
+    throw new Error(`${envName} must be a positive integer.`);
   }
 
   return timeoutMs;
