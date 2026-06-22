@@ -189,22 +189,21 @@ describe("createOpenAIAnalysisService", () => {
       result: {
         ...sampleAnalyzeResponse.result,
         translation:
-          "신중한 상태 설계는 팀이 인터페이스 버그를 더 빨리 찾도록 돕습니다.",
+          "빠른 상태 설계는 팀이 인터페이스 버그를 더 빨리 찾도록 돕습니다.",
         sentences: [
           {
             ...sampleAnalyzeResponse.result.sentences[0],
-            source:
-              "Careful state design helps teams find interface bugs faster.",
+            source: "Fast state design helps teams find interface bugs faster.",
             translation:
-              "신중한 상태 설계는 팀이 인터페이스 버그를 더 빨리 찾도록 돕습니다.",
+              "빠른 상태 설계는 팀이 인터페이스 버그를 더 빨리 찾도록 돕습니다.",
             tokens: [
               { text: "state", vocabularyKey: null },
               { text: "design", vocabularyKey: "existing-design" },
             ],
             chunks: [
               {
-                english: "Careful state design",
-                literalTranslation: "신중한 상태 설계는",
+                english: "Fast state design",
+                literalTranslation: "빠른 상태 설계는",
                 role: "주어 역할을 합니다.",
               },
               {
@@ -267,6 +266,16 @@ describe("createOpenAIAnalysisService", () => {
             contextMeaning: "문제를 찾는 속도가 더 빠름을 뜻합니다.",
             saveLabel: "faster",
           },
+          {
+            key: "fast",
+            term: "fast",
+            baseForm: "fast",
+            type: "word",
+            partOfSpeech: "adjective",
+            meaning: "빠른",
+            contextMeaning: "상태 설계의 속도감이나 효율을 나타냅니다.",
+            saveLabel: "fast",
+          },
         ],
       },
     };
@@ -289,7 +298,7 @@ describe("createOpenAIAnalysisService", () => {
 
     await expect(
       service.analyze({
-        text: "Careful state design helps teams find interface bugs faster.",
+        text: "Fast state design helps teams find interface bugs faster.",
         model: "z-ai/glm-5.2",
       }),
     ).resolves.toMatchObject({
@@ -297,6 +306,7 @@ describe("createOpenAIAnalysisService", () => {
         sentences: [
           {
             tokens: [
+              { text: "Fast", vocabularyKey: "fast" },
               { text: "state", vocabularyKey: "state" },
               { text: "design", vocabularyKey: "existing-design" },
               { text: "interface", vocabularyKey: "interface" },

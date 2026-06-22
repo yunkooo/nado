@@ -381,19 +381,41 @@ function createVocabularyKeyByWord(vocabularyItems: AnalysisVocabularyItem[]) {
   >();
 
   for (const item of vocabularyItems) {
-    for (const candidate of [item.term, item.baseForm, item.saveLabel]) {
-      const words = extractEnglishWords(candidate);
-      const firstWord = words[0];
+    if (item.type === "word") {
+      for (const candidate of [
+        {
+          priority: vocabularyCandidatePriority.wordTerm,
+          value: item.term,
+        },
+        {
+          priority: vocabularyCandidatePriority.wordFallback,
+          value: item.baseForm,
+        },
+        {
+          priority: vocabularyCandidatePriority.wordFallback,
+          value: item.saveLabel,
+        },
+      ]) {
+        const words = extractEnglishWords(candidate.value);
+        const firstWord = words[0];
 
-      if (item.type === "word" && firstWord && words.length === 1) {
+        if (!firstWord || words.length !== 1) {
+          continue;
+        }
+
         setVocabularyKeyCandidate({
-          priority: vocabularyCandidatePriority.word,
+          priority: candidate.priority,
           vocabularyKey: item.key,
           vocabularyKeyCandidateByWord,
           word: firstWord,
         });
-        continue;
       }
+
+      continue;
+    }
+
+    for (const candidate of [item.term, item.baseForm, item.saveLabel]) {
+      const words = extractEnglishWords(candidate);
 
       if (item.type === "phrase") {
         for (const word of words) {
@@ -420,7 +442,8 @@ function createVocabularyKeyByWord(vocabularyItems: AnalysisVocabularyItem[]) {
 
 const vocabularyCandidatePriority = {
   phrase: 1,
-  word: 2,
+  wordFallback: 2,
+  wordTerm: 3,
 } as const;
 
 function setVocabularyKeyCandidate({
