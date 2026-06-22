@@ -238,6 +238,8 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 첫 흐�
 
 이 demo의 목적은 완성된 모바일 디자인 QA 자동화가 아니라, token-first 전략이 실제 세 플랫폼 표면에서 끊기지 않는지 가장 작은 단위로 확인하는 것이다.
 
+실제 확인 절차는 [Token parity demo 검증 흐름](token-parity-demo.md)에 정리한다.
+
 ## 후속 작업 후보
 
 이 문서는 전략 정리까지만 다룬다. 실제 구현은 다음 issue로 나눈다.

@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const toStoryFiles = (path: string) =>
@@ -13,6 +13,11 @@ const readUiStorySource = (fileName: string) =>
     new URL(`../../../packages/ui/src/${fileName}`, import.meta.url),
     "utf8",
   );
+const readOptionalSource = (path: string) => {
+  const sourceUrl = new URL(path, import.meta.url);
+
+  return existsSync(sourceUrl) ? readFileSync(sourceUrl, "utf8") : "";
+};
 const escapeRegExp = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const storyExportPattern = (exportName: string) =>
@@ -58,6 +63,9 @@ const prTemplateSource = readFileSync(
 const prWorkflowSource = readFileSync(
   new URL("../../../docs/workflow/pr-workflow.md", import.meta.url),
   "utf8",
+);
+const tokenParityDemoSource = readOptionalSource(
+  "../../../docs/design-system/token-parity-demo.md",
 );
 const readmeSource = readFileSync(
   new URL("../README.md", import.meta.url),
@@ -253,6 +261,38 @@ export const OtherStory: Story = {
     expect(prWorkflowSource).toContain("pnpm --filter @nado/ui test");
     expect(prWorkflowSource).toContain("pnpm --filter @nado/mobile test");
     expect(readmeSource).toContain("PR checklist");
+  });
+
+  it("connects token parity demo surfaces across Storybook and Mobile", () => {
+    const foundationsSource = readStorySource("Foundations.stories.tsx");
+    const mobileDemoSource = readFileSync(
+      new URL(
+        "../../../apps/mobile/src/features/design/MobileTokenParityDemoScreen.tsx",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    const mobileStylesSource = readFileSync(
+      new URL(
+        "../../../apps/mobile/src/styles/mobileStyles.ts",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+
+    expect(foundationsSource).toContain("Button component");
+    expect(foundationsSource).toContain("tokens.component.button");
+    expect(foundationsSource).toContain("storybook-component-token-grid");
+    expect(mobileDemoSource).toContain("Button contract");
+    expect(mobileStylesSource).toContain(
+      "backgroundColor: mobileButtonTokens.primary.background",
+    );
+    expect(tokenParityDemoSource).toContain("Foundations/Tokens");
+    expect(tokenParityDemoSource).toContain("UI/Button");
+    expect(tokenParityDemoSource).toContain("Mobile Design Demo");
+    expect(tokenParityDemoSource).toContain(
+      "EXPO_PUBLIC_NADO_MOBILE_DESIGN_DEMO=1",
+    );
   });
 
   it("uses viewport globals for narrow sidebar stories", () => {
