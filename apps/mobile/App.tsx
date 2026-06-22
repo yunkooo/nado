@@ -32,9 +32,11 @@ import {
   INITIAL_ANALYSIS_TEXT,
   getAnalysisComposerState,
   getAnalysisSourceSampleState,
-  mobileTabs,
+  getMobileTabs,
 } from "./src/features/analysis/analysisScreen";
 import { getVisibleMobileTranslationNoteParts } from "./src/features/analysis/translationNotes";
+import { MobileTokenParityDemoScreen } from "./src/features/design/MobileTokenParityDemoScreen";
+import { readMobileDesignDemoEnabled } from "./src/features/design/designTokenDemo";
 import {
   MOBILE_WORD_POPOVER_DEFAULT_HEIGHT,
   MOBILE_WORD_POPOVER_DEFAULT_WIDTH,
@@ -84,6 +86,7 @@ type MobileVocabularySelectionHandler = (
 
 const configuredMobileApiBaseUrl = readMobileApiBaseUrl();
 const configuredMobileApiPlatform = Platform.OS;
+const isMobileDesignDemoEnabled = readMobileDesignDemoEnabled();
 const MOBILE_ANALYSIS_MODEL_STORAGE_KEY = "nado.mobile.analysis-model.v1";
 
 export default function App() {
@@ -112,6 +115,9 @@ export default function App() {
   const selectedAnalysisModelLabel =
     ANALYSIS_MODELS.find((model) => model.id === selectedAnalysisModel)
       ?.label ?? ANALYSIS_MODELS[0].label;
+  const visibleMobileTabs = getMobileTabs({
+    showDesignDemo: isMobileDesignDemoEnabled,
+  });
   const studyRefreshControl = isStudyTabActive ? (
     <RefreshControl
       colors={[mobileColors.primary]}
@@ -337,11 +343,12 @@ export default function App() {
               vocabularyState={vocabularyState}
             />
           ) : null}
+          {activeTab === "designDemo" ? <MobileTokenParityDemoScreen /> : null}
         </ScrollView>
 
         <View style={styles.bottomArea}>
           <View style={styles.tabbar} accessibilityRole="tablist">
-            {mobileTabs.map((tab) => {
+            {visibleMobileTabs.map((tab) => {
               const selected = tab.key === activeTab;
 
               return (

@@ -16,7 +16,19 @@ export const mobileTabs = [
   { disabled: false, key: "review", label: "복습" },
 ] as const;
 
-export type MobileTabKey = (typeof mobileTabs)[number]["key"];
+const MOBILE_DESIGN_DEMO_TAB = {
+  disabled: false,
+  key: "designDemo",
+  label: "디자인",
+} as const;
+
+export type MobileTabKey =
+  | (typeof mobileTabs)[number]["key"]
+  | typeof MOBILE_DESIGN_DEMO_TAB.key;
+
+export function getMobileTabs({ showDesignDemo }: { showDesignDemo: boolean }) {
+  return showDesignDemo ? [...mobileTabs, MOBILE_DESIGN_DEMO_TAB] : mobileTabs;
+}
 
 export function getAnalysisComposerState(text: string) {
   const inputLength = countAnalysisTextCharacters(text);

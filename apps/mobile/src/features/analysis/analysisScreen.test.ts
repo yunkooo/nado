@@ -7,6 +7,7 @@ import {
   INITIAL_ANALYSIS_TEXT,
   getAnalysisComposerState,
   getAnalysisSourceSampleState,
+  getMobileTabs,
   mobileTabs,
 } from "./analysisScreen";
 
@@ -28,6 +29,14 @@ describe("mobile analysis screen state", () => {
       { disabled: false, key: "analysis", label: "분석" },
       { disabled: false, key: "vocabulary", label: "단어장" },
       { disabled: false, key: "review", label: "복습" },
+    ]);
+  });
+
+  it("keeps the mobile design demo tab behind an explicit opt-in", () => {
+    expect(getMobileTabs({ showDesignDemo: false })).toEqual(mobileTabs);
+    expect(getMobileTabs({ showDesignDemo: true })).toEqual([
+      ...mobileTabs,
+      { disabled: false, key: "designDemo", label: "디자인" },
     ]);
   });
 
