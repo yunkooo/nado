@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { tokens } from "@nado/tokens";
 
 const styles = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
 
@@ -59,10 +60,85 @@ describe("analysis component styles", () => {
   });
 
   it("uses a strong active color for the composer send button", () => {
+    const rootRule = readRule(":root");
+    const buttonRule = readRule(".nado-button");
     const sendButtonRule = readRule(".nado-button--send");
 
-    expect(sendButtonRule).toContain("background: var(--nado-color-primary)");
-    expect(sendButtonRule).toContain("color: var(--nado-color-primary-ink)");
+    expect(rootRule).not.toContain("--nado-button-primary-background:");
+    expect(rootRule).not.toContain("--nado-button-send-background:");
+    expect(buttonRule).not.toContain("--nado-button-primary-background:");
+    expect(sendButtonRule).toContain(
+      "background: var(--nado-button-primary-background, var(--nado-color-primary))",
+    );
+    expect(sendButtonRule).toContain(
+      "color: var(--nado-button-primary-foreground, var(--nado-color-primary-ink))",
+    );
+  });
+
+  it("keeps button styles aligned with component tokens", () => {
+    const rootRule = readRule(":root");
+    const buttonRule = readRule(".nado-button");
+    const smButtonRule = readRule(".nado-button--sm");
+    const mdButtonRule = readRule(".nado-button--md");
+    const iconButtonRule = readRule(".nado-button--icon");
+    const primaryButtonRule = readRule(".nado-button--primary");
+    const secondaryButtonRule = readRule(".nado-button--secondary");
+    const ghostButtonRule = readRule(".nado-button--ghost");
+    const sendButtonRule = readRule(".nado-button--send");
+
+    expect(rootRule).toContain(
+      `--nado-button-size-md-height: ${tokens.component.button.size.md.height}`,
+    );
+    expect(rootRule).toContain(
+      `--nado-radius-pill: ${tokens.component.button.size.icon.radius}`,
+    );
+    expect(rootRule).not.toContain("--nado-button-radius:");
+    expect(rootRule).not.toContain("--nado-button-primary-background:");
+    expect(rootRule).not.toContain("--nado-button-secondary-background:");
+    expect(rootRule).not.toContain("--nado-button-size-icon-radius:");
+    expect(rootRule).not.toContain("--nado-button-ghost-foreground:");
+    expect(rootRule).not.toContain("--nado-button-send-background:");
+
+    expect(buttonRule).not.toContain("--nado-button-radius:");
+    expect(buttonRule).toContain(
+      "border-radius: var(--nado-button-radius, var(--nado-radius-md))",
+    );
+    expect(buttonRule).toContain(
+      "min-height: var(--nado-button-size-md-height)",
+    );
+    expect(smButtonRule).toContain(
+      "min-height: var(--nado-button-size-sm-height)",
+    );
+    expect(mdButtonRule).toContain(
+      "padding: 0 var(--nado-button-size-md-padding-x)",
+    );
+    expect(iconButtonRule).toContain(
+      "border-radius: var(--nado-button-size-icon-radius, var(--nado-radius-pill))",
+    );
+    expect(iconButtonRule).toContain(
+      "height: var(--nado-button-size-icon-height)",
+    );
+    expect(iconButtonRule).toContain(
+      "width: var(--nado-button-size-icon-width)",
+    );
+    expect(primaryButtonRule).toContain(
+      "background: var(--nado-button-primary-background, var(--nado-color-primary))",
+    );
+    expect(primaryButtonRule).toContain(
+      "color: var(--nado-button-primary-foreground, var(--nado-color-primary-ink))",
+    );
+    expect(secondaryButtonRule).toContain(
+      "border-color: var(--nado-button-secondary-border, var(--nado-color-border))",
+    );
+    expect(ghostButtonRule).toContain(
+      "background: var(--nado-button-ghost-background, transparent)",
+    );
+    expect(sendButtonRule).toContain(
+      "background: var(--nado-button-primary-background, var(--nado-color-primary))",
+    );
+    expect(sendButtonRule).toContain(
+      "color: var(--nado-button-primary-foreground, var(--nado-color-primary-ink))",
+    );
   });
 
   it("shows the composer model select affordance with a chevron", () => {
