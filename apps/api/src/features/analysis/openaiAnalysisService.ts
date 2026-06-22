@@ -7,6 +7,9 @@ import {
 import type {
   AnalysisChunk,
   AnalysisModelId,
+  AnalysisSentence,
+  AnalysisToken,
+  AnalysisVocabularyItem,
   AnalyzeRequest,
   AnalyzeResponse,
 } from "@nado/shared";
@@ -275,7 +278,7 @@ async function parseOpenRouterAnalysisResponse(
     );
   }
 
-  return normalizeAnalysisChunks(parsedAnalysis.data);
+  return normalizeOpenRouterAnalysisResponse(parsedAnalysis.data);
 }
 
 function normalizeAnalysisChunks(analysis: AnalyzeResponse): AnalyzeResponse {
@@ -293,6 +296,163 @@ function normalizeAnalysisChunks(analysis: AnalyzeResponse): AnalyzeResponse {
       })),
     },
   };
+}
+
+function normalizeOpenRouterAnalysisResponse(
+  analysis: AnalyzeResponse,
+): AnalyzeResponse {
+  const normalizedAnalysis = normalizeAnalysisChunks(analysis);
+
+  if (normalizedAnalysis.status === "not_analyzable") {
+    return normalizedAnalysis;
+  }
+
+  const vocabularyKeyByWord = createVocabularyKeyByWord(
+    normalizedAnalysis.result.vocabularyItems,
+  );
+  const vocabularyKeys = new Set(
+    normalizedAnalysis.result.vocabularyItems.map((item) => item.key),
+  );
+
+  return {
+    ...normalizedAnalysis,
+    result: {
+      ...normalizedAnalysis.result,
+      sentences: normalizedAnalysis.result.sentences.map((sentence) => ({
+        ...sentence,
+        tokens: supplementSentenceTokens({
+          sentence,
+          vocabularyKeyByWord,
+          vocabularyKeys,
+        }),
+      })),
+    },
+  };
+}
+
+function supplementSentenceTokens({
+  sentence,
+  vocabularyKeyByWord,
+  vocabularyKeys,
+}: {
+  sentence: AnalysisSentence;
+  vocabularyKeyByWord: Map<string, string>;
+  vocabularyKeys: Set<string>;
+}): AnalysisToken[] {
+  const tokens: AnalysisToken[] = [];
+  let existingTokenIndex = 0;
+
+  for (const word of extractEnglishWords(
+    sentence.chunks.map((chunk) => chunk.english).join(" "),
+  )) {
+    const existingTokenMatch = findMatchingAnalysisToken(
+      sentence.tokens,
+      existingTokenIndex,
+      word,
+    );
+    const existingToken = existingTokenMatch?.token;
+
+    if (existingTokenMatch) {
+      existingTokenIndex = existingTokenMatch.nextIndex;
+    }
+
+    const vocabularyKey =
+      resolveValidVocabularyKey(existingToken?.vocabularyKey, vocabularyKeys) ??
+      vocabularyKeyByWord.get(normalizeVocabularyMatchText(word));
+
+    if (vocabularyKey) {
+      tokens.push({
+        text: existingToken?.text ?? word,
+        vocabularyKey,
+      });
+    }
+  }
+
+  return tokens.length > 0 ? tokens : sentence.tokens;
+}
+
+function createVocabularyKeyByWord(vocabularyItems: AnalysisVocabularyItem[]) {
+  const vocabularyKeyByWord = new Map<string, string>();
+
+  for (const item of vocabularyItems) {
+    for (const candidate of [item.term, item.baseForm, item.saveLabel]) {
+      const words = extractEnglishWords(candidate);
+      const firstWord = words[0];
+
+      if (item.type === "word" && firstWord && words.length === 1) {
+        setVocabularyKeyCandidate(vocabularyKeyByWord, firstWord, item.key);
+        continue;
+      }
+
+      if (item.type === "phrase") {
+        for (const word of words) {
+          if (shouldIndexPhraseWord(word)) {
+            setVocabularyKeyCandidate(vocabularyKeyByWord, word, item.key);
+          }
+        }
+      }
+    }
+  }
+
+  return vocabularyKeyByWord;
+}
+
+function setVocabularyKeyCandidate(
+  vocabularyKeyByWord: Map<string, string>,
+  word: string,
+  vocabularyKey: string,
+) {
+  const normalizedWord = normalizeVocabularyMatchText(word);
+
+  if (!vocabularyKeyByWord.has(normalizedWord)) {
+    vocabularyKeyByWord.set(normalizedWord, vocabularyKey);
+  }
+}
+
+function findMatchingAnalysisToken(
+  tokens: AnalysisToken[],
+  startIndex: number,
+  word: string,
+) {
+  const normalizedWord = normalizeVocabularyMatchText(word);
+
+  for (let index = startIndex; index < tokens.length; index += 1) {
+    if (
+      normalizeVocabularyMatchText(tokens[index]?.text ?? "") === normalizedWord
+    ) {
+      return {
+        nextIndex: index + 1,
+        token: tokens[index],
+      };
+    }
+  }
+
+  return null;
+}
+
+function resolveValidVocabularyKey(
+  vocabularyKey: string | null | undefined,
+  vocabularyKeys: Set<string>,
+) {
+  return vocabularyKey && vocabularyKeys.has(vocabularyKey)
+    ? vocabularyKey
+    : null;
+}
+
+const englishWordPattern = /[A-Za-z]+(?:['’-][A-Za-z]+)*/g;
+const ignoredPhraseWordPattern =
+  /^(?:a|an|and|as|at|but|by|for|from|if|in|into|of|on|or|the|to|with)$/i;
+
+function extractEnglishWords(text: string) {
+  return Array.from(text.matchAll(englishWordPattern), (match) => match[0]);
+}
+
+function shouldIndexPhraseWord(word: string) {
+  return word.length > 2 && !ignoredPhraseWordPattern.test(word);
+}
+
+function normalizeVocabularyMatchText(text: string) {
+  return text.normalize("NFKC").toLocaleLowerCase("en-US");
 }
 
 const predicateAdverbChunkPattern =

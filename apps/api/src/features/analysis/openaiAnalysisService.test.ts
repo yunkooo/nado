@@ -183,6 +183,122 @@ describe("createOpenAIAnalysisService", () => {
     });
   });
 
+  it("supplements OpenRouter sentence tokens from vocabulary items when model output omits token links", async () => {
+    const responseWithSparseTokens = {
+      ...sampleAnalyzeResponse,
+      result: {
+        ...sampleAnalyzeResponse.result,
+        translation:
+          "신중한 상태 설계는 팀이 인터페이스 버그를 더 빨리 찾도록 돕습니다.",
+        sentences: [
+          {
+            ...sampleAnalyzeResponse.result.sentences[0],
+            source:
+              "Careful state design helps teams find interface bugs faster.",
+            translation:
+              "신중한 상태 설계는 팀이 인터페이스 버그를 더 빨리 찾도록 돕습니다.",
+            tokens: [
+              { text: "state", vocabularyKey: null },
+              { text: "design", vocabularyKey: "existing-design" },
+            ],
+            chunks: [
+              {
+                english: "Careful state design",
+                literalTranslation: "신중한 상태 설계는",
+                role: "주어 역할을 합니다.",
+              },
+              {
+                english: "helps teams find interface bugs faster",
+                literalTranslation:
+                  "팀이 인터페이스 버그를 더 빨리 찾도록 돕습니다",
+                role: "서술부 역할을 합니다.",
+              },
+            ],
+          },
+        ],
+        vocabularyItems: [
+          {
+            key: "state",
+            term: "state",
+            baseForm: "state",
+            type: "word",
+            partOfSpeech: "noun",
+            meaning: "상태",
+            contextMeaning: "컴포넌트가 기억하는 데이터 상태입니다.",
+            saveLabel: "state",
+          },
+          {
+            key: "existing-design",
+            term: "design",
+            baseForm: "design",
+            type: "word",
+            partOfSpeech: "noun",
+            meaning: "설계",
+            contextMeaning: "상태를 구성하는 방식입니다.",
+            saveLabel: "design",
+          },
+          {
+            key: "interface-bugs",
+            term: "interface bugs",
+            baseForm: "interface bug",
+            type: "phrase",
+            partOfSpeech: null,
+            meaning: "인터페이스 버그",
+            contextMeaning: "화면 동작에서 드러나는 문제입니다.",
+            saveLabel: "interface bugs",
+          },
+          {
+            key: "faster",
+            term: "faster",
+            baseForm: "fast",
+            type: "word",
+            partOfSpeech: "adverb",
+            meaning: "더 빠르게",
+            contextMeaning: "문제를 찾는 속도가 더 빠름을 뜻합니다.",
+            saveLabel: "faster",
+          },
+        ],
+      },
+    };
+    const service = createOpenAIAnalysisService({
+      openRouterApiKey: "test-openrouter-key",
+      fetch: async () =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify(responseWithSparseTokens),
+                },
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+    });
+
+    await expect(
+      service.analyze({
+        text: "Careful state design helps teams find interface bugs faster.",
+        model: "z-ai/glm-5.2",
+      }),
+    ).resolves.toMatchObject({
+      result: {
+        sentences: [
+          {
+            tokens: [
+              { text: "state", vocabularyKey: "state" },
+              { text: "design", vocabularyKey: "existing-design" },
+              { text: "interface", vocabularyKey: "interface-bugs" },
+              { text: "bugs", vocabularyKey: "interface-bugs" },
+              { text: "faster", vocabularyKey: "faster" },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
   it("normalizes predicate adverb chunks so repeated platform analyses keep stable boundaries", async () => {
     const responseWithSplitPredicate = {
       ...sampleAnalyzeResponse,
