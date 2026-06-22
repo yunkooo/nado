@@ -319,6 +319,85 @@ describe("createOpenAIAnalysisService", () => {
     });
   });
 
+  it("preserves null sentence tokens so duplicate words keep their keyed occurrence", async () => {
+    const responseWithDuplicateTokens = {
+      ...sampleAnalyzeResponse,
+      result: {
+        ...sampleAnalyzeResponse.result,
+        translation: "메아리처럼 반복한 뒤 리뷰를 개선합니다.",
+        sentences: [
+          {
+            ...sampleAnalyzeResponse.result.sentences[0],
+            source: "Echo echo improves reviews.",
+            translation: "메아리처럼 반복한 뒤 리뷰를 개선합니다.",
+            tokens: [
+              { text: "Echo", vocabularyKey: null },
+              { text: "echo", vocabularyKey: "repeated-echo" },
+            ],
+            chunks: [
+              {
+                english: "Echo echo",
+                literalTranslation: "메아리처럼 반복한 뒤",
+                role: "반복 표현입니다.",
+              },
+              {
+                english: "improves reviews",
+                literalTranslation: "리뷰를 개선합니다",
+                role: "서술부입니다.",
+              },
+            ],
+          },
+        ],
+        vocabularyItems: [
+          {
+            key: "repeated-echo",
+            term: "repeated reference",
+            baseForm: "repeated reference",
+            type: "phrase",
+            partOfSpeech: null,
+            meaning: "반복 언급",
+            contextMeaning: "두 번째 echo에만 연결된 저장 항목입니다.",
+            saveLabel: "repeated reference",
+          },
+        ],
+      },
+    };
+    const service = createOpenAIAnalysisService({
+      openRouterApiKey: "test-openrouter-key",
+      fetch: async () =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify(responseWithDuplicateTokens),
+                },
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+    });
+
+    await expect(
+      service.analyze({
+        text: "Echo echo improves reviews.",
+        model: "z-ai/glm-5.2",
+      }),
+    ).resolves.toMatchObject({
+      result: {
+        sentences: [
+          {
+            tokens: [
+              { text: "Echo", vocabularyKey: null },
+              { text: "echo", vocabularyKey: "repeated-echo" },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
   it("normalizes predicate adverb chunks so repeated platform analyses keep stable boundaries", async () => {
     const responseWithSplitPredicate = {
       ...sampleAnalyzeResponse,

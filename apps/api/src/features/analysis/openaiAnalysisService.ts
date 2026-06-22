@@ -360,10 +360,10 @@ function supplementSentenceTokens({
       resolveValidVocabularyKey(existingToken?.vocabularyKey, vocabularyKeys) ??
       vocabularyKeyByWord.get(normalizeVocabularyMatchText(word));
 
-    if (vocabularyKey) {
+    if (vocabularyKey || existingTokenMatch) {
       tokens.push({
         text: existingToken?.text ?? word,
-        vocabularyKey,
+        vocabularyKey: vocabularyKey ?? null,
       });
     }
   }
