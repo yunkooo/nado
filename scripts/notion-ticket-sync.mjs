@@ -133,7 +133,7 @@ export function buildNotionPropertiesForEvent({
   const isCiResultSync = syncMode === "ci-result";
   const isMetadataOnlySync = syncMode === "metadata-only";
   const isReviewSync = syncMode === "review-event";
-  const shouldUpdateCi = !isMetadataOnlySync && !isReviewSync;
+  const shouldUpdateCi = isCiResultSync || action === "closed";
   const properties = {
     "GitHub PR": { url: pullRequest.html_url ?? null },
     "GitHub Branch": richText(pullRequest.head?.ref ?? ""),

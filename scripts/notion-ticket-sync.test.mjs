@@ -129,7 +129,7 @@ describe("notion ticket sync helpers", () => {
     ).toBe("pending");
   });
 
-  it("builds the In-review properties for an active PR event", () => {
+  it("builds the In-review properties for an active PR event without touching CI status", () => {
     const properties = buildNotionPropertiesForEvent({
       action: "synchronize",
       ciStatus: "Failed",
@@ -142,8 +142,8 @@ describe("notion ticket sync helpers", () => {
     expect(properties["GitHub Branch"].rich_text[0].text.content).toBe(
       "codex/nado-notion-sync",
     );
-    expect(properties["CI Status"].select.name).toBe("Failed");
-    expect(properties["Last CI Check"].date.start).toBe(now);
+    expect(properties["CI Status"]).toBeUndefined();
+    expect(properties["Last CI Check"]).toBeUndefined();
     expect(properties["Review Status"]).toBeUndefined();
     expect(properties["Last Review Check"]).toBeUndefined();
     expect(properties["PR Created At"].date.start).toBe(
@@ -177,6 +177,8 @@ describe("notion ticket sync helpers", () => {
     expect(properties["Last Push Summary"].rich_text[0].text.content).toContain(
       "abcdef1",
     );
+    expect(properties["CI Status"]).toBeUndefined();
+    expect(properties["Last CI Check"]).toBeUndefined();
     expect(properties["Review Status"]).toBeUndefined();
     expect(properties["Last Review Check"]).toBeUndefined();
   });
@@ -1300,6 +1302,9 @@ describe("notion ticket sync helpers", () => {
     );
     expect(notionTicketSchemaSource).toContain(
       "`Review Status`를 `Pending`으로 되돌리지 않는다",
+    );
+    expect(notionTicketSchemaSource).toContain(
+      "`CI Status`를 `Pending`으로 되돌리지 않는다",
     );
   });
 });
