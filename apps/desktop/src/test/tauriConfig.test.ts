@@ -40,6 +40,10 @@ describe("desktop Tauri config", () => {
     expect(csp).toContain("default-src 'self'");
     expect(csp).toContain("connect-src");
     expect(csp).toContain("https://*.supabase.co");
+    expect(csp).toContain("wss://*.supabase.co");
+    expect(csp).toContain("wss://*.supabase.com");
+    expect(csp).toContain("ws://localhost:*");
+    expect(csp).toContain("ws://127.0.0.1:*");
     expect(csp).toContain("https://nadoapi-production.up.railway.app");
     expect(csp).not.toContain("'unsafe-eval'");
   });
