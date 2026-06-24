@@ -144,6 +144,8 @@ PR 생성, PR 업데이트, PR branch push 같은 PR 이벤트는 `Review Status
 PR 생성, PR 업데이트, PR branch push 같은 활성 PR 이벤트는 `CI Status`와 `Last CI Check`도
 쓰지 않는다. CI 결과는 `workflow_run` 기반 `ci-result` sync가 기록하므로, 더 늦게 끝난
 `pull_request_target` job이 이미 기록된 `Success` 또는 `Failed`를 `Pending`으로 되돌리지 않는다.
+fork PR의 CI `workflow_run`에서 `workflow_run.pull_requests`가 비어 있어도
+`workflow_run.head_repository`가 현재 저장소와 다르면 PR URL을 요구하기 전에 Notion sync를 skip한다.
 
 이 workflow를 추가하는 PR처럼 default branch의 trusted checkout에 아직
 `scripts/notion-ticket-sync.mjs`가 없으면 Notion sync step은 성공적으로 skip한다. merge 이후

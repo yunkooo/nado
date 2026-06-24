@@ -1111,6 +1111,43 @@ describe("notion ticket sync helpers", () => {
     expect(updatedProperties["Last Push Summary"]).toBeUndefined();
   });
 
+  it("skips fork CI workflow_run events even when PR summaries are missing", async () => {
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "workflow-run-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "notion-data-source",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          repository: {
+            url: "https://api.github.com/repos/yunkooo/nado",
+          },
+          workflow_run: {
+            conclusion: "failure",
+            event: "pull_request",
+            head_repository: {
+              full_name: "contributor/nado",
+            },
+            pull_requests: [],
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.skipped).toBe(true);
+    expect(result.reason).toBe("Skipping Notion sync for a fork pull request");
+    expect(requests).toHaveLength(0);
+  });
+
   it("skips CI-result syncs for closed pull requests", async () => {
     const githubPullRequestUrl =
       "https://api.github.com/repos/yunkooo/nado/pulls/42";
@@ -1367,5 +1404,7 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSchemaSource).toContain(
       "`CI Status`를 `Pending`으로 되돌리지 않는다",
     );
+    expect(notionTicketSchemaSource).toContain("workflow_run.pull_requests");
+    expect(notionTicketSchemaSource).toContain("workflow_run.head_repository");
   });
 });

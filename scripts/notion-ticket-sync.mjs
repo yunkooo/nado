@@ -507,6 +507,14 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
     };
   }
 
+  if (isCrossRepositoryWorkflowRun(event.workflow_run, env.GITHUB_REPOSITORY)) {
+    return {
+      ok: true,
+      reason: "Skipping Notion sync for a fork pull request",
+      skipped: true,
+    };
+  }
+
   const pullRequestSummary = event.workflow_run.pull_requests?.[0];
   const pullRequestUrl =
     pullRequestSummary?.url ??
@@ -696,6 +704,16 @@ function isCrossRepositoryPullRequest(pullRequest, repository) {
   const headRepository = pullRequest.head?.repo?.full_name;
 
   return !headRepository || headRepository !== repository;
+}
+
+function isCrossRepositoryWorkflowRun(workflowRun, repository) {
+  if (!repository) {
+    return false;
+  }
+
+  const headRepository = workflowRun?.head_repository?.full_name;
+
+  return Boolean(headRepository && headRepository !== repository);
 }
 
 function isNotionPageInDataSource(page, dataSourceId) {
