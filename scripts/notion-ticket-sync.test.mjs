@@ -275,6 +275,58 @@ describe("notion ticket sync helpers", () => {
     expect(requests[0].options.headers["Notion-Version"]).toBe("2025-09-03");
   });
 
+  it("skips stale synchronize events before writing push metadata", async () => {
+    const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "pull-request-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === pullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            head: {
+              ...pullRequest.head,
+              sha: "newer-head-sha",
+            },
+            url: pullRequestUrl,
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          action: "synchronize",
+          pull_request: {
+            ...pullRequest,
+            head: {
+              ...pullRequest.head,
+              sha: "older-head-sha",
+            },
+            number: 42,
+            url: pullRequestUrl,
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.skipped).toBe(true);
+    expect(result.reason).toBe(
+      "Skipping stale PR-event Notion sync for an outdated synchronize event",
+    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].url).toBe(pullRequestUrl);
+  });
+
   it("syncs pull request review changes without touching CI status", async () => {
     const requests = [];
 
@@ -966,5 +1018,8 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSchemaSource).toContain("활성 change request");
     expect(notionTicketSchemaSource).toContain("per_page=100");
     expect(notionTicketSchemaSource).toContain("COMMENTED");
+    expect(notionTicketSchemaSource).toContain(
+      "더 오래된 `pull_request synchronize` job",
+    );
   });
 });

@@ -375,11 +375,58 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
   }
 
   if (event.pull_request) {
+    let pullRequest = event.pull_request;
+
+    if (event.action === "synchronize") {
+      if (!env.GITHUB_TOKEN) {
+        return {
+          ok: false,
+          reason: "Missing required environment variables: GITHUB_TOKEN",
+        };
+      }
+
+      const pullRequestUrl =
+        event.pull_request.url ??
+        buildPullRequestApiUrl({
+          number: event.pull_request.number,
+          repositoryUrl: event.repository?.url,
+        });
+
+      if (!pullRequestUrl) {
+        return {
+          ok: false,
+          reason: "Pull request event does not include a pull request URL",
+        };
+      }
+
+      const currentPullRequest = await fetchGitHubPullRequest({
+        fetchImpl,
+        githubToken: env.GITHUB_TOKEN,
+        pullRequestUrl,
+      });
+
+      if (
+        isStaleSynchronizeEventForPullRequest(
+          event.pull_request,
+          currentPullRequest,
+        )
+      ) {
+        return {
+          ok: true,
+          reason:
+            "Skipping stale PR-event Notion sync for an outdated synchronize event",
+          skipped: true,
+        };
+      }
+
+      pullRequest = currentPullRequest;
+    }
+
     return {
       action: event.action,
       ciResult: env.CI_RESULT,
       ok: true,
-      pullRequest: event.pull_request,
+      pullRequest,
       syncMode: event.action === "edited" ? "metadata-only" : "pr-event",
     };
   }
@@ -446,8 +493,22 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
 }
 
 function isStaleWorkflowRunForPullRequest(workflowRun, pullRequest) {
-  const runHeadSha = workflowRun?.head_sha;
-  const currentHeadSha = pullRequest.head?.sha;
+  return isStalePullRequestHead({
+    currentPullRequest: pullRequest,
+    eventHeadSha: workflowRun?.head_sha,
+  });
+}
+
+function isStaleSynchronizeEventForPullRequest(eventPullRequest, pullRequest) {
+  return isStalePullRequestHead({
+    currentPullRequest: pullRequest,
+    eventHeadSha: eventPullRequest?.head?.sha,
+  });
+}
+
+function isStalePullRequestHead({ currentPullRequest, eventHeadSha }) {
+  const runHeadSha = eventHeadSha;
+  const currentHeadSha = currentPullRequest.head?.sha;
 
   return Boolean(runHeadSha && currentHeadSha && runHeadSha !== currentHeadSha);
 }
