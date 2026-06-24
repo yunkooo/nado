@@ -43,6 +43,7 @@ Commit 1개 = 단일 목적 1개
 - GitHub native sub-issue 연결을 사용할 수 없으면 Markdown checklist와 `Parent: #<parent>` 표기를 fallback으로 사용하고, 수동 최신화가 필요하다는 점을 남긴다.
 - PR 작업 단위로 확정된 Issue 작업 요청은 branch push와 ready PR 생성을 포함한다.
 - 새 PR은 기본적으로 ready 상태로 만들고, 저장소 Codex automatic review 대상이 되도록 한다.
+- Notion workflow rehearsal PR은 dedicated test ticket과 최소 문서 변경으로 만들고 production 코드는 건드리지 않는다.
 - `yunkooo/nado`의 Codex code review 설정은 개인 기본 설정 상속을 피하고, 저장소 row에서 `자동 코드 검토`를 명시적으로 켠 뒤 `Review trigger`를 `매 푸시마다`로 둔다.
 - AI는 설정 UI를 직접 확인하거나 변경할 수 없으므로, 설정 상태가 불명확하면 사용자에게 확인한다.
 - 자동 리뷰 결과는 최신 PR head commit 기준으로 확인한다.
