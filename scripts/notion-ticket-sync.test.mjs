@@ -1000,6 +1000,72 @@ describe("notion ticket sync helpers", () => {
     expect(updatedProperties["CI Status"]).toBeUndefined();
   });
 
+  it("marks dismissed-only aggregate review state as unknown instead of using a stale event fallback", async () => {
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "pull-request-review-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (
+          url ===
+          "https://api.github.com/repos/yunkooo/nado/pulls/42/reviews?per_page=100"
+        ) {
+          return Response.json([
+            {
+              id: 1,
+              state: "DISMISSED",
+              submitted_at: "2026-06-24T11:59:00.000Z",
+              user: {
+                login: "reviewer-a",
+              },
+            },
+          ]);
+        }
+
+        if (options.method === "GET") {
+          return Response.json({
+            parent: {
+              data_source_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+              type: "data_source_id",
+            },
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          action: "submitted",
+          pull_request: {
+            ...pullRequest,
+            number: 42,
+            url: "https://api.github.com/repos/yunkooo/nado/pulls/42",
+          },
+          review: {
+            state: "approved",
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+
+    const updatedProperties = JSON.parse(requests[2].options.body).properties;
+
+    expect(updatedProperties["Review Status"]).toEqual({
+      select: {
+        name: "Unknown",
+      },
+    });
+  });
+
   it("marks dismissed pull request reviews as unknown", () => {
     const plan = createSyncPlan({
       action: "dismissed",
@@ -1261,6 +1327,85 @@ describe("notion ticket sync helpers", () => {
     expect(requests[0].url).toBe(githubPullRequestUrl);
   });
 
+  it("skips older CI workflow runs for the same head SHA", async () => {
+    const githubPullRequestUrl =
+      "https://api.github.com/repos/yunkooo/nado/pulls/42";
+    const latestWorkflowRunsUrl =
+      "https://api.github.com/repos/yunkooo/nado/actions/workflows/123/runs?event=pull_request&head_sha=current-head-sha&per_page=1";
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "workflow-run-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "notion-data-source",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === githubPullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            head: {
+              ...pullRequest.head,
+              repo: {
+                full_name: "yunkooo/nado",
+              },
+              sha: "current-head-sha",
+            },
+            state: "open",
+          });
+        }
+
+        if (url === latestWorkflowRunsUrl) {
+          return Response.json({
+            workflow_runs: [
+              {
+                head_sha: "current-head-sha",
+                id: 101,
+                run_attempt: 1,
+              },
+            ],
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          repository: {
+            url: "https://api.github.com/repos/yunkooo/nado",
+          },
+          workflow_run: {
+            conclusion: "failure",
+            event: "pull_request",
+            head_sha: "current-head-sha",
+            id: 100,
+            pull_requests: [
+              {
+                number: 42,
+                url: githubPullRequestUrl,
+              },
+            ],
+            run_attempt: 1,
+            workflow_id: 123,
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.skipped).toBe(true);
+    expect(result.reason).toBe(
+      "Skipping stale CI-result Notion sync for an older workflow run",
+    );
+    expect(requests.map((request) => request.url)).toEqual([
+      githubPullRequestUrl,
+      latestWorkflowRunsUrl,
+    ]);
+  });
+
   it("keeps Notion secrets out of PR-controlled CI code", () => {
     const reviewDispatchJob = workflowJobSource(
       notionTicketReviewDispatchWorkflowSource,
@@ -1274,6 +1419,10 @@ describe("notion ticket sync helpers", () => {
     const trustedReviewJob = workflowJobSource(
       notionTicketSyncWorkflowSource,
       "trusted-review-event",
+      "ci-result",
+    );
+    const ciResultJob = workflowJobSource(
+      notionTicketSyncWorkflowSource,
       "ci-result",
     );
 
@@ -1346,6 +1495,7 @@ describe("notion ticket sync helpers", () => {
     );
     expect(trustedReviewJob).toContain("NOTION_TOKEN");
     expect(trustedReviewJob).toContain("node scripts/notion-ticket-sync.mjs");
+    expect(ciResultJob).toContain("actions: read");
   });
 
   it("documents typed ticket creation and push metadata rules", () => {
@@ -1406,5 +1556,7 @@ describe("notion ticket sync helpers", () => {
     );
     expect(notionTicketSchemaSource).toContain("workflow_run.pull_requests");
     expect(notionTicketSchemaSource).toContain("workflow_run.head_repository");
+    expect(notionTicketSchemaSource).toContain("dismissed-only");
+    expect(notionTicketSchemaSource).toContain("최신 run/attempt");
   });
 });

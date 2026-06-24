@@ -560,6 +560,21 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
     };
   }
 
+  const latestWorkflowRun = await fetchLatestWorkflowRunForHead({
+    fetchImpl,
+    githubToken: env.GITHUB_TOKEN,
+    repositoryUrl: event.repository?.url,
+    workflowRun: event.workflow_run,
+  });
+
+  if (isOlderWorkflowRunForSameHead(event.workflow_run, latestWorkflowRun)) {
+    return {
+      ok: true,
+      reason: "Skipping stale CI-result Notion sync for an older workflow run",
+      skipped: true,
+    };
+  }
+
   return {
     action: "synchronize",
     ciResult: env.CI_RESULT ?? event.workflow_run.conclusion,
@@ -585,6 +600,35 @@ function isStaleWorkflowRunForPullRequest(workflowRun, pullRequest) {
     currentPullRequest: pullRequest,
     eventHeadSha: workflowRun?.head_sha,
   });
+}
+
+function isOlderWorkflowRunForSameHead(workflowRun, latestWorkflowRun) {
+  if (!workflowRun || !latestWorkflowRun) {
+    return false;
+  }
+
+  if (
+    workflowRun.head_sha &&
+    latestWorkflowRun.head_sha &&
+    workflowRun.head_sha !== latestWorkflowRun.head_sha
+  ) {
+    return false;
+  }
+
+  if (workflowRun.id && latestWorkflowRun.id) {
+    if (workflowRun.id !== latestWorkflowRun.id) {
+      return true;
+    }
+
+    const runAttempt = Number(workflowRun.run_attempt ?? 0);
+    const latestRunAttempt = Number(latestWorkflowRun.run_attempt ?? 0);
+
+    return Boolean(
+      runAttempt && latestRunAttempt && runAttempt < latestRunAttempt,
+    );
+  }
+
+  return false;
 }
 
 function isStaleSynchronizeEventForPullRequest(eventPullRequest, pullRequest) {
@@ -671,6 +715,10 @@ function deriveReviewStateFromReviews({ fallbackState, reviews }) {
 
   if (latestStates.includes("approved")) {
     return "approved";
+  }
+
+  if (latestStates.includes("dismissed")) {
+    return "unknown";
   }
 
   return fallbackState;
@@ -943,6 +991,58 @@ async function fetchGitHubPullRequestReviews({
   }
 
   return reviews;
+}
+
+async function fetchLatestWorkflowRunForHead({
+  fetchImpl,
+  githubToken,
+  repositoryUrl,
+  workflowRun,
+}) {
+  const workflowRunsUrl = buildWorkflowRunsForHeadApiUrl({
+    repositoryUrl,
+    workflowRun,
+  });
+
+  if (!workflowRunsUrl) {
+    return null;
+  }
+
+  const response = await fetchImpl(workflowRunsUrl, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${githubToken}`,
+      "X-GitHub-Api-Version": GITHUB_API_VERSION,
+    },
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+
+    throw new Error(
+      `GitHub workflow runs fetch failed (${response.status}): ${errorBody}`,
+    );
+  }
+
+  const body = await response.json();
+
+  return body.workflow_runs?.[0] ?? null;
+}
+
+function buildWorkflowRunsForHeadApiUrl({ repositoryUrl, workflowRun }) {
+  if (!repositoryUrl || !workflowRun?.workflow_id || !workflowRun?.head_sha) {
+    return null;
+  }
+
+  const workflowRunsUrl = new URL(
+    `${repositoryUrl}/actions/workflows/${workflowRun.workflow_id}/runs`,
+  );
+
+  workflowRunsUrl.searchParams.set("event", "pull_request");
+  workflowRunsUrl.searchParams.set("head_sha", workflowRun.head_sha);
+  workflowRunsUrl.searchParams.set("per_page", "1");
+
+  return workflowRunsUrl.toString();
 }
 
 function buildPaginatedGitHubUrl(url) {

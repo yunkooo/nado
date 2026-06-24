@@ -138,12 +138,16 @@ GitHub reviews API는 `per_page=100`으로 조회하고 `Link` header의 `rel="n
 끝까지 따라간 뒤 집계한다. reviewer별 상태 집계에서는 `APPROVED`, `CHANGES_REQUESTED`,
 `DISMISSED`만 결정적 review 상태로 보고, `COMMENTED`는 이전 change request를 해제하지 않는다.
 활성 `CHANGES_REQUESTED` 리뷰가 하나라도 남아 있으면 `Review Status`를 `Passed`로 내리지 않는다.
+현재 집계된 결정적 리뷰 상태가 dismissed-only이면 stale review 이벤트의 fallback 값을 쓰지 않고
+`Review Status = Unknown`으로 기록한다.
 PR 생성, PR 업데이트, PR branch push 같은 PR 이벤트는 `Review Status`와 `Last Review Check`를
 쓰지 않으므로, 더 늦게 끝난 `pull_request_target` job이 이미 기록된 `Passed` 또는
 `Changes requested`를 `Pending`으로 되돌리지 않는다.
 PR 생성, PR 업데이트, PR branch push 같은 활성 PR 이벤트는 `CI Status`와 `Last CI Check`도
 쓰지 않는다. CI 결과는 `workflow_run` 기반 `ci-result` sync가 기록하므로, 더 늦게 끝난
 `pull_request_target` job이 이미 기록된 `Success` 또는 `Failed`를 `Pending`으로 되돌리지 않는다.
+같은 head SHA에서 여러 CI run이 생긴 경우에는 Actions run 목록에서 최신 run/attempt를 조회하고,
+더 오래된 `workflow_run` 완료 이벤트는 Notion을 갱신하지 않는다.
 fork PR의 CI `workflow_run`에서 `workflow_run.pull_requests`가 비어 있어도
 `workflow_run.head_repository`가 현재 저장소와 다르면 PR URL을 요구하기 전에 Notion sync를 skip한다.
 
