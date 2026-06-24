@@ -87,11 +87,16 @@
 
 ## GitHub Actions Requirements
 
-GitHub Actions의 `Notion Ticket Sync` job은 다음 값이 있어야 동작한다.
+GitHub Actions의 `Notion Ticket Sync` workflow는 다음 값이 있어야 동작한다.
 
 - Repository secret: `NOTION_TOKEN`
 - Repository variable 또는 secret: `NOTION_TICKETS_DATA_SOURCE_ID`
 - Built-in token: `GITHUB_TOKEN`
+
+`NOTION_TOKEN`은 PR branch에서 checkout한 코드에 주입하지 않는다. Notion 동기화는
+`.github/workflows/notion-ticket-sync.yml`에서 `pull_request_target` 또는
+`workflow_run` 이벤트로 실행하며, base/default branch에서 checkout한 trusted code의
+`scripts/notion-ticket-sync.mjs`만 실행한다.
 
 PR 본문의 `## Notion Ticket` 섹션에는 다음 형식의 Notion page URL이 있어야 한다.
 

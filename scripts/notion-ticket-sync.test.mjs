@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   buildNotionPropertiesForEvent,
@@ -6,9 +7,18 @@ import {
   extractNotionPageId,
   mapCiResultToStatus,
   parseTicketUrlFromBody,
+  runSync,
 } from "./notion-ticket-sync.mjs";
 
 const now = "2026-06-24T12:00:00.000Z";
+const ciWorkflowSource = readFileSync(
+  new URL("../.github/workflows/ci.yml", import.meta.url),
+  "utf8",
+);
+const notionTicketSyncWorkflowSource = readFileSync(
+  new URL("../.github/workflows/notion-ticket-sync.yml", import.meta.url),
+  "utf8",
+);
 
 const pullRequest = {
   body: [
@@ -160,5 +170,87 @@ describe("notion ticket sync helpers", () => {
 
     expect(plan.ok).toBe(false);
     expect(plan.reason).toBe("Missing Notion Ticket URL in PR body");
+  });
+
+  it("syncs CI results from a workflow_run event after fetching trusted PR details", async () => {
+    const githubPullRequestUrl =
+      "https://api.github.com/repos/yunkooo/nado/pulls/42";
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "workflow-run-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "notion-data-source",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === githubPullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            head: {
+              ...pullRequest.head,
+              repo: {
+                full_name: "yunkooo/nado",
+              },
+            },
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          repository: {
+            url: "https://api.github.com/repos/yunkooo/nado",
+          },
+          workflow_run: {
+            conclusion: "failure",
+            event: "pull_request",
+            pull_requests: [
+              {
+                number: 42,
+                url: githubPullRequestUrl,
+              },
+            ],
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(requests[0].url).toBe(githubPullRequestUrl);
+    expect(requests[0].options.headers.Authorization).toBe(
+      "Bearer github-token",
+    );
+    expect(requests[1].url).toBe(
+      "https://api.notion.com/v1/pages/11111111-2222-3333-4444-555555555555",
+    );
+    expect(
+      JSON.parse(requests[1].options.body).properties["CI Status"],
+    ).toEqual({
+      select: {
+        name: "Failed",
+      },
+    });
+  });
+
+  it("keeps Notion secrets out of PR-controlled CI code", () => {
+    expect(ciWorkflowSource).not.toContain("NOTION_TOKEN");
+    expect(ciWorkflowSource).not.toContain("NOTION_TICKETS_DATA_SOURCE_ID");
+    expect(ciWorkflowSource).not.toContain("notion-ticket-sync:");
+    expect(notionTicketSyncWorkflowSource).toContain("pull_request_target:");
+    expect(notionTicketSyncWorkflowSource).toContain("workflow_run:");
+    expect(notionTicketSyncWorkflowSource).toContain(
+      "Checkout trusted base code",
+    );
+    expect(notionTicketSyncWorkflowSource).toContain(
+      "ref: ${{ github.event.pull_request.base.sha }}",
+    );
+    expect(notionTicketSyncWorkflowSource).toContain(
+      "Checkout trusted default branch code",
+    );
   });
 });

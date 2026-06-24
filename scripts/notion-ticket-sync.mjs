@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const NOTION_API_VERSION = "2022-06-28";
+const GITHUB_API_VERSION = "2022-11-28";
 const NOTION_PAGE_URL_PATTERN =
   /https?:\/\/(?:www\.)?(?:app\.)?notion\.(?:so|com)\/[^\s<>)]+/i;
 const COMPACT_NOTION_ID_PATTERN = /[0-9a-f]{32}/i;
@@ -230,20 +231,31 @@ export async function runSync({
   }
 
   const event = JSON.parse(readFile(env.GITHUB_EVENT_PATH, "utf8"));
-  const pullRequest = event.pull_request;
+  const syncInput = await resolveSyncInput({
+    env,
+    event,
+    fetchImpl,
+  });
 
-  if (!pullRequest) {
+  if (!syncInput.ok) {
+    return syncInput;
+  }
+
+  if (
+    isCrossRepositoryPullRequest(syncInput.pullRequest, env.GITHUB_REPOSITORY)
+  ) {
     return {
-      ok: false,
-      reason: "GitHub event payload does not include pull_request",
+      ok: true,
+      reason: "Skipping Notion sync for a fork pull request",
+      skipped: true,
     };
   }
 
   const syncPlan = createSyncPlan({
-    action: event.action,
-    ciResult: env.CI_RESULT,
+    action: syncInput.action,
+    ciResult: syncInput.ciResult,
     e2eResult: env.E2E_RESULT,
-    pullRequest,
+    pullRequest: syncInput.pullRequest,
     verifyResult: env.VERIFY_RESULT,
   });
 
@@ -263,6 +275,75 @@ export async function runSync({
     pageId: syncPlan.pageId,
     ticketUrl: syncPlan.ticketUrl,
   };
+}
+
+async function resolveSyncInput({ env, event, fetchImpl }) {
+  if (event.pull_request) {
+    return {
+      action: event.action,
+      ciResult: env.CI_RESULT,
+      ok: true,
+      pullRequest: event.pull_request,
+    };
+  }
+
+  if (event.workflow_run?.event !== "pull_request") {
+    return {
+      ok: false,
+      reason: "GitHub event payload does not include a pull request",
+    };
+  }
+
+  const pullRequestSummary = event.workflow_run.pull_requests?.[0];
+  const pullRequestUrl =
+    pullRequestSummary?.url ??
+    buildPullRequestApiUrl({
+      number: pullRequestSummary?.number,
+      repositoryUrl: event.repository?.url,
+    });
+
+  if (!pullRequestUrl) {
+    return {
+      ok: false,
+      reason: "Workflow run event does not include a pull request URL",
+    };
+  }
+
+  if (!env.GITHUB_TOKEN) {
+    return {
+      ok: false,
+      reason: "Missing required environment variables: GITHUB_TOKEN",
+    };
+  }
+
+  return {
+    action: "synchronize",
+    ciResult: env.CI_RESULT ?? event.workflow_run.conclusion,
+    ok: true,
+    pullRequest: await fetchGitHubPullRequest({
+      fetchImpl,
+      githubToken: env.GITHUB_TOKEN,
+      pullRequestUrl,
+    }),
+  };
+}
+
+function buildPullRequestApiUrl({ number, repositoryUrl }) {
+  if (!number || !repositoryUrl) {
+    return null;
+  }
+
+  return `${repositoryUrl}/pulls/${number}`;
+}
+
+function isCrossRepositoryPullRequest(pullRequest, repository) {
+  if (!repository) {
+    return false;
+  }
+
+  const headRepository = pullRequest.head?.repo?.full_name;
+
+  return Boolean(headRepository && headRepository !== repository);
 }
 
 function formatCompactUuid(compactId) {
@@ -349,6 +430,30 @@ async function updateNotionPage({
   }
 }
 
+async function fetchGitHubPullRequest({
+  fetchImpl,
+  githubToken,
+  pullRequestUrl,
+}) {
+  const response = await fetchImpl(pullRequestUrl, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${githubToken}`,
+      "X-GitHub-Api-Version": GITHUB_API_VERSION,
+    },
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+
+    throw new Error(
+      `GitHub pull request fetch failed (${response.status}): ${errorBody}`,
+    );
+  }
+
+  return response.json();
+}
+
 async function main() {
   try {
     const result = await runSync();
@@ -356,6 +461,11 @@ async function main() {
     if (!result.ok) {
       console.error(result.reason);
       process.exitCode = 1;
+      return;
+    }
+
+    if (result.skipped) {
+      console.log(result.reason);
       return;
     }
 

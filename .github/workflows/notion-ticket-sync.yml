@@ -1,0 +1,59 @@
+name: Notion Ticket Sync
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited, ready_for_review, closed]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  pr-event:
+    name: Sync PR event
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted base code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sync Notion ticket
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          NOTION_TICKETS_DATA_SOURCE_ID: ${{ vars.NOTION_TICKETS_DATA_SOURCE_ID || secrets.NOTION_TICKETS_DATA_SOURCE_ID }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: node scripts/notion-ticket-sync.mjs
+
+  ci-result:
+    name: Sync CI result
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted default branch code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sync Notion ticket
+        env:
+          CI_RESULT: ${{ github.event.workflow_run.conclusion }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+          NOTION_TICKETS_DATA_SOURCE_ID: ${{ vars.NOTION_TICKETS_DATA_SOURCE_ID || secrets.NOTION_TICKETS_DATA_SOURCE_ID }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: node scripts/notion-ticket-sync.mjs
