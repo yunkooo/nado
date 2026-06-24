@@ -2,16 +2,18 @@ name: CI
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, edited, ready_for_review, closed]
   push:
     branches: [main]
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   verify:
     name: Lint, typecheck, test, build
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -130,6 +132,7 @@ jobs:
   e2e:
     name: E2E smoke
     needs: verify
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -238,3 +241,25 @@ jobs:
         with:
           job-name: E2E smoke
           webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  notion-ticket-sync:
+    name: Notion Ticket Sync
+    needs: [verify, e2e]
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sync Notion ticket
+        env:
+          E2E_RESULT: ${{ needs.e2e.result }}
+          NOTION_TICKETS_DATA_SOURCE_ID: ${{ vars.NOTION_TICKETS_DATA_SOURCE_ID || secrets.NOTION_TICKETS_DATA_SOURCE_ID }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          VERIFY_RESULT: ${{ needs.verify.result }}
+        run: node scripts/notion-ticket-sync.mjs
