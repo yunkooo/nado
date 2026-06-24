@@ -16,10 +16,14 @@
 | `상태`              | Status | 티켓의 현재 진행 상태다. 아래 상태값만 사용한다.         |
 | `우선순위`          | Select | 기존 우선순위 값을 유지한다.                             |
 | `담당자`            | Person | 작업 담당자를 표시한다.                                  |
+| `작업 유형`         | Select | 티켓의 성격을 기능, 수정, 문서 등으로 분류한다.          |
 | `시작일`            | Date   | 작업이 실제로 시작된 날짜다.                             |
 | `종료일`            | Date   | PR merge 후 완료된 날짜다.                               |
 | `GitHub PR`         | URL    | 연결된 GitHub Pull Request URL이다.                      |
 | `GitHub Branch`     | Text   | 작업 브랜치 이름이다.                                    |
+| `Last Push At`      | Date   | PR branch push를 마지막으로 반영한 시각이다.             |
+| `Last Head SHA`     | Text   | 마지막으로 반영한 PR head commit SHA다.                  |
+| `Last Push Summary` | Text   | 마지막 push가 어떤 PR/branch/SHA를 반영했는지 요약한다.  |
 | `CI Status`         | Select | 연결된 PR의 CI/check 상태다.                             |
 | `Review Status`     | Select | Codex 리뷰 또는 사람 리뷰의 현재 상태다.                 |
 | `Blocker`           | Text   | 작업을 막는 원인이나 해제 조건이다.                      |
@@ -27,6 +31,21 @@
 | `Merged At`         | Date   | PR이 merge된 시각이다.                                   |
 | `Last CI Check`     | Date   | CI 상태를 마지막으로 확인한 시각이다.                    |
 | `Last Review Check` | Date   | 리뷰 상태를 마지막으로 확인한 시각이다.                  |
+
+## Work Type Values
+
+`작업 유형`은 티켓 생성 시 반드시 하나를 선택한다. Codex가 티켓을 만들거나 사용자가 티켓 생성을 요청하면 아래 기준으로 고른다.
+
+| 작업 유형 | When To Use                                             |
+| --------- | ------------------------------------------------------- |
+| `기능`    | 사용자가 새로 체감하는 기능이나 화면, 흐름을 추가한다.  |
+| `수정`    | 버그, 깨진 동작, 잘못된 상태 전이를 바로잡는다.         |
+| `문서`    | README, workflow 문서, 사용 가이드, 주석 중심 변경이다. |
+| `테스트`  | 테스트 추가, 테스트 보강, 검증 자동화 개선이 중심이다.  |
+| `리팩터`  | 외부 동작은 유지하고 내부 구조, 이름, 경계를 개선한다.  |
+| `설정`    | 빌드, CI, 패키지, 앱 설정, 환경 구성을 바꾼다.          |
+| `보안`    | secret, 권한, 인증/인가, 민감 정보 노출 위험을 줄인다.  |
+| `운영`    | 배포, 모니터링, 알림, 반복 운영 절차를 개선한다.        |
 
 ## Status Values
 
@@ -73,17 +92,18 @@
 
 ## State Transition Rules
 
-| Event                | 상태           | CI Status                  | Review Status       | Notes                                                         |
-| -------------------- | -------------- | -------------------------- | ------------------- | ------------------------------------------------------------- |
-| 티켓 생성            | `TODO`         | `Not started`              | `Not requested`     | 아직 GitHub 작업이 없어야 한다.                               |
-| 작업 시작            | `IN-progrss`   | `Not started`              | `Not requested`     | 브랜치를 만들면 `GitHub Branch`를 기록한다.                   |
-| PR 생성/업데이트     | `IN-review`    | GitHub Actions 결과        | `Pending`           | `Ticket:` URL이 없으면 `Notion Ticket Sync` check가 실패한다. |
-| CI 실패              | `IN-review`    | `Failed`                   | 현재 리뷰 상태 유지 | 실패한 check 이름과 핵심 로그를 사용자에게 보고한다.          |
-| CI 성공              | `IN-review`    | `Success`                  | 현재 리뷰 상태 유지 | CI 성공만으로 `DONE` 처리하지 않는다.                         |
-| 리뷰 수정 요청       | `IN-review`    | 현재 CI 상태 유지          | `Changes requested` | 명시적인 change request가 있을 때만 사용한다.                 |
-| 리뷰 문제 없음       | `IN-review`    | 현재 CI 상태 유지          | `Passed`            | CI도 성공해야 merge 후보가 된다.                              |
-| PR merge             | `DONE`         | `Success`                  | `Passed`            | `Merged At`과 `종료일`을 기록한다.                            |
-| PR 닫힘, merge 안 됨 | 현재 상태 유지 | `Cancelled` 또는 `Unknown` | 현재 리뷰 상태 유지 | `Blocker`에 `PR closed without merge`를 기록한다.             |
+| Event                | 상태           | CI Status                  | Review Status       | Notes                                                            |
+| -------------------- | -------------- | -------------------------- | ------------------- | ---------------------------------------------------------------- |
+| 티켓 생성            | `TODO`         | `Not started`              | `Not requested`     | 아직 GitHub 작업이 없어야 한다.                                  |
+| 작업 시작            | `IN-progrss`   | `Not started`              | `Not requested`     | 브랜치를 만들면 `GitHub Branch`를 기록한다.                      |
+| PR 생성/업데이트     | `IN-review`    | GitHub Actions 결과        | `Pending`           | `Ticket:` URL이 없으면 `Notion Ticket Sync` check가 실패한다.    |
+| PR branch push       | `IN-review`    | `Pending`                  | `Pending`           | `Last Push At`, `Last Head SHA`, `Last Push Summary`를 기록한다. |
+| CI 실패              | `IN-review`    | `Failed`                   | 현재 리뷰 상태 유지 | 실패한 check 이름과 핵심 로그를 사용자에게 보고한다.             |
+| CI 성공              | `IN-review`    | `Success`                  | 현재 리뷰 상태 유지 | CI 성공만으로 `DONE` 처리하지 않는다.                            |
+| 리뷰 수정 요청       | `IN-review`    | 현재 CI 상태 유지          | `Changes requested` | 명시적인 change request가 있을 때만 사용한다.                    |
+| 리뷰 문제 없음       | `IN-review`    | 현재 CI 상태 유지          | `Passed`            | CI도 성공해야 merge 후보가 된다.                                 |
+| PR merge             | `DONE`         | `Success`                  | `Passed`            | `Merged At`과 `종료일`을 기록한다.                               |
+| PR 닫힘, merge 안 됨 | 현재 상태 유지 | `Cancelled` 또는 `Unknown` | 현재 리뷰 상태 유지 | `Blocker`에 `PR closed without merge`를 기록한다.                |
 
 ## GitHub Actions Requirements
 
@@ -105,6 +125,28 @@ PR 본문의 `## Notion Ticket` 섹션에는 다음 형식의 Notion page URL이
 ```
 
 티켓 URL이 없으면 Notion 원장을 신뢰할 수 없으므로 sync check는 실패한다.
+
+## Ticket Body Template
+
+티켓 본문에는 최소한 다음 항목을 채운다. 내용이 짧아도 각 항목의 의도가 분명해야 한다.
+
+```markdown
+## 배경
+
+## 작업 유형
+
+## 작업 범위
+
+## 완료 조건
+
+## 제외 범위
+
+## 검증 계획
+
+## 진행 메모
+```
+
+GitHub Actions는 PR branch push가 감지되면 `Last Push At`, `Last Head SHA`, `Last Push Summary` 속성을 자동 갱신한다. 본문 `진행 메모`에 장문의 히스토리를 쌓는 것은 v2.1 이후 필요할 때 추가한다.
 
 ## Merge Completion Rule
 

@@ -109,6 +109,12 @@ export function deriveCiResult({
     return "pending";
   }
 
+  if (
+    ["opened", "reopened", "synchronize", "ready_for_review"].includes(action)
+  ) {
+    return "pending";
+  }
+
   return "unknown";
 }
 
@@ -131,6 +137,12 @@ export function buildNotionPropertiesForEvent({
 
   if (pullRequest.created_at) {
     properties["PR Created At"] = date(pullRequest.created_at);
+  }
+
+  if (action === "synchronize") {
+    properties["Last Push At"] = date(now);
+    properties["Last Head SHA"] = richText(pullRequest.head?.sha ?? "");
+    properties["Last Push Summary"] = richText(buildPushSummary(pullRequest));
   }
 
   if (action === "closed") {
@@ -162,6 +174,16 @@ export function buildNotionPropertiesForEvent({
     "Last Review Check": date(now),
     Blocker: richText(""),
   };
+}
+
+function buildPushSummary(pullRequest) {
+  const branch = pullRequest.head?.ref ?? "unknown branch";
+  const headSha = pullRequest.head?.sha ?? "";
+  const shortSha = headSha ? headSha.slice(0, 7) : "unknown";
+  const prLabel = pullRequest.number ? `PR #${pullRequest.number}` : "PR";
+  const title = pullRequest.title ? ` - ${pullRequest.title}` : "";
+
+  return `${prLabel} pushed ${shortSha} to ${branch}${title}`;
 }
 
 export function createSyncPlan({

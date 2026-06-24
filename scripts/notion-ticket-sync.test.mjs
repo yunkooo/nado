@@ -19,6 +19,14 @@ const notionTicketSyncWorkflowSource = readFileSync(
   new URL("../.github/workflows/notion-ticket-sync.yml", import.meta.url),
   "utf8",
 );
+const notionTicketSkillSource = readFileSync(
+  new URL("../.agents/skills/notion-ticket-pr-loop/SKILL.md", import.meta.url),
+  "utf8",
+);
+const notionTicketSchemaSource = readFileSync(
+  new URL("../docs/workflow/notion-ticket-db-schema.md", import.meta.url),
+  "utf8",
+);
 
 const pullRequest = {
   body: [
@@ -96,6 +104,12 @@ describe("notion ticket sync helpers", () => {
         verifyResult: "skipped",
       }),
     ).toBe("success");
+    expect(
+      deriveCiResult({
+        action: "synchronize",
+        pullRequest,
+      }),
+    ).toBe("pending");
   });
 
   it("builds the In-review properties for an active PR event", () => {
@@ -117,6 +131,34 @@ describe("notion ticket sync helpers", () => {
     expect(properties["Last Review Check"].date.start).toBe(now);
     expect(properties["PR Created At"].date.start).toBe(
       "2026-06-24T11:30:00.000Z",
+    );
+  });
+
+  it("records push metadata for synchronize events", () => {
+    const properties = buildNotionPropertiesForEvent({
+      action: "synchronize",
+      ciStatus: "Pending",
+      now,
+      pullRequest: {
+        ...pullRequest,
+        head: {
+          ...pullRequest.head,
+          sha: "abcdef1234567890",
+        },
+        number: 42,
+        title: "Notion 티켓 push 메타데이터 반영",
+      },
+    });
+
+    expect(properties["Last Push At"].date.start).toBe(now);
+    expect(properties["Last Head SHA"].rich_text[0].text.content).toBe(
+      "abcdef1234567890",
+    );
+    expect(properties["Last Push Summary"].rich_text[0].text.content).toContain(
+      "PR #42",
+    );
+    expect(properties["Last Push Summary"].rich_text[0].text.content).toContain(
+      "abcdef1",
     );
   });
 
@@ -311,5 +353,35 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSyncWorkflowSource).toContain(
       "Checkout trusted default branch code",
     );
+  });
+
+  it("documents typed ticket creation and push metadata rules", () => {
+    for (const workType of [
+      "기능",
+      "수정",
+      "문서",
+      "테스트",
+      "리팩터",
+      "설정",
+      "보안",
+      "운영",
+    ]) {
+      expect(notionTicketSchemaSource).toContain(workType);
+      expect(notionTicketSkillSource).toContain(workType);
+    }
+
+    for (const requiredSection of [
+      "배경",
+      "작업 범위",
+      "완료 조건",
+      "제외 범위",
+      "검증 계획",
+    ]) {
+      expect(notionTicketSkillSource).toContain(requiredSection);
+    }
+
+    expect(notionTicketSchemaSource).toContain("Last Push At");
+    expect(notionTicketSchemaSource).toContain("Last Head SHA");
+    expect(notionTicketSchemaSource).toContain("Last Push Summary");
   });
 });

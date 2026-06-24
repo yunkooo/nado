@@ -47,12 +47,14 @@
 - v1의 작업 원장은 Notion `프로젝트` 데이터 소스이며, data source ID는 GitHub Actions의 `NOTION_TICKETS_DATA_SOURCE_ID` 값으로만 관리한다.
 - 현재 상태값은 그대로 사용한다: `TODO`, `IN-progrss`, `IN-review`, `DONE`.
 - 상태 흐름은 `TODO` -> `IN-progrss` -> `IN-review` -> `DONE`이다.
+- Notion 티켓을 만들 때는 `작업 유형`을 기능, 수정, 문서, 테스트, 리팩터, 설정, 보안, 운영 중 하나로 고르고, 배경, 작업 범위, 완료 조건, 제외 범위, 검증 계획을 본문에 적는다.
 - Codex 또는 작업자는 작업 시작 시 `IN-progrss`, PR 생성/업데이트 시 `IN-review`까지만 처리한다.
 - `DONE`, `Merged At`, `종료일` 처리는 GitHub Actions의 merge 이벤트 동기화만 담당한다.
 - PR 본문에는 `.github/pull_request_template.md`의 `Ticket:` 줄에 Notion ticket URL을 반드시 넣는다.
 - `Ticket:` URL이 없으면 `Notion Ticket Sync` GitHub Actions check가 실패하는 것이 정상이다.
 - 자동화에 필요한 GitHub Actions 값은 `NOTION_TOKEN`, `NOTION_TICKETS_DATA_SOURCE_ID`, 기본 `GITHUB_TOKEN`이다. 실제 token 값과 data source ID 값은 코드, 문서, 커밋에 남기지 않는다.
 - `NOTION_TOKEN`은 PR branch에서 checkout한 코드에 주입하지 않는다. Notion 동기화는 trusted base/default branch 코드에서만 실행한다.
+- PR branch push는 `pull_request synchronize` 이벤트를 통해 Notion의 `Last Push At`, `Last Head SHA`, `Last Push Summary`에 기록한다.
 
 ## 커밋 규칙
 
