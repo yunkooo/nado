@@ -1,7 +1,9 @@
 import {
+  ANALYSIS_ERROR_MESSAGES,
   DEFAULT_ANALYSIS_MODEL_ID,
   analyzeResponseSchema,
   normalizeAnalysisText,
+  readApiErrorDetail,
   type AnalysisModelId,
   type AnalysisResult as ApiAnalysisResult,
 } from "@nado/shared";
@@ -13,6 +15,15 @@ import {
 } from "./apiConfig";
 
 type Fetcher = typeof fetch;
+
+type AnalyzeTextError = {
+  code?: string;
+  message: string;
+  requestId?: string;
+  retryable?: boolean;
+  status: "error";
+  statusCode?: number;
+};
 
 export type MobileAnalysisSummary = {
   sentences: MobileSentenceAnalysis[];
@@ -70,7 +81,8 @@ export type MobileVocabularyItem = MobileVocabularySuggestion & {
 
 export type AnalyzeTextResult =
   | { data: MobileAnalysisSummary; status: "success" }
-  | { message: string; status: "error" | "not_analyzable" };
+  | AnalyzeTextError
+  | { message: string; status: "not_analyzable" };
 
 export type AnalyzeTextOptions = {
   accessToken?: string | null;
@@ -80,8 +92,7 @@ export type AnalyzeTextOptions = {
   model?: AnalysisModelId;
 };
 
-const ANALYZE_ERROR_MESSAGE =
-  "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.";
+const ANALYZE_ERROR_MESSAGE = ANALYSIS_ERROR_MESSAGES.analysis_failed;
 const MOBILE_CONNECTION_ERROR_MESSAGE =
   "분석 서버에 연결할 수 없어요. API 서버 설정을 확인해 주세요.";
 
@@ -119,17 +130,16 @@ export async function analyzeText(
   const payload = await readJson(response);
 
   if (!response.ok) {
-    return {
-      message: readErrorMessage(payload),
-      status: "error",
-    };
+    return createAnalyzeErrorResult(payload, response.status);
   }
 
   const parsed = analyzeResponseSchema.safeParse(payload);
 
   if (!parsed.success) {
     return {
-      message: ANALYZE_ERROR_MESSAGE,
+      code: "invalid_analysis_response",
+      message: ANALYSIS_ERROR_MESSAGES.invalid_analysis_response,
+      retryable: true,
       status: "error",
     };
   }
@@ -240,18 +250,17 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-function readErrorMessage(payload: unknown): string {
-  if (isRecord(payload) && isRecord(payload.error)) {
-    return typeof payload.error.message === "string"
-      ? payload.error.message
-      : ANALYZE_ERROR_MESSAGE;
-  }
+function createAnalyzeErrorResult(
+  payload: unknown,
+  statusCode: number,
+): AnalyzeTextError {
+  const error = readApiErrorDetail(payload, ANALYZE_ERROR_MESSAGE);
 
-  return ANALYZE_ERROR_MESSAGE;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+  return {
+    ...error,
+    status: "error",
+    statusCode,
+  };
 }
 
 function createAnalyzeHeaders(accessToken: string | null | undefined) {

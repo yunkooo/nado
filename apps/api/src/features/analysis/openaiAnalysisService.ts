@@ -1,4 +1,5 @@
 import {
+  ANALYSIS_ERROR_MESSAGES,
   DEFAULT_ANALYSIS_MODEL_ID,
   analyzeResponseJsonSchema,
   analyzeResponseSchema,
@@ -139,7 +140,7 @@ export function createOpenAIAnalysisService(
           if (isAbortError(error)) {
             throw new UpstreamTimeoutError(
               "analysis_timeout",
-              "분석 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
+              ANALYSIS_ERROR_MESSAGES.analysis_timeout,
             );
           }
 
@@ -234,7 +235,7 @@ async function analyzeWithOpenRouter({
       if (isAbortError(error)) {
         throw new UpstreamTimeoutError(
           "analysis_timeout",
-          "분석 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
+          ANALYSIS_ERROR_MESSAGES.analysis_timeout,
         );
       }
 

@@ -166,6 +166,8 @@ describe("analyzeText", () => {
           error: {
             code: "analysis_failed",
             message: "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+            requestId: "request-1",
+            retryable: true,
           },
         },
         { status: 502 },
@@ -178,8 +180,12 @@ describe("analyzeText", () => {
         fetcher,
       }),
     ).resolves.toEqual({
+      code: "analysis_failed",
       message: "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+      requestId: "request-1",
+      retryable: true,
       status: "error",
+      statusCode: 502,
     });
   });
 
@@ -247,7 +253,9 @@ describe("analyzeText", () => {
         fetcher,
       }),
     ).resolves.toEqual({
-      message: "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+      code: "invalid_analysis_response",
+      message: "분석 결과 형식이 올바르지 않아요. 잠시 후 다시 시도해 주세요.",
+      retryable: true,
       status: "error",
     });
   });

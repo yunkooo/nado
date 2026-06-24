@@ -480,6 +480,29 @@ export const analyzeResponseSchema = z.discriminatedUnion("status", [
   }),
 ]);
 
+export const ANALYSIS_ERROR_MESSAGES = {
+  analysis_failed: "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+  analysis_timeout:
+    "분석 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
+  invalid_analysis_response:
+    "분석 결과 형식이 올바르지 않아요. 잠시 후 다시 시도해 주세요.",
+} as const;
+
+export const apiErrorDetailSchema = z.object({
+  code: z.string().trim().min(1, "api.error.code.required"),
+  message: z.string().trim().min(1, "api.error.message.required"),
+  requestId: z
+    .string()
+    .trim()
+    .min(1, "api.error.request_id.required")
+    .optional(),
+  retryable: z.boolean().optional(),
+});
+
+export const apiErrorResponseSchema = z.object({
+  error: apiErrorDetailSchema,
+});
+
 const nullableStringJsonSchema = {
   anyOf: [{ type: "string" }, { type: "null" }],
 };
@@ -657,10 +680,17 @@ export const saveVocabularyResponseSchema = z.object({
 export const errorCodeSchema = z.enum([
   "invalid_json",
   "invalid_input",
+  "invalid_request_body",
   "not_authenticated",
   "not_found",
+  "payload_too_large",
   "rate_limited",
+  "auth_unavailable",
   "analysis_failed",
+  "analysis_timeout",
+  "invalid_analysis_response",
+  "internal_error",
+  "unknown_error",
 ]);
 
 export type AnalyzeRequest = z.infer<typeof analyzeRequestSchema>;
@@ -681,6 +711,8 @@ export type AnalysisVocabularySuggestion = z.infer<
 >;
 export type AnalysisResult = z.infer<typeof analysisResultSchema>;
 export type AnalyzeResponse = z.infer<typeof analyzeResponseSchema>;
+export type ApiErrorDetail = z.infer<typeof apiErrorDetailSchema>;
+export type ApiErrorResponse = z.infer<typeof apiErrorResponseSchema>;
 export type VocabularyListResponse = z.infer<
   typeof vocabularyListResponseSchema
 >;
@@ -691,6 +723,22 @@ export type ErrorCode = z.infer<typeof errorCodeSchema>;
 
 export function parseAnalyzeRequest(input: unknown): AnalyzeRequest {
   return analyzeRequestSchema.parse(input);
+}
+
+export function readApiErrorDetail(
+  payload: unknown,
+  fallbackMessage: string,
+): ApiErrorDetail {
+  const parsed = apiErrorResponseSchema.safeParse(payload);
+
+  if (parsed.success) {
+    return parsed.data.error;
+  }
+
+  return {
+    code: "unknown_error",
+    message: fallbackMessage,
+  };
 }
 
 export function normalizeVocabularyTerm(term: string): string {

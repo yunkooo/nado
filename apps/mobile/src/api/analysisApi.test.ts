@@ -191,6 +191,36 @@ describe("analyzeText", () => {
     });
   });
 
+  it("returns traceable error details from failed analyze responses", async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json(
+        {
+          error: {
+            code: "analysis_failed",
+            message: "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+            requestId: "request-1",
+            retryable: true,
+          },
+        },
+        { status: 502 },
+      ),
+    );
+
+    await expect(
+      analyzeText("I was wondering if you could help me.", {
+        apiBaseUrl: "http://127.0.0.1:8787",
+        fetcher,
+      }),
+    ).resolves.toEqual({
+      code: "analysis_failed",
+      message: "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+      requestId: "request-1",
+      retryable: true,
+      status: "error",
+      statusCode: 502,
+    });
+  });
+
   it("sends an authenticated bearer token when provided", async () => {
     const fetcher = vi.fn(async () =>
       Response.json({
@@ -255,7 +285,9 @@ describe("analyzeText", () => {
         fetcher,
       }),
     ).resolves.toEqual({
-      message: "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+      code: "invalid_analysis_response",
+      message: "분석 결과 형식이 올바르지 않아요. 잠시 후 다시 시도해 주세요.",
+      retryable: true,
       status: "error",
     });
   });

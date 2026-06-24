@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   ANALYSIS_MODELS,
+  ANALYSIS_ERROR_MESSAGES,
   DEFAULT_ANALYSIS_MODEL_ID,
   MAX_ANALYSIS_TEXT_LENGTH,
   analysisModelIdSchema,
+  apiErrorResponseSchema,
   analyzeResponseJsonSchema,
   analyzeResponseSchema,
   countAnalysisTextCharacters,
@@ -24,6 +26,7 @@ import {
   saveVocabularyRequestSchema,
   shouldStartVocabularyManualRefresh,
   shouldRefreshVocabularyFromLifecycle,
+  readApiErrorDetail,
 } from "./index";
 
 describe("parseAnalyzeRequest", () => {
@@ -123,6 +126,37 @@ describe("analysis text helpers", () => {
       true,
     );
     expect(hasUnsupportedAnalysisTextCharacters("I leave home.")).toBe(false);
+  });
+});
+
+describe("api error response helpers", () => {
+  it("parses traceable retryable analysis errors", () => {
+    expect(
+      apiErrorResponseSchema.parse({
+        error: {
+          code: "analysis_failed",
+          message: ANALYSIS_ERROR_MESSAGES.analysis_failed,
+          requestId: "request-1",
+          retryable: true,
+        },
+      }),
+    ).toEqual({
+      error: {
+        code: "analysis_failed",
+        message: ANALYSIS_ERROR_MESSAGES.analysis_failed,
+        requestId: "request-1",
+        retryable: true,
+      },
+    });
+  });
+
+  it("falls back to the analysis message when an error payload is malformed", () => {
+    expect(
+      readApiErrorDetail(null, ANALYSIS_ERROR_MESSAGES.analysis_failed),
+    ).toEqual({
+      code: "unknown_error",
+      message: ANALYSIS_ERROR_MESSAGES.analysis_failed,
+    });
   });
 });
 

@@ -192,6 +192,7 @@ describe("app", () => {
 
   it("returns a structured analyze response for valid input", async () => {
     let receivedInput: { model?: string; text: string } | undefined;
+    const analysisTimingLogs: unknown[] = [];
     const app = createApp({
       analyzeService: {
         analyze: async (input) => {
@@ -241,6 +242,9 @@ describe("app", () => {
         },
       },
       analysisUsageService,
+      analysisTimingLogger: (entry) => {
+        analysisTimingLogs.push(entry);
+      },
     });
 
     const response = await request(app, "/api/analyze", {
@@ -263,6 +267,24 @@ describe("app", () => {
       model: "z-ai/glm-5.2",
       text: "I was wondering if you could help me.",
     });
+    expect(analysisTimingLogs).toHaveLength(1);
+    expect(analysisTimingLogs[0]).toMatchObject({
+      model: "z-ai/glm-5.2",
+      outcome: "success",
+      route: "POST /api/analyze",
+      status: "analyzable",
+      statusCode: 200,
+      textLength: 37,
+      timingsMs: {
+        analyze: expect.any(Number),
+        responseValidation: expect.any(Number),
+        total: expect.any(Number),
+        usageConsume: expect.any(Number),
+        usageIdentity: expect.any(Number),
+      },
+      usageIdentity: "anonymous",
+    });
+    expect(analysisTimingLogs[0]).not.toHaveProperty("text");
   });
 
   it("does not call the analyze service for locally rejected input", async () => {
@@ -311,10 +333,43 @@ describe("app", () => {
     });
 
     expect(response.status).toBe(502);
-    await expect(response.json()).resolves.toEqual({
+    await expect(response.json()).resolves.toMatchObject({
       error: {
         code: "analysis_failed",
         message: "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+        requestId: expect.any(String),
+        retryable: true,
+      },
+    });
+  });
+
+  it("returns invalid_analysis_response when the analyze service returns malformed data", async () => {
+    const app = createApp({
+      analyzeService: {
+        analyze: async () => ({
+          status: "analyzable" as const,
+          result: {
+            translation: "도와주실 수 있는지 궁금합니다.",
+          },
+        }),
+      },
+      analysisUsageService,
+    });
+
+    const response = await request(app, "/api/analyze", {
+      body: JSON.stringify({ text: "I was wondering if you could help me." }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+      error: {
+        code: "invalid_analysis_response",
+        message:
+          "분석 결과 형식이 올바르지 않아요. 잠시 후 다시 시도해 주세요.",
+        requestId: expect.any(String),
+        retryable: true,
       },
     });
   });
@@ -339,11 +394,13 @@ describe("app", () => {
     });
 
     expect(response.status).toBe(504);
-    await expect(response.json()).resolves.toEqual({
+    await expect(response.json()).resolves.toMatchObject({
       error: {
         code: "analysis_timeout",
         message:
           "분석 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",
+        requestId: expect.any(String),
+        retryable: true,
       },
     });
   });
@@ -395,10 +452,12 @@ describe("app", () => {
 
     expect(response.status).toBe(429);
     expect(response.headers.get("Retry-After")).toBe("60");
-    await expect(response.json()).resolves.toEqual({
+    await expect(response.json()).resolves.toMatchObject({
       error: {
         code: "rate_limited",
         message: "오늘 사용할 수 있는 분석 횟수를 모두 사용했어요.",
+        requestId: expect.any(String),
+        retryable: false,
       },
     });
     expect(analyzeCalls).toBe(0);

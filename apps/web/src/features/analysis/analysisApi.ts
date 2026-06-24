@@ -1,31 +1,40 @@
 import {
+  ANALYSIS_ERROR_MESSAGES,
   DEFAULT_ANALYSIS_MODEL_ID,
   analyzeResponseSchema,
   isOpenRouterAnalysisModelId,
+  readApiErrorDetail,
   type AnalysisModelId,
   type AnalysisResult as ApiAnalysisResult,
 } from "@nado/shared";
 import type { AnalysisResultData } from "@nado/ui";
 import {
   fetchWithTimeout,
-  readApiErrorMessage,
   readJson,
   type ApiRequestOptions,
 } from "../../lib/apiClient";
 
+type AnalyzeTextError = {
+  code?: string;
+  message: string;
+  requestId?: string;
+  retryable?: boolean;
+  status: "error";
+  statusCode?: number;
+};
+
 export type AnalyzeTextResult =
   | { data: AnalysisResultData; status: "success" }
-  | { message: string; status: "error" | "not_analyzable" };
+  | AnalyzeTextError
+  | { message: string; status: "not_analyzable" };
 
 export type AnalyzeTextOptions = ApiRequestOptions & {
   accessToken?: string | null;
   model?: AnalysisModelId;
 };
 
-const ANALYZE_ERROR_MESSAGE =
-  "분석 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.";
-const ANALYZE_TIMEOUT_MESSAGE =
-  "분석 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.";
+const ANALYZE_ERROR_MESSAGE = ANALYSIS_ERROR_MESSAGES.analysis_failed;
+const ANALYZE_TIMEOUT_MESSAGE = ANALYSIS_ERROR_MESSAGES.analysis_timeout;
 const ANALYZE_REQUEST_TIMEOUT_MS = 35_000;
 const ANALYZE_OPENROUTER_REQUEST_TIMEOUT_MS = 155_000;
 
@@ -61,17 +70,16 @@ export async function analyzeText(
   const payload = await readJson(response);
 
   if (!response.ok) {
-    return {
-      message: readApiErrorMessage(payload, ANALYZE_ERROR_MESSAGE),
-      status: "error",
-    };
+    return createAnalyzeErrorResult(payload, response.status);
   }
 
   const parsed = analyzeResponseSchema.safeParse(payload);
 
   if (!parsed.success) {
     return {
-      message: ANALYZE_ERROR_MESSAGE,
+      code: "invalid_analysis_response",
+      message: ANALYSIS_ERROR_MESSAGES.invalid_analysis_response,
+      retryable: true,
       status: "error",
     };
   }
@@ -165,6 +173,19 @@ function createAnalyzeHeaders(accessToken: string | null | undefined) {
   }
 
   return headers;
+}
+
+function createAnalyzeErrorResult(
+  payload: unknown,
+  statusCode: number,
+): AnalyzeTextError {
+  const error = readApiErrorDetail(payload, ANALYZE_ERROR_MESSAGE);
+
+  return {
+    ...error,
+    status: "error",
+    statusCode,
+  };
 }
 
 function resolveAnalyzeRequestTimeoutMs(model: AnalysisModelId): number {

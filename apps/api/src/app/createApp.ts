@@ -17,6 +17,10 @@ import {
   invalidJsonHandler,
 } from "./middleware/errorHandlers.js";
 import { createAnalysisRoutes } from "./routes/analysisRoutes.js";
+import type {
+  AnalysisTimingLogEntry,
+  AnalysisTimingLogger,
+} from "./routes/analysisRoutes.js";
 import { createHealthRoutes } from "./routes/healthRoutes.js";
 import { createVocabularyRoutes } from "./routes/vocabularyRoutes.js";
 import { readTrustProxy } from "./trustProxy.js";
@@ -27,6 +31,7 @@ export type AppDependencies = {
   allowLocalCors?: boolean;
   analyzeService?: AnalyzeService;
   analysisUsageService?: AnalysisUsageService;
+  analysisTimingLogger?: AnalysisTimingLogger;
   authService?: AuthService;
   trustProxy?: boolean | number | string;
   usageIpHashSalt?: string;
@@ -63,6 +68,8 @@ export function createApp(dependencies: AppDependencies = {}): Express {
     "/api",
     createAnalysisRoutes({
       analysisUsageService,
+      analysisTimingLogger:
+        dependencies.analysisTimingLogger ?? createAnalysisTimingLogger(),
       analyzeService,
       authService,
       usageIpHashSalt,
@@ -88,3 +95,13 @@ function lazySupabaseAnalysisUsageService(): AnalysisUsageService {
 }
 
 export const app = createApp();
+
+function createAnalysisTimingLogger(): AnalysisTimingLogger | undefined {
+  if (process.env.NODE_ENV === "test") {
+    return undefined;
+  }
+
+  return (entry: AnalysisTimingLogEntry) => {
+    console.info("[analysis-timing]", JSON.stringify(entry));
+  };
+}
