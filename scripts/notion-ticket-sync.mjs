@@ -338,9 +338,13 @@ async function updateNotionPage({
 
   if (!response.ok) {
     const errorBody = await response.text();
+    const permissionHint =
+      response.status === 404
+        ? " Check that the Notion ticket page and its parent data source are shared with the integration configured by NOTION_TOKEN."
+        : "";
 
     throw new Error(
-      `Notion page update failed (${response.status}): ${errorBody}`,
+      `Notion page update failed (${response.status}): ${errorBody}${permissionHint}`,
     );
   }
 }
