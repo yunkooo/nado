@@ -90,10 +90,10 @@ Notion 티켓을 새로 만들거나 사용자가 티켓 생성을 요청하면 
 7. 작업에 GitHub Issue도 연결되어 있으면 `AGENTS.md`의 Issue/PR branch naming 규칙을 따른다.
 8. 티켓 범위 안에서만 구현하고, 가장 작지만 신뢰할 수 있는 검증 명령을 실행한다.
 9. PR을 만들 때 `Ticket:` 줄에 Notion page URL을 넣는다.
-10. Notion 접근 권한이 있으면 티켓을 `IN-review`로 옮기고, `GitHub PR`, `GitHub Branch`를 기록한 뒤 `Review Status`를 `Pending`으로 설정한다.
+10. Notion 접근 권한이 있으면 티켓을 `IN-review`로 옮기고, `GitHub PR`, `GitHub Branch`를 기록한다. 기존 `Review Status`와 `Last Review Check`는 덮어쓰지 않는다.
 11. `CI Status`와 `Last CI Check`는 GitHub Actions가 기록하도록 둔다.
 12. PR branch push 후에는 GitHub Actions가 현재 PR head SHA를 확인한 뒤 `Last Push At`, `Last Head SHA`, `Last Push Summary`를 기록하도록 둔다. 더 오래된 `synchronize` webhook payload는 stale 이벤트로 skip한다. `closed`를 제외한 PR 이벤트는 현재 PR이 이미 closed이면 오래된 이벤트로 보고 `IN-review`나 metadata를 다시 쓰지 않는다. PR 본문 수정은 ticket URL과 PR metadata만 확인하며 기존 CI/review 상태를 덮어쓰지 않는다.
-13. PR review 제출 후에는 GitHub Actions가 `Review Status`와 `Last Review Check`를 기록하도록 둔다. 명시적인 change request는 `Changes requested`, 승인 리뷰는 pagination까지 확인한 현재 review 목록에 활성 change request가 없을 때만 `Passed`, comment-only review는 이전 change request를 해제하지 않으며 dismissed review는 `Unknown`으로 동기화한다.
+13. PR review 제출 후에는 토큰 없는 `.github/workflows/notion-ticket-review-dispatch.yml`의 `pull_request_review` job이 `workflow_dispatch`로 trusted default branch sync를 요청하고, 해당 trusted run이 `Review Status`와 `Last Review Check`를 기록하도록 둔다. 명시적인 change request는 `Changes requested`, 승인 리뷰는 pagination까지 확인한 현재 review 목록에 활성 change request가 없을 때만 `Passed`, comment-only review는 이전 change request를 해제하지 않으며 dismissed review는 `Unknown`으로 동기화한다.
 14. 티켓을 `DONE`으로 옮기지 않는다. `DONE` 처리는 PR merge 후 GitHub Actions가 담당한다.
 
 ## PR 본문 요구사항
@@ -126,5 +126,5 @@ same-repository PR에서 `Ticket:`이 없으면 `Notion Ticket Sync` GitHub Acti
 - Notion 접근 권한이 있으면 PR 생성 후 `GitHub PR`과 `GitHub Branch`를 기록했다.
 - PR branch push 후에는 GitHub Actions가 push metadata를 갱신한다고 안내했다.
 - CI 상태 기록은 GitHub Actions에 맡겼다.
-- review 상태 기록은 GitHub Actions의 `pull_request_review` 동기화에 맡겼다.
+- review 상태 기록은 GitHub Actions의 토큰 없는 `pull_request_review` dispatch와 trusted `workflow_dispatch` 동기화에 맡겼다.
 - Notion 접근 권한이 있으면 merge 전 티켓 상태는 `IN-review`에서 멈추며, `DONE`으로 직접 옮기지 않았다.

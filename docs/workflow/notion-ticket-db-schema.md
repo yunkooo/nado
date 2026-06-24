@@ -98,9 +98,9 @@
 | -------------------- | -------------- | -------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | 티켓 생성            | `TODO`         | `Not started`              | `Not requested`     | 아직 GitHub 작업이 없어야 한다.                                                                                        |
 | 작업 시작            | `IN-progrss`   | `Not started`              | `Not requested`     | 브랜치를 만들면 `GitHub Branch`를 기록한다.                                                                            |
-| PR 생성/업데이트     | `IN-review`    | GitHub Actions 결과        | `Pending`           | 현재 PR이 closed가 아닐 때만 갱신한다. `Ticket:` URL이 없으면 `Notion Ticket Sync` check가 실패한다.                   |
+| PR 생성/업데이트     | `IN-review`    | GitHub Actions 결과        | 현재 리뷰 상태 유지 | 현재 PR이 closed가 아닐 때만 갱신한다. `Ticket:` URL이 없으면 `Notion Ticket Sync` check가 실패한다.                   |
 | PR 본문 수정         | 현재 상태 유지 | 현재 CI 상태 유지          | 현재 리뷰 상태 유지 | 현재 PR이 closed가 아닐 때만 `Ticket:` URL과 PR metadata를 확인하고 CI/review 상태를 덮어쓰지 않는다.                  |
-| PR branch push       | `IN-review`    | `Pending`                  | `Pending`           | 현재 PR head SHA와 webhook payload SHA가 같을 때만 `Last Push At`, `Last Head SHA`, `Last Push Summary`를 기록한다.    |
+| PR branch push       | `IN-review`    | `Pending`                  | 현재 리뷰 상태 유지 | 현재 PR head SHA와 webhook payload SHA가 같을 때만 `Last Push At`, `Last Head SHA`, `Last Push Summary`를 기록한다.    |
 | CI 실패              | `IN-review`    | `Failed`                   | 현재 리뷰 상태 유지 | 실패한 check 이름과 핵심 로그를 사용자에게 보고한다.                                                                   |
 | CI 성공              | `IN-review`    | `Success`                  | 현재 리뷰 상태 유지 | CI 성공만으로 `DONE` 처리하지 않는다.                                                                                  |
 | 리뷰 수정 요청       | `IN-review`    | 현재 CI 상태 유지          | `Changes requested` | `pull_request_review`의 명시적인 change request가 있을 때만 사용한다.                                                  |
@@ -118,17 +118,24 @@ GitHub Actions의 `Notion Ticket Sync` workflow는 다음 값이 있어야 동�
 - Built-in token: `GITHUB_TOKEN`
 
 `NOTION_TOKEN`은 PR branch에서 checkout한 코드에 주입하지 않는다. Notion 동기화는
-`.github/workflows/notion-ticket-sync.yml`에서 `pull_request_target`, `pull_request_review`,
+`.github/workflows/notion-ticket-sync.yml`에서 `pull_request_target`, `workflow_dispatch`,
 또는 `workflow_run` 이벤트로 실행하며, base/default branch에서 checkout한 trusted code의
 `scripts/notion-ticket-sync.mjs`만 실행한다.
 
-`pull_request_review` 이벤트는 same-repository PR에서만 Notion token을 사용한다. fork PR은
+`pull_request_review` 이벤트는 `.github/workflows/notion-ticket-review-dispatch.yml`의
+토큰 없는 dispatch job으로만 처리한다. 이 workflow는 `NOTION_TOKEN`이나
+`NOTION_TICKETS_DATA_SOURCE_ID`를 받지 않고, `workflow_dispatch`로 default branch의 trusted
+review sync를 요청한다. 실제 Notion review 상태 갱신은 secret-bearing
+`.github/workflows/notion-ticket-sync.yml`의 `workflow_dispatch` run에서만 수행한다. fork PR은
 secret 노출과 권한 혼선을 피하기 위해 Notion sync 대상에서 제외한다.
 review approval 이벤트는 단일 이벤트만 믿지 않고 GitHub reviews API로 reviewer별 최신 상태를 확인한다.
 GitHub reviews API는 `per_page=100`으로 조회하고 `Link` header의 `rel="next"` pagination을
 끝까지 따라간 뒤 집계한다. reviewer별 상태 집계에서는 `APPROVED`, `CHANGES_REQUESTED`,
 `DISMISSED`만 결정적 review 상태로 보고, `COMMENTED`는 이전 change request를 해제하지 않는다.
 활성 `CHANGES_REQUESTED` 리뷰가 하나라도 남아 있으면 `Review Status`를 `Passed`로 내리지 않는다.
+PR 생성, PR 업데이트, PR branch push 같은 PR 이벤트는 `Review Status`와 `Last Review Check`를
+쓰지 않으므로, 더 늦게 끝난 `pull_request_target` job이 이미 기록된 `Passed` 또는
+`Changes requested`를 `Pending`으로 되돌리지 않는다.
 
 이 workflow를 추가하는 PR처럼 base/default branch의 trusted checkout에 아직
 `scripts/notion-ticket-sync.mjs`가 없으면 Notion sync step은 성공적으로 skip한다. merge 이후
@@ -169,6 +176,7 @@ GitHub Actions는 PR branch push가 감지되면 현재 PR head SHA를 조회한
 더 오래된 `pull_request synchronize` job이 늦게 끝나면 stale 이벤트로 보고 Notion 업데이트를 skip한다.
 `closed`를 제외한 `pull_request_target` 이벤트는 Notion 업데이트 전에 현재 PR 상태를 다시 조회한다. 현재 PR이
 이미 closed이면 stale 이벤트로 보고 `IN-review`, PR metadata, push metadata를 다시 쓰지 않는다.
+PR 이벤트는 리뷰 속성을 직접 쓰지 않으며 `Review Status`를 `Pending`으로 되돌리지 않는다.
 본문 `진행 메모`에 장문의 히스토리를 쌓는 것은 v2.1 이후 필요할 때 추가한다.
 
 ## Merge Completion Rule

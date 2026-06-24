@@ -19,6 +19,13 @@ const notionTicketSyncWorkflowSource = readFileSync(
   new URL("../.github/workflows/notion-ticket-sync.yml", import.meta.url),
   "utf8",
 );
+const notionTicketReviewDispatchWorkflowSource = readFileSync(
+  new URL(
+    "../.github/workflows/notion-ticket-review-dispatch.yml",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const notionTicketSkillSource = readFileSync(
   new URL("../.agents/skills/notion-ticket-pr-loop/SKILL.md", import.meta.url),
   "utf8",
@@ -27,6 +34,16 @@ const notionTicketSchemaSource = readFileSync(
   new URL("../docs/workflow/notion-ticket-db-schema.md", import.meta.url),
   "utf8",
 );
+
+function workflowJobSource(source, jobName, nextJobName) {
+  const start = source.indexOf(`  ${jobName}:`);
+  const end =
+    nextJobName === undefined
+      ? source.length
+      : source.indexOf(`  ${nextJobName}:`, start + 1);
+
+  return source.slice(start, end === -1 ? source.length : end);
+}
 
 const pullRequest = {
   body: [
@@ -126,9 +143,9 @@ describe("notion ticket sync helpers", () => {
       "codex/nado-notion-sync",
     );
     expect(properties["CI Status"].select.name).toBe("Failed");
-    expect(properties["Review Status"].select.name).toBe("Pending");
     expect(properties["Last CI Check"].date.start).toBe(now);
-    expect(properties["Last Review Check"].date.start).toBe(now);
+    expect(properties["Review Status"]).toBeUndefined();
+    expect(properties["Last Review Check"]).toBeUndefined();
     expect(properties["PR Created At"].date.start).toBe(
       "2026-06-24T11:30:00.000Z",
     );
@@ -160,6 +177,8 @@ describe("notion ticket sync helpers", () => {
     expect(properties["Last Push Summary"].rich_text[0].text.content).toContain(
       "abcdef1",
     );
+    expect(properties["Review Status"]).toBeUndefined();
+    expect(properties["Last Review Check"]).toBeUndefined();
   });
 
   it("builds Done properties only when the PR was merged", () => {
@@ -468,6 +487,92 @@ describe("notion ticket sync helpers", () => {
     });
     expect(updatedProperties["CI Status"]).toBeUndefined();
     expect(updatedProperties["Last CI Check"]).toBeUndefined();
+    expect(updatedProperties["상태"]).toBeUndefined();
+  });
+
+  it("syncs trusted workflow_dispatch review changes from the current PR", async () => {
+    const requests = [];
+    const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "trusted-review-dispatch-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === pullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            head: {
+              ...pullRequest.head,
+              repo: {
+                full_name: "yunkooo/nado",
+              },
+            },
+            number: 42,
+            state: "open",
+            url: pullRequestUrl,
+          });
+        }
+
+        if (url === `${pullRequestUrl}/reviews?per_page=100`) {
+          return Response.json([
+            {
+              id: 1,
+              state: "APPROVED",
+              submitted_at: "2026-06-24T11:59:00.000Z",
+              user: {
+                login: "reviewer-a",
+              },
+            },
+          ]);
+        }
+
+        if (options.method === "GET") {
+          return Response.json({
+            parent: {
+              data_source_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+              type: "data_source_id",
+            },
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          inputs: {
+            pr_number: "42",
+            review_action: "submitted",
+            review_state: "approved",
+            sync_event: "review",
+          },
+          repository: {
+            url: "https://api.github.com/repos/yunkooo/nado",
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(requests).toHaveLength(4);
+    expect(requests[0].url).toBe(pullRequestUrl);
+    expect(requests[1].url).toBe(`${pullRequestUrl}/reviews?per_page=100`);
+    expect(requests[2].options.method).toBe("GET");
+    expect(requests[3].options.method).toBe("PATCH");
+
+    const updatedProperties = JSON.parse(requests[3].options.body).properties;
+
+    expect(updatedProperties["Review Status"]).toEqual({
+      select: {
+        name: "Passed",
+      },
+    });
+    expect(updatedProperties["CI Status"]).toBeUndefined();
     expect(updatedProperties["상태"]).toBeUndefined();
   });
 
@@ -1019,6 +1124,16 @@ describe("notion ticket sync helpers", () => {
   });
 
   it("keeps Notion secrets out of PR-controlled CI code", () => {
+    const reviewDispatchJob = workflowJobSource(
+      notionTicketReviewDispatchWorkflowSource,
+      "review-dispatch",
+    );
+    const trustedReviewJob = workflowJobSource(
+      notionTicketSyncWorkflowSource,
+      "trusted-review-event",
+      "ci-result",
+    );
+
     expect(ciWorkflowSource).toContain(
       "types: [opened, synchronize, reopened, edited, ready_for_review]",
     );
@@ -1030,7 +1145,19 @@ describe("notion ticket sync helpers", () => {
     expect(ciWorkflowSource).not.toContain("notion-ticket-sync:");
     expect(notionTicketSyncWorkflowSource).toContain("pull_request_target:");
     expect(notionTicketSyncWorkflowSource).toContain("workflow_run:");
-    expect(notionTicketSyncWorkflowSource).toContain("pull_request_review:");
+    expect(notionTicketSyncWorkflowSource).toContain("workflow_dispatch:");
+    expect(notionTicketSyncWorkflowSource).not.toContain(
+      "pull_request_review:",
+    );
+    expect(notionTicketReviewDispatchWorkflowSource).toContain(
+      "pull_request_review:",
+    );
+    expect(notionTicketReviewDispatchWorkflowSource).not.toContain(
+      "NOTION_TOKEN",
+    );
+    expect(notionTicketReviewDispatchWorkflowSource).not.toContain(
+      "NOTION_TICKETS_DATA_SOURCE_ID",
+    );
     expect(notionTicketSyncWorkflowSource).toContain(
       "Checkout trusted base code",
     );
@@ -1040,12 +1167,31 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSyncWorkflowSource).toContain(
       "Checkout trusted default branch code",
     );
-    expect(notionTicketSyncWorkflowSource).toContain(
-      "head.repo.full_name == github.repository",
+    expect(notionTicketReviewDispatchWorkflowSource).toContain(
+      "gh workflow run notion-ticket-sync.yml",
+    );
+    expect(notionTicketSyncWorkflowSource).not.toContain(
+      "gh workflow run notion-ticket-sync.yml",
     );
     expect(notionTicketSyncWorkflowSource).toContain(
       "Skip unavailable trusted sync script",
     );
+    expect(notionTicketSyncWorkflowSource).toContain(
+      "github.event_name == 'pull_request_target'",
+    );
+    expect(notionTicketSyncWorkflowSource).not.toContain(
+      "github.event_name == 'pull_request_target' ||",
+    );
+    expect(reviewDispatchJob).toContain(
+      "github.event.pull_request.head.repo.full_name == github.repository",
+    );
+    expect(reviewDispatchJob).not.toContain("NOTION_TOKEN");
+    expect(reviewDispatchJob).not.toContain("NOTION_TICKETS_DATA_SOURCE_ID");
+    expect(reviewDispatchJob).not.toContain(
+      "node scripts/notion-ticket-sync.mjs",
+    );
+    expect(trustedReviewJob).toContain("NOTION_TOKEN");
+    expect(trustedReviewJob).toContain("node scripts/notion-ticket-sync.mjs");
   });
 
   it("documents typed ticket creation and push metadata rules", () => {
@@ -1087,6 +1233,10 @@ describe("notion ticket sync helpers", () => {
     );
     expect(notionTicketSchemaSource).toContain(
       "`closed`를 제외한 `pull_request_target` 이벤트",
+    );
+    expect(notionTicketSchemaSource).toContain("workflow_dispatch");
+    expect(notionTicketSchemaSource).toContain(
+      "`Review Status`를 `Pending`으로 되돌리지 않는다",
     );
   });
 });

@@ -1,0 +1,32 @@
+name: Notion Ticket Review Dispatch
+
+on:
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  review-dispatch:
+    name: Request trusted review sync
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch trusted review sync
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REVIEW_ACTION: ${{ github.event.action }}
+          REVIEW_STATE: ${{ github.event.review.state }}
+        run: |
+          gh workflow run notion-ticket-sync.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$DEFAULT_BRANCH" \
+            -f sync_event=review \
+            -f pr_number="$PR_NUMBER" \
+            -f review_action="$REVIEW_ACTION" \
+            -f review_state="$REVIEW_STATE"

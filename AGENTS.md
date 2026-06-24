@@ -58,7 +58,8 @@
 - `closed`를 제외한 PR 이벤트는 Notion 업데이트 전 현재 PR 상태를 조회한다. 현재 PR이 이미 closed이면 오래된 이벤트로 보고 `IN-review`나 metadata를 다시 쓰지 않는다.
 - PR branch push는 `pull_request synchronize` 이벤트를 통해 Notion의 `Last Push At`, `Last Head SHA`, `Last Push Summary`에 기록한다. 기록 전 현재 PR head SHA를 조회하고, webhook payload가 최신 head가 아니면 stale 이벤트로 보고 skip한다.
 - PR 본문 수정은 `Ticket:` URL과 PR metadata만 확인하고 기존 CI/review 상태를 덮어쓰지 않는다.
-- PR review 제출은 `pull_request_review` 이벤트를 통해 `Review Status`와 `Last Review Check`만 갱신한다. 승인 이벤트는 pagination까지 확인한 현재 review 목록에 활성 change request가 없을 때만 `Passed`로 기록하고, comment-only review는 이전 change request를 해제하지 않는다.
+- PR 생성, 업데이트, branch push 이벤트는 기존 `Review Status`와 `Last Review Check`를 덮어쓰지 않는다.
+- PR review 제출은 토큰 없는 `.github/workflows/notion-ticket-review-dispatch.yml`의 `pull_request_review` job이 `workflow_dispatch`로 trusted default branch sync를 요청하고, 해당 trusted run이 `Review Status`와 `Last Review Check`만 갱신한다. 승인 이벤트는 pagination까지 확인한 현재 review 목록에 활성 change request가 없을 때만 `Passed`로 기록하고, comment-only review는 이전 change request를 해제하지 않는다.
 - fork PR은 Notion token을 사용하는 동기화 대상에서 제외한다.
 
 ## 커밋 규칙
