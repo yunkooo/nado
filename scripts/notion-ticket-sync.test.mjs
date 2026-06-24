@@ -594,13 +594,13 @@ describe("notion ticket sync helpers", () => {
     expect(updatedProperties["상태"]).toBeUndefined();
   });
 
-  it("syncs trusted workflow_dispatch review changes from the current PR", async () => {
+  it("skips trusted review signal syncs for pull requests that do not target main", async () => {
     const requests = [];
     const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
 
     const result = await runSync({
       env: {
-        GITHUB_EVENT_PATH: "trusted-review-dispatch-event.json",
+        GITHUB_EVENT_PATH: "review-workflow-run-event.json",
         GITHUB_REPOSITORY: "yunkooo/nado",
         GITHUB_TOKEN: "github-token",
         NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
@@ -612,6 +612,69 @@ describe("notion ticket sync helpers", () => {
         if (url === pullRequestUrl) {
           return Response.json({
             ...pullRequest,
+            base: {
+              ref: "feature/base",
+            },
+            number: 42,
+            state: "open",
+            url: pullRequestUrl,
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          repository: {
+            default_branch: "main",
+            url: "https://api.github.com/repos/yunkooo/nado",
+          },
+          workflow_run: {
+            conclusion: "success",
+            event: "pull_request_review",
+            head_repository: {
+              full_name: "yunkooo/nado",
+            },
+            pull_requests: [
+              {
+                number: 42,
+                url: pullRequestUrl,
+              },
+            ],
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.skipped).toBe(true);
+    expect(result.reason).toBe(
+      "Skipping Notion sync for a pull request that does not target main",
+    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].url).toBe(pullRequestUrl);
+  });
+
+  it("syncs review status from a trusted workflow_run review signal", async () => {
+    const requests = [];
+    const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "review-workflow-run-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === pullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            base: {
+              ref: "main",
+            },
             head: {
               ...pullRequest.head,
               repo: {
@@ -650,24 +713,33 @@ describe("notion ticket sync helpers", () => {
       },
       readFile: () =>
         JSON.stringify({
-          inputs: {
-            pr_number: "42",
-            review_action: "submitted",
-            review_state: "approved",
-            sync_event: "review",
-          },
           repository: {
+            default_branch: "main",
             url: "https://api.github.com/repos/yunkooo/nado",
+          },
+          workflow_run: {
+            conclusion: "success",
+            event: "pull_request_review",
+            head_repository: {
+              full_name: "yunkooo/nado",
+            },
+            pull_requests: [
+              {
+                number: 42,
+                url: pullRequestUrl,
+              },
+            ],
           },
         }),
     });
 
     expect(result.ok).toBe(true);
-    expect(requests).toHaveLength(4);
-    expect(requests[0].url).toBe(pullRequestUrl);
-    expect(requests[1].url).toBe(`${pullRequestUrl}/reviews?per_page=100`);
-    expect(requests[2].options.method).toBe("GET");
-    expect(requests[3].options.method).toBe("PATCH");
+    expect(requests.map((request) => request.url)).toEqual([
+      pullRequestUrl,
+      `${pullRequestUrl}/reviews?per_page=100`,
+      "https://api.notion.com/v1/pages/11111111-2222-3333-4444-555555555555",
+      "https://api.notion.com/v1/pages/11111111-2222-3333-4444-555555555555",
+    ]);
 
     const updatedProperties = JSON.parse(requests[3].options.body).properties;
 
@@ -678,59 +750,6 @@ describe("notion ticket sync helpers", () => {
     });
     expect(updatedProperties["CI Status"]).toBeUndefined();
     expect(updatedProperties["상태"]).toBeUndefined();
-  });
-
-  it("skips trusted review syncs for pull requests that do not target main", async () => {
-    const requests = [];
-    const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
-
-    const result = await runSync({
-      env: {
-        GITHUB_EVENT_PATH: "trusted-review-dispatch-event.json",
-        GITHUB_REPOSITORY: "yunkooo/nado",
-        GITHUB_TOKEN: "github-token",
-        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-        NOTION_TOKEN: "notion-token",
-      },
-      fetchImpl: async (url, options = {}) => {
-        requests.push({ options, url });
-
-        if (url === pullRequestUrl) {
-          return Response.json({
-            ...pullRequest,
-            base: {
-              ref: "feature/base",
-            },
-            number: 42,
-            state: "open",
-            url: pullRequestUrl,
-          });
-        }
-
-        return Response.json({}, { status: 200 });
-      },
-      readFile: () =>
-        JSON.stringify({
-          inputs: {
-            pr_number: "42",
-            review_action: "submitted",
-            review_state: "approved",
-            sync_event: "review",
-          },
-          repository: {
-            default_branch: "main",
-            url: "https://api.github.com/repos/yunkooo/nado",
-          },
-        }),
-    });
-
-    expect(result.ok).toBe(true);
-    expect(result.skipped).toBe(true);
-    expect(result.reason).toBe(
-      "Skipping Notion sync for a pull request that does not target main",
-    );
-    expect(requests).toHaveLength(1);
-    expect(requests[0].url).toBe(pullRequestUrl);
   });
 
   it("keeps review status changes requested while any latest reviewer state requests changes", async () => {
@@ -1534,11 +1553,11 @@ describe("notion ticket sync helpers", () => {
     const prEventJob = workflowJobSource(
       notionTicketSyncWorkflowSource,
       "pr-event",
-      "trusted-review-event",
+      "review-result",
     );
-    const trustedReviewJob = workflowJobSource(
+    const reviewResultJob = workflowJobSource(
       notionTicketSyncWorkflowSource,
-      "trusted-review-event",
+      "review-result",
       "ci-result",
     );
     const ciResultJob = workflowJobSource(
@@ -1558,10 +1577,16 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSyncWorkflowSource).toContain("pull_request_target:");
     expect(notionTicketSyncWorkflowSource).toContain("branches: [main]");
     expect(notionTicketSyncWorkflowSource).toContain("workflow_run:");
-    expect(notionTicketSyncWorkflowSource).toContain("workflow_dispatch:");
+    expect(notionTicketSyncWorkflowSource).toContain(
+      "workflows: [CI, Notion Ticket Review Dispatch]",
+    );
+    expect(notionTicketSyncWorkflowSource).not.toContain("workflow_dispatch:");
     expect(notionTicketSyncWorkflowSource).not.toContain(
       "pull_request_review:",
     );
+    expect(notionTicketSyncWorkflowSource).not.toContain("sync_event:");
+    expect(notionTicketSyncWorkflowSource).not.toContain("review_action:");
+    expect(notionTicketSyncWorkflowSource).not.toContain("review_state:");
     expect(notionTicketReviewDispatchWorkflowSource).toContain(
       "pull_request_review:",
     );
@@ -1570,6 +1595,9 @@ describe("notion ticket sync helpers", () => {
     );
     expect(notionTicketReviewDispatchWorkflowSource).not.toContain(
       "NOTION_TICKETS_DATA_SOURCE_ID",
+    );
+    expect(notionTicketReviewDispatchWorkflowSource).not.toContain(
+      "actions: write",
     );
     expect(notionTicketSyncWorkflowSource).not.toContain(
       "ref: ${{ github.event.pull_request.base.sha }}",
@@ -1581,17 +1609,15 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSyncWorkflowSource).toContain(
       "Checkout trusted default branch code",
     );
-    expect(notionTicketReviewDispatchWorkflowSource).toContain(
+    expect(reviewResultJob).toContain("Checkout trusted default branch code");
+    expect(reviewResultJob).toContain(
+      "github.event.workflow_run.event == 'pull_request_review'",
+    );
+    expect(notionTicketReviewDispatchWorkflowSource).not.toContain(
       "gh workflow run notion-ticket-sync.yml",
     );
-    expect(notionTicketReviewDispatchWorkflowSource).toContain(
+    expect(notionTicketReviewDispatchWorkflowSource).not.toContain(
       "gh workflow view notion-ticket-sync.yml",
-    );
-    expect(notionTicketReviewDispatchWorkflowSource).toContain(
-      "workflow_dispatch:",
-    );
-    expect(notionTicketReviewDispatchWorkflowSource).toContain(
-      "Skipping until this workflow is merged",
     );
     expect(notionTicketSyncWorkflowSource).not.toContain(
       "gh workflow run notion-ticket-sync.yml",
@@ -1616,8 +1642,8 @@ describe("notion ticket sync helpers", () => {
     expect(reviewDispatchJob).not.toContain(
       "node scripts/notion-ticket-sync.mjs",
     );
-    expect(trustedReviewJob).toContain("NOTION_TOKEN");
-    expect(trustedReviewJob).toContain("node scripts/notion-ticket-sync.mjs");
+    expect(reviewResultJob).toContain("NOTION_TOKEN");
+    expect(reviewResultJob).toContain("node scripts/notion-ticket-sync.mjs");
     expect(ciResultJob).toContain("actions: read");
   });
 
@@ -1667,9 +1693,13 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSchemaSource).toContain(
       "`PR closed without merge` blocker를 쓰지 않는다",
     );
-    expect(notionTicketSchemaSource).toContain("workflow_dispatch");
+    expect(notionTicketSchemaSource).not.toContain("workflow_dispatch");
+    expect(notionTicketSchemaSource).toContain("read-only signal job");
     expect(notionTicketSchemaSource).toContain(
-      "review dispatch job은 성공적으로 skip한다",
+      "`actions: write` 권한을 받지 않고",
+    );
+    expect(notionTicketSchemaSource).toContain(
+      "workflow_run`으로 이 signal workflow의 완료",
     );
     expect(notionTicketSchemaSource).toContain(
       "`Review Status`를 `Pending`으로 되돌리지 않는다",
@@ -1681,9 +1711,7 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSchemaSource).toContain("workflow_run.head_repository");
     expect(notionTicketSchemaSource).toContain("dismissed-only");
     expect(notionTicketSchemaSource).toContain("최신 run/attempt");
-    expect(notionTicketSchemaSource).toContain(
-      "review dispatch job은 PR base가 default branch",
-    );
+    expect(notionTicketSchemaSource).toContain("PR base가 default branch인");
     expect(notionTicketSchemaSource).toContain(
       "CI-result sync도 fetch한 PR base가 default branch가 아니면",
     );

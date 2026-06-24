@@ -347,62 +347,6 @@ export async function runSync({
 }
 
 async function resolveSyncInput({ env, event, fetchImpl }) {
-  if (event.inputs?.sync_event === "review") {
-    if (!env.GITHUB_TOKEN) {
-      return {
-        ok: false,
-        reason: "Missing required environment variables: GITHUB_TOKEN",
-      };
-    }
-
-    const pullRequestUrl = buildPullRequestApiUrl({
-      number: event.inputs.pr_number,
-      repositoryUrl: event.repository?.url,
-    });
-
-    if (!pullRequestUrl) {
-      return {
-        ok: false,
-        reason:
-          "Workflow dispatch review sync does not include a pull request URL",
-      };
-    }
-
-    const pullRequest = await fetchGitHubPullRequest({
-      fetchImpl,
-      githubToken: env.GITHUB_TOKEN,
-      pullRequestUrl,
-    });
-
-    if (!isPullRequestTargetingTrustedBase(pullRequest, event)) {
-      return buildNonTrustedBaseSkipResult(event);
-    }
-
-    if (pullRequest.state === "closed") {
-      return {
-        ok: true,
-        reason: "Skipping review Notion sync for a closed pull request",
-        skipped: true,
-      };
-    }
-
-    const reviewState = await resolvePullRequestReviewState({
-      fetchImpl,
-      githubToken: env.GITHUB_TOKEN,
-      pullRequest,
-      reviewAction: event.inputs.review_action,
-      reviewState: event.inputs.review_state,
-    });
-
-    return {
-      action: event.inputs.review_action,
-      ok: true,
-      pullRequest,
-      reviewState,
-      syncMode: "review-event",
-    };
-  }
-
   if (event.review && event.pull_request) {
     if (!env.GITHUB_TOKEN) {
       return {
@@ -512,7 +456,10 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
     };
   }
 
-  if (event.workflow_run?.event !== "pull_request") {
+  if (
+    event.workflow_run?.event !== "pull_request" &&
+    event.workflow_run?.event !== "pull_request_review"
+  ) {
     return {
       ok: false,
       reason: "GitHub event payload does not include a pull request",
@@ -557,6 +504,32 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
 
   if (!isPullRequestTargetingTrustedBase(pullRequest, event)) {
     return buildNonTrustedBaseSkipResult(event);
+  }
+
+  if (event.workflow_run.event === "pull_request_review") {
+    if (pullRequest.state === "closed") {
+      return {
+        ok: true,
+        reason: "Skipping review Notion sync for a closed pull request",
+        skipped: true,
+      };
+    }
+
+    const reviewState = await resolvePullRequestReviewState({
+      fetchImpl,
+      githubToken: env.GITHUB_TOKEN,
+      pullRequest,
+      reviewAction: "submitted",
+      reviewState: "unknown",
+    });
+
+    return {
+      action: "submitted",
+      ok: true,
+      pullRequest,
+      reviewState,
+      syncMode: "review-event",
+    };
   }
 
   if (pullRequest.state === "closed") {

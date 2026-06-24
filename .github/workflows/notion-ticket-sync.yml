@@ -4,28 +4,8 @@ on:
   pull_request_target:
     branches: [main]
     types: [opened, synchronize, reopened, edited, ready_for_review, closed]
-  workflow_dispatch:
-    inputs:
-      sync_event:
-        description: Trusted sync event type
-        required: true
-        type: choice
-        options:
-          - review
-      pr_number:
-        description: Pull request number
-        required: true
-        type: string
-      review_action:
-        description: Pull request review action
-        required: true
-        type: string
-      review_state:
-        description: Pull request review state
-        required: true
-        type: string
   workflow_run:
-    workflows: [CI]
+    workflows: [CI, Notion Ticket Review Dispatch]
     types: [completed]
 
 permissions:
@@ -72,9 +52,9 @@ jobs:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
         run: node scripts/notion-ticket-sync.mjs
 
-  trusted-review-event:
-    name: Sync trusted review event
-    if: github.event_name == 'workflow_dispatch' && inputs.sync_event == 'review'
+  review-result:
+    name: Sync review result
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request_review'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -105,8 +85,8 @@ jobs:
       - name: Sync Notion ticket
         if: steps.trusted-sync-script.outputs.available == 'true'
         env:
-          GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
           NOTION_TICKETS_DATA_SOURCE_ID: ${{ vars.NOTION_TICKETS_DATA_SOURCE_ID || secrets.NOTION_TICKETS_DATA_SOURCE_ID }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
         run: node scripts/notion-ticket-sync.mjs

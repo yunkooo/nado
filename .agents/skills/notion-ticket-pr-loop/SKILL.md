@@ -26,7 +26,7 @@ description: nado 저장소에서 Notion 티켓 기반 작업을 진행할 때 �
 - `NOTION_TOKEN` 또는 `NOTION_TICKETS_DATA_SOURCE_ID` 값은 코드, 문서, 로그, PR 본문, 채팅에 노출하지 않는다.
 - `Ticket:` URL의 Notion page는 GitHub Actions에 설정된 `NOTION_TICKETS_DATA_SOURCE_ID`의 data source에 속해야 한다.
 - Notion sync는 data source parent 확인을 위해 `Notion-Version: 2025-09-03` 이상을 기준으로 한다.
-- `NOTION_TOKEN`을 사용하는 Notion sync는 `main` 대상 PR과 trusted `workflow_dispatch`/`workflow_run`에서만 실행하고, default branch 코드를 checkout한다. review dispatch와 CI-result sync도 PR base가 default branch가 아니면 Notion 갱신 전에 skip한다. 신뢰되지 않은 same-repository feature branch를 base로 하는 PR에는 secret-bearing sync를 실행하지 않는다.
+- `NOTION_TOKEN`을 사용하는 Notion sync는 `main` 대상 PR과 trusted `workflow_run`에서만 실행하고, default branch 코드를 checkout한다. review signal과 CI-result sync도 PR base가 default branch가 아니면 Notion 갱신 전에 skip한다. 신뢰되지 않은 same-repository feature branch를 base로 하는 PR에는 secret-bearing sync를 실행하지 않는다.
 
 ## 상태 매핑
 
@@ -94,7 +94,7 @@ Notion 티켓을 새로 만들거나 사용자가 티켓 생성을 요청하면 
 10. Notion 접근 권한이 있으면 티켓을 `IN-review`로 옮기고, `GitHub PR`, `GitHub Branch`를 기록한다. 기존 `Review Status`와 `Last Review Check`는 덮어쓰지 않는다.
 11. `CI Status`와 `Last CI Check`는 GitHub Actions의 `workflow_run` 기반 `ci-result` sync가 기록하도록 둔다. PR 생성, 업데이트, branch push 이벤트는 기존 CI 상태를 덮어쓰지 않는다. CI-result sync는 PR base가 default branch가 아니면 Notion 갱신 전에 skip한다. 같은 head SHA의 CI run이 여러 개 있으면 Actions run 목록에서 최신 run/attempt를 확인하고, 더 오래된 run은 stale 이벤트로 보고 skip한다. fork PR의 CI `workflow_run`은 `workflow_run.pull_requests`가 비어 있어도 `workflow_run.head_repository`가 현재 저장소와 다르면 Notion sync를 skip한다.
 12. PR branch push 후에는 GitHub Actions가 현재 PR head SHA를 확인한 뒤 `Last Push At`, `Last Head SHA`, `Last Push Summary`를 기록하도록 둔다. 더 오래된 `synchronize` webhook payload는 stale 이벤트로 skip한다. PR 이벤트는 현재 PR 상태를 다시 조회한다. 현재 PR이 이미 closed이면 오래된 이벤트로 보고 `IN-review`나 metadata를 다시 쓰지 않는다. 닫힘 이벤트도 현재 PR이 다시 열려 있으면 stale 이벤트로 보고 `Blocker`를 쓰지 않는다. PR 본문 수정은 ticket URL과 PR metadata만 확인하며 기존 CI/review 상태를 덮어쓰지 않는다.
-13. PR review 제출 후에는 토큰 없는 `.github/workflows/notion-ticket-review-dispatch.yml`의 `pull_request_review` job이 `workflow_dispatch`로 trusted default branch sync를 요청하고, 해당 trusted run이 `Review Status`와 `Last Review Check`를 기록하도록 둔다. review dispatch와 trusted review sync는 PR base가 default branch가 아니면 Notion 갱신 전에 skip한다. 명시적인 change request는 `Changes requested`, 승인 리뷰는 pagination까지 확인한 현재 review 목록에 활성 change request가 없을 때만 `Passed`, comment-only review는 이전 change request를 해제하지 않으며 dismissed-only review 집계는 stale 이벤트 fallback을 쓰지 않고 `Unknown`으로 동기화한다.
+13. PR review 제출 후에는 토큰 없는 `.github/workflows/notion-ticket-review-dispatch.yml`의 read-only `pull_request_review` job이 signal만 남기고, secret-bearing `.github/workflows/notion-ticket-sync.yml`이 `workflow_run`으로 그 완료를 받아 trusted default branch 코드에서 현재 PR과 reviews API를 다시 조회한다. review signal workflow에는 `actions: write`를 주지 않는다. review signal과 trusted review sync는 PR base가 default branch가 아니면 Notion 갱신 전에 skip한다. 명시적인 change request는 `Changes requested`, 승인 리뷰는 pagination까지 확인한 현재 review 목록에 활성 change request가 없을 때만 `Passed`, comment-only review는 이전 change request를 해제하지 않으며 dismissed-only review 집계는 stale 이벤트 fallback을 쓰지 않고 `Unknown`으로 동기화한다.
 14. 티켓을 `DONE`으로 옮기지 않는다. `DONE` 처리는 PR merge 후 GitHub Actions가 담당한다.
 
 ## PR 본문 요구사항
@@ -127,5 +127,5 @@ same-repository PR에서 `Ticket:`이 없으면 `Notion Ticket Sync` GitHub Acti
 - Notion 접근 권한이 있으면 PR 생성 후 `GitHub PR`과 `GitHub Branch`를 기록했다.
 - PR branch push 후에는 GitHub Actions가 push metadata를 갱신한다고 안내했다.
 - CI 상태 기록은 GitHub Actions에 맡겼다.
-- review 상태 기록은 GitHub Actions의 토큰 없는 `pull_request_review` dispatch와 trusted `workflow_dispatch` 동기화에 맡겼다.
+- review 상태 기록은 GitHub Actions의 토큰 없는 read-only `pull_request_review` signal과 trusted `workflow_run` 동기화에 맡겼다.
 - Notion 접근 권한이 있으면 merge 전 티켓 상태는 `IN-review`에서 멈추며, `DONE`으로 직접 옮기지 않았다.
