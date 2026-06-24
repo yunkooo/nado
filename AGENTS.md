@@ -57,7 +57,7 @@
 - `NOTION_TOKEN`은 PR branch에서 checkout한 코드에 주입하지 않는다. Notion 동기화는 trusted base/default branch 코드에서만 실행하며, trusted checkout에 sync script가 아직 없으면 skip한다.
 - PR branch push는 `pull_request synchronize` 이벤트를 통해 Notion의 `Last Push At`, `Last Head SHA`, `Last Push Summary`에 기록한다.
 - PR 본문 수정은 `Ticket:` URL과 PR metadata만 확인하고 기존 CI/review 상태를 덮어쓰지 않는다.
-- PR review 제출은 `pull_request_review` 이벤트를 통해 `Review Status`와 `Last Review Check`만 갱신한다. 승인 이벤트는 현재 review 목록에 활성 change request가 없을 때만 `Passed`로 기록한다.
+- PR review 제출은 `pull_request_review` 이벤트를 통해 `Review Status`와 `Last Review Check`만 갱신한다. 승인 이벤트는 pagination까지 확인한 현재 review 목록에 활성 change request가 없을 때만 `Passed`로 기록하고, comment-only review는 이전 change request를 해제하지 않는다.
 - fork PR은 Notion token을 사용하는 동기화 대상에서 제외한다.
 
 ## 커밋 규칙

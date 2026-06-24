@@ -94,20 +94,20 @@
 
 ## State Transition Rules
 
-| Event                | 상태           | CI Status                  | Review Status       | Notes                                                                                                   |
-| -------------------- | -------------- | -------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------- |
-| 티켓 생성            | `TODO`         | `Not started`              | `Not requested`     | 아직 GitHub 작업이 없어야 한다.                                                                         |
-| 작업 시작            | `IN-progrss`   | `Not started`              | `Not requested`     | 브랜치를 만들면 `GitHub Branch`를 기록한다.                                                             |
-| PR 생성/업데이트     | `IN-review`    | GitHub Actions 결과        | `Pending`           | `Ticket:` URL이 없으면 `Notion Ticket Sync` check가 실패한다.                                           |
-| PR 본문 수정         | 현재 상태 유지 | 현재 CI 상태 유지          | 현재 리뷰 상태 유지 | `Ticket:` URL과 PR metadata만 확인하고 CI/review 상태를 덮어쓰지 않는다.                                |
-| PR branch push       | `IN-review`    | `Pending`                  | `Pending`           | `Last Push At`, `Last Head SHA`, `Last Push Summary`를 기록한다.                                        |
-| CI 실패              | `IN-review`    | `Failed`                   | 현재 리뷰 상태 유지 | 실패한 check 이름과 핵심 로그를 사용자에게 보고한다.                                                    |
-| CI 성공              | `IN-review`    | `Success`                  | 현재 리뷰 상태 유지 | CI 성공만으로 `DONE` 처리하지 않는다.                                                                   |
-| 리뷰 수정 요청       | `IN-review`    | 현재 CI 상태 유지          | `Changes requested` | `pull_request_review`의 명시적인 change request가 있을 때만 사용한다.                                   |
-| 리뷰 승인            | `IN-review`    | 현재 CI 상태 유지          | `Passed`            | 현재 PR review 목록을 조회해 활성 change request가 없을 때만 갱신한다. CI도 성공해야 merge 후보가 된다. |
-| 리뷰 dismiss         | `IN-review`    | 현재 CI 상태 유지          | `Unknown`           | 기존 review 판단이 사라졌으므로 다시 확인해야 하는 상태로 둔다.                                         |
-| PR merge             | `DONE`         | `Success`                  | `Passed`            | `Merged At`과 `종료일`을 기록한다.                                                                      |
-| PR 닫힘, merge 안 됨 | 현재 상태 유지 | `Cancelled` 또는 `Unknown` | 현재 리뷰 상태 유지 | `Blocker`에 `PR closed without merge`를 기록한다.                                                       |
+| Event                | 상태           | CI Status                  | Review Status       | Notes                                                                                                                  |
+| -------------------- | -------------- | -------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 티켓 생성            | `TODO`         | `Not started`              | `Not requested`     | 아직 GitHub 작업이 없어야 한다.                                                                                        |
+| 작업 시작            | `IN-progrss`   | `Not started`              | `Not requested`     | 브랜치를 만들면 `GitHub Branch`를 기록한다.                                                                            |
+| PR 생성/업데이트     | `IN-review`    | GitHub Actions 결과        | `Pending`           | `Ticket:` URL이 없으면 `Notion Ticket Sync` check가 실패한다.                                                          |
+| PR 본문 수정         | 현재 상태 유지 | 현재 CI 상태 유지          | 현재 리뷰 상태 유지 | `Ticket:` URL과 PR metadata만 확인하고 CI/review 상태를 덮어쓰지 않는다.                                               |
+| PR branch push       | `IN-review`    | `Pending`                  | `Pending`           | `Last Push At`, `Last Head SHA`, `Last Push Summary`를 기록한다.                                                       |
+| CI 실패              | `IN-review`    | `Failed`                   | 현재 리뷰 상태 유지 | 실패한 check 이름과 핵심 로그를 사용자에게 보고한다.                                                                   |
+| CI 성공              | `IN-review`    | `Success`                  | 현재 리뷰 상태 유지 | CI 성공만으로 `DONE` 처리하지 않는다.                                                                                  |
+| 리뷰 수정 요청       | `IN-review`    | 현재 CI 상태 유지          | `Changes requested` | `pull_request_review`의 명시적인 change request가 있을 때만 사용한다.                                                  |
+| 리뷰 승인            | `IN-review`    | 현재 CI 상태 유지          | `Passed`            | 현재 PR review 목록을 pagination까지 조회해 활성 change request가 없을 때만 갱신한다. CI도 성공해야 merge 후보가 된다. |
+| 리뷰 dismiss         | `IN-review`    | 현재 CI 상태 유지          | `Unknown`           | 기존 review 판단이 사라졌으므로 다시 확인해야 하는 상태로 둔다.                                                        |
+| PR merge             | `DONE`         | `Success`                  | `Passed`            | `Merged At`과 `종료일`을 기록한다.                                                                                     |
+| PR 닫힘, merge 안 됨 | 현재 상태 유지 | `Cancelled` 또는 `Unknown` | 현재 리뷰 상태 유지 | `Blocker`에 `PR closed without merge`를 기록한다.                                                                      |
 
 ## GitHub Actions Requirements
 
@@ -125,6 +125,9 @@ GitHub Actions의 `Notion Ticket Sync` workflow는 다음 값이 있어야 동�
 `pull_request_review` 이벤트는 same-repository PR에서만 Notion token을 사용한다. fork PR은
 secret 노출과 권한 혼선을 피하기 위해 Notion sync 대상에서 제외한다.
 review approval 이벤트는 단일 이벤트만 믿지 않고 GitHub reviews API로 reviewer별 최신 상태를 확인한다.
+GitHub reviews API는 `per_page=100`으로 조회하고 `Link` header의 `rel="next"` pagination을
+끝까지 따라간 뒤 집계한다. reviewer별 상태 집계에서는 `APPROVED`, `CHANGES_REQUESTED`,
+`DISMISSED`만 결정적 review 상태로 보고, `COMMENTED`는 이전 change request를 해제하지 않는다.
 활성 `CHANGES_REQUESTED` 리뷰가 하나라도 남아 있으면 `Review Status`를 `Passed`로 내리지 않는다.
 
 이 workflow를 추가하는 PR처럼 base/default branch의 trusted checkout에 아직

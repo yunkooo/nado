@@ -491,25 +491,29 @@ async function resolvePullRequestReviewState({
 }
 
 function deriveReviewStateFromReviews({ fallbackState, reviews }) {
-  const latestByReviewer = new Map();
+  const latestDecisiveByReviewer = new Map();
 
   for (const review of reviews ?? []) {
     const reviewer = review.user?.login;
     const submittedAt = review.submitted_at ?? "";
+    const reviewState = review.state?.toLowerCase();
 
-    if (!reviewer || !review.state) {
+    if (!reviewer || !isDecisiveReviewState(reviewState)) {
       continue;
     }
 
-    const previousReview = latestByReviewer.get(reviewer);
+    const previousReview = latestDecisiveByReviewer.get(reviewer);
 
     if (!previousReview || submittedAt >= (previousReview.submitted_at ?? "")) {
-      latestByReviewer.set(reviewer, review);
+      latestDecisiveByReviewer.set(reviewer, {
+        ...review,
+        state: reviewState,
+      });
     }
   }
 
-  const latestStates = Array.from(latestByReviewer.values()).map((review) =>
-    review.state.toLowerCase(),
+  const latestStates = Array.from(latestDecisiveByReviewer.values()).map(
+    (review) => review.state,
   );
 
   if (latestStates.includes("changes_requested")) {
@@ -521,6 +525,10 @@ function deriveReviewStateFromReviews({ fallbackState, reviews }) {
   }
 
   return fallbackState;
+}
+
+function isDecisiveReviewState(reviewState) {
+  return ["approved", "changes_requested", "dismissed"].includes(reviewState);
 }
 
 function buildPullRequestApiUrl({ number, repositoryUrl }) {
@@ -746,23 +754,61 @@ async function fetchGitHubPullRequestReviews({
   githubToken,
   reviewsUrl,
 }) {
-  const response = await fetchImpl(reviewsUrl, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${githubToken}`,
-      "X-GitHub-Api-Version": GITHUB_API_VERSION,
-    },
-  });
+  const reviews = [];
+  let nextUrl = buildPaginatedGitHubUrl(reviewsUrl);
 
-  if (!response.ok) {
-    const errorBody = await response.text();
+  while (nextUrl) {
+    const response = await fetchImpl(nextUrl, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${githubToken}`,
+        "X-GitHub-Api-Version": GITHUB_API_VERSION,
+      },
+    });
 
-    throw new Error(
-      `GitHub pull request reviews fetch failed (${response.status}): ${errorBody}`,
-    );
+    if (!response.ok) {
+      const errorBody = await response.text();
+
+      throw new Error(
+        `GitHub pull request reviews fetch failed (${response.status}): ${errorBody}`,
+      );
+    }
+
+    const pageReviews = await response.json();
+
+    if (Array.isArray(pageReviews)) {
+      reviews.push(...pageReviews);
+    }
+
+    nextUrl = parseGitHubNextLink(response.headers.get("link"));
   }
 
-  return response.json();
+  return reviews;
+}
+
+function buildPaginatedGitHubUrl(url) {
+  try {
+    const paginatedUrl = new URL(url);
+    paginatedUrl.searchParams.set("per_page", "100");
+
+    return paginatedUrl.toString();
+  } catch {
+    const separator = url.includes("?") ? "&" : "?";
+
+    return `${url}${separator}per_page=100`;
+  }
+}
+
+function parseGitHubNextLink(linkHeader) {
+  if (!linkHeader) {
+    return null;
+  }
+
+  const nextLink = linkHeader
+    .split(",")
+    .find((link) => /;\s*rel="next"\s*$/i.test(link.trim()));
+
+  return nextLink?.match(/<([^>]+)>/)?.[1] ?? null;
 }
 
 async function main() {
