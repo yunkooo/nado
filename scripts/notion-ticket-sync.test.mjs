@@ -55,6 +55,9 @@ const pullRequest = {
   created_at: "2026-06-24T11:30:00.000Z",
   head: {
     ref: "codex/nado-notion-sync",
+    repo: {
+      full_name: "yunkooo/nado",
+    },
   },
   html_url: "https://github.com/yunkooo/nado/pull/42",
   merged: false,
@@ -311,6 +314,54 @@ describe("notion ticket sync helpers", () => {
     );
     expect(requests[1].options.method).toBe("GET");
     expect(requests[1].options.headers["Notion-Version"]).toBe("2025-09-03");
+  });
+
+  it("treats pull requests with a missing head repository as unsafe fork PRs", async () => {
+    const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "pull-request-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === pullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            head: {
+              ...pullRequest.head,
+              repo: null,
+            },
+            number: 42,
+            state: "open",
+            url: pullRequestUrl,
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          action: "opened",
+          pull_request: {
+            ...pullRequest,
+            number: 42,
+            url: pullRequestUrl,
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.skipped).toBe(true);
+    expect(result.reason).toBe("Skipping Notion sync for a fork pull request");
+    expect(requests).toHaveLength(1);
+    expect(requests[0].url).toBe(pullRequestUrl);
   });
 
   it("skips stale synchronize events before writing push metadata", async () => {
@@ -1283,6 +1334,9 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSchemaSource).toContain("Last Push Summary");
     expect(notionTicketSchemaSource).toContain("pull_request_review");
     expect(notionTicketSchemaSource).toContain("fork PR");
+    expect(notionTicketSchemaSource).toContain(
+      "`head.repo`가 없거나 `null`인 PR",
+    );
     expect(notionTicketSchemaSource).toContain("2025-09-03");
     expect(notionTicketSchemaSource).toContain("활성 change request");
     expect(notionTicketSchemaSource).toContain("per_page=100");

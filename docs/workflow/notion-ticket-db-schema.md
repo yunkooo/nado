@@ -127,7 +127,8 @@ GitHub Actions의 `Notion Ticket Sync` workflow는 다음 값이 있어야 동�
 `NOTION_TICKETS_DATA_SOURCE_ID`를 받지 않고, `workflow_dispatch`로 default branch의 trusted
 review sync를 요청한다. 실제 Notion review 상태 갱신은 secret-bearing
 `.github/workflows/notion-ticket-sync.yml`의 `workflow_dispatch` run에서만 수행한다. fork PR은
-secret 노출과 권한 혼선을 피하기 위해 Notion sync 대상에서 제외한다.
+secret 노출과 권한 혼선을 피하기 위해 Notion sync 대상에서 제외한다. GitHub API 응답에서
+`head.repo`가 없거나 `null`인 PR도 출처를 신뢰할 수 없으므로 fork PR과 같이 skip한다.
 이 workflow를 추가하는 PR처럼 default branch의 `notion-ticket-sync.yml`에 아직
 `workflow_dispatch`가 없으면 review dispatch job은 성공적으로 skip한다.
 review approval 이벤트는 단일 이벤트만 믿지 않고 GitHub reviews API로 reviewer별 최신 상태를 확인한다.

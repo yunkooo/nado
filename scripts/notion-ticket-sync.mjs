@@ -695,7 +695,7 @@ function isCrossRepositoryPullRequest(pullRequest, repository) {
 
   const headRepository = pullRequest.head?.repo?.full_name;
 
-  return Boolean(headRepository && headRepository !== repository);
+  return !headRepository || headRepository !== repository;
 }
 
 function isNotionPageInDataSource(page, dataSourceId) {

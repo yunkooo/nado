@@ -107,7 +107,7 @@ PR 본문에는 반드시 다음 섹션이 있어야 한다.
 - Status before PR: `TODO` / `IN-progrss`
 ```
 
-same-repository PR에서 `Ticket:`이 없으면 `Notion Ticket Sync` GitHub Actions check가 실패하는 것이 정상이다. fork PR은 Notion token을 사용하는 동기화 대상에서 제외한다.
+same-repository PR에서 `Ticket:`이 없으면 `Notion Ticket Sync` GitHub Actions check가 실패하는 것이 정상이다. fork PR은 Notion token을 사용하는 동기화 대상에서 제외한다. GitHub API 응답에서 `head.repo`가 없거나 `null`인 PR도 출처를 신뢰할 수 없으므로 fork PR처럼 skip한다.
 
 ## Blocker 처리
 
