@@ -237,7 +237,66 @@ describe("notion ticket sync helpers", () => {
     });
   });
 
+  it("skips CI-result syncs for closed pull requests", async () => {
+    const githubPullRequestUrl =
+      "https://api.github.com/repos/yunkooo/nado/pulls/42";
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "workflow-run-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "notion-data-source",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === githubPullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            merged: true,
+            state: "closed",
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          repository: {
+            url: "https://api.github.com/repos/yunkooo/nado",
+          },
+          workflow_run: {
+            conclusion: "success",
+            event: "pull_request",
+            pull_requests: [
+              {
+                number: 42,
+                url: githubPullRequestUrl,
+              },
+            ],
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.skipped).toBe(true);
+    expect(result.reason).toBe(
+      "Skipping CI-result Notion sync for a closed pull request",
+    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].url).toBe(githubPullRequestUrl);
+  });
+
   it("keeps Notion secrets out of PR-controlled CI code", () => {
+    expect(ciWorkflowSource).toContain(
+      "types: [opened, synchronize, reopened, edited, ready_for_review]",
+    );
+    expect(ciWorkflowSource).not.toContain(
+      "types: [opened, synchronize, reopened, edited, ready_for_review, closed]",
+    );
     expect(ciWorkflowSource).not.toContain("NOTION_TOKEN");
     expect(ciWorkflowSource).not.toContain("NOTION_TICKETS_DATA_SOURCE_ID");
     expect(ciWorkflowSource).not.toContain("notion-ticket-sync:");

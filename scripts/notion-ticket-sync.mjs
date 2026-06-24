@@ -241,6 +241,10 @@ export async function runSync({
     return syncInput;
   }
 
+  if (syncInput.skipped) {
+    return syncInput;
+  }
+
   if (
     isCrossRepositoryPullRequest(syncInput.pullRequest, env.GITHUB_REPOSITORY)
   ) {
@@ -316,15 +320,25 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
     };
   }
 
+  const pullRequest = await fetchGitHubPullRequest({
+    fetchImpl,
+    githubToken: env.GITHUB_TOKEN,
+    pullRequestUrl,
+  });
+
+  if (pullRequest.state === "closed") {
+    return {
+      ok: true,
+      reason: "Skipping CI-result Notion sync for a closed pull request",
+      skipped: true,
+    };
+  }
+
   return {
     action: "synchronize",
     ciResult: env.CI_RESULT ?? event.workflow_run.conclusion,
     ok: true,
-    pullRequest: await fetchGitHubPullRequest({
-      fetchImpl,
-      githubToken: env.GITHUB_TOKEN,
-      pullRequestUrl,
-    }),
+    pullRequest,
   };
 }
 
