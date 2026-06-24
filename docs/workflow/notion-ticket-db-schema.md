@@ -1,0 +1,112 @@
+# Notion Ticket DB Schema
+
+이 문서는 nado 프로젝트에서 Notion `프로젝트` 데이터 소스를 작업 원장으로 사용할 때 필요한 속성, 상태 규칙, GitHub Actions 자동화 규칙을 정의한다.
+
+## Data Source
+
+- Notion data source: `프로젝트`
+- Data source ID: GitHub Actions의 `NOTION_TICKETS_DATA_SOURCE_ID` 값으로 관리한다.
+- Dashboard는 v1에서 별도 React 앱을 만들지 않고 Notion database view로 운영한다.
+
+## Required Properties
+
+| Property            | Type   | Purpose                                                  |
+| ------------------- | ------ | -------------------------------------------------------- |
+| `프로젝트 이름`     | Title  | 티켓 제목이다. 작업 범위를 한눈에 이해할 수 있어야 한다. |
+| `상태`              | Status | 티켓의 현재 진행 상태다. 아래 상태값만 사용한다.         |
+| `우선순위`          | Select | 기존 우선순위 값을 유지한다.                             |
+| `담당자`            | Person | 작업 담당자를 표시한다.                                  |
+| `시작일`            | Date   | 작업이 실제로 시작된 날짜다.                             |
+| `종료일`            | Date   | PR merge 후 완료된 날짜다.                               |
+| `GitHub PR`         | URL    | 연결된 GitHub Pull Request URL이다.                      |
+| `GitHub Branch`     | Text   | 작업 브랜치 이름이다.                                    |
+| `CI Status`         | Select | 연결된 PR의 CI/check 상태다.                             |
+| `Review Status`     | Select | Codex 리뷰 또는 사람 리뷰의 현재 상태다.                 |
+| `Blocker`           | Text   | 작업을 막는 원인이나 해제 조건이다.                      |
+| `PR Created At`     | Date   | PR이 생성된 시각이다.                                    |
+| `Merged At`         | Date   | PR이 merge된 시각이다.                                   |
+| `Last CI Check`     | Date   | CI 상태를 마지막으로 확인한 시각이다.                    |
+| `Last Review Check` | Date   | 리뷰 상태를 마지막으로 확인한 시각이다.                  |
+
+## Status Values
+
+`상태`는 현재 Notion 데이터 소스에 존재하는 값을 그대로 사용한다. 오타처럼 보이는 `IN-progrss`도 v1에서는 변경하지 않는다.
+
+| 상태         | Meaning                       | When To Use                                                                |
+| ------------ | ----------------------------- | -------------------------------------------------------------------------- |
+| `TODO`       | 아직 시작하지 않은 작업       | 새 티켓 생성 시 기본 상태다.                                               |
+| `IN-progrss` | 구현이 진행 중인 작업         | Codex 또는 작업자가 티켓 기반 작업을 시작할 때 변경한다.                   |
+| `IN-review`  | PR이 열려 있고 검토 중인 작업 | PR 생성 후 변경한다. CI 실패나 리뷰 수정 요청이 있어도 이 상태를 유지한다. |
+| `DONE`       | PR이 merge되어 완료된 작업    | 연결된 PR이 실제로 merge된 뒤 GitHub Actions가 변경한다.                   |
+
+## CI Status Values
+
+| CI Status     | Meaning                                       |
+| ------------- | --------------------------------------------- |
+| `Not started` | 아직 PR 또는 CI 실행이 없다.                  |
+| `Pending`     | CI/check가 실행 중이다.                       |
+| `Success`     | 필수 CI/check가 모두 통과했다.                |
+| `Failed`      | 하나 이상의 필수 CI/check가 실패했다.         |
+| `Cancelled`   | CI/check가 취소되었다.                        |
+| `Unknown`     | GitHub Actions가 현재 상태를 확인하지 못했다. |
+
+## Review Status Values
+
+| Review Status       | Meaning                                            |
+| ------------------- | -------------------------------------------------- |
+| `Not requested`     | 아직 리뷰가 요청되지 않았다.                       |
+| `Pending`           | Codex 리뷰 또는 사람 리뷰가 진행 중이다.           |
+| `Changes requested` | 해결해야 할 리뷰 의견이 남아 있다.                 |
+| `Passed`            | 현재 확인 가능한 리뷰 문제가 없다.                 |
+| `Unknown`           | GitHub Actions가 현재 리뷰 상태를 확인하지 못했다. |
+
+## Dashboard Views
+
+다음 view를 Notion `프로젝트` 데이터 소스에 둔다.
+
+| View            | Type  | Purpose                                 |
+| --------------- | ----- | --------------------------------------- |
+| `Status Board`  | Board | `상태` 기준으로 전체 티켓 흐름을 본다.  |
+| `Review Queue`  | Table | `IN-review` 티켓을 검토 대기열로 본다.  |
+| `Blockers`      | Table | `Blocker`가 있는 티켓만 본다.           |
+| `Recently Done` | Table | 완료된 티켓을 `종료일` 최신순으로 본다. |
+
+## State Transition Rules
+
+| Event                | 상태           | CI Status                  | Review Status       | Notes                                                         |
+| -------------------- | -------------- | -------------------------- | ------------------- | ------------------------------------------------------------- |
+| 티켓 생성            | `TODO`         | `Not started`              | `Not requested`     | 아직 GitHub 작업이 없어야 한다.                               |
+| 작업 시작            | `IN-progrss`   | `Not started`              | `Not requested`     | 브랜치를 만들면 `GitHub Branch`를 기록한다.                   |
+| PR 생성/업데이트     | `IN-review`    | GitHub Actions 결과        | `Pending`           | `Ticket:` URL이 없으면 `Notion Ticket Sync` check가 실패한다. |
+| CI 실패              | `IN-review`    | `Failed`                   | 현재 리뷰 상태 유지 | 실패한 check 이름과 핵심 로그를 사용자에게 보고한다.          |
+| CI 성공              | `IN-review`    | `Success`                  | 현재 리뷰 상태 유지 | CI 성공만으로 `DONE` 처리하지 않는다.                         |
+| 리뷰 수정 요청       | `IN-review`    | 현재 CI 상태 유지          | `Changes requested` | 명시적인 change request가 있을 때만 사용한다.                 |
+| 리뷰 문제 없음       | `IN-review`    | 현재 CI 상태 유지          | `Passed`            | CI도 성공해야 merge 후보가 된다.                              |
+| PR merge             | `DONE`         | `Success`                  | `Passed`            | `Merged At`과 `종료일`을 기록한다.                            |
+| PR 닫힘, merge 안 됨 | 현재 상태 유지 | `Cancelled` 또는 `Unknown` | 현재 리뷰 상태 유지 | `Blocker`에 `PR closed without merge`를 기록한다.             |
+
+## GitHub Actions Requirements
+
+GitHub Actions의 `Notion Ticket Sync` job은 다음 값이 있어야 동작한다.
+
+- Repository secret: `NOTION_TOKEN`
+- Repository variable 또는 secret: `NOTION_TICKETS_DATA_SOURCE_ID`
+- Built-in token: `GITHUB_TOKEN`
+
+PR 본문의 `## Notion Ticket` 섹션에는 다음 형식의 Notion page URL이 있어야 한다.
+
+```markdown
+- Ticket: https://app.notion.com/p/...
+```
+
+티켓 URL이 없으면 Notion 원장을 신뢰할 수 없으므로 sync check는 실패한다.
+
+## Merge Completion Rule
+
+티켓은 다음 조건을 모두 만족할 때만 `DONE`으로 변경한다.
+
+- 연결된 PR이 실제로 merge되었다.
+- GitHub Actions에서 `Notion Ticket Sync`가 merge 이벤트를 처리했다.
+- `GitHub PR` 속성에 merge된 PR URL이 기록되어 있다.
+
+AI 작업 세션과 repo-local skill은 PR 생성 후 `IN-review`까지만 처리한다. `DONE` 전환은 merge 이벤트를 놓치지 않기 위해 GitHub Actions가 담당한다.

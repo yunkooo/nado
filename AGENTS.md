@@ -41,6 +41,18 @@
 - AI는 PR 생성과 리뷰 반영까지 도울 수 있지만, 사용자의 명시적 요청 없이 merge하거나 `main`에 직접 push하지 않는다.
 - Issue나 PR 요구사항이 모호하거나 현재 작업tree에 관련 없는 변경사항이 있으면 작업을 시작하기 전에 사용자에게 확인한다.
 
+## Notion Ticket 작업 규칙
+
+- Notion 티켓 기반 작업 요청을 받으면 먼저 `.agents/skills/notion-ticket-pr-loop/SKILL.md`와 `docs/workflow/notion-ticket-db-schema.md`를 확인한다.
+- v1의 작업 원장은 Notion `프로젝트` 데이터 소스이며, data source ID는 GitHub Actions의 `NOTION_TICKETS_DATA_SOURCE_ID` 값으로만 관리한다.
+- 현재 상태값은 그대로 사용한다: `TODO`, `IN-progrss`, `IN-review`, `DONE`.
+- 상태 흐름은 `TODO` -> `IN-progrss` -> `IN-review` -> `DONE`이다.
+- Codex 또는 작업자는 작업 시작 시 `IN-progrss`, PR 생성/업데이트 시 `IN-review`까지만 처리한다.
+- `DONE`, `Merged At`, `종료일` 처리는 GitHub Actions의 merge 이벤트 동기화만 담당한다.
+- PR 본문에는 `.github/pull_request_template.md`의 `Ticket:` 줄에 Notion ticket URL을 반드시 넣는다.
+- `Ticket:` URL이 없으면 `Notion Ticket Sync` GitHub Actions check가 실패하는 것이 정상이다.
+- 자동화에 필요한 GitHub Actions 값은 `NOTION_TOKEN`, `NOTION_TICKETS_DATA_SOURCE_ID`, 기본 `GITHUB_TOKEN`이다. 실제 token 값과 data source ID 값은 코드, 문서, 커밋에 남기지 않는다.
+
 ## 커밋 규칙
 
 - 커밋 메시지는 한국어로 작성한다.
