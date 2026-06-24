@@ -19,6 +19,7 @@ Commit 1개 = 단일 목적 1개
 | [issue-workflow.md](issue-workflow.md)                       | 기능 요청, 버그, 개선 작업을 Issue로 정리할 때   |
 | [pr-workflow.md](pr-workflow.md)                             | 작업 결과를 PR로 올리거나 리뷰를 반영할 때       |
 | [ai-collaboration-workflow.md](ai-collaboration-workflow.md) | AI에게 Issue 생성, Issue 작업, PR 수정을 맡길 때 |
+| [notion-ticket-db-schema.md](notion-ticket-db-schema.md)     | Notion 티켓과 GitHub Actions 동기화를 다룰 때    |
 
 실제 GitHub 템플릿 파일:
 
@@ -33,6 +34,8 @@ Commit 1개 = 단일 목적 1개
 - Branch는 하나의 PR 작업 단위를 해결하기 위해 만든다.
 - Commit은 하나의 변경 목적을 기록한다.
 - PR은 변경 내용, 검증 결과, 리뷰 포인트를 공유한다.
+- Notion 티켓 기반 작업은 `프로젝트` 데이터 소스를 작업 원장으로 사용한다.
+- PR 본문의 `Ticket:` URL은 Notion 티켓과 GitHub PR을 연결하는 필수 계약이다.
 - PR 단위는 issue 구조가 아니라 리뷰 가능, 검증 가능, 독립 merge 가능 여부로 정한다.
 - 큰 cohesive 작업은 parent issue 기준 branch 1개와 PR 1개로 처리하고, sub-issue나 checklist는 세부 추적용으로 사용할 수 있다.
 - 여러 독립 작업으로 나뉘는 큰 작업은 parent issue를 추적용으로 만들고, GitHub native sub-issue 기준으로 branch와 PR을 만든다.

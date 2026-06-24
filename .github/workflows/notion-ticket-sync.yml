@@ -1,0 +1,133 @@
+name: Notion Ticket Sync
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited, ready_for_review, closed]
+  workflow_run:
+    workflows: [CI, Notion Ticket Review Dispatch]
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  pr-event:
+    name: Sync PR event
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout trusted default branch code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Skip unavailable trusted sync script
+        id: trusted-sync-script
+        run: |
+          if [ ! -f scripts/notion-ticket-sync.mjs ]; then
+            echo "Notion sync script is not available in the trusted checkout. Skipping until this workflow is merged."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "available=true" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        if: steps.trusted-sync-script.outputs.available == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sync Notion ticket
+        if: steps.trusted-sync-script.outputs.available == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          NOTION_TICKETS_DATA_SOURCE_ID: ${{ vars.NOTION_TICKETS_DATA_SOURCE_ID || secrets.NOTION_TICKETS_DATA_SOURCE_ID }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: node scripts/notion-ticket-sync.mjs
+
+  review-result:
+    name: Sync review result
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request_review'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout trusted default branch code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Skip unavailable trusted sync script
+        id: trusted-sync-script
+        run: |
+          if [ ! -f scripts/notion-ticket-sync.mjs ]; then
+            echo "Notion sync script is not available in the trusted checkout. Skipping until this workflow is merged."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "available=true" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        if: steps.trusted-sync-script.outputs.available == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sync Notion ticket
+        if: steps.trusted-sync-script.outputs.available == 'true'
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+          NOTION_TICKETS_DATA_SOURCE_ID: ${{ vars.NOTION_TICKETS_DATA_SOURCE_ID || secrets.NOTION_TICKETS_DATA_SOURCE_ID }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: node scripts/notion-ticket-sync.mjs
+
+  ci-result:
+    name: Sync CI result
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout trusted default branch code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Skip unavailable trusted sync script
+        id: trusted-sync-script
+        run: |
+          if [ ! -f scripts/notion-ticket-sync.mjs ]; then
+            echo "Notion sync script is not available in the trusted checkout. Skipping until this workflow is merged."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "available=true" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        if: steps.trusted-sync-script.outputs.available == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sync Notion ticket
+        if: steps.trusted-sync-script.outputs.available == 'true'
+        env:
+          CI_RESULT: ${{ github.event.workflow_run.conclusion }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+          NOTION_TICKETS_DATA_SOURCE_ID: ${{ vars.NOTION_TICKETS_DATA_SOURCE_ID || secrets.NOTION_TICKETS_DATA_SOURCE_ID }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: node scripts/notion-ticket-sync.mjs

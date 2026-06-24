@@ -251,9 +251,8 @@ export const OtherStory: Story = {
   });
 
   it("connects Storybook verification to the PR checklist and workflow docs", () => {
-    expect(prTemplateSource).toContain("UI/Storybook 변경 시");
-    expect(prTemplateSource).toContain("pnpm --filter @nado/storybook test");
-    expect(prTemplateSource).toContain("pnpm --filter @nado/storybook build");
+    expect(prTemplateSource).toContain("관련 lint/typecheck/test/build 실행");
+    expect(prTemplateSource).toContain("UI 변경 시 화면 또는 Storybook 확인");
     expect(prWorkflowSource).toContain("Storybook 검증 기준");
     expect(prWorkflowSource).toContain(
       "Storybook 전용 build는 아직 별도 필수 check로 분리하지 않았으므로",

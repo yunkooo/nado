@@ -1,0 +1,22 @@
+name: Notion Ticket Review Dispatch
+
+on:
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+
+jobs:
+  review-dispatch:
+    name: Request trusted review sync
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.base.ref == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record review sync signal
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REVIEW_ACTION: ${{ github.event.action }}
+          REVIEW_STATE: ${{ github.event.review.state }}
+        run: |
+          echo "Review sync signal recorded for PR #$PR_NUMBER ($REVIEW_ACTION/$REVIEW_STATE)."

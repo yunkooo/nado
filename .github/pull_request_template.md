@@ -1,30 +1,42 @@
-## 작업 내용
+## Notion Ticket
 
-- 변경 내용을 요약해주세요.
+- Ticket:
+- Status before PR: `TODO` / `IN-progrss`
 
-## 확인
+## 요약
+
+<!-- 변경 목적과 핵심 결과를 2-3줄로 요약해주세요. -->
+
+## 변경 사항
+
+<!-- 주요 변경사항을 bullet로 적어주세요. -->
+
+## 검증
 
 - [ ] `git diff --check`
-- [ ] 필요한 lint, typecheck, test 또는 화면 확인
-- [ ] UI/Storybook 변경 시 Storybook story 갱신 또는 영향 없음 사유 작성
-- [ ] UI/Storybook 변경 시 `pnpm --filter @nado/storybook test`
-- [ ] UI/Storybook 변경 시 `pnpm --filter @nado/storybook typecheck`
-- [ ] UI/Storybook 변경 시 `pnpm --filter @nado/storybook build`
-- [ ] 공통 UI 변경 시 `pnpm --filter @nado/ui test`
-- [ ] Mobile UI/token 변경 시 `pnpm --filter @nado/mobile test`
-- [ ] Codex automatic review 대상 PR로 ready 상태 확인
+- [ ] 관련 lint/typecheck/test/build 실행
+- [ ] UI 변경 시 화면 또는 Storybook 확인
+- [ ] 실행하지 못한 검증은 비고에 이유 작성
+
+실행한 명령:
+
+```text
+
+```
 
 ## 영향 범위
 
-- 영향받는 앱, 패키지, 문서를 적어주세요.
+- 앱/패키지:
+- 사용자 영향:
+- 데이터/API 영향:
 
 ## 리뷰 포인트
 
-- 특히 확인해줬으면 하는 부분을 적어주세요.
+<!-- 리뷰어가 특히 봐줬으면 하는 부분을 적어주세요. -->
 
 ## 비고
 
-- 실행하지 못한 검증, 남은 위험, Codex automatic review 결과가 없는 경우를 적어주세요.
+<!-- 실행하지 못한 검증, 남은 위험, 후속 작업이 있으면 적어주세요. -->
 
 Closes #
 Parent: # (sub-issue 작업인 경우)
