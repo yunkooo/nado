@@ -272,6 +272,7 @@ describe("notion ticket sync helpers", () => {
     );
     expect(requests).toHaveLength(1);
     expect(requests[0].options.method).toBe("GET");
+    expect(requests[0].options.headers["Notion-Version"]).toBe("2025-09-03");
   });
 
   it("syncs pull request review changes without touching CI status", async () => {
@@ -281,11 +282,27 @@ describe("notion ticket sync helpers", () => {
       env: {
         GITHUB_EVENT_PATH: "pull-request-review-event.json",
         GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
         NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
         NOTION_TOKEN: "notion-token",
       },
       fetchImpl: async (url, options = {}) => {
         requests.push({ options, url });
+
+        if (
+          url === "https://api.github.com/repos/yunkooo/nado/pulls/42/reviews"
+        ) {
+          return Response.json([
+            {
+              id: 1,
+              state: "CHANGES_REQUESTED",
+              submitted_at: "2026-06-24T11:59:00.000Z",
+              user: {
+                login: "reviewer-a",
+              },
+            },
+          ]);
+        }
 
         if (options.method === "GET") {
           return Response.json({
@@ -301,7 +318,11 @@ describe("notion ticket sync helpers", () => {
       readFile: () =>
         JSON.stringify({
           action: "submitted",
-          pull_request: pullRequest,
+          pull_request: {
+            ...pullRequest,
+            number: 42,
+            url: "https://api.github.com/repos/yunkooo/nado/pulls/42",
+          },
           review: {
             state: "changes_requested",
           },
@@ -309,11 +330,14 @@ describe("notion ticket sync helpers", () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(requests).toHaveLength(2);
-    expect(requests[0].options.method).toBe("GET");
-    expect(requests[1].options.method).toBe("PATCH");
+    expect(requests).toHaveLength(3);
+    expect(requests[0].url).toBe(
+      "https://api.github.com/repos/yunkooo/nado/pulls/42/reviews",
+    );
+    expect(requests[1].options.method).toBe("GET");
+    expect(requests[2].options.method).toBe("PATCH");
 
-    const updatedProperties = JSON.parse(requests[1].options.body).properties;
+    const updatedProperties = JSON.parse(requests[2].options.body).properties;
 
     expect(updatedProperties["Review Status"]).toEqual({
       select: {
@@ -330,12 +354,160 @@ describe("notion ticket sync helpers", () => {
     expect(updatedProperties["상태"]).toBeUndefined();
   });
 
+  it("keeps review status changes requested while any latest reviewer state requests changes", async () => {
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "pull-request-review-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (
+          url === "https://api.github.com/repos/yunkooo/nado/pulls/42/reviews"
+        ) {
+          return Response.json([
+            {
+              id: 1,
+              state: "CHANGES_REQUESTED",
+              submitted_at: "2026-06-24T11:50:00.000Z",
+              user: {
+                login: "reviewer-a",
+              },
+            },
+            {
+              id: 2,
+              state: "APPROVED",
+              submitted_at: "2026-06-24T11:55:00.000Z",
+              user: {
+                login: "reviewer-b",
+              },
+            },
+          ]);
+        }
+
+        if (options.method === "GET") {
+          return Response.json({
+            parent: {
+              data_source_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+              type: "data_source_id",
+            },
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          action: "submitted",
+          pull_request: {
+            ...pullRequest,
+            number: 42,
+            url: "https://api.github.com/repos/yunkooo/nado/pulls/42",
+          },
+          review: {
+            state: "approved",
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+
+    const updatedProperties = JSON.parse(requests[2].options.body).properties;
+
+    expect(updatedProperties["Review Status"]).toEqual({
+      select: {
+        name: "Changes requested",
+      },
+    });
+    expect(updatedProperties["CI Status"]).toBeUndefined();
+  });
+
+  it("marks review status passed only when aggregate reviews have no active change requests", async () => {
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "pull-request-review-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (
+          url === "https://api.github.com/repos/yunkooo/nado/pulls/42/reviews"
+        ) {
+          return Response.json([
+            {
+              id: 1,
+              state: "CHANGES_REQUESTED",
+              submitted_at: "2026-06-24T11:50:00.000Z",
+              user: {
+                login: "reviewer-a",
+              },
+            },
+            {
+              id: 2,
+              state: "APPROVED",
+              submitted_at: "2026-06-24T11:55:00.000Z",
+              user: {
+                login: "reviewer-a",
+              },
+            },
+          ]);
+        }
+
+        if (options.method === "GET") {
+          return Response.json({
+            parent: {
+              data_source_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+              type: "data_source_id",
+            },
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          action: "submitted",
+          pull_request: {
+            ...pullRequest,
+            number: 42,
+            url: "https://api.github.com/repos/yunkooo/nado/pulls/42",
+          },
+          review: {
+            state: "approved",
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+
+    const updatedProperties = JSON.parse(requests[2].options.body).properties;
+
+    expect(updatedProperties["Review Status"]).toEqual({
+      select: {
+        name: "Passed",
+      },
+    });
+    expect(updatedProperties["CI Status"]).toBeUndefined();
+  });
+
   it("marks dismissed pull request reviews as unknown", () => {
     const plan = createSyncPlan({
       action: "dismissed",
       now,
       pullRequest,
-      reviewState: "changes_requested",
+      reviewState: "unknown",
       syncMode: "review-event",
     });
 
@@ -579,6 +751,9 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSyncWorkflowSource).toContain(
       "head.repo.full_name == github.repository",
     );
+    expect(notionTicketSyncWorkflowSource).toContain(
+      "Skip unavailable trusted sync script",
+    );
   });
 
   it("documents typed ticket creation and push metadata rules", () => {
@@ -611,5 +786,7 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSchemaSource).toContain("Last Push Summary");
     expect(notionTicketSchemaSource).toContain("pull_request_review");
     expect(notionTicketSchemaSource).toContain("fork PR");
+    expect(notionTicketSchemaSource).toContain("2025-09-03");
+    expect(notionTicketSchemaSource).toContain("활성 change request");
   });
 });

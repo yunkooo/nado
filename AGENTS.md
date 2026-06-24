@@ -54,10 +54,10 @@
 - same-repository PR에서 `Ticket:` URL이 없으면 `Notion Ticket Sync` GitHub Actions check가 실패하는 것이 정상이다.
 - `Ticket:` URL의 Notion page는 `NOTION_TICKETS_DATA_SOURCE_ID`로 설정된 data source에 속해야 하며, 다른 data source의 page면 동기화하지 않는다.
 - 자동화에 필요한 GitHub Actions 값은 `NOTION_TOKEN`, `NOTION_TICKETS_DATA_SOURCE_ID`, 기본 `GITHUB_TOKEN`이다. 실제 token 값과 data source ID 값은 코드, 문서, 커밋에 남기지 않는다.
-- `NOTION_TOKEN`은 PR branch에서 checkout한 코드에 주입하지 않는다. Notion 동기화는 trusted base/default branch 코드에서만 실행한다.
+- `NOTION_TOKEN`은 PR branch에서 checkout한 코드에 주입하지 않는다. Notion 동기화는 trusted base/default branch 코드에서만 실행하며, trusted checkout에 sync script가 아직 없으면 skip한다.
 - PR branch push는 `pull_request synchronize` 이벤트를 통해 Notion의 `Last Push At`, `Last Head SHA`, `Last Push Summary`에 기록한다.
 - PR 본문 수정은 `Ticket:` URL과 PR metadata만 확인하고 기존 CI/review 상태를 덮어쓰지 않는다.
-- PR review 제출은 `pull_request_review` 이벤트를 통해 `Review Status`와 `Last Review Check`만 갱신한다.
+- PR review 제출은 `pull_request_review` 이벤트를 통해 `Review Status`와 `Last Review Check`만 갱신한다. 승인 이벤트는 현재 review 목록에 활성 change request가 없을 때만 `Passed`로 기록한다.
 - fork PR은 Notion token을 사용하는 동기화 대상에서 제외한다.
 
 ## 커밋 규칙

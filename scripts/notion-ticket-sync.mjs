@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const NOTION_API_VERSION = "2022-06-28";
+const NOTION_API_VERSION = "2025-09-03";
 const GITHUB_API_VERSION = "2022-11-28";
 const NOTION_PAGE_URL_PATTERN =
   /https?:\/\/(?:www\.)?(?:app\.)?notion\.(?:so|com)\/[^\s<>)]+/i;
@@ -350,11 +350,26 @@ export async function runSync({
 
 async function resolveSyncInput({ env, event, fetchImpl }) {
   if (event.review && event.pull_request) {
+    if (!env.GITHUB_TOKEN) {
+      return {
+        ok: false,
+        reason: "Missing required environment variables: GITHUB_TOKEN",
+      };
+    }
+
+    const reviewState = await resolvePullRequestReviewState({
+      fetchImpl,
+      githubToken: env.GITHUB_TOKEN,
+      pullRequest: event.pull_request,
+      reviewAction: event.action,
+      reviewState: event.review.state,
+    });
+
     return {
       action: event.action,
       ok: true,
       pullRequest: event.pull_request,
-      reviewState: event.review.state,
+      reviewState,
       syncMode: "review-event",
     };
   }
@@ -437,19 +452,75 @@ function isStaleWorkflowRunForPullRequest(workflowRun, pullRequest) {
   return Boolean(runHeadSha && currentHeadSha && runHeadSha !== currentHeadSha);
 }
 
-function mapReviewStateToStatus({ reviewAction, reviewState }) {
-  if (reviewAction === "dismissed") {
-    return "Unknown";
-  }
-
+function mapReviewStateToStatus({ reviewState }) {
   switch (reviewState?.toLowerCase()) {
     case "approved":
       return "Passed";
     case "changes_requested":
       return "Changes requested";
+    case "unknown":
+      return "Unknown";
     default:
       return null;
   }
+}
+
+async function resolvePullRequestReviewState({
+  fetchImpl,
+  githubToken,
+  pullRequest,
+  reviewAction,
+  reviewState,
+}) {
+  const reviewsUrl = buildPullRequestReviewsApiUrl(pullRequest);
+
+  if (!reviewsUrl) {
+    return reviewAction === "dismissed" ? "unknown" : reviewState;
+  }
+
+  const reviews = await fetchGitHubPullRequestReviews({
+    fetchImpl,
+    githubToken,
+    reviewsUrl,
+  });
+
+  return deriveReviewStateFromReviews({
+    fallbackState: reviewAction === "dismissed" ? "unknown" : reviewState,
+    reviews,
+  });
+}
+
+function deriveReviewStateFromReviews({ fallbackState, reviews }) {
+  const latestByReviewer = new Map();
+
+  for (const review of reviews ?? []) {
+    const reviewer = review.user?.login;
+    const submittedAt = review.submitted_at ?? "";
+
+    if (!reviewer || !review.state) {
+      continue;
+    }
+
+    const previousReview = latestByReviewer.get(reviewer);
+
+    if (!previousReview || submittedAt >= (previousReview.submitted_at ?? "")) {
+      latestByReviewer.set(reviewer, review);
+    }
+  }
+
+  const latestStates = Array.from(latestByReviewer.values()).map((review) =>
+    review.state.toLowerCase(),
+  );
+
+  if (latestStates.includes("changes_requested")) {
+    return "changes_requested";
+  }
+
+  if (latestStates.includes("approved")) {
+    return "approved";
+  }
+
+  return fallbackState;
 }
 
 function buildPullRequestApiUrl({ number, repositoryUrl }) {
@@ -458,6 +529,14 @@ function buildPullRequestApiUrl({ number, repositoryUrl }) {
   }
 
   return `${repositoryUrl}/pulls/${number}`;
+}
+
+function buildPullRequestReviewsApiUrl(pullRequest) {
+  if (!pullRequest?.url) {
+    return null;
+  }
+
+  return `${pullRequest.url}/reviews`;
 }
 
 function isCrossRepositoryPullRequest(pullRequest, repository) {
@@ -656,6 +735,30 @@ async function fetchGitHubPullRequest({
 
     throw new Error(
       `GitHub pull request fetch failed (${response.status}): ${errorBody}`,
+    );
+  }
+
+  return response.json();
+}
+
+async function fetchGitHubPullRequestReviews({
+  fetchImpl,
+  githubToken,
+  reviewsUrl,
+}) {
+  const response = await fetchImpl(reviewsUrl, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${githubToken}`,
+      "X-GitHub-Api-Version": GITHUB_API_VERSION,
+    },
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+
+    throw new Error(
+      `GitHub pull request reviews fetch failed (${response.status}): ${errorBody}`,
     );
   }
 

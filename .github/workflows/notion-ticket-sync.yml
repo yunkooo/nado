@@ -24,13 +24,27 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.base.sha }}
 
+      - name: Skip unavailable trusted sync script
+        id: trusted-sync-script
+        run: |
+          if [ ! -f scripts/notion-ticket-sync.mjs ]; then
+            echo "Notion sync script is not available in the trusted checkout. Skipping until this workflow is merged."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "available=true" >> "$GITHUB_OUTPUT"
+
       - name: Setup Node.js
+        if: steps.trusted-sync-script.outputs.available == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
       - name: Sync Notion ticket
+        if: steps.trusted-sync-script.outputs.available == 'true'
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           NOTION_TICKETS_DATA_SOURCE_ID: ${{ vars.NOTION_TICKETS_DATA_SOURCE_ID || secrets.NOTION_TICKETS_DATA_SOURCE_ID }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
@@ -46,12 +60,25 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
 
+      - name: Skip unavailable trusted sync script
+        id: trusted-sync-script
+        run: |
+          if [ ! -f scripts/notion-ticket-sync.mjs ]; then
+            echo "Notion sync script is not available in the trusted checkout. Skipping until this workflow is merged."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "available=true" >> "$GITHUB_OUTPUT"
+
       - name: Setup Node.js
+        if: steps.trusted-sync-script.outputs.available == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
       - name: Sync Notion ticket
+        if: steps.trusted-sync-script.outputs.available == 'true'
         env:
           CI_RESULT: ${{ github.event.workflow_run.conclusion }}
           GITHUB_REPOSITORY: ${{ github.repository }}
