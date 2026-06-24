@@ -98,8 +98,8 @@
 | -------------------- | -------------- | -------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | 티켓 생성            | `TODO`         | `Not started`              | `Not requested`     | 아직 GitHub 작업이 없어야 한다.                                                                                        |
 | 작업 시작            | `IN-progrss`   | `Not started`              | `Not requested`     | 브랜치를 만들면 `GitHub Branch`를 기록한다.                                                                            |
-| PR 생성/업데이트     | `IN-review`    | GitHub Actions 결과        | `Pending`           | `Ticket:` URL이 없으면 `Notion Ticket Sync` check가 실패한다.                                                          |
-| PR 본문 수정         | 현재 상태 유지 | 현재 CI 상태 유지          | 현재 리뷰 상태 유지 | `Ticket:` URL과 PR metadata만 확인하고 CI/review 상태를 덮어쓰지 않는다.                                               |
+| PR 생성/업데이트     | `IN-review`    | GitHub Actions 결과        | `Pending`           | 현재 PR이 closed가 아닐 때만 갱신한다. `Ticket:` URL이 없으면 `Notion Ticket Sync` check가 실패한다.                   |
+| PR 본문 수정         | 현재 상태 유지 | 현재 CI 상태 유지          | 현재 리뷰 상태 유지 | 현재 PR이 closed가 아닐 때만 `Ticket:` URL과 PR metadata를 확인하고 CI/review 상태를 덮어쓰지 않는다.                  |
 | PR branch push       | `IN-review`    | `Pending`                  | `Pending`           | 현재 PR head SHA와 webhook payload SHA가 같을 때만 `Last Push At`, `Last Head SHA`, `Last Push Summary`를 기록한다.    |
 | CI 실패              | `IN-review`    | `Failed`                   | 현재 리뷰 상태 유지 | 실패한 check 이름과 핵심 로그를 사용자에게 보고한다.                                                                   |
 | CI 성공              | `IN-review`    | `Success`                  | 현재 리뷰 상태 유지 | CI 성공만으로 `DONE` 처리하지 않는다.                                                                                  |
@@ -167,6 +167,8 @@ GitHub Actions는 URL에서 page ID를 추출한 뒤 해당 page가 `NOTION_TICK
 GitHub Actions는 PR branch push가 감지되면 현재 PR head SHA를 조회한다. webhook payload의 head SHA가
 현재 PR head SHA와 같을 때만 `Last Push At`, `Last Head SHA`, `Last Push Summary` 속성을 자동 갱신한다.
 더 오래된 `pull_request synchronize` job이 늦게 끝나면 stale 이벤트로 보고 Notion 업데이트를 skip한다.
+`closed`를 제외한 `pull_request_target` 이벤트는 Notion 업데이트 전에 현재 PR 상태를 다시 조회한다. 현재 PR이
+이미 closed이면 stale 이벤트로 보고 `IN-review`, PR metadata, push metadata를 다시 쓰지 않는다.
 본문 `진행 메모`에 장문의 히스토리를 쌓는 것은 v2.1 이후 필요할 때 추가한다.
 
 ## Merge Completion Rule

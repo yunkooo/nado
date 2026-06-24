@@ -242,11 +242,21 @@ describe("notion ticket sync helpers", () => {
       env: {
         GITHUB_EVENT_PATH: "pull-request-event.json",
         GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
         NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
         NOTION_TOKEN: "notion-token",
       },
       fetchImpl: async (url, options = {}) => {
         requests.push({ options, url });
+
+        if (url === "https://api.github.com/repos/yunkooo/nado/pulls/42") {
+          return Response.json({
+            ...pullRequest,
+            number: 42,
+            state: "open",
+            url,
+          });
+        }
 
         if (options.method === "GET") {
           return Response.json({
@@ -262,7 +272,11 @@ describe("notion ticket sync helpers", () => {
       readFile: () =>
         JSON.stringify({
           action: "opened",
-          pull_request: pullRequest,
+          pull_request: {
+            ...pullRequest,
+            number: 42,
+            url: "https://api.github.com/repos/yunkooo/nado/pulls/42",
+          },
         }),
     });
 
@@ -270,9 +284,12 @@ describe("notion ticket sync helpers", () => {
     expect(result.reason).toBe(
       "Notion ticket page is not in the configured Notion data source",
     );
-    expect(requests).toHaveLength(1);
-    expect(requests[0].options.method).toBe("GET");
-    expect(requests[0].options.headers["Notion-Version"]).toBe("2025-09-03");
+    expect(requests).toHaveLength(2);
+    expect(requests[0].url).toBe(
+      "https://api.github.com/repos/yunkooo/nado/pulls/42",
+    );
+    expect(requests[1].options.method).toBe("GET");
+    expect(requests[1].options.headers["Notion-Version"]).toBe("2025-09-03");
   });
 
   it("skips stale synchronize events before writing push metadata", async () => {
@@ -322,6 +339,53 @@ describe("notion ticket sync helpers", () => {
     expect(result.skipped).toBe(true);
     expect(result.reason).toBe(
       "Skipping stale PR-event Notion sync for an outdated synchronize event",
+    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].url).toBe(pullRequestUrl);
+  });
+
+  it("skips stale active PR events when the current PR is already closed", async () => {
+    const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "pull-request-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === pullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            merged: true,
+            state: "closed",
+            url: pullRequestUrl,
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          action: "opened",
+          pull_request: {
+            ...pullRequest,
+            number: 42,
+            state: "open",
+            url: pullRequestUrl,
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.skipped).toBe(true);
+    expect(result.reason).toBe(
+      "Skipping stale PR-event Notion sync for a closed pull request",
     );
     expect(requests).toHaveLength(1);
     expect(requests[0].url).toBe(pullRequestUrl);
@@ -1020,6 +1084,9 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSchemaSource).toContain("COMMENTED");
     expect(notionTicketSchemaSource).toContain(
       "더 오래된 `pull_request synchronize` job",
+    );
+    expect(notionTicketSchemaSource).toContain(
+      "`closed`를 제외한 `pull_request_target` 이벤트",
     );
   });
 });

@@ -377,7 +377,7 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
   if (event.pull_request) {
     let pullRequest = event.pull_request;
 
-    if (event.action === "synchronize") {
+    if (shouldFetchCurrentPullRequestForEvent(event.action)) {
       if (!env.GITHUB_TOKEN) {
         return {
           ok: false,
@@ -405,7 +405,17 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
         pullRequestUrl,
       });
 
+      if (currentPullRequest.state === "closed") {
+        return {
+          ok: true,
+          reason:
+            "Skipping stale PR-event Notion sync for a closed pull request",
+          skipped: true,
+        };
+      }
+
       if (
+        event.action === "synchronize" &&
         isStaleSynchronizeEventForPullRequest(
           event.pull_request,
           currentPullRequest,
@@ -490,6 +500,10 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
     pullRequest,
     syncMode: "ci-result",
   };
+}
+
+function shouldFetchCurrentPullRequestForEvent(action) {
+  return action !== "closed";
 }
 
 function isStaleWorkflowRunForPullRequest(workflowRun, pullRequest) {
