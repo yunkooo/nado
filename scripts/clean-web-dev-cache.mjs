@@ -25,7 +25,8 @@ async function removePackageTurboCaches(scope) {
 }
 
 await Promise.all([
-  removePath(join(root, "apps", "web", ".next")),
+  removePath(join(root, "apps", "web", ".next", "dev", "cache")),
+  removePath(join(root, "apps", "web", ".next", "cache")),
   removePath(join(root, ".turbo")),
   removePackageTurboCaches("apps"),
   removePackageTurboCaches("packages"),
