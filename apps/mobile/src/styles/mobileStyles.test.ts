@@ -56,6 +56,18 @@ describe("mobile shared style tokens", () => {
     expect(mobileStylesSource).toContain("paddingHorizontal: mobileSpacing.md");
   });
 
+  it("lets the analysis composer settle at the bottom of scroll content", () => {
+    const contentStyle = mobileStylesSource.match(
+      /content:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+    const composerWrapStyle = mobileStylesSource.match(
+      /composerWrap:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+
+    expect(contentStyle).toContain("flexGrow: 1");
+    expect(composerWrapStyle).toContain('marginTop: "auto"');
+  });
+
   it("keeps the analyze icon button backed by send icon component tokens", () => {
     const analyzeButtonStyle = mobileStylesSource.match(
       /analyzeButton:\s*{(?<body>[\s\S]*?)\n  },/,

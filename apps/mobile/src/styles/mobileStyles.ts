@@ -126,6 +126,7 @@ export const styles = StyleSheet.create({
   },
   composerWrap: {
     gap: 10,
+    marginTop: "auto",
     width: "100%",
   },
   composerFooter: {
@@ -226,6 +227,7 @@ export const styles = StyleSheet.create({
   },
   content: {
     alignItems: "stretch",
+    flexGrow: 1,
     gap: 20,
     paddingHorizontal: 14,
     paddingTop: 20,
