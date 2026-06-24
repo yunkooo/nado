@@ -26,6 +26,7 @@ description: nado 저장소에서 Notion 티켓 기반 작업을 진행할 때 �
 - `NOTION_TOKEN` 또는 `NOTION_TICKETS_DATA_SOURCE_ID` 값은 코드, 문서, 로그, PR 본문, 채팅에 노출하지 않는다.
 - `Ticket:` URL의 Notion page는 GitHub Actions에 설정된 `NOTION_TICKETS_DATA_SOURCE_ID`의 data source에 속해야 한다.
 - Notion sync는 data source parent 확인을 위해 `Notion-Version: 2025-09-03` 이상을 기준으로 한다.
+- `NOTION_TOKEN`을 사용하는 Notion sync는 `main` 대상 PR과 trusted `workflow_dispatch`/`workflow_run`에서만 실행하고, default branch 코드를 checkout한다. 신뢰되지 않은 same-repository feature branch를 base로 하는 PR에는 secret-bearing sync를 실행하지 않는다.
 
 ## 상태 매핑
 

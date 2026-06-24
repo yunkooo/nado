@@ -117,10 +117,12 @@ GitHub Actions의 `Notion Ticket Sync` workflow는 다음 값이 있어야 동�
 - Repository variable 또는 secret: `NOTION_TICKETS_DATA_SOURCE_ID`
 - Built-in token: `GITHUB_TOKEN`
 
-`NOTION_TOKEN`은 PR branch에서 checkout한 코드에 주입하지 않는다. Notion 동기화는
-`.github/workflows/notion-ticket-sync.yml`에서 `pull_request_target`, `workflow_dispatch`,
-또는 `workflow_run` 이벤트로 실행하며, base/default branch에서 checkout한 trusted code의
-`scripts/notion-ticket-sync.mjs`만 실행한다.
+`NOTION_TOKEN`은 PR branch 또는 신뢰되지 않은 base branch에서 checkout한 코드에 주입하지 않는다.
+Notion 동기화는 `.github/workflows/notion-ticket-sync.yml`에서 `pull_request_target`,
+`workflow_dispatch`, 또는 `workflow_run` 이벤트로 실행하며, `scripts/notion-ticket-sync.mjs`는
+default branch에서 checkout한 trusted code만 실행한다. `pull_request_target`은 `main` 대상 PR로
+제한해서, 신뢰되지 않은 same-repository feature branch를 base로 하는 PR에는 secret-bearing sync를
+실행하지 않는다.
 
 `pull_request_review` 이벤트는 `.github/workflows/notion-ticket-review-dispatch.yml`의
 토큰 없는 dispatch job으로만 처리한다. 이 workflow는 `NOTION_TOKEN`이나
@@ -143,7 +145,7 @@ PR 생성, PR 업데이트, PR branch push 같은 활성 PR 이벤트는 `CI Sta
 쓰지 않는다. CI 결과는 `workflow_run` 기반 `ci-result` sync가 기록하므로, 더 늦게 끝난
 `pull_request_target` job이 이미 기록된 `Success` 또는 `Failed`를 `Pending`으로 되돌리지 않는다.
 
-이 workflow를 추가하는 PR처럼 base/default branch의 trusted checkout에 아직
+이 workflow를 추가하는 PR처럼 default branch의 trusted checkout에 아직
 `scripts/notion-ticket-sync.mjs`가 없으면 Notion sync step은 성공적으로 skip한다. merge 이후
 trusted branch에 script가 존재하면 같은 workflow가 실제 동기화를 수행한다.
 

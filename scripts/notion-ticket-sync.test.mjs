@@ -1229,6 +1229,11 @@ describe("notion ticket sync helpers", () => {
       notionTicketReviewDispatchWorkflowSource,
       "review-dispatch",
     );
+    const prEventJob = workflowJobSource(
+      notionTicketSyncWorkflowSource,
+      "pr-event",
+      "trusted-review-event",
+    );
     const trustedReviewJob = workflowJobSource(
       notionTicketSyncWorkflowSource,
       "trusted-review-event",
@@ -1245,6 +1250,7 @@ describe("notion ticket sync helpers", () => {
     expect(ciWorkflowSource).not.toContain("NOTION_TICKETS_DATA_SOURCE_ID");
     expect(ciWorkflowSource).not.toContain("notion-ticket-sync:");
     expect(notionTicketSyncWorkflowSource).toContain("pull_request_target:");
+    expect(notionTicketSyncWorkflowSource).toContain("branches: [main]");
     expect(notionTicketSyncWorkflowSource).toContain("workflow_run:");
     expect(notionTicketSyncWorkflowSource).toContain("workflow_dispatch:");
     expect(notionTicketSyncWorkflowSource).not.toContain(
@@ -1259,11 +1265,12 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketReviewDispatchWorkflowSource).not.toContain(
       "NOTION_TICKETS_DATA_SOURCE_ID",
     );
-    expect(notionTicketSyncWorkflowSource).toContain(
-      "Checkout trusted base code",
-    );
-    expect(notionTicketSyncWorkflowSource).toContain(
+    expect(notionTicketSyncWorkflowSource).not.toContain(
       "ref: ${{ github.event.pull_request.base.sha }}",
+    );
+    expect(prEventJob).toContain("Checkout trusted default branch code");
+    expect(prEventJob).toContain(
+      "ref: ${{ github.event.repository.default_branch }}",
     );
     expect(notionTicketSyncWorkflowSource).toContain(
       "Checkout trusted default branch code",
