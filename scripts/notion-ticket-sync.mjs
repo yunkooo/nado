@@ -123,11 +123,13 @@ export function buildNotionPropertiesForEvent({
   ciStatus,
   now,
   pullRequest,
+  syncMode = "pr-event",
 }) {
   if (!pullRequest) {
     throw new Error("pullRequest is required");
   }
 
+  const isCiResultSync = syncMode === "ci-result";
   const properties = {
     "GitHub PR": { url: pullRequest.html_url ?? null },
     "GitHub Branch": richText(pullRequest.head?.ref ?? ""),
@@ -139,7 +141,7 @@ export function buildNotionPropertiesForEvent({
     properties["PR Created At"] = date(pullRequest.created_at);
   }
 
-  if (action === "synchronize") {
+  if (!isCiResultSync && action === "synchronize") {
     properties["Last Push At"] = date(now);
     properties["Last Head SHA"] = richText(pullRequest.head?.sha ?? "");
     properties["Last Push Summary"] = richText(buildPushSummary(pullRequest));
@@ -167,6 +169,10 @@ export function buildNotionPropertiesForEvent({
     };
   }
 
+  if (isCiResultSync) {
+    return properties;
+  }
+
   return {
     ...properties,
     상태: status("IN-review"),
@@ -192,6 +198,7 @@ export function createSyncPlan({
   e2eResult,
   now = new Date().toISOString(),
   pullRequest,
+  syncMode = "pr-event",
   verifyResult,
 }) {
   const ticketUrl = parseTicketUrlFromBody(pullRequest?.body ?? "");
@@ -228,6 +235,7 @@ export function createSyncPlan({
       ),
       now,
       pullRequest,
+      syncMode,
     }),
     ticketUrl,
   };
@@ -282,6 +290,7 @@ export async function runSync({
     ciResult: syncInput.ciResult,
     e2eResult: env.E2E_RESULT,
     pullRequest: syncInput.pullRequest,
+    syncMode: syncInput.syncMode,
     verifyResult: env.VERIFY_RESULT,
   });
 
@@ -310,6 +319,7 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
       ciResult: env.CI_RESULT,
       ok: true,
       pullRequest: event.pull_request,
+      syncMode: "pr-event",
     };
   }
 
@@ -356,12 +366,29 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
     };
   }
 
+  if (isStaleWorkflowRunForPullRequest(event.workflow_run, pullRequest)) {
+    return {
+      ok: true,
+      reason:
+        "Skipping stale CI-result Notion sync for an outdated workflow run",
+      skipped: true,
+    };
+  }
+
   return {
     action: "synchronize",
     ciResult: env.CI_RESULT ?? event.workflow_run.conclusion,
     ok: true,
     pullRequest,
+    syncMode: "ci-result",
   };
+}
+
+function isStaleWorkflowRunForPullRequest(workflowRun, pullRequest) {
+  const runHeadSha = workflowRun?.head_sha;
+  const currentHeadSha = pullRequest.head?.sha;
+
+  return Boolean(runHeadSha && currentHeadSha && runHeadSha !== currentHeadSha);
 }
 
 function buildPullRequestApiUrl({ number, repositoryUrl }) {

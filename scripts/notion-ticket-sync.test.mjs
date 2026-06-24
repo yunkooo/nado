@@ -235,6 +235,7 @@ describe("notion ticket sync helpers", () => {
             ...pullRequest,
             head: {
               ...pullRequest.head,
+              sha: "current-head-sha",
               repo: {
                 full_name: "yunkooo/nado",
               },
@@ -252,6 +253,7 @@ describe("notion ticket sync helpers", () => {
           workflow_run: {
             conclusion: "failure",
             event: "pull_request",
+            head_sha: "current-head-sha",
             pull_requests: [
               {
                 number: 42,
@@ -270,13 +272,20 @@ describe("notion ticket sync helpers", () => {
     expect(requests[1].url).toBe(
       "https://api.notion.com/v1/pages/11111111-2222-3333-4444-555555555555",
     );
-    expect(
-      JSON.parse(requests[1].options.body).properties["CI Status"],
-    ).toEqual({
+    const updatedProperties = JSON.parse(requests[1].options.body).properties;
+
+    expect(updatedProperties["CI Status"]).toEqual({
       select: {
         name: "Failed",
       },
     });
+    expect(updatedProperties["상태"]).toBeUndefined();
+    expect(updatedProperties["Review Status"]).toBeUndefined();
+    expect(updatedProperties["Last Review Check"]).toBeUndefined();
+    expect(updatedProperties.Blocker).toBeUndefined();
+    expect(updatedProperties["Last Push At"]).toBeUndefined();
+    expect(updatedProperties["Last Head SHA"]).toBeUndefined();
+    expect(updatedProperties["Last Push Summary"]).toBeUndefined();
   });
 
   it("skips CI-result syncs for closed pull requests", async () => {
@@ -327,6 +336,66 @@ describe("notion ticket sync helpers", () => {
     expect(result.skipped).toBe(true);
     expect(result.reason).toBe(
       "Skipping CI-result Notion sync for a closed pull request",
+    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].url).toBe(githubPullRequestUrl);
+  });
+
+  it("skips stale CI-result syncs for outdated workflow runs", async () => {
+    const githubPullRequestUrl =
+      "https://api.github.com/repos/yunkooo/nado/pulls/42";
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "workflow-run-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "notion-data-source",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === githubPullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            head: {
+              ...pullRequest.head,
+              repo: {
+                full_name: "yunkooo/nado",
+              },
+              sha: "current-head-sha",
+            },
+            state: "open",
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          repository: {
+            url: "https://api.github.com/repos/yunkooo/nado",
+          },
+          workflow_run: {
+            conclusion: "failure",
+            event: "pull_request",
+            head_sha: "outdated-head-sha",
+            pull_requests: [
+              {
+                number: 42,
+                url: githubPullRequestUrl,
+              },
+            ],
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.skipped).toBe(true);
+    expect(result.reason).toBe(
+      "Skipping stale CI-result Notion sync for an outdated workflow run",
     );
     expect(requests).toHaveLength(1);
     expect(requests[0].url).toBe(githubPullRequestUrl);
