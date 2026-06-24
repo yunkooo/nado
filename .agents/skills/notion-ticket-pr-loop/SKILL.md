@@ -24,6 +24,7 @@ description: nado 저장소에서 Notion 티켓 기반 작업을 진행할 때 �
 - Notion 접근 권한이 없으면 사용자에게 ticket URL과 현재 상태를 확인받고, 확인된 정보만 기준으로 진행한다.
 - Notion 도구나 API 호출이 실제로 성공하기 전에는 티켓을 읽었거나 갱신했다고 말하지 않는다.
 - `NOTION_TOKEN` 또는 `NOTION_TICKETS_DATA_SOURCE_ID` 값은 코드, 문서, 로그, PR 본문, 채팅에 노출하지 않는다.
+- `Ticket:` URL의 Notion page는 GitHub Actions에 설정된 `NOTION_TICKETS_DATA_SOURCE_ID`의 data source에 속해야 한다.
 
 ## 상태 매핑
 
@@ -90,8 +91,9 @@ Notion 티켓을 새로 만들거나 사용자가 티켓 생성을 요청하면 
 9. PR을 만들 때 `Ticket:` 줄에 Notion page URL을 넣는다.
 10. Notion 접근 권한이 있으면 티켓을 `IN-review`로 옮기고, `GitHub PR`, `GitHub Branch`를 기록한 뒤 `Review Status`를 `Pending`으로 설정한다.
 11. `CI Status`와 `Last CI Check`는 GitHub Actions가 기록하도록 둔다.
-12. PR branch push 후에는 GitHub Actions가 `Last Push At`, `Last Head SHA`, `Last Push Summary`를 기록하도록 둔다. 사용자가 수동 진행 메모를 원하면 Notion 접근 권한이 있을 때만 `진행 메모`에 짧게 남긴다.
-13. 티켓을 `DONE`으로 옮기지 않는다. `DONE` 처리는 PR merge 후 GitHub Actions가 담당한다.
+12. PR branch push 후에는 GitHub Actions가 `Last Push At`, `Last Head SHA`, `Last Push Summary`를 기록하도록 둔다. PR 본문 수정은 ticket URL과 PR metadata만 확인하며 기존 CI/review 상태를 덮어쓰지 않는다.
+13. PR review 제출 후에는 GitHub Actions가 `Review Status`와 `Last Review Check`를 기록하도록 둔다. 명시적인 change request는 `Changes requested`, 승인 리뷰는 `Passed`, dismissed review는 `Unknown`으로 동기화한다.
+14. 티켓을 `DONE`으로 옮기지 않는다. `DONE` 처리는 PR merge 후 GitHub Actions가 담당한다.
 
 ## PR 본문 요구사항
 
@@ -104,7 +106,7 @@ PR 본문에는 반드시 다음 섹션이 있어야 한다.
 - Status before PR: `TODO` / `IN-progrss`
 ```
 
-`Ticket:`이 없으면 `Notion Ticket Sync` GitHub Actions check가 실패하는 것이 정상이다.
+same-repository PR에서 `Ticket:`이 없으면 `Notion Ticket Sync` GitHub Actions check가 실패하는 것이 정상이다. fork PR은 Notion token을 사용하는 동기화 대상에서 제외한다.
 
 ## Blocker 처리
 
@@ -123,4 +125,5 @@ PR 본문에는 반드시 다음 섹션이 있어야 한다.
 - Notion 접근 권한이 있으면 PR 생성 후 `GitHub PR`과 `GitHub Branch`를 기록했다.
 - PR branch push 후에는 GitHub Actions가 push metadata를 갱신한다고 안내했다.
 - CI 상태 기록은 GitHub Actions에 맡겼다.
+- review 상태 기록은 GitHub Actions의 `pull_request_review` 동기화에 맡겼다.
 - Notion 접근 권한이 있으면 merge 전 티켓 상태는 `IN-review`에서 멈추며, `DONE`으로 직접 옮기지 않았다.

@@ -123,6 +123,7 @@ export function buildNotionPropertiesForEvent({
   ciStatus,
   now,
   pullRequest,
+  reviewState,
   syncMode = "pr-event",
 }) {
   if (!pullRequest) {
@@ -130,18 +131,24 @@ export function buildNotionPropertiesForEvent({
   }
 
   const isCiResultSync = syncMode === "ci-result";
+  const isMetadataOnlySync = syncMode === "metadata-only";
+  const isReviewSync = syncMode === "review-event";
+  const shouldUpdateCi = !isMetadataOnlySync && !isReviewSync;
   const properties = {
     "GitHub PR": { url: pullRequest.html_url ?? null },
     "GitHub Branch": richText(pullRequest.head?.ref ?? ""),
-    "CI Status": select(ciStatus ?? "Unknown"),
-    "Last CI Check": date(now),
   };
+
+  if (shouldUpdateCi) {
+    properties["CI Status"] = select(ciStatus ?? "Unknown");
+    properties["Last CI Check"] = date(now);
+  }
 
   if (pullRequest.created_at) {
     properties["PR Created At"] = date(pullRequest.created_at);
   }
 
-  if (!isCiResultSync && action === "synchronize") {
+  if (syncMode === "pr-event" && action === "synchronize") {
     properties["Last Push At"] = date(now);
     properties["Last Head SHA"] = richText(pullRequest.head?.sha ?? "");
     properties["Last Push Summary"] = richText(buildPushSummary(pullRequest));
@@ -169,7 +176,22 @@ export function buildNotionPropertiesForEvent({
     };
   }
 
-  if (isCiResultSync) {
+  if (isReviewSync) {
+    const reviewStatus = mapReviewStateToStatus({
+      reviewAction: action,
+      reviewState,
+    });
+
+    if (reviewStatus) {
+      properties["Review Status"] = select(reviewStatus);
+    }
+
+    properties["Last Review Check"] = date(now);
+
+    return properties;
+  }
+
+  if (isCiResultSync || isMetadataOnlySync) {
     return properties;
   }
 
@@ -198,6 +220,7 @@ export function createSyncPlan({
   e2eResult,
   now = new Date().toISOString(),
   pullRequest,
+  reviewState,
   syncMode = "pr-event",
   verifyResult,
 }) {
@@ -235,6 +258,7 @@ export function createSyncPlan({
       ),
       now,
       pullRequest,
+      reviewState,
       syncMode,
     }),
     ticketUrl,
@@ -290,12 +314,24 @@ export async function runSync({
     ciResult: syncInput.ciResult,
     e2eResult: env.E2E_RESULT,
     pullRequest: syncInput.pullRequest,
+    reviewState: syncInput.reviewState,
     syncMode: syncInput.syncMode,
     verifyResult: env.VERIFY_RESULT,
   });
 
   if (!syncPlan.ok) {
     return syncPlan;
+  }
+
+  const pageValidation = await validateNotionTicketPage({
+    dataSourceId: env.NOTION_TICKETS_DATA_SOURCE_ID,
+    fetchImpl,
+    notionToken: env.NOTION_TOKEN,
+    pageId: syncPlan.pageId,
+  });
+
+  if (!pageValidation.ok) {
+    return pageValidation;
   }
 
   await updateNotionPage({
@@ -313,13 +349,23 @@ export async function runSync({
 }
 
 async function resolveSyncInput({ env, event, fetchImpl }) {
+  if (event.review && event.pull_request) {
+    return {
+      action: event.action,
+      ok: true,
+      pullRequest: event.pull_request,
+      reviewState: event.review.state,
+      syncMode: "review-event",
+    };
+  }
+
   if (event.pull_request) {
     return {
       action: event.action,
       ciResult: env.CI_RESULT,
       ok: true,
       pullRequest: event.pull_request,
-      syncMode: "pr-event",
+      syncMode: event.action === "edited" ? "metadata-only" : "pr-event",
     };
   }
 
@@ -391,6 +437,21 @@ function isStaleWorkflowRunForPullRequest(workflowRun, pullRequest) {
   return Boolean(runHeadSha && currentHeadSha && runHeadSha !== currentHeadSha);
 }
 
+function mapReviewStateToStatus({ reviewAction, reviewState }) {
+  if (reviewAction === "dismissed") {
+    return "Unknown";
+  }
+
+  switch (reviewState?.toLowerCase()) {
+    case "approved":
+      return "Passed";
+    case "changes_requested":
+      return "Changes requested";
+    default:
+      return null;
+  }
+}
+
 function buildPullRequestApiUrl({ number, repositoryUrl }) {
   if (!number || !repositoryUrl) {
     return null;
@@ -407,6 +468,39 @@ function isCrossRepositoryPullRequest(pullRequest, repository) {
   const headRepository = pullRequest.head?.repo?.full_name;
 
   return Boolean(headRepository && headRepository !== repository);
+}
+
+function isNotionPageInDataSource(page, dataSourceId) {
+  const pageParentId = getNotionPageParentDataSourceId(page);
+
+  return Boolean(
+    pageParentId &&
+    normalizeNotionId(pageParentId) === normalizeNotionId(dataSourceId),
+  );
+}
+
+function getNotionPageParentDataSourceId(page) {
+  const parent = page?.parent;
+
+  if (!parent) {
+    return null;
+  }
+
+  if (parent.type === "data_source_id") {
+    return parent.data_source_id;
+  }
+
+  if (parent.type === "database_id") {
+    return parent.database_id;
+  }
+
+  return null;
+}
+
+function normalizeNotionId(id) {
+  return String(id ?? "")
+    .replaceAll("-", "")
+    .toLowerCase();
 }
 
 function formatCompactUuid(compactId) {
@@ -491,6 +585,57 @@ async function updateNotionPage({
       `Notion page update failed (${response.status}): ${errorBody}${permissionHint}`,
     );
   }
+}
+
+async function validateNotionTicketPage({
+  dataSourceId,
+  fetchImpl,
+  notionToken,
+  pageId,
+}) {
+  const page = await retrieveNotionPage({
+    fetchImpl,
+    notionToken,
+    pageId,
+  });
+
+  if (!isNotionPageInDataSource(page, dataSourceId)) {
+    return {
+      ok: false,
+      reason: "Notion ticket page is not in the configured Notion data source",
+    };
+  }
+
+  return {
+    ok: true,
+  };
+}
+
+async function retrieveNotionPage({ fetchImpl, notionToken, pageId }) {
+  const response = await fetchImpl(
+    `https://api.notion.com/v1/pages/${pageId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${notionToken}`,
+        "Notion-Version": NOTION_API_VERSION,
+      },
+      method: "GET",
+    },
+  );
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    const permissionHint =
+      response.status === 404
+        ? " Check that the Notion ticket page and its parent data source are shared with the integration configured by NOTION_TOKEN."
+        : "";
+
+    throw new Error(
+      `Notion page retrieval failed (${response.status}): ${errorBody}${permissionHint}`,
+    );
+  }
+
+  return response.json();
 }
 
 async function fetchGitHubPullRequest({

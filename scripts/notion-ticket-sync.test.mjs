@@ -214,6 +214,145 @@ describe("notion ticket sync helpers", () => {
     expect(plan.reason).toBe("Missing Notion Ticket URL in PR body");
   });
 
+  it("keeps CI and review fields out of PR body edit syncs", () => {
+    const plan = createSyncPlan({
+      action: "edited",
+      now,
+      pullRequest,
+      syncMode: "metadata-only",
+    });
+
+    expect(plan.ok).toBe(true);
+    expect(plan.properties["GitHub PR"].url).toBe(pullRequest.html_url);
+    expect(plan.properties["GitHub Branch"].rich_text[0].text.content).toBe(
+      "codex/nado-notion-sync",
+    );
+    expect(plan.properties["CI Status"]).toBeUndefined();
+    expect(plan.properties["Last CI Check"]).toBeUndefined();
+    expect(plan.properties["상태"]).toBeUndefined();
+    expect(plan.properties["Review Status"]).toBeUndefined();
+    expect(plan.properties["Last Review Check"]).toBeUndefined();
+    expect(plan.properties.Blocker).toBeUndefined();
+  });
+
+  it("rejects Notion ticket pages outside the configured data source", async () => {
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "pull-request-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (options.method === "GET") {
+          return Response.json({
+            parent: {
+              data_source_id: "11111111-2222-3333-4444-555555555555",
+              type: "data_source_id",
+            },
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          action: "opened",
+          pull_request: pullRequest,
+        }),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe(
+      "Notion ticket page is not in the configured Notion data source",
+    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].options.method).toBe("GET");
+  });
+
+  it("syncs pull request review changes without touching CI status", async () => {
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "pull-request-review-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (options.method === "GET") {
+          return Response.json({
+            parent: {
+              data_source_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+              type: "data_source_id",
+            },
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          action: "submitted",
+          pull_request: pullRequest,
+          review: {
+            state: "changes_requested",
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(requests).toHaveLength(2);
+    expect(requests[0].options.method).toBe("GET");
+    expect(requests[1].options.method).toBe("PATCH");
+
+    const updatedProperties = JSON.parse(requests[1].options.body).properties;
+
+    expect(updatedProperties["Review Status"]).toEqual({
+      select: {
+        name: "Changes requested",
+      },
+    });
+    expect(updatedProperties["Last Review Check"]).toEqual({
+      date: {
+        start: expect.any(String),
+      },
+    });
+    expect(updatedProperties["CI Status"]).toBeUndefined();
+    expect(updatedProperties["Last CI Check"]).toBeUndefined();
+    expect(updatedProperties["상태"]).toBeUndefined();
+  });
+
+  it("marks dismissed pull request reviews as unknown", () => {
+    const plan = createSyncPlan({
+      action: "dismissed",
+      now,
+      pullRequest,
+      reviewState: "changes_requested",
+      syncMode: "review-event",
+    });
+
+    expect(plan.ok).toBe(true);
+    expect(plan.properties["Review Status"]).toEqual({
+      select: {
+        name: "Unknown",
+      },
+    });
+    expect(plan.properties["Last Review Check"]).toEqual({
+      date: {
+        start: now,
+      },
+    });
+    expect(plan.properties["CI Status"]).toBeUndefined();
+  });
+
   it("syncs CI results from a workflow_run event after fetching trusted PR details", async () => {
     const githubPullRequestUrl =
       "https://api.github.com/repos/yunkooo/nado/pulls/42";
@@ -239,6 +378,15 @@ describe("notion ticket sync helpers", () => {
               repo: {
                 full_name: "yunkooo/nado",
               },
+            },
+          });
+        }
+
+        if (options.method === "GET") {
+          return Response.json({
+            parent: {
+              data_source_id: "notion-data-source",
+              type: "data_source_id",
             },
           });
         }
@@ -272,7 +420,12 @@ describe("notion ticket sync helpers", () => {
     expect(requests[1].url).toBe(
       "https://api.notion.com/v1/pages/11111111-2222-3333-4444-555555555555",
     );
-    const updatedProperties = JSON.parse(requests[1].options.body).properties;
+    expect(requests[1].options.method).toBe("GET");
+    expect(requests[2].url).toBe(
+      "https://api.notion.com/v1/pages/11111111-2222-3333-4444-555555555555",
+    );
+    expect(requests[2].options.method).toBe("PATCH");
+    const updatedProperties = JSON.parse(requests[2].options.body).properties;
 
     expect(updatedProperties["CI Status"]).toEqual({
       select: {
@@ -413,6 +566,7 @@ describe("notion ticket sync helpers", () => {
     expect(ciWorkflowSource).not.toContain("notion-ticket-sync:");
     expect(notionTicketSyncWorkflowSource).toContain("pull_request_target:");
     expect(notionTicketSyncWorkflowSource).toContain("workflow_run:");
+    expect(notionTicketSyncWorkflowSource).toContain("pull_request_review:");
     expect(notionTicketSyncWorkflowSource).toContain(
       "Checkout trusted base code",
     );
@@ -421,6 +575,9 @@ describe("notion ticket sync helpers", () => {
     );
     expect(notionTicketSyncWorkflowSource).toContain(
       "Checkout trusted default branch code",
+    );
+    expect(notionTicketSyncWorkflowSource).toContain(
+      "head.repo.full_name == github.repository",
     );
   });
 
@@ -452,5 +609,7 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSchemaSource).toContain("Last Push At");
     expect(notionTicketSchemaSource).toContain("Last Head SHA");
     expect(notionTicketSchemaSource).toContain("Last Push Summary");
+    expect(notionTicketSchemaSource).toContain("pull_request_review");
+    expect(notionTicketSchemaSource).toContain("fork PR");
   });
 });
