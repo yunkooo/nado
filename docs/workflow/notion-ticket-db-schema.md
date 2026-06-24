@@ -127,7 +127,8 @@ default branch에서 checkout한 trusted code만 실행한다. `pull_request_tar
 `pull_request_review` 이벤트는 `.github/workflows/notion-ticket-review-dispatch.yml`의
 토큰 없는 dispatch job으로만 처리한다. 이 workflow는 `NOTION_TOKEN`이나
 `NOTION_TICKETS_DATA_SOURCE_ID`를 받지 않고, `workflow_dispatch`로 default branch의 trusted
-review sync를 요청한다. 실제 Notion review 상태 갱신은 secret-bearing
+review sync를 요청한다. review dispatch job은 PR base가 default branch인 경우에만 요청을 보낸다.
+실제 Notion review 상태 갱신은 secret-bearing
 `.github/workflows/notion-ticket-sync.yml`의 `workflow_dispatch` run에서만 수행한다. fork PR은
 secret 노출과 권한 혼선을 피하기 위해 Notion sync 대상에서 제외한다. GitHub API 응답에서
 `head.repo`가 없거나 `null`인 PR도 출처를 신뢰할 수 없으므로 fork PR과 같이 skip한다.
@@ -146,6 +147,7 @@ PR 생성, PR 업데이트, PR branch push 같은 PR 이벤트는 `Review Status
 PR 생성, PR 업데이트, PR branch push 같은 활성 PR 이벤트는 `CI Status`와 `Last CI Check`도
 쓰지 않는다. CI 결과는 `workflow_run` 기반 `ci-result` sync가 기록하므로, 더 늦게 끝난
 `pull_request_target` job이 이미 기록된 `Success` 또는 `Failed`를 `Pending`으로 되돌리지 않는다.
+CI-result sync도 fetch한 PR base가 default branch가 아니면 Notion을 갱신하지 않는다.
 같은 head SHA에서 여러 CI run이 생긴 경우에는 Actions run 목록에서 최신 run/attempt를 조회하고,
 더 오래된 `workflow_run` 완료 이벤트는 Notion을 갱신하지 않는다.
 fork PR의 CI `workflow_run`에서 `workflow_run.pull_requests`가 비어 있어도

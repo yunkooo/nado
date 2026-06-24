@@ -374,6 +374,10 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
       pullRequestUrl,
     });
 
+    if (!isPullRequestTargetingTrustedBase(pullRequest, event)) {
+      return buildNonTrustedBaseSkipResult(event);
+    }
+
     if (pullRequest.state === "closed") {
       return {
         ok: true,
@@ -405,6 +409,10 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
         ok: false,
         reason: "Missing required environment variables: GITHUB_TOKEN",
       };
+    }
+
+    if (!isPullRequestTargetingTrustedBase(event.pull_request, event)) {
+      return buildNonTrustedBaseSkipResult(event);
     }
 
     const reviewState = await resolvePullRequestReviewState({
@@ -491,6 +499,10 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
       pullRequest = currentPullRequest;
     }
 
+    if (!isPullRequestTargetingTrustedBase(pullRequest, event)) {
+      return buildNonTrustedBaseSkipResult(event);
+    }
+
     return {
       action: event.action,
       ciResult: env.CI_RESULT,
@@ -543,6 +555,10 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
     pullRequestUrl,
   });
 
+  if (!isPullRequestTargetingTrustedBase(pullRequest, event)) {
+    return buildNonTrustedBaseSkipResult(event);
+  }
+
   if (pullRequest.state === "closed") {
     return {
       ok: true,
@@ -593,6 +609,25 @@ function shouldFetchCurrentPullRequestForEvent(action) {
     "reopened",
     "synchronize",
   ].includes(action);
+}
+
+function isPullRequestTargetingTrustedBase(pullRequest, event) {
+  const trustedBaseBranch = getTrustedBaseBranch(event);
+  const baseRef = pullRequest?.base?.ref;
+
+  return Boolean(baseRef && baseRef === trustedBaseBranch);
+}
+
+function buildNonTrustedBaseSkipResult(event) {
+  return {
+    ok: true,
+    reason: `Skipping Notion sync for a pull request that does not target ${getTrustedBaseBranch(event)}`,
+    skipped: true,
+  };
+}
+
+function getTrustedBaseBranch(event) {
+  return event.repository?.default_branch ?? "main";
 }
 
 function isStaleWorkflowRunForPullRequest(workflowRun, pullRequest) {

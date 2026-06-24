@@ -54,7 +54,7 @@
 - same-repository PR에서 `Ticket:` URL이 없으면 `Notion Ticket Sync` GitHub Actions check가 실패하는 것이 정상이다.
 - `Ticket:` URL의 Notion page는 `NOTION_TICKETS_DATA_SOURCE_ID`로 설정된 data source에 속해야 하며, 다른 data source의 page면 동기화하지 않는다.
 - 자동화에 필요한 GitHub Actions 값은 `NOTION_TOKEN`, `NOTION_TICKETS_DATA_SOURCE_ID`, 기본 `GITHUB_TOKEN`이다. 실제 token 값과 data source ID 값은 코드, 문서, 커밋에 남기지 않는다.
-- `NOTION_TOKEN`은 PR branch 또는 신뢰되지 않은 base branch에서 checkout한 코드에 주입하지 않는다. Notion 동기화는 `main` 대상 `pull_request_target` 이벤트와 trusted `workflow_dispatch`/`workflow_run`에서만 실행하며, default branch 코드를 checkout한다. trusted checkout에 sync script가 아직 없으면 skip한다.
+- `NOTION_TOKEN`은 PR branch 또는 신뢰되지 않은 base branch에서 checkout한 코드에 주입하지 않는다. Notion 동기화는 `main` 대상 `pull_request_target` 이벤트와 trusted `workflow_dispatch`/`workflow_run`에서만 실행하며, default branch 코드를 checkout한다. review dispatch와 CI-result sync도 PR base가 default branch가 아니면 Notion 갱신 전에 skip한다. trusted checkout에 sync script가 아직 없으면 skip한다.
 - PR 이벤트는 Notion 업데이트 전 현재 PR 상태를 조회한다. 현재 PR이 이미 closed이면 오래된 이벤트로 보고 `IN-review`나 metadata를 다시 쓰지 않는다. 닫힘 이벤트도 현재 PR이 다시 열려 있으면 stale 이벤트로 보고 `Blocker`를 쓰지 않는다.
 - PR branch push는 `pull_request synchronize` 이벤트를 통해 Notion의 `Last Push At`, `Last Head SHA`, `Last Push Summary`에 기록한다. 기록 전 현재 PR head SHA를 조회하고, webhook payload가 최신 head가 아니면 stale 이벤트로 보고 skip한다.
 - PR 생성, 업데이트, branch push 이벤트는 기존 `CI Status`와 `Last CI Check`를 덮어쓰지 않는다. CI 상태 기록은 `workflow_run` 기반 `ci-result` sync가 담당한다. 같은 head SHA의 CI run이 여러 개 있으면 Actions run 목록에서 최신 run/attempt를 확인하고, 더 오래된 run은 stale 이벤트로 보고 skip한다.

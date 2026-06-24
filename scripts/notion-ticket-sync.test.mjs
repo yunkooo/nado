@@ -51,6 +51,9 @@ const pullRequest = {
     "",
     "- Ticket: https://app.notion.com/p/Nado-Ticket-11111111222233334444555555555555?pvs=4",
   ].join("\n"),
+  base: {
+    ref: "main",
+  },
   closed_at: "2026-06-24T12:30:00.000Z",
   created_at: "2026-06-24T11:30:00.000Z",
   head: {
@@ -677,6 +680,59 @@ describe("notion ticket sync helpers", () => {
     expect(updatedProperties["상태"]).toBeUndefined();
   });
 
+  it("skips trusted review syncs for pull requests that do not target main", async () => {
+    const requests = [];
+    const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "trusted-review-dispatch-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === pullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            base: {
+              ref: "feature/base",
+            },
+            number: 42,
+            state: "open",
+            url: pullRequestUrl,
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          inputs: {
+            pr_number: "42",
+            review_action: "submitted",
+            review_state: "approved",
+            sync_event: "review",
+          },
+          repository: {
+            default_branch: "main",
+            url: "https://api.github.com/repos/yunkooo/nado",
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.skipped).toBe(true);
+    expect(result.reason).toBe(
+      "Skipping Notion sync for a pull request that does not target main",
+    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].url).toBe(pullRequestUrl);
+  });
+
   it("keeps review status changes requested while any latest reviewer state requests changes", async () => {
     const requests = [];
 
@@ -1177,6 +1233,70 @@ describe("notion ticket sync helpers", () => {
     expect(updatedProperties["Last Push Summary"]).toBeUndefined();
   });
 
+  it("skips CI-result syncs for pull requests that do not target main", async () => {
+    const githubPullRequestUrl =
+      "https://api.github.com/repos/yunkooo/nado/pulls/42";
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "workflow-run-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "notion-data-source",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === githubPullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            base: {
+              ref: "feature/base",
+            },
+            head: {
+              ...pullRequest.head,
+              repo: {
+                full_name: "yunkooo/nado",
+              },
+              sha: "current-head-sha",
+            },
+            state: "open",
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          repository: {
+            default_branch: "main",
+            url: "https://api.github.com/repos/yunkooo/nado",
+          },
+          workflow_run: {
+            conclusion: "failure",
+            event: "pull_request",
+            head_sha: "current-head-sha",
+            pull_requests: [
+              {
+                number: 42,
+                url: githubPullRequestUrl,
+              },
+            ],
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.skipped).toBe(true);
+    expect(result.reason).toBe(
+      "Skipping Notion sync for a pull request that does not target main",
+    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].url).toBe(githubPullRequestUrl);
+  });
+
   it("skips fork CI workflow_run events even when PR summaries are missing", async () => {
     const requests = [];
 
@@ -1488,6 +1608,9 @@ describe("notion ticket sync helpers", () => {
     expect(reviewDispatchJob).toContain(
       "github.event.pull_request.head.repo.full_name == github.repository",
     );
+    expect(reviewDispatchJob).toContain(
+      "github.event.pull_request.base.ref == github.event.repository.default_branch",
+    );
     expect(reviewDispatchJob).not.toContain("NOTION_TOKEN");
     expect(reviewDispatchJob).not.toContain("NOTION_TICKETS_DATA_SOURCE_ID");
     expect(reviewDispatchJob).not.toContain(
@@ -1558,5 +1681,11 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketSchemaSource).toContain("workflow_run.head_repository");
     expect(notionTicketSchemaSource).toContain("dismissed-only");
     expect(notionTicketSchemaSource).toContain("최신 run/attempt");
+    expect(notionTicketSchemaSource).toContain(
+      "review dispatch job은 PR base가 default branch",
+    );
+    expect(notionTicketSchemaSource).toContain(
+      "CI-result sync도 fetch한 PR base가 default branch가 아니면",
+    );
   });
 });
