@@ -455,7 +455,16 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
         pullRequestUrl,
       });
 
-      if (currentPullRequest.state === "closed") {
+      if (event.action === "closed" && currentPullRequest.state !== "closed") {
+        return {
+          ok: true,
+          reason:
+            "Skipping stale closed PR-event Notion sync for a reopened pull request",
+          skipped: true,
+        };
+      }
+
+      if (event.action !== "closed" && currentPullRequest.state === "closed") {
         return {
           ok: true,
           reason:
@@ -553,7 +562,14 @@ async function resolveSyncInput({ env, event, fetchImpl }) {
 }
 
 function shouldFetchCurrentPullRequestForEvent(action) {
-  return action !== "closed";
+  return [
+    "closed",
+    "edited",
+    "opened",
+    "ready_for_review",
+    "reopened",
+    "synchronize",
+  ].includes(action);
 }
 
 function isStaleWorkflowRunForPullRequest(workflowRun, pullRequest) {

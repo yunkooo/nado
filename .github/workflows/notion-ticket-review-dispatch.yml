@@ -14,7 +14,30 @@ jobs:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
+      - name: Check trusted sync workflow
+        id: trusted-sync-workflow
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          if ! workflow_yaml="$(gh workflow view notion-ticket-sync.yml --repo "$GITHUB_REPOSITORY" --ref "$DEFAULT_BRANCH" --yaml 2>&1)"; then
+            echo "$workflow_yaml"
+            echo "Trusted sync workflow is not available on $DEFAULT_BRANCH. Skipping until this workflow is merged."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! printf '%s\n' "$workflow_yaml" | grep -q 'workflow_dispatch:'; then
+            echo "Trusted sync workflow on $DEFAULT_BRANCH does not have workflow_dispatch. Skipping until this workflow is merged."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "available=true" >> "$GITHUB_OUTPUT"
+
       - name: Dispatch trusted review sync
+        if: steps.trusted-sync-workflow.outputs.available == 'true'
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GH_TOKEN: ${{ github.token }}

@@ -410,6 +410,54 @@ describe("notion ticket sync helpers", () => {
     expect(requests[0].url).toBe(pullRequestUrl);
   });
 
+  it("skips stale closed-unmerged events when the current PR was reopened", async () => {
+    const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "pull-request-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === pullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            merged: false,
+            state: "open",
+            url: pullRequestUrl,
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          action: "closed",
+          pull_request: {
+            ...pullRequest,
+            merged: false,
+            number: 42,
+            state: "closed",
+            url: pullRequestUrl,
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.skipped).toBe(true);
+    expect(result.reason).toBe(
+      "Skipping stale closed PR-event Notion sync for a reopened pull request",
+    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].url).toBe(pullRequestUrl);
+  });
+
   it("syncs pull request review changes without touching CI status", async () => {
     const requests = [];
 
@@ -1170,6 +1218,15 @@ describe("notion ticket sync helpers", () => {
     expect(notionTicketReviewDispatchWorkflowSource).toContain(
       "gh workflow run notion-ticket-sync.yml",
     );
+    expect(notionTicketReviewDispatchWorkflowSource).toContain(
+      "gh workflow view notion-ticket-sync.yml",
+    );
+    expect(notionTicketReviewDispatchWorkflowSource).toContain(
+      "workflow_dispatch:",
+    );
+    expect(notionTicketReviewDispatchWorkflowSource).toContain(
+      "Skipping until this workflow is merged",
+    );
     expect(notionTicketSyncWorkflowSource).not.toContain(
       "gh workflow run notion-ticket-sync.yml",
     );
@@ -1232,9 +1289,15 @@ describe("notion ticket sync helpers", () => {
       "더 오래된 `pull_request synchronize` job",
     );
     expect(notionTicketSchemaSource).toContain(
-      "`closed`를 제외한 `pull_request_target` 이벤트",
+      "`pull_request_target` 이벤트는 Notion 업데이트 전에 현재 PR 상태를 다시 조회한다",
+    );
+    expect(notionTicketSchemaSource).toContain(
+      "`PR closed without merge` blocker를 쓰지 않는다",
     );
     expect(notionTicketSchemaSource).toContain("workflow_dispatch");
+    expect(notionTicketSchemaSource).toContain(
+      "review dispatch job은 성공적으로 skip한다",
+    );
     expect(notionTicketSchemaSource).toContain(
       "`Review Status`를 `Pending`으로 되돌리지 않는다",
     );
