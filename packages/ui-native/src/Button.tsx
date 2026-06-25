@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Children, type ReactNode } from "react";
 import {
   Pressable,
   Text as NativeText,
@@ -41,6 +41,8 @@ export function Button({
   ...props
 }: ButtonProps) {
   const isDisabled = Boolean(disabled || isLoading);
+  const buttonContent = isLoading ? "Loading" : children;
+  const shouldRenderTextLabel = isTextButtonLabel(buttonContent);
 
   return (
     <Pressable
@@ -58,9 +60,24 @@ export function Button({
         style,
       ]}
     >
-      <NativeText style={[createButtonTextStyle({ variant }), textStyle]}>
-        {isLoading ? "Loading" : children}
-      </NativeText>
+      {shouldRenderTextLabel ? (
+        <NativeText style={[createButtonTextStyle({ variant }), textStyle]}>
+          {buttonContent}
+        </NativeText>
+      ) : (
+        buttonContent
+      )}
     </Pressable>
+  );
+}
+
+function isTextButtonLabel(children: ReactNode) {
+  const normalizedChildren = Children.toArray(children);
+
+  return (
+    normalizedChildren.length > 0 &&
+    normalizedChildren.every(
+      (child) => typeof child === "string" || typeof child === "number",
+    )
   );
 }

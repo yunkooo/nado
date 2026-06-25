@@ -1,5 +1,7 @@
 import { nativeTokens } from "@nado/tokens/react-native";
-import { describe, expect, it } from "vitest";
+import { createElement, type ReactElement, type ReactNode } from "react";
+import { describe, expect, it, vi } from "vitest";
+import { Button } from "./Button";
 import {
   createButtonStyle,
   createButtonTextStyle,
@@ -7,7 +9,31 @@ import {
   createTextStyle,
 } from "./styles";
 
+const nativeMocks = vi.hoisted(() => ({
+  Pressable: "Pressable",
+  Text: "Text",
+  View: "View",
+}));
+
+vi.mock("react-native", () => nativeMocks);
+
 describe("@nado/ui-native primitive style contracts", () => {
+  it("wraps text labels but renders icon children without nesting them in Text", () => {
+    const labelButton = Button({ children: "Save" }) as ReactElement<{
+      children: ReactElement<{ children: ReactNode }>;
+    }>;
+    const icon = createElement(nativeMocks.View, { testID: "save-icon" });
+    const iconButton = Button({
+      accessibilityLabel: "Save",
+      children: icon,
+      size: "icon",
+    }) as ReactElement<{ children: ReactNode }>;
+
+    expect(labelButton.props.children.type).toBe(nativeMocks.Text);
+    expect(labelButton.props.children.props.children).toBe("Save");
+    expect(iconButton.props.children).toBe(icon);
+  });
+
   it("backs Button variants and sizes with native component tokens", () => {
     expect(createButtonStyle({ size: "md", variant: "primary" })).toMatchObject(
       {
