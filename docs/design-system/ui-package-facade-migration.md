@@ -132,9 +132,20 @@ packages/ui/
 
 ```json
 {
-  ".": "./src/index.ts",
-  "./web": "./src/web.ts",
-  "./styles.css": "./src/styles.css"
+  ".": {
+    "types": "./src/index.ts",
+    "development": "./src/index.ts",
+    "import": "./dist/index.js"
+  },
+  "./web": {
+    "types": "./src/web.ts",
+    "development": "./src/web.ts",
+    "import": "./dist/web.js"
+  },
+  "./styles.css": {
+    "development": "./src/styles.css",
+    "import": "./dist/styles.css"
+  }
 }
 ```
 
