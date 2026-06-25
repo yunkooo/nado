@@ -40,7 +40,8 @@ v1에서는 패키지를 새로 늘리기보다 현재 경계를 명확히 한�
 | 패키지            | v1 역할                                     | 현재 상태        | 생성/확장 기준                                      |
 | ----------------- | ------------------------------------------- | ---------------- | --------------------------------------------------- |
 | `@nado/tokens`    | primitive, semantic, component token의 원본 | 이미 사용 중     | 모든 플랫폼에 반영되어야 하는 디자인 값 변경        |
-| `@nado/ui`        | Web/Desktop React DOM 컴포넌트              | 이미 사용 중     | DOM, CSS variable, Storybook 검증이 필요한 UI       |
+| `@nado/ui`        | Web/Desktop 호환 facade                     | 이미 사용 중     | 기존 앱 import 유지와 deprecation 기간 호환성       |
+| `@nado/ui-web`    | Web/Desktop React DOM 컴포넌트 구현         | 이미 사용 중     | DOM, CSS variable, Storybook 검증이 필요한 UI       |
 | `@nado/shared`    | 도메인 스키마, API 타입, 비즈니스 규칙      | 이미 사용 중     | 플랫폼과 무관한 제품 규칙이나 API 계약              |
 | `@nado/ui-native` | React Native 공통 컴포넌트 후보             | 아직 만들지 않음 | 같은 RN UI 패턴이 2곳 이상 반복되고 prop 계약 필요  |
 | `@nado/core`      | theme, hook, i18n, platform utility 후보    | 아직 만들지 않음 | 앱별 중복이 커지고 도메인 규칙과 분리할 필요가 생김 |
@@ -89,7 +90,7 @@ import { nativeTokens } from "@nado/tokens/react-native";
 
 ## v2 목표 패키지 구조
 
-v1에서는 `@nado/ui`가 Web/Desktop React DOM 구현을 직접 제공한다. 장기적으로는 `@nado/ui`를 public facade로 두고, 실제 구현을 `@nado/ui-web`과 `@nado/ui-native`로 분리하는 구조를 목표로 한다.
+현재 `@nado/ui`는 Web/Desktop 호환 facade이고, 실제 React DOM 구현은 `@nado/ui-web`에 둔다. 장기적으로는 같은 facade 구조에서 Native 구현도 `@nado/ui-native`로 분리하는 구조를 목표로 한다.
 
 ```txt
 packages/
@@ -101,7 +102,7 @@ packages/
   ui-native/
 ```
 
-`icons`, `core`, `ui-web`, `ui-native`는 v2 목표 구조의 후보 패키지다. v1에서 바로 만들지 않고, 책임과 도입 기준은 [UI package facade migration](ui-package-facade-migration.md)을 기준으로 판단한다.
+`icons`, `core`, `ui-native`는 v2 목표 구조의 후보 패키지다. `ui-web`은 Web/Desktop 구현 패키지로 먼저 만들었고, 나머지는 v1에서 바로 만들지 않는다. 책임과 도입 기준은 [UI package facade migration](ui-package-facade-migration.md)을 기준으로 판단한다.
 
 목표 import는 다음과 같다.
 

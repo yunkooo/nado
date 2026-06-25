@@ -71,8 +71,8 @@ git diff --check
 | ------------------------- | ----------------------------------------------------------------- |
 | token 원본                | `packages/tokens/src/tokens.ts`                                   |
 | RN token adapter          | `packages/tokens/src/reactNative.ts`                              |
-| Web/Desktop Button        | `packages/ui/src/Button.tsx`                                      |
-| Web/Desktop Button CSS    | `packages/ui/src/styles.css`                                      |
+| Web/Desktop Button        | `packages/ui-web/src/Button.tsx`                                  |
+| Web/Desktop Button CSS    | `packages/ui-web/src/styles.css`                                  |
 | Storybook foundation demo | `apps/storybook/src/Foundations.stories.tsx`                      |
 | Mobile token demo         | `apps/mobile/src/features/design/MobileTokenParityDemoScreen.tsx` |
 | Mobile shared styles      | `apps/mobile/src/styles/mobileStyles.ts`                          |

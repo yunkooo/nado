@@ -119,7 +119,7 @@ facade가 보장해야 하는 공통 API 대상은 다음 여섯 가지다.
 
 가장 작은 런타임 변경은 현재 `@nado/ui` DOM 구현을 유지한 채 `@nado/ui/web` subpath를 추가하는 것이다.
 
-현재 이 단계는 완료되어 있다. `@nado/ui/web`은 `packages/ui/src/web.ts`에서 현재 `@nado/ui` public surface를 re-export하고, `@nado/ui/web/styles.css`는 기존 Web/Desktop CSS를 같은 source/dist 파일로 노출한다.
+현재 이 단계는 완료되어 있다. `@nado/ui/web`은 `packages/ui/src/web.ts`에서 `@nado/ui-web` public surface를 re-export하고, `@nado/ui/web/styles.css`는 기존 Web/Desktop compatibility CSS를 같은 source/dist 파일로 노출한다.
 
 예상 구조:
 
@@ -159,11 +159,11 @@ packages/ui/
 
 ### Phase 3. `@nado/ui-web` 생성과 DOM 구현 이동
 
-`@nado/ui-web` 패키지를 만들고 현재 DOM 구현을 옮긴다. `@nado/ui/web`은 `@nado/ui-web`을 re-export한다.
+현재 이 단계는 완료되어 있다. `@nado/ui-web` 패키지를 만들고 DOM 구현을 옮겼다. `@nado/ui`와 `@nado/ui/web`은 deprecation 기간 동안 `@nado/ui-web`을 re-export하는 facade로 유지한다.
 
-이 단계의 이동 단위는 기본 컴포넌트 몇 개가 아니라 현재 `packages/ui/src/index.ts`가 공개하는 Web/Desktop public surface 전체다. 현재 public surface에는 `tokens`, `Button`, `Chip`, `InputComposer`, `Stack`, `Text`, `analysis`, `study` module export가 포함된다.
+이 단계의 이동 단위는 기본 컴포넌트 몇 개가 아니라 migration 시점의 `packages/ui/src/index.ts`가 공개하던 Web/Desktop public surface 전체다. 현재 `@nado/ui-web` public surface에는 `tokens`, `Button`, `Chip`, `InputComposer`, `Stack`, `Text`, `analysis`, `study` module export가 포함된다.
 
-특정 export를 `@nado/ui-web`으로 옮기지 않기로 결정한다면, 그 export가 계속 머무는 패키지와 이유를 이 문서에 먼저 기록하고 `@nado/ui` deprecation re-export가 기존 앱 import를 깨지 않는지 테스트로 고정한다.
+기존 `@nado/ui` import는 `@nado/ui-web`을 re-export하는 facade 테스트로 보호한다. 특정 export를 `@nado/ui-web`에서 제외하려면, 그 export가 계속 머무는 패키지와 이유를 이 문서에 먼저 기록하고 기존 앱 import를 깨지 않는지 테스트로 고정한다.
 
 예상 구조:
 
@@ -230,16 +230,11 @@ import { Button } from "@nado/ui";
 
 이 설계 뒤의 구현은 아래처럼 나눈다.
 
-1. `@nado/ui-web` 패키지 생성
-   - `packages/ui/src/index.ts`가 공개하는 현재 DOM export 전체를 이동하거나 re-export한다.
-   - `@nado/ui/web` facade가 `@nado/ui-web`을 바라보게 한다.
-   - 기존 `@nado/ui` import가 deprecation 기간 동안 같은 export 이름을 제공하는지 package export 테스트로 고정한다.
-
-2. RN-local Button/Text/Stack 반복 점검
+1. RN-local Button/Text/Stack 반복 점검
    - 실제 mobile 화면에서 공통화할 반복 UI가 있는지 확인한다.
    - 반복이 충분하면 `@nado/ui-native` 생성 티켓을 만든다.
 
-3. `@nado/ui-native` 최소 API 구현
+2. `@nado/ui-native` 최소 API 구현
    - `Button`, `Text`, `Stack`부터 시작한다.
    - `Card`, `Badge`, `Avatar`는 그 다음 후보로 둔다.
 
@@ -247,7 +242,6 @@ import { Button } from "@nado/ui";
 
 이 설계는 패키지 구조의 방향을 정하기 위한 것이다. 다음은 별도 티켓으로 분리한다.
 
-- `packages/ui-web` 실제 생성
 - `packages/ui-native` 실제 생성
 - `packages/core` 실제 생성
 - 기존 앱 import migration
