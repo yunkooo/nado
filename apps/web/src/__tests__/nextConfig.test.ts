@@ -40,6 +40,7 @@ describe("nextConfig", () => {
       "@nado/tokens/react-native": "../../packages/tokens/src/reactNative.ts",
       "@nado/ui": "../../packages/ui/src/index.ts",
       "@nado/ui/styles.css": "../../packages/ui/src/styles.css",
+      "@nado/ui/web/styles.css": "../../packages/ui/src/styles.css",
     });
   });
 });

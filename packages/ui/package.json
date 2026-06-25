@@ -14,6 +14,10 @@
       "development": "./src/web.ts",
       "import": "./dist/web.js"
     },
+    "./web/styles.css": {
+      "development": "./src/styles.css",
+      "import": "./dist/styles.css"
+    },
     "./styles.css": {
       "development": "./src/styles.css",
       "import": "./dist/styles.css"

@@ -24,12 +24,12 @@ Mobile React Native UI
 
 ## 현재 공유 구조
 
-| 영역      | 현재 공유하는 것                                  | 별도 구현하는 것                                   | 현재 검증 위치         |
-| --------- | ------------------------------------------------- | -------------------------------------------------- | ---------------------- |
-| Web       | `@nado/ui`, `@nado/tokens`, `@nado/ui/styles.css` | Web app surface와 Next.js 연결                     | Web app, Storybook     |
-| Desktop   | `@nado/ui`, `@nado/tokens`, `@nado/ui/styles.css` | Desktop shell, Tauri 연결, desktop surface         | Desktop app, Storybook |
-| Mobile    | `@nado/tokens/react-native`                       | React Native 화면, `StyleSheet`, touch interaction | Expo app, mobile tests |
-| Storybook | Web/Desktop UI 상태 확인, mock surface            | 실제 API/Auth/Supabase 연결                        | `apps/storybook`       |
+| 영역      | 현재 공유하는 것                                                                             | 별도 구현하는 것                                   | 현재 검증 위치         |
+| --------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------- |
+| Web       | `@nado/ui`, `@nado/ui/web`, `@nado/tokens`, `@nado/ui/styles.css`, `@nado/ui/web/styles.css` | Web app surface와 Next.js 연결                     | Web app, Storybook     |
+| Desktop   | `@nado/ui`, `@nado/ui/web`, `@nado/tokens`, `@nado/ui/styles.css`, `@nado/ui/web/styles.css` | Desktop shell, Tauri 연결, desktop surface         | Desktop app, Storybook |
+| Mobile    | `@nado/tokens/react-native`                                                                  | React Native 화면, `StyleSheet`, touch interaction | Expo app, mobile tests |
+| Storybook | Web/Desktop UI 상태 확인, mock surface                                                       | 실제 API/Auth/Supabase 연결                        | `apps/storybook`       |
 
 Storybook은 디자인 시스템의 원본이 아니다. Storybook은 `@nado/ui`와 mock surface가 기대한 상태로 보이는지 확인하는 preview/verification layer다.
 
@@ -56,10 +56,11 @@ import { Button, InputComposer } from "@nado/ui";
 import "@nado/ui/styles.css";
 ```
 
-`@nado/ui/web`은 Web/Desktop 전용 public surface를 명시하기 위한 subpath다. 현재는 `@nado/ui`와 같은 DOM export를 re-export하며, 기존 앱 import migration은 선택 사항으로 둔다.
+`@nado/ui/web`은 Web/Desktop 전용 public surface를 명시하기 위한 subpath다. 현재는 `@nado/ui`와 같은 DOM export를 re-export하며, 스타일도 `@nado/ui/web/styles.css`로 import할 수 있다. 기존 `@nado/ui`와 `@nado/ui/styles.css` import는 호환 경로로 유지하고, 앱 import migration은 선택 사항으로 둔다.
 
 ```tsx
 import { Button, InputComposer } from "@nado/ui/web";
+import "@nado/ui/web/styles.css";
 ```
 
 Mobile v1은 `@nado/ui`를 직접 import하지 않는다. React Native 화면은 `@nado/tokens/react-native`와 RN-local component/style 구현을 사용한다.
@@ -107,6 +108,7 @@ packages/
 ```tsx
 // Web / Desktop
 import { Button, Text, Stack } from "@nado/ui/web";
+import "@nado/ui/web/styles.css";
 
 // React Native
 import { Button, Text, Stack } from "@nado/ui/native";
@@ -325,7 +327,7 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 이 문서는 전략 정리까지만 다룬다. 실제 구현은 다음 issue로 나눈다.
 
 - `@nado/tokens` component token을 chip, reviewCard로 확대
-- `@nado/ui/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
+- `@nado/ui/styles.css`와 `@nado/ui/web/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
 - Mobile `mobileStyles`가 주요 반복 UI에서 `nativeTokens`를 계속 사용하는지 점검
 - `@nado/ui-native` 최소 API를 `Button`, `Text`, `Stack`부터 설계
 - `@nado/core` 도입 기준과 첫 후보 utility 검토

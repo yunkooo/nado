@@ -119,7 +119,7 @@ facade가 보장해야 하는 공통 API 대상은 다음 여섯 가지다.
 
 가장 작은 런타임 변경은 현재 `@nado/ui` DOM 구현을 유지한 채 `@nado/ui/web` subpath를 추가하는 것이다.
 
-현재 이 단계는 완료되어 있다. `@nado/ui/web`은 `packages/ui/src/web.ts`에서 현재 `@nado/ui` public surface를 re-export한다.
+현재 이 단계는 완료되어 있다. `@nado/ui/web`은 `packages/ui/src/web.ts`에서 현재 `@nado/ui` public surface를 re-export하고, `@nado/ui/web/styles.css`는 기존 Web/Desktop CSS를 같은 source/dist 파일로 노출한다.
 
 예상 구조:
 
@@ -143,6 +143,10 @@ packages/ui/
     "types": "./src/web.ts",
     "development": "./src/web.ts",
     "import": "./dist/web.js"
+  },
+  "./web/styles.css": {
+    "development": "./src/styles.css",
+    "import": "./dist/styles.css"
   },
   "./styles.css": {
     "development": "./src/styles.css",
@@ -189,7 +193,7 @@ packages/ui-web/
 - Storybook은 `@nado/ui/web` 또는 `@nado/ui-web` 중 하나의 기준으로 정리된다.
 - 기존 `@nado/ui` import는 deprecation 기간 동안 전체 public surface를 유지한다.
 - `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`이 migration 시점의 Web/Desktop export를 같은 이름으로 제공하는지 테스트한다.
-- `@nado/ui/styles.css` 또는 새 styles export 경로가 기존 Web/Desktop/Storybook CSS import를 깨지 않는지 확인한다.
+- `@nado/ui/styles.css`와 `@nado/ui/web/styles.css`가 기존 Web/Desktop/Storybook CSS import를 깨지 않는지 확인한다.
 
 ### Phase 4. `@nado/ui-native` 최소 패키지 생성
 
@@ -226,20 +230,16 @@ import { Button } from "@nado/ui";
 
 이 설계 뒤의 구현은 아래처럼 나눈다.
 
-1. `@nado/ui` styles export 정리
-   - `@nado/ui/styles.css`와 향후 `@nado/ui/web/styles.css` 또는 `@nado/ui-web/styles.css` 중 표준을 정한다.
-   - token 기반 CSS custom property 생성 후보와 연결한다.
-
-2. `@nado/ui-web` 패키지 생성
+1. `@nado/ui-web` 패키지 생성
    - `packages/ui/src/index.ts`가 공개하는 현재 DOM export 전체를 이동하거나 re-export한다.
    - `@nado/ui/web` facade가 `@nado/ui-web`을 바라보게 한다.
    - 기존 `@nado/ui` import가 deprecation 기간 동안 같은 export 이름을 제공하는지 package export 테스트로 고정한다.
 
-3. RN-local Button/Text/Stack 반복 점검
+2. RN-local Button/Text/Stack 반복 점검
    - 실제 mobile 화면에서 공통화할 반복 UI가 있는지 확인한다.
    - 반복이 충분하면 `@nado/ui-native` 생성 티켓을 만든다.
 
-4. `@nado/ui-native` 최소 API 구현
+3. `@nado/ui-native` 최소 API 구현
    - `Button`, `Text`, `Stack`부터 시작한다.
    - `Card`, `Badge`, `Avatar`는 그 다음 후보로 둔다.
 
