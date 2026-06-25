@@ -65,4 +65,19 @@ describe("mobile design token demo flag", () => {
       "tokenSources.map((tokenSource)",
     );
   });
+
+  it("applies the native primitive package on the low-risk demo surface", () => {
+    expect(mobileTokenParityDemoScreenSource).toContain(
+      'import { Button, Stack, Text } from "@nado/ui-native";',
+    );
+    expect(mobileTokenParityDemoScreenSource).toContain("<Stack");
+    expect(mobileTokenParityDemoScreenSource).toContain(
+      '<Button variant="primary"',
+    );
+    expect(mobileTokenParityDemoScreenSource).toContain(
+      'accessibilityLabel="Send icon token sample"',
+    );
+    expect(mobileTokenParityDemoScreenSource).toContain('size="icon"');
+    expect(mobileTokenParityDemoScreenSource).toContain('variant="send"');
+  });
 });
