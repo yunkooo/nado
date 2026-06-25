@@ -81,6 +81,36 @@ v1에서 도입하지 않는 import 경로는 다음과 같다.
 
 예를 들어 `tokens.spacing.md`가 `"12px"`라면, `nativeTokens.spacing.md`는 `12`가 된다.
 
+## v2 목표 패키지 구조
+
+v1에서는 `@nado/ui`가 Web/Desktop React DOM 구현을 직접 제공한다. 장기적으로는 `@nado/ui`를 public facade로 두고, 실제 구현을 `@nado/ui-web`과 `@nado/ui-native`로 분리하는 구조를 목표로 한다.
+
+```txt
+packages/
+  tokens/
+  icons/
+  core/
+  ui/
+  ui-web/
+  ui-native/
+```
+
+`icons`, `core`, `ui-web`, `ui-native`는 v2 목표 구조의 후보 패키지다. v1에서 바로 만들지 않고, 책임과 도입 기준은 [UI package facade migration](ui-package-facade-migration.md)을 기준으로 판단한다.
+
+목표 import는 다음과 같다.
+
+```tsx
+// Web / Desktop
+import { Button, Text, Stack } from "@nado/ui/web";
+
+// React Native
+import { Button, Text, Stack } from "@nado/ui/native";
+```
+
+기본 `@nado/ui` import는 Next.js, Vite/Tauri, Expo/Metro가 모두 안전하게 해석되는지 검증한 뒤 마지막 단계에서만 cross-platform entry로 검토한다.
+
+세부 migration 순서는 [UI package facade migration](ui-package-facade-migration.md)에 기록한다.
+
 ### 2. 컴포넌트 구현은 플랫폼별로 나눈다
 
 Web/Desktop은 DOM과 CSS를 사용하므로 `@nado/ui` 컴포넌트를 공유할 수 있다.
@@ -173,7 +203,7 @@ Mobile에서 반복되는 RN 컴포넌트가 늘어나면 `@nado/ui-native` 패�
 - Web/Desktop의 `@nado/ui`와 같은 variant/state 계약을 맞춰야 한다.
 - 단순 screen-local style보다 패키지화했을 때 유지보수 비용이 줄어든다.
 
-처음부터 큰 패키지를 만들기보다 `Button`, `Chip`, `ReviewCard`처럼 작은 컴포넌트부터 시작하는 것이 좋다.
+처음부터 큰 패키지를 만들기보다 공통 API 계약이 이미 있는 `Button`, `Text`, `Stack`부터 시작하는 것이 좋다. `Chip`과 `ReviewCard`는 component token 반복이 확인될 때 별도 후보로 다룬다.
 
 v1에서는 `@nado/ui-native`를 만들지 않는다. 현재 Mobile은 screen-local `StyleSheet`가 많고, 공통 RN component API를 패키지화할 만큼 반복 경계가 아직 충분히 검증되지 않았다. 먼저 [Component API contracts](component-api-contracts.md)에서 Web/Desktop과 RN이 공유할 prop 의미를 고정한다.
 
@@ -273,39 +303,17 @@ Storybook for React Native는 아직 이 저장소에 설정되어 있지 않으
 
 즉, 지금 당장 후속 모바일 디자인 변경자가 실행할 수 있는 경로는 Expo app과 mobile tests다. Storybook for RN은 준비된 경로가 아니라 다음 도입 후보로 문서화한다.
 
-## Demo 후보
+## Token parity demo
 
-첫 demo는 token 변경이 세 플랫폼에 반영되는지 보여주는 작은 화면이면 충분하다.
+token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 기준 흐름은 [Token parity demo 검증 흐름](token-parity-demo.md)을 따른다.
 
-후보:
+현재 사용 가능한 확인 표면은 다음이다.
 
-1. `primary` color 변경 demo
-2. `radius.md` 변경 demo
-3. `spacing.md` 변경 demo
-4. Button/Chip state parity demo
-5. ReviewCard answer hidden/revealed parity demo
+- Storybook `Foundations/Tokens`, `UI/Button`, `WebSurface`, `DesktopSurface`
+- Expo app `Mobile Design Demo`
+- `packages/tokens`, `@nado/ui`, `@nado/storybook`, `@nado/mobile` test
 
-완성 기준:
-
-- Web Storybook에서 변경이 보인다.
-- Desktop Storybook surface에서 변경이 보인다.
-- 현재는 Expo app 또는 mobile tests에서 같은 token 변경이 확인된다.
-- Storybook for RN 도입 후에는 Mobile story에서도 같은 token 변경이 보인다.
-- 각 플랫폼에서 구현은 달라도 variant/state 이름은 동일하다.
-
-### 최소 token demo 흐름
-
-token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 첫 흐름은 다음 정도로 제한한다.
-
-1. `@nado/tokens`에서 `color.primary`, `radius.md`, `spacing.md` 중 하나만 바꾸는 작은 변경을 만든다.
-2. Web/Desktop은 `apps/storybook`의 `Foundations`, `WebSurface`, `DesktopSurface`에서 변경된 색상, radius, spacing이 보이는지 확인한다.
-3. Mobile은 Expo app의 분석 입력 또는 단어장 화면처럼 `mobileStyles`가 `nativeTokens`를 통과해 쓰는 화면에서 같은 변경이 보이는지 확인한다.
-4. 자동 검증은 현재 가능한 범위에서 `packages/tokens` test와 `@nado/mobile` test를 실행해 CSS pixel token이 RN number token으로 변환되는 계약과 mobile style import 계약을 확인한다.
-5. Storybook for React Native가 도입된 뒤에는 같은 demo를 RN story로 옮겨 Web/Desktop Storybook과 나란히 비교한다.
-
-이 demo의 목적은 완성된 모바일 디자인 QA 자동화가 아니라, token-first 전략이 실제 세 플랫폼 표면에서 끊기지 않는지 가장 작은 단위로 확인하는 것이다.
-
-실제 확인 절차는 [Token parity demo 검증 흐름](token-parity-demo.md)에 정리한다.
+추가 demo는 token 또는 component contract가 새로 확장될 때만 별도 issue로 만든다.
 
 ## 후속 작업 후보
 
@@ -313,14 +321,12 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 첫 흐�
 
 - `@nado/tokens` component token을 chip, reviewCard로 확대
 - `@nado/ui/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
+- `@nado/ui/web` subpath 추가
 - Mobile `mobileStyles`가 주요 반복 UI에서 `nativeTokens`를 계속 사용하는지 점검
-- `@nado/ui-native` 최소 API 설계
+- `@nado/ui-native` 최소 API를 `Button`, `Text`, `Stack`부터 설계
 - `@nado/core` 도입 기준과 첫 후보 utility 검토
 - Storybook for React Native 도입 방식 검토
 - Mobile token parity story 추가
-- 필요한 경우 Mobile token parity demo screen 추가
-- token 변경이 Web/Desktop/Mobile에 반영되는 demo 구성
-- RN 검증 도구 비교와 도입 기준 정리
 
 ## v1 제외 범위와 future capability
 

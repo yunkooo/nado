@@ -20,6 +20,18 @@ import { nativeTokens } from "@nado/tokens/react-native";
 
 Mobile은 v1에서 `@nado/ui`를 직접 import하지 않는다. `@nado/ui/web`, `@nado/ui/native`, `Button.web.tsx`, `Button.native.tsx`도 v1에서 만들지 않는다.
 
+v2 목표는 `@nado/ui`를 facade로 두고 명시적 platform subpath를 제공하는 것이다.
+
+```tsx
+// Web / Desktop
+import { Button } from "@nado/ui/web";
+
+// React Native
+import { Button } from "@nado/ui/native";
+```
+
+이 목표 구조의 migration 순서는 [UI package facade migration](ui-package-facade-migration.md)을 따른다. 기본 `import { Button } from "@nado/ui"` cross-platform entry는 bundler별 조건부 export가 검증된 뒤에만 연다.
+
 ## 현재 구현
 
 현재 공통 패키지에 실제 구현된 Web/Desktop 기본 component는 `Button`, `Text`, `Stack`이다.

@@ -419,6 +419,80 @@ describe("notion ticket sync helpers", () => {
     expect(requests[0].url).toBe(pullRequestUrl);
   });
 
+  it("fails synchronize syncs when required push metadata properties are unavailable", async () => {
+    const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "pull-request-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === pullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            head: {
+              ...pullRequest.head,
+              sha: "current-head-sha",
+            },
+            number: 42,
+            state: "open",
+            title: "필수 push metadata 속성 누락 처리",
+            url: pullRequestUrl,
+          });
+        }
+
+        if (options.method === "GET") {
+          return Response.json({
+            parent: {
+              data_source_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+              type: "data_source_id",
+            },
+            properties: {
+              Blocker: {},
+              "GitHub Branch": {},
+              "GitHub PR": {},
+              "PR Created At": {},
+              상태: {},
+            },
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          action: "synchronize",
+          pull_request: {
+            ...pullRequest,
+            head: {
+              ...pullRequest.head,
+              sha: "current-head-sha",
+            },
+            number: 42,
+            url: pullRequestUrl,
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe(
+      "Notion data source is missing required push metadata properties: Last Push At, Last Head SHA, Last Push Summary",
+    );
+    expect(requests).toHaveLength(2);
+    expect(requests[0].url).toBe(pullRequestUrl);
+    expect(requests[1].url).toBe(
+      "https://api.notion.com/v1/pages/11111111-2222-3333-4444-555555555555",
+    );
+    expect(requests[1].options.method).toBe("GET");
+  });
+
   it("skips stale active PR events when the current PR is already closed", async () => {
     const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
     const requests = [];
