@@ -140,6 +140,12 @@ describe("mobile shared style tokens", () => {
     const demoSendIconButtonTextStyle = mobileStylesSource.match(
       /designDemoSendIconButtonText:\s*{(?<body>[\s\S]*?)\n  },/,
     )?.groups?.body;
+    const demoTokenSourceStyle = mobileStylesSource.match(
+      /designDemoTokenSource:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+    const demoTokenSourceTextStyle = mobileStylesSource.match(
+      /designDemoTokenSourceText:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
 
     expect(demoSurfaceStyle ?? "").toContain(
       "backgroundColor: mobileColors.surface",
@@ -185,6 +191,15 @@ describe("mobile shared style tokens", () => {
     expect(demoSendIconButtonTextStyle ?? "").toContain(
       "color: mobileButtonTokens.send.foreground",
     );
+    expect(demoTokenSourceStyle ?? "").toContain(
+      "backgroundColor: mobileColors.surfaceMuted",
+    );
+    expect(demoTokenSourceStyle ?? "").toContain(
+      "borderRadius: mobileRadius.sm",
+    );
+    expect(demoTokenSourceStyle ?? "").toContain('maxWidth: "100%"');
+    expect(demoTokenSourceTextStyle ?? "").toContain("flexShrink: 1");
+    expect(demoTokenSourceTextStyle ?? "").toContain("minWidth: 0");
   });
 
   it("renders the mobile word definition card as an anchored overlay", () => {

@@ -273,6 +273,13 @@ export const OtherStory: Story = {
       ),
       "utf8",
     );
+    const mobileDemoDataSource = readFileSync(
+      new URL(
+        "../../../apps/mobile/src/features/design/designTokenDemo.ts",
+        import.meta.url,
+      ),
+      "utf8",
+    );
     const mobileStylesSource = readFileSync(
       new URL(
         "../../../apps/mobile/src/styles/mobileStyles.ts",
@@ -284,7 +291,11 @@ export const OtherStory: Story = {
     expect(foundationsSource).toContain("Button component");
     expect(foundationsSource).toContain("tokens.component.button");
     expect(foundationsSource).toContain("storybook-component-token-grid");
-    expect(mobileDemoSource).toContain("Button contract");
+    expect(mobileDemoSource).toContain("getMobileTokenParityDemoSections");
+    expect(mobileDemoDataSource).toContain("Button contract");
+    expect(mobileDemoDataSource).toContain(
+      "nativeTokens.component.button.send",
+    );
     expect(mobileDemoSource).toContain("designDemoSendIconButton");
     expect(mobileStylesSource).toContain(
       "backgroundColor: mobileButtonTokens.primary.background",
