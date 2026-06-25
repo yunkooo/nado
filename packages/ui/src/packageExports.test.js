@@ -19,4 +19,10 @@ describe("@nado/ui package exports", () => {
       "./dist/styles.css",
     );
   });
+
+  it("exposes the Web/Desktop public surface through @nado/ui/web", () => {
+    expect(packageJson.exports["./web"].types).toBe("./src/web.ts");
+    expect(packageJson.exports["./web"].development).toBe("./src/web.ts");
+    expect(packageJson.exports["./web"].import).toBe("./dist/web.js");
+  });
 });

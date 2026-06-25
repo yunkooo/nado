@@ -66,7 +66,7 @@ import { Button, Stack, Text } from "@nado/ui/native";
 import { Button, Stack, Text } from "@nado/ui";
 ```
 
-기본 `@nado/ui` export는 Next.js, Vite/Tauri, Expo/Metro가 모두 같은 의도로 해석하는지 검증되기 전까지 cross-platform import로 홍보하지 않는다. 그 전에는 명시적인 `@nado/ui/web`, `@nado/ui/native` subpath를 표준으로 둔다.
+기본 `@nado/ui` export는 Next.js, Vite/Tauri, Expo/Metro가 모두 같은 의도로 해석하는지 검증되기 전까지 cross-platform import로 홍보하지 않는다. 현재는 Web/Desktop 전용 `@nado/ui/web`만 제공하고, `@nado/ui/native`는 Phase 4에서 `@nado/ui-native`가 생긴 뒤 연다.
 
 ## Component API 범위
 
@@ -118,6 +118,8 @@ facade가 보장해야 하는 공통 API 대상은 다음 여섯 가지다.
 ### Phase 2. `@nado/ui/web` subpath 추가
 
 가장 작은 런타임 변경은 현재 `@nado/ui` DOM 구현을 유지한 채 `@nado/ui/web` subpath를 추가하는 것이다.
+
+현재 이 단계는 완료되어 있다. `@nado/ui/web`은 `packages/ui/src/web.ts`에서 현재 `@nado/ui` public surface를 re-export한다.
 
 예상 구조:
 
@@ -224,24 +226,20 @@ import { Button } from "@nado/ui";
 
 이 설계 뒤의 구현은 아래처럼 나눈다.
 
-1. `@nado/ui/web` subpath 추가
-   - 현재 구현을 이동하지 않고 `web.ts` re-export만 추가한다.
-   - Web/Desktop/Storybook import 정책을 문서와 테스트로 확인한다.
-
-2. `@nado/ui` styles export 정리
+1. `@nado/ui` styles export 정리
    - `@nado/ui/styles.css`와 향후 `@nado/ui/web/styles.css` 또는 `@nado/ui-web/styles.css` 중 표준을 정한다.
    - token 기반 CSS custom property 생성 후보와 연결한다.
 
-3. `@nado/ui-web` 패키지 생성
+2. `@nado/ui-web` 패키지 생성
    - `packages/ui/src/index.ts`가 공개하는 현재 DOM export 전체를 이동하거나 re-export한다.
    - `@nado/ui/web` facade가 `@nado/ui-web`을 바라보게 한다.
    - 기존 `@nado/ui` import가 deprecation 기간 동안 같은 export 이름을 제공하는지 package export 테스트로 고정한다.
 
-4. RN-local Button/Text/Stack 반복 점검
+3. RN-local Button/Text/Stack 반복 점검
    - 실제 mobile 화면에서 공통화할 반복 UI가 있는지 확인한다.
    - 반복이 충분하면 `@nado/ui-native` 생성 티켓을 만든다.
 
-5. `@nado/ui-native` 최소 API 구현
+4. `@nado/ui-native` 최소 API 구현
    - `Button`, `Text`, `Stack`부터 시작한다.
    - `Card`, `Badge`, `Avatar`는 그 다음 후보로 둔다.
 
@@ -277,4 +275,4 @@ import { Button } from "@nado/ui";
 
 Nado의 목표 구조는 `@nado/ui` facade와 `@nado/ui-web`, `@nado/ui-native` 구현 패키지 분리다.
 
-다만 실제 이동은 단계적으로 한다. 가장 먼저 `@nado/ui/web` subpath를 열고, 그 다음 DOM 구현을 `@nado/ui-web`으로 이동한다. `@nado/ui/native`와 `@nado/ui-native`는 RN 반복 컴포넌트가 확인된 뒤 만든다.
+다만 실제 이동은 단계적으로 한다. 먼저 `@nado/ui/web` subpath를 열었고, 그 다음 DOM 구현을 `@nado/ui-web`으로 이동한다. `@nado/ui/native`와 `@nado/ui-native`는 RN 반복 컴포넌트가 확인된 뒤 만든다.

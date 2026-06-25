@@ -12,15 +12,21 @@ Web/Desktop:
 import { Button } from "@nado/ui";
 ```
 
+Web/Desktop explicit subpath:
+
+```tsx
+import { Button } from "@nado/ui/web";
+```
+
 Mobile v1:
 
 ```tsx
 import { nativeTokens } from "@nado/tokens/react-native";
 ```
 
-Mobile은 v1에서 `@nado/ui`를 직접 import하지 않는다. `@nado/ui/web`, `@nado/ui/native`, `Button.web.tsx`, `Button.native.tsx`도 v1에서 만들지 않는다.
+Mobile은 v1에서 `@nado/ui`를 직접 import하지 않는다. `@nado/ui/native`, `Button.web.tsx`, `Button.native.tsx`도 현재 만들지 않는다.
 
-v2 목표는 `@nado/ui`를 facade로 두고 명시적 platform subpath를 제공하는 것이다.
+v2 목표는 `@nado/ui`를 facade로 두고 platform subpath를 더 명확히 분리하는 것이다. 현재는 Web/Desktop explicit subpath인 `@nado/ui/web`만 제공한다.
 
 ```tsx
 // Web / Desktop
