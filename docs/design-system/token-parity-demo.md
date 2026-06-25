@@ -39,8 +39,8 @@ EXPO_PUBLIC_NADO_MOBILE_DESIGN_DEMO=1 pnpm --filter @nado/mobile dev
 
 1. Expo app을 연다.
 2. 하단 tab에서 `디자인`을 선택한다.
-3. `Primary color` 영역에서 `nativeTokens.color.primary`, `nativeTokens.color.surfaceMuted` 반영을 확인한다.
-4. `Button contract` 영역에서 `nativeTokens.component.button.primary`, `secondary`, `send`, `size.md`, `size.icon`, `radius` 반영을 확인한다.
+3. `Primary color` 영역에서 color swatch와 `nativeTokens.color.primary`, `nativeTokens.color.surfaceMuted` source label을 함께 확인한다.
+4. `Button contract` 영역에서 button sample과 `nativeTokens.component.button.primary`, `secondary`, `send`, `size.md`, `size.icon` source label을 함께 확인한다.
 
 ## 자동 검증
 
@@ -63,7 +63,7 @@ git diff --check
 - `@nado/ui` test는 Web/Desktop Button CSS가 component token 계약을 따르는지 확인한다.
 - Storybook 구조 테스트는 `Foundations/Tokens`가 button component token을 보여주는지 확인한다.
 - Storybook build는 등록된 story가 production build에서 실제로 번들링되는지 확인한다.
-- Mobile test는 `mobileStyles`가 `@nado/tokens/react-native`와 `mobileButtonTokens`를 쓰는지 확인한다.
+- Mobile test는 `mobileStyles`가 `@nado/tokens/react-native`와 `mobileButtonTokens`를 쓰는지, Mobile demo가 확인할 token source 목록을 화면과 같은 데이터로 제공하는지 확인한다.
 
 ## 관련 파일
 

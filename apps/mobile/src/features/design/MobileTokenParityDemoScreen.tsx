@@ -1,5 +1,8 @@
 import { Text, View } from "react-native";
 import { styles } from "../../styles/mobileStyles";
+import { getMobileTokenParityDemoSections } from "./designTokenDemo";
+
+const mobileTokenParityDemoSections = getMobileTokenParityDemoSections();
 
 export function MobileTokenParityDemoScreen() {
   return (
@@ -12,45 +15,54 @@ export function MobileTokenParityDemoScreen() {
         </Text>
       </View>
 
-      <View
-        accessibilityLabel="모바일 토큰 데모"
-        style={styles.designDemoSurface}
-      >
-        <View style={styles.sectionTitleGroup}>
-          <Text style={styles.sectionTitle}>Primary color</Text>
-          <Text style={styles.panelText}>
-            Web/Desktop과 같은 semantic primary token을 사용합니다.
-          </Text>
-        </View>
-        <View style={styles.designDemoSwatchRow}>
-          <View style={styles.designDemoPrimarySwatch} />
-          <View style={styles.designDemoSurfaceSwatch} />
-        </View>
-      </View>
+      {mobileTokenParityDemoSections.map((section) => (
+        <View
+          accessibilityLabel={
+            section.title === "Primary color" ? "모바일 토큰 데모" : undefined
+          }
+          key={section.title}
+          style={styles.designDemoSurface}
+        >
+          <View style={styles.sectionTitleGroup}>
+            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <Text style={styles.panelText}>{section.description}</Text>
+          </View>
 
-      <View style={styles.designDemoSurface}>
-        <View style={styles.sectionTitleGroup}>
-          <Text style={styles.sectionTitle}>Button contract</Text>
-          <Text style={styles.panelText}>
-            primary/secondary/send variant와 md/icon size가 component token을
-            따라갑니다.
-          </Text>
+          {section.title === "Primary color" ? (
+            <View style={styles.designDemoSwatchRow}>
+              <View style={styles.designDemoPrimarySwatch} />
+              <View style={styles.designDemoSurfaceSwatch} />
+            </View>
+          ) : (
+            <View style={styles.designDemoButtonRow}>
+              <View style={styles.designDemoPrimaryButton}>
+                <Text style={styles.designDemoPrimaryButtonText}>Primary</Text>
+              </View>
+              <View style={styles.designDemoSecondaryButton}>
+                <Text style={styles.designDemoSecondaryButtonText}>
+                  Secondary
+                </Text>
+              </View>
+              <View
+                accessibilityLabel="Send icon token sample"
+                style={styles.designDemoSendIconButton}
+              >
+                <Text style={styles.designDemoSendIconButtonText}>↗</Text>
+              </View>
+            </View>
+          )}
+
+          <View style={styles.designDemoTokenSourceList}>
+            {section.tokenSources.map((tokenSource) => (
+              <View key={tokenSource} style={styles.designDemoTokenSource}>
+                <Text style={styles.designDemoTokenSourceText}>
+                  {tokenSource}
+                </Text>
+              </View>
+            ))}
+          </View>
         </View>
-        <View style={styles.designDemoButtonRow}>
-          <View style={styles.designDemoPrimaryButton}>
-            <Text style={styles.designDemoPrimaryButtonText}>Primary</Text>
-          </View>
-          <View style={styles.designDemoSecondaryButton}>
-            <Text style={styles.designDemoSecondaryButtonText}>Secondary</Text>
-          </View>
-          <View
-            accessibilityLabel="Send icon token sample"
-            style={styles.designDemoSendIconButton}
-          >
-            <Text style={styles.designDemoSendIconButtonText}>↗</Text>
-          </View>
-        </View>
-      </View>
+      ))}
     </View>
   );
 }
