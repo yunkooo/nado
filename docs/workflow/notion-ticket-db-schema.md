@@ -92,6 +92,16 @@
 | `Blockers`      | Table | `Blocker`가 있는 티켓만 본다.           |
 | `Recently Done` | Table | 완료된 티켓을 `종료일` 최신순으로 본다. |
 
+## Ticket Granularity Rules
+
+Notion 티켓은 PR 자동화의 공식 연결 단위다. PR 본문의 `Ticket:` URL은 하나의 대표 티켓만 자동 동기화하므로, 티켓을 만들 때부터 PR 단위와 맞춘다.
+
+- 한 PR로 끝낼 작은 단계들은 Notion `TODO` 카드를 여러 개 만들지 않는다.
+- 작은 단계들은 대표 티켓 본문의 checklist, `작업 범위`, `완료 조건`, `진행 메모`에 넣는다.
+- 별도 Notion 티켓은 독립적으로 리뷰, 검증, merge 가능한 작업에만 만든다.
+- `Related tickets`처럼 PR 본문에 여러 Notion URL을 적어도 GitHub Actions는 공식 `Ticket:` URL 하나만 `DONE`으로 동기화한다.
+- 이미 과하게 쪼갠 카드가 있으면 보드에 남겨둘지 먼저 판단하고, 같은 PR로 처리될 항목은 대표 티켓으로 통합한다.
+
 ## State Transition Rules
 
 | Event                | 상태           | CI Status                  | Review Status       | Notes                                                                                                                    |

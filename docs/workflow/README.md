@@ -37,6 +37,8 @@ Commit 1개 = 단일 목적 1개
 - Notion 티켓 기반 작업은 `프로젝트` 데이터 소스를 작업 원장으로 사용한다.
 - PR 본문의 `Ticket:` URL은 Notion 티켓과 GitHub PR을 연결하는 필수 계약이다.
 - PR 단위는 issue 구조가 아니라 리뷰 가능, 검증 가능, 독립 merge 가능 여부로 정한다.
+- Notion 티켓도 PR 단위와 맞춘다. 한 PR로 끝낼 작은 단계들은 여러 `TODO` 카드로 만들지 않고, 대표 티켓 하나의 본문 checklist나 진행 메모로 관리한다.
+- 독립적으로 리뷰, 검증, merge 가능한 작업만 별도 Notion 티켓으로 분리한다.
 - 큰 cohesive 작업은 parent issue 기준 branch 1개와 PR 1개로 처리하고, sub-issue나 checklist는 세부 추적용으로 사용할 수 있다.
 - 여러 독립 작업으로 나뉘는 큰 작업은 parent issue를 추적용으로 만들고, GitHub native sub-issue 기준으로 branch와 PR을 만든다.
 - tracking parent issue의 진행률은 GitHub native sub-issue 연결을 우선 기준으로 보고, Markdown checklist는 후보 정리나 보조 메모로만 사용한다.
