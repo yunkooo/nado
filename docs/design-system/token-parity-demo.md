@@ -73,10 +73,11 @@ git diff --check
 | RN token adapter          | `packages/tokens/src/reactNative.ts`                              |
 | Web/Desktop Button        | `packages/ui-web/src/Button.tsx`                                  |
 | Web/Desktop Button CSS    | `packages/ui-web/src/styles.css`                                  |
+| Mobile primitive package  | `packages/ui-native/src/`                                         |
 | Storybook foundation demo | `apps/storybook/src/Foundations.stories.tsx`                      |
 | Mobile token demo         | `apps/mobile/src/features/design/MobileTokenParityDemoScreen.tsx` |
 | Mobile shared styles      | `apps/mobile/src/styles/mobileStyles.ts`                          |
 
 ## 제외 범위
 
-이 흐름은 현재 가능한 검증 표면을 연결하는 것이다. Storybook for React Native, `@nado/ui-native`, Tamagui, NativeWind 같은 도구 도입 여부는 별도 issue에서 판단한다.
+이 흐름은 현재 가능한 검증 표면을 연결하는 것이다. Storybook for React Native, Tamagui, NativeWind 같은 도구 도입 여부는 별도 issue에서 판단한다.

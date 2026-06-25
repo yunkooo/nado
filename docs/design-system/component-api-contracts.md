@@ -24,9 +24,15 @@ Mobile v1:
 import { nativeTokens } from "@nado/tokens/react-native";
 ```
 
+Mobile v1 primitive package:
+
+```tsx
+import { Button, Stack, Text } from "@nado/ui-native";
+```
+
 Mobile은 v1에서 `@nado/ui`를 직접 import하지 않는다. `@nado/ui/native`, `Button.web.tsx`, `Button.native.tsx`도 현재 만들지 않는다.
 
-v2 목표는 `@nado/ui`를 facade로 두고 platform subpath를 더 명확히 분리하는 것이다. 현재는 Web/Desktop explicit subpath인 `@nado/ui/web`만 제공한다.
+v2 목표는 `@nado/ui`를 facade로 두고 platform subpath를 더 명확히 분리하는 것이다. 현재 facade subpath는 Web/Desktop explicit subpath인 `@nado/ui/web`만 제공하고, Mobile primitive는 독립 패키지 `@nado/ui-native`에서 먼저 제공한다.
 
 ```tsx
 // Web / Desktop
@@ -40,18 +46,21 @@ import { Button } from "@nado/ui/native";
 
 ## 현재 구현
 
-현재 공통 패키지에 실제 구현된 Web/Desktop 기본 component는 `Button`, `Text`, `Stack`이다. Mobile에는 아직 패키지 export가 없지만, [RN component repeat audit](rn-component-repeat-audit.md)에서 같은 성격의 RN-local 반복을 확인했다.
+현재 공통 패키지에 실제 구현된 기본 component는 `Button`, `Text`, `Stack`이다. Web/Desktop은 `@nado/ui`와 `@nado/ui-web`, Mobile은 `@nado/ui-native`가 담당한다.
 
-| Component | Package    | Platform    | Status |
-| --------- | ---------- | ----------- | ------ |
-| `Button`  | `@nado/ui` | Web/Desktop | 구현됨 |
-| `Text`    | `@nado/ui` | Web/Desktop | 구현됨 |
-| `Stack`   | `@nado/ui` | Web/Desktop | 구현됨 |
-| `Card`    | 후보       | 공통 계약   | 미구현 |
-| `Badge`   | 후보       | 공통 계약   | 미구현 |
-| `Avatar`  | 후보       | 공통 계약   | 미구현 |
+| Component | Package           | Platform    | Status |
+| --------- | ----------------- | ----------- | ------ |
+| `Button`  | `@nado/ui`        | Web/Desktop | 구현됨 |
+| `Text`    | `@nado/ui`        | Web/Desktop | 구현됨 |
+| `Stack`   | `@nado/ui`        | Web/Desktop | 구현됨 |
+| `Button`  | `@nado/ui-native` | Mobile      | 구현됨 |
+| `Text`    | `@nado/ui-native` | Mobile      | 구현됨 |
+| `Stack`   | `@nado/ui-native` | Mobile      | 구현됨 |
+| `Card`    | 후보              | 공통 계약   | 미구현 |
+| `Badge`   | 후보              | 공통 계약   | 미구현 |
+| `Avatar`  | 후보              | 공통 계약   | 미구현 |
 
-미구현 component는 이 문서에서 목표 계약만 고정한다. 실제 export는 별도 작업에서 추가한다. `@nado/ui-native`의 첫 구현 후보는 `Button`, `Text`, `Stack`이며, 앱 전체 마이그레이션은 별도 PR로 분리한다.
+미구현 component는 이 문서에서 목표 계약만 고정한다. 실제 export는 별도 작업에서 추가한다. 앱 전체 마이그레이션과 `@nado/ui/native` facade 개방은 별도 PR로 분리한다.
 
 ## Button
 

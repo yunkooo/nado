@@ -17,7 +17,9 @@
 
 ## 결론
 
-`Button`, `Text`, `Stack` 반복은 확인되었다. 따라서 다음 독립 PR 후보는 `@nado/ui-native` 최소 API 구현이다.
+`Button`, `Text`, `Stack` 반복은 확인되었다. 이 점검 결과 다음 독립 PR로 `@nado/ui-native` 최소 API 구현을 선택했다.
+
+현재 `packages/ui-native`는 이 최소 API를 제공한다. 앱 전체 마이그레이션과 `@nado/ui/native` facade 개방은 후속 PR로 분리한다.
 
 다만 현재 Mobile은 아직 `App.tsx` 단일 화면 조합과 `mobileStyles` 중심 구조가 강하다. 첫 구현 PR에서 앱 전체를 대규모로 마이그레이션하지 않는다. `packages/ui-native`를 만들더라도 최소 primitive와 테스트를 먼저 만들고, 실제 화면 적용은 token parity demo 같은 낮은 위험 표면부터 시작한다.
 
@@ -79,7 +81,7 @@
 
 ## 첫 `@nado/ui-native` PR 범위
 
-다음 구현 PR은 아래 범위가 적당하다.
+첫 구현 PR의 범위는 아래가 적당하다.
 
 - `packages/ui-native` 패키지를 만든다.
 - `Button`, `Text`, `Stack`을 export한다.
@@ -108,4 +110,4 @@
 
 ## 다음 결정
 
-반복 점검 결과, `@nado/ui-native` 최소 API 구현으로 넘어갈 수 있다. 단, 구현은 패키지와 primitive contract를 먼저 만들고 앱 화면 마이그레이션은 후속 PR로 분리한다.
+반복 점검 결과에 따라 `@nado/ui-native` 최소 API를 만들었다. 다음 단계는 `MobileTokenParityDemoScreen` 같은 낮은 위험 표면에 적용하거나, `@nado/ui/native` facade 개방 조건을 검증하는 것이다.
