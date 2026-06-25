@@ -49,11 +49,17 @@ v1에서는 패키지를 새로 늘리기보다 현재 경계를 명확히 한�
 
 ## Import 정책
 
-Web과 Desktop은 React DOM 환경이므로 `@nado/ui`를 직접 사용한다.
+Web과 Desktop은 React DOM 환경이므로 현재 기본 import는 `@nado/ui`를 사용한다.
 
 ```tsx
 import { Button, InputComposer } from "@nado/ui";
 import "@nado/ui/styles.css";
+```
+
+`@nado/ui/web`은 Web/Desktop 전용 public surface를 명시하기 위한 subpath다. 현재는 `@nado/ui`와 같은 DOM export를 re-export하며, 기존 앱 import migration은 선택 사항으로 둔다.
+
+```tsx
+import { Button, InputComposer } from "@nado/ui/web";
 ```
 
 Mobile v1은 `@nado/ui`를 직접 import하지 않는다. React Native 화면은 `@nado/tokens/react-native`와 RN-local component/style 구현을 사용한다.
@@ -62,14 +68,13 @@ Mobile v1은 `@nado/ui`를 직접 import하지 않는다. React Native 화면은
 import { nativeTokens } from "@nado/tokens/react-native";
 ```
 
-v1에서 도입하지 않는 import 경로는 다음과 같다.
+현재 도입하지 않는 import 경로는 다음과 같다.
 
-- `@nado/ui/web`
 - `@nado/ui/native`
 - `Button.web.tsx`
 - `Button.native.tsx`
 
-단일 `@nado/ui` 패키지 안에서 web/native subpath를 모두 제공하면 peer dependency, bundler condition, Storybook, Expo 해석 규칙이 한 번에 복잡해진다. 플랫폼 파일명 방식도 모든 컴포넌트가 1:1로 대응한다는 압력을 만들기 때문에 현재 제품 단계에는 맞지 않는다. v1의 기준은 같은 파일 공유가 아니라 같은 token source와 같은 prop contract 공유다.
+단일 `@nado/ui` 패키지 안에서 web/native subpath를 한 번에 모두 제공하면 peer dependency, bundler condition, Storybook, Expo 해석 규칙이 한 번에 복잡해진다. 그래서 먼저 Web/Desktop 전용 `@nado/ui/web`만 열고, Native subpath와 플랫폼 파일명 방식은 아직 도입하지 않는다. 기준은 같은 파일 공유가 아니라 같은 token source와 같은 prop contract 공유다.
 
 ## 추천 원칙
 
@@ -321,7 +326,6 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 
 - `@nado/tokens` component token을 chip, reviewCard로 확대
 - `@nado/ui/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
-- `@nado/ui/web` subpath 추가
 - Mobile `mobileStyles`가 주요 반복 UI에서 `nativeTokens`를 계속 사용하는지 점검
 - `@nado/ui-native` 최소 API를 `Button`, `Text`, `Stack`부터 설계
 - `@nado/core` 도입 기준과 첫 후보 utility 검토

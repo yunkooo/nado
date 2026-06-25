@@ -9,6 +9,11 @@
       "development": "./src/index.ts",
       "import": "./dist/index.js"
     },
+    "./web": {
+      "types": "./src/web.ts",
+      "development": "./src/web.ts",
+      "import": "./dist/web.js"
+    },
     "./styles.css": {
       "development": "./src/styles.css",
       "import": "./dist/styles.css"
