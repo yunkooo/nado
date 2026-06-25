@@ -22,13 +22,13 @@ Mobile은 v1에서 `@nado/ui`를 직접 import하지 않는다. `@nado/ui/web`, 
 
 ## 현재 구현
 
-현재 공통 패키지에 실제 구현된 기본 action component는 `Button`이다.
+현재 공통 패키지에 실제 구현된 Web/Desktop 기본 component는 `Button`, `Text`, `Stack`이다.
 
 | Component | Package    | Platform    | Status |
 | --------- | ---------- | ----------- | ------ |
 | `Button`  | `@nado/ui` | Web/Desktop | 구현됨 |
-| `Text`    | 후보       | 공통 계약   | 미구현 |
-| `Stack`   | 후보       | 공통 계약   | 미구현 |
+| `Text`    | `@nado/ui` | Web/Desktop | 구현됨 |
+| `Stack`   | `@nado/ui` | Web/Desktop | 구현됨 |
 | `Card`    | 후보       | 공통 계약   | 미구현 |
 | `Badge`   | 후보       | 공통 계약   | 미구현 |
 | `Avatar`  | 후보       | 공통 계약   | 미구현 |
@@ -65,7 +65,7 @@ Mobile은 v1에서 `@nado/ui`를 직접 import하지 않는다. `@nado/ui/web`, 
 
 ## Text
 
-목표 계약:
+현재 Web/Desktop 구현:
 
 ```tsx
 <Text size="lg" tone="muted">
@@ -73,18 +73,18 @@ Mobile은 v1에서 `@nado/ui`를 직접 import하지 않는다. `@nado/ui/web`, 
 </Text>
 ```
 
-| Prop     | 후보 값                                 | 의미                         |
+| Prop     | 값                                      | 의미                         |
 | -------- | --------------------------------------- | ---------------------------- |
 | `size`   | `xs`, `sm`, `md`, `lg`, `xl`            | 글자 크기와 line-height 단계 |
 | `weight` | `regular`, `medium`, `bold`, `heavy`    | font-weight 의미             |
 | `tone`   | `default`, `muted`, `primary`, `danger` | semantic color 의미          |
 | `align`  | `start`, `center`, `end`                | 텍스트 정렬                  |
 
-v1에서는 실제 component를 만들지 않는다. 먼저 typography token이 정리된 뒤 구현한다.
+Web/Desktop은 `<p>`와 CSS class, CSS custom property를 사용한다. `size`, `line-height`, `weight` 값은 `@nado/tokens`의 `tokens.typography.text`를 기준으로 맞춘다. Mobile은 향후 RN-local 구현에서 같은 prop 이름과 의미를 따른다.
 
 ## Stack
 
-목표 계약:
+현재 Web/Desktop 구현:
 
 ```tsx
 <Stack gap="md" direction="vertical">
@@ -92,13 +92,14 @@ v1에서는 실제 component를 만들지 않는다. 먼저 typography token이 
 </Stack>
 ```
 
-| Prop        | 후보 값                             | 의미                  |
+| Prop        | 값                                  | 의미                  |
 | ----------- | ----------------------------------- | --------------------- |
 | `gap`       | `xs`, `sm`, `md`, `lg`, `xl`        | token 기반 child 간격 |
 | `direction` | `vertical`, `horizontal`            | 쌓는 방향             |
 | `align`     | `start`, `center`, `end`, `stretch` | 교차축 정렬           |
 
 Web/Desktop은 flex/grid, Mobile은 `View`와 RN style로 구현한다. `gap`은 반드시 token 이름을 받는다.
+현재 Web/Desktop `Stack`의 `gap` 값은 `@nado/tokens`의 `tokens.spacing` 단계와 맞춘다.
 
 ## Card
 
