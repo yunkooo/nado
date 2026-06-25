@@ -2,7 +2,7 @@
 
 이 문서는 `@nado/tokens` 변경이 Web, Desktop, Mobile 검증 표면에 함께 드러나는지 확인하는 기준 흐름이다.
 
-목표는 웹 CSS 값을 모바일이 따라 쓰게 만드는 것이 아니다. 디자인 값의 원본을 `@nado/tokens`에 두고, Web/Desktop은 `@nado/ui`, Mobile은 `@nado/tokens/react-native`를 통해 같은 의미의 token을 사용하게 만드는 것이다.
+목표는 웹 CSS 값을 모바일이 따라 쓰게 만드는 것이 아니다. 디자인 값의 원본을 `@nado/tokens`에 두고, Web/Desktop은 `@nado/ui`, Mobile은 `@nado/tokens/react-native`와 `@nado/ui/native`를 통해 같은 의미의 token과 primitive contract를 사용하게 만드는 것이다.
 
 ## 확인 표면
 
@@ -12,7 +12,7 @@
 | Web/Desktop component  | Storybook `UI/Button`          | `primary`, `secondary`, `send`, `md`, `icon` 버튼 상태                                            |
 | Web app surface        | Storybook `WebSurface`         | 실제 웹 mock surface에서 token이 끊기지 않는지                                                    |
 | Desktop app surface    | Storybook `DesktopSurface`     | desktop shell mock surface에서 token이 끊기지 않는지                                              |
-| Mobile                 | Expo app `Mobile Design Demo`  | `nativeTokens`와 `@nado/ui-native`를 통과한 primary color, surface, radius, spacing, button token |
+| Mobile                 | Expo app `Mobile Design Demo`  | `nativeTokens`와 `@nado/ui/native`를 통과한 primary color, surface, radius, spacing, button token |
 
 ## 변경 기준
 
@@ -40,7 +40,7 @@ EXPO_PUBLIC_NADO_MOBILE_DESIGN_DEMO=1 pnpm --filter @nado/mobile dev
 1. Expo app을 연다.
 2. 하단 tab에서 `디자인`을 선택한다.
 3. `Primary color` 영역에서 color swatch와 `nativeTokens.color.primary`, `nativeTokens.color.surfaceMuted` source label을 함께 확인한다.
-4. `Button contract` 영역에서 `@nado/ui-native` button sample과 `nativeTokens.component.button.primary`, `secondary`, `send`, `size.md`, `size.icon` source label을 함께 확인한다.
+4. `Button contract` 영역에서 `@nado/ui/native` button sample과 `nativeTokens.component.button.primary`, `secondary`, `send`, `size.md`, `size.icon` source label을 함께 확인한다.
 
 ## 자동 검증
 
@@ -63,7 +63,7 @@ git diff --check
 - `@nado/ui` test는 Web/Desktop Button CSS가 component token 계약을 따르는지 확인한다.
 - Storybook 구조 테스트는 `Foundations/Tokens`가 button component token을 보여주는지 확인한다.
 - Storybook build는 등록된 story가 production build에서 실제로 번들링되는지 확인한다.
-- Mobile test는 `mobileStyles`가 `@nado/tokens/react-native`를 쓰는지, Mobile demo가 확인할 token source 목록을 화면과 같은 데이터로 제공하는지, 낮은 위험 데모 표면이 `@nado/ui-native` primitive를 실제로 import하는지 확인한다.
+- Mobile test는 `mobileStyles`가 `@nado/tokens/react-native`를 쓰는지, Mobile demo가 확인할 token source 목록을 화면과 같은 데이터로 제공하는지, 낮은 위험 데모 표면이 `@nado/ui/native` facade를 실제로 import하는지 확인한다.
 
 ## 관련 파일
 
@@ -74,6 +74,7 @@ git diff --check
 | Web/Desktop Button        | `packages/ui-web/src/Button.tsx`                                  |
 | Web/Desktop Button CSS    | `packages/ui-web/src/styles.css`                                  |
 | Mobile primitive package  | `packages/ui-native/src/`                                         |
+| Mobile facade package     | `packages/ui/src/native.ts`                                       |
 | Storybook foundation demo | `apps/storybook/src/Foundations.stories.tsx`                      |
 | Mobile token demo         | `apps/mobile/src/features/design/MobileTokenParityDemoScreen.tsx` |
 | Mobile shared styles      | `apps/mobile/src/styles/mobileStyles.ts`                          |
