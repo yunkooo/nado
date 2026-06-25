@@ -155,6 +155,10 @@ packages/ui/
 
 `@nado/ui-web` 패키지를 만들고 현재 DOM 구현을 옮긴다. `@nado/ui/web`은 `@nado/ui-web`을 re-export한다.
 
+이 단계의 이동 단위는 기본 컴포넌트 몇 개가 아니라 현재 `packages/ui/src/index.ts`가 공개하는 Web/Desktop public surface 전체다. 현재 public surface에는 `tokens`, `Button`, `Chip`, `InputComposer`, `Stack`, `Text`, `analysis`, `study` module export가 포함된다.
+
+특정 export를 `@nado/ui-web`으로 옮기지 않기로 결정한다면, 그 export가 계속 머무는 패키지와 이유를 이 문서에 먼저 기록하고 `@nado/ui` deprecation re-export가 기존 앱 import를 깨지 않는지 테스트로 고정한다.
+
 예상 구조:
 
 ```txt
@@ -165,9 +169,15 @@ packages/ui/
 
 packages/ui-web/
   src/
+    index.ts
+    tokens.ts
     Button.tsx
+    Chip.tsx
+    InputComposer.tsx
     TextPrimitive.tsx
     Stack.tsx
+    analysis.tsx
+    study.tsx
     styles.css
 ```
 
@@ -175,7 +185,9 @@ packages/ui-web/
 
 - Web/Desktop 앱은 계속 동작한다.
 - Storybook은 `@nado/ui/web` 또는 `@nado/ui-web` 중 하나의 기준으로 정리된다.
-- 기존 `@nado/ui` import는 deprecation 기간 동안 유지한다.
+- 기존 `@nado/ui` import는 deprecation 기간 동안 전체 public surface를 유지한다.
+- `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`이 migration 시점의 Web/Desktop export를 같은 이름으로 제공하는지 테스트한다.
+- `@nado/ui/styles.css` 또는 새 styles export 경로가 기존 Web/Desktop/Storybook CSS import를 깨지 않는지 확인한다.
 
 ### Phase 4. `@nado/ui-native` 최소 패키지 생성
 
@@ -221,8 +233,9 @@ import { Button } from "@nado/ui";
    - token 기반 CSS custom property 생성 후보와 연결한다.
 
 3. `@nado/ui-web` 패키지 생성
-   - 현재 DOM 구현을 이동한다.
+   - `packages/ui/src/index.ts`가 공개하는 현재 DOM export 전체를 이동하거나 re-export한다.
    - `@nado/ui/web` facade가 `@nado/ui-web`을 바라보게 한다.
+   - 기존 `@nado/ui` import가 deprecation 기간 동안 같은 export 이름을 제공하는지 package export 테스트로 고정한다.
 
 4. RN-local Button/Text/Stack 반복 점검
    - 실제 mobile 화면에서 공통화할 반복 UI가 있는지 확인한다.
