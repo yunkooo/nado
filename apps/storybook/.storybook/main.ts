@@ -10,7 +10,7 @@ const config: StorybookConfig = {
   },
   stories: [
     "../src/**/*.stories.@(ts|tsx)",
-    "../../../packages/ui/src/**/*.stories.@(ts|tsx)",
+    "../../../packages/ui-web/src/**/*.stories.@(ts|tsx)",
   ],
   viteFinal: async (viteConfig) => {
     const existingAlias = viteConfig.resolve?.alias;
@@ -40,6 +40,14 @@ const config: StorybookConfig = {
           {
             find: /^@nado\/ui\/web\/styles.css$/,
             replacement: toPathname("../../../packages/ui/src/styles.css"),
+          },
+          {
+            find: /^@nado\/ui-web$/,
+            replacement: toPathname("../../../packages/ui-web/src/index.ts"),
+          },
+          {
+            find: /^@nado\/ui-web\/styles.css$/,
+            replacement: toPathname("../../../packages/ui-web/src/styles.css"),
           },
           {
             find: /^@nado\/tokens$/,

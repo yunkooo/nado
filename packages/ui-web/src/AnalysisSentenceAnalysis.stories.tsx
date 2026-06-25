@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { SentenceAnalysis } from "@nado/ui";
+import { SentenceAnalysis } from "@nado/ui-web";
 import { analysisMock } from "./analysisStoryFixtures";
 
 const firstSentence = analysisMock.sentences[0];

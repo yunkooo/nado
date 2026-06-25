@@ -5,7 +5,7 @@ import {
   MAX_ANALYSIS_TEXT_LENGTH,
 } from "@nado/shared";
 import { AnalysisResult, InputComposer, InputSample } from "@nado/ui";
-import { analysisMock } from "../../../packages/ui/src/analysisStoryFixtures";
+import { analysisMock } from "../../../packages/ui-web/src/analysisStoryFixtures";
 
 function AnalysisPageMockView() {
   return (

@@ -3,7 +3,7 @@ import {
   VocabularyEmptyState,
   VocabularyErrorState,
   VocabularyListItem,
-} from "@nado/ui";
+} from "@nado/ui-web";
 import { analysisMock } from "./analysisStoryFixtures";
 
 const firstItem =

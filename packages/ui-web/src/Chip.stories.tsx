@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Chip } from "@nado/ui";
+import { Chip } from "@nado/ui-web";
 
 const meta = {
   component: Chip,

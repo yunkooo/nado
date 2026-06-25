@@ -28,5 +28,8 @@ describe("desktop Vite config", () => {
     expect(viteConfigSource).toContain("../../packages/ui/src/index.ts");
     expect(viteConfigSource).toContain("@nado\\/ui\\/web\\/styles.css");
     expect(viteConfigSource).toContain("../../packages/ui/src/styles.css");
+    expect(viteConfigSource).toContain("@nado\\/ui-web");
+    expect(viteConfigSource).toContain("../../packages/ui-web/src/index.ts");
+    expect(viteConfigSource).toContain("../../packages/ui-web/src/styles.css");
   });
 });

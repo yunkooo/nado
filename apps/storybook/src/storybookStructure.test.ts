@@ -10,7 +10,7 @@ const readStorySource = (fileName: string) =>
   readFileSync(new URL(`./${fileName}`, import.meta.url), "utf8");
 const readUiStorySource = (fileName: string) =>
   readFileSync(
-    new URL(`../../../packages/ui/src/${fileName}`, import.meta.url),
+    new URL(`../../../packages/ui-web/src/${fileName}`, import.meta.url),
     "utf8",
   );
 const readOptionalSource = (path: string) => {
@@ -72,7 +72,7 @@ const readmeSource = readFileSync(
   "utf8",
 );
 const appStoryFiles = toStoryFiles("./");
-const uiStoryFiles = toStoryFiles("../../../packages/ui/src/");
+const uiStoryFiles = toStoryFiles("../../../packages/ui-web/src/");
 const storybookConfigSource = readFileSync(
   new URL("../.storybook/main.ts", import.meta.url),
   "utf8",
@@ -92,7 +92,7 @@ describe("storybook source structure", () => {
     ]);
   });
 
-  it("co-locates shared UI stories with the UI package source", () => {
+  it("co-locates shared UI stories with the Web implementation package source", () => {
     expect(uiStoryFiles).toEqual([
       "AnalysisInputSample.stories.tsx",
       "AnalysisReadingChunkLine.stories.tsx",
@@ -111,11 +111,15 @@ describe("storybook source structure", () => {
 
   it("loads workspace packages from source while editing stories", () => {
     expect(storybookConfigSource).toContain(
-      "../../../packages/ui/src/**/*.stories.@(ts|tsx)",
+      "../../../packages/ui-web/src/**/*.stories.@(ts|tsx)",
     );
     expect(storybookConfigSource).toContain(
       "../../../packages/ui/src/index.ts",
     );
+    expect(storybookConfigSource).toContain(
+      "../../../packages/ui-web/src/index.ts",
+    );
+    expect(storybookConfigSource).toContain("@nado\\/ui-web");
     expect(storybookConfigSource).toContain("@nado\\/ui\\/web\\/styles.css");
     expect(storybookConfigSource).toContain(
       "../../../packages/tokens/src/index.ts",

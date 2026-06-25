@@ -10,7 +10,7 @@
   "include": [
     ".storybook",
     "src",
-    "../../packages/ui/src/**/*.stories.tsx",
-    "../../packages/ui/src/**/*StoryFixtures.ts"
+    "../../packages/ui-web/src/**/*.stories.tsx",
+    "../../packages/ui-web/src/**/*StoryFixtures.ts"
   ]
 }

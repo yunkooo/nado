@@ -5,7 +5,7 @@ import {
   DEFAULT_ANALYSIS_MODEL_ID,
   MAX_ANALYSIS_TEXT_LENGTH,
 } from "@nado/shared";
-import { InputComposer, type InputComposerProps } from "@nado/ui";
+import { InputComposer, type InputComposerProps } from "@nado/ui-web";
 
 const meta = {
   component: InputComposer,

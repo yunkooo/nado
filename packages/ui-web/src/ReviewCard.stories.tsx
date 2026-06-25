@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { ReviewCard } from "@nado/ui";
+import { ReviewCard } from "@nado/ui-web";
 
 const meta = {
   component: ReviewCard,

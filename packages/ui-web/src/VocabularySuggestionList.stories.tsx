@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { VocabularySuggestionList } from "@nado/ui";
+import { VocabularySuggestionList } from "@nado/ui-web";
 import { analysisMock } from "./analysisStoryFixtures";
 
 const meta = {

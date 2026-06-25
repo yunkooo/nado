@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Button } from "@nado/ui";
+import { Button } from "@nado/ui-web";
 
 const meta = {
   component: Button,

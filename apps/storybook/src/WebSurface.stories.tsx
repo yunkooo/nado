@@ -7,7 +7,7 @@ import {
   countAnalysisTextCharacters,
 } from "@nado/shared";
 import { AnalysisResult, InputComposer, InputSample } from "@nado/ui";
-import { analysisMock } from "../../../packages/ui/src/analysisStoryFixtures";
+import { analysisMock } from "../../../packages/ui-web/src/analysisStoryFixtures";
 import "../../web/src/app/styles/base.css";
 import "../../web/src/app/styles/shell.css";
 import "../../web/src/app/styles/analysis.css";

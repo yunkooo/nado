@@ -29,7 +29,12 @@ describe("nextConfig", () => {
 
   it("transpiles workspace packages that are consumed from source", () => {
     expect(nextConfig.transpilePackages).toEqual(
-      expect.arrayContaining(["@nado/shared", "@nado/tokens", "@nado/ui"]),
+      expect.arrayContaining([
+        "@nado/shared",
+        "@nado/tokens",
+        "@nado/ui",
+        "@nado/ui-web",
+      ]),
     );
   });
 
@@ -41,6 +46,8 @@ describe("nextConfig", () => {
       "@nado/ui": "../../packages/ui/src/index.ts",
       "@nado/ui/styles.css": "../../packages/ui/src/styles.css",
       "@nado/ui/web/styles.css": "../../packages/ui/src/styles.css",
+      "@nado/ui-web": "../../packages/ui-web/src/index.ts",
+      "@nado/ui-web/styles.css": "../../packages/ui-web/src/styles.css",
     });
   });
 });
