@@ -10,6 +10,11 @@ const NOTION_PAGE_URL_PATTERN =
 const COMPACT_NOTION_ID_PATTERN = /[0-9a-f]{32}/i;
 const DASHED_NOTION_ID_PATTERN =
   /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+const OPTIONAL_NOTION_PROPERTIES = new Set([
+  "Last Push At",
+  "Last Head SHA",
+  "Last Push Summary",
+]);
 
 export function parseTicketUrlFromBody(body = "") {
   const ticketLine = body
@@ -336,7 +341,10 @@ export async function runSync({
     fetchImpl,
     notionToken: env.NOTION_TOKEN,
     pageId: syncPlan.pageId,
-    properties: syncPlan.properties,
+    properties: omitUnavailableOptionalNotionProperties({
+      page: pageValidation.page,
+      properties: syncPlan.properties,
+    }),
   });
 
   return {
@@ -910,7 +918,22 @@ async function validateNotionTicketPage({
 
   return {
     ok: true,
+    page,
   };
+}
+
+function omitUnavailableOptionalNotionProperties({ page, properties }) {
+  if (!page?.properties || typeof page.properties !== "object") {
+    return properties;
+  }
+
+  return Object.fromEntries(
+    Object.entries(properties).filter(
+      ([propertyName]) =>
+        propertyName in page.properties ||
+        !OPTIONAL_NOTION_PROPERTIES.has(propertyName),
+    ),
+  );
 }
 
 async function retrieveNotionPage({ fetchImpl, notionToken, pageId }) {

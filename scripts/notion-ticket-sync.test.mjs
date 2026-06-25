@@ -419,6 +419,80 @@ describe("notion ticket sync helpers", () => {
     expect(requests[0].url).toBe(pullRequestUrl);
   });
 
+  it("omits unavailable optional push metadata properties from Notion updates", async () => {
+    const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "pull-request-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (url === pullRequestUrl) {
+          return Response.json({
+            ...pullRequest,
+            head: {
+              ...pullRequest.head,
+              sha: "current-head-sha",
+            },
+            number: 42,
+            state: "open",
+            title: "선택 push metadata 속성 안전 처리",
+            url: pullRequestUrl,
+          });
+        }
+
+        if (options.method === "GET") {
+          return Response.json({
+            parent: {
+              data_source_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+              type: "data_source_id",
+            },
+            properties: {
+              Blocker: {},
+              "GitHub Branch": {},
+              "GitHub PR": {},
+              "PR Created At": {},
+              상태: {},
+            },
+          });
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          action: "synchronize",
+          pull_request: {
+            ...pullRequest,
+            head: {
+              ...pullRequest.head,
+              sha: "current-head-sha",
+            },
+            number: 42,
+            url: pullRequestUrl,
+          },
+        }),
+    });
+
+    expect(result.ok).toBe(true);
+    const updatedProperties = JSON.parse(
+      requests.at(-1).options.body,
+    ).properties;
+
+    expect(updatedProperties["상태"].status.name).toBe("IN-review");
+    expect(updatedProperties["GitHub Branch"]).toBeDefined();
+    expect(updatedProperties["Last Push At"]).toBeUndefined();
+    expect(updatedProperties["Last Head SHA"]).toBeUndefined();
+    expect(updatedProperties["Last Push Summary"]).toBeUndefined();
+  });
+
   it("skips stale active PR events when the current PR is already closed", async () => {
     const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
     const requests = [];
