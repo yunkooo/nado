@@ -15,6 +15,21 @@
   --nado-radius-composer: 18px;
   --nado-radius-pill: 999px;
   --nado-shadow-composer: 0 12px 28px rgba(32, 32, 29, 0.08);
+  --nado-spacing-xs: 4px;
+  --nado-spacing-sm: 8px;
+  --nado-spacing-md: 12px;
+  --nado-spacing-lg: 16px;
+  --nado-spacing-xl: 24px;
+  --nado-text-size-xs: 12px;
+  --nado-text-size-sm: 14px;
+  --nado-text-size-md: 16px;
+  --nado-text-size-lg: 18px;
+  --nado-text-size-xl: 22px;
+  --nado-text-line-height-xs: 17px;
+  --nado-text-line-height-sm: 21px;
+  --nado-text-line-height-md: 26px;
+  --nado-text-line-height-lg: 28px;
+  --nado-text-line-height-xl: 32px;
   --nado-button-size-sm-height: 32px;
   --nado-button-size-sm-padding-x: 12px;
   --nado-button-size-md-height: 40px;
@@ -41,6 +56,129 @@
   color: var(--nado-color-ink);
   letter-spacing: 0;
   margin: 0;
+}
+
+.nado-text {
+  color: var(--nado-color-ink);
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.nado-text--size-xs {
+  font-size: var(--nado-text-size-xs);
+  line-height: var(--nado-text-line-height-xs);
+}
+
+.nado-text--size-sm {
+  font-size: var(--nado-text-size-sm);
+  line-height: var(--nado-text-line-height-sm);
+}
+
+.nado-text--size-md {
+  font-size: var(--nado-text-size-md);
+  line-height: var(--nado-text-line-height-md);
+}
+
+.nado-text--size-lg {
+  font-size: var(--nado-text-size-lg);
+  line-height: var(--nado-text-line-height-lg);
+}
+
+.nado-text--size-xl {
+  font-size: var(--nado-text-size-xl);
+  line-height: var(--nado-text-line-height-xl);
+}
+
+.nado-text--weight-regular {
+  font-weight: 400;
+}
+
+.nado-text--weight-medium {
+  font-weight: 600;
+}
+
+.nado-text--weight-bold {
+  font-weight: 700;
+}
+
+.nado-text--weight-heavy {
+  font-weight: 800;
+}
+
+.nado-text--tone-default {
+  color: var(--nado-color-ink);
+}
+
+.nado-text--tone-muted {
+  color: var(--nado-color-ink-muted);
+}
+
+.nado-text--tone-primary {
+  color: var(--nado-color-primary);
+}
+
+.nado-text--tone-danger {
+  color: var(--nado-color-accent);
+}
+
+.nado-text--align-start {
+  text-align: start;
+}
+
+.nado-text--align-center {
+  text-align: center;
+}
+
+.nado-text--align-end {
+  text-align: end;
+}
+
+.nado-stack {
+  display: flex;
+}
+
+.nado-stack--direction-vertical {
+  flex-direction: column;
+}
+
+.nado-stack--direction-horizontal {
+  flex-direction: row;
+}
+
+.nado-stack--gap-xs {
+  gap: var(--nado-spacing-xs);
+}
+
+.nado-stack--gap-sm {
+  gap: var(--nado-spacing-sm);
+}
+
+.nado-stack--gap-md {
+  gap: var(--nado-spacing-md);
+}
+
+.nado-stack--gap-lg {
+  gap: var(--nado-spacing-lg);
+}
+
+.nado-stack--gap-xl {
+  gap: var(--nado-spacing-xl);
+}
+
+.nado-stack--align-start {
+  align-items: flex-start;
+}
+
+.nado-stack--align-center {
+  align-items: center;
+}
+
+.nado-stack--align-end {
+  align-items: flex-end;
+}
+
+.nado-stack--align-stretch {
+  align-items: stretch;
 }
 
 .nado-button,

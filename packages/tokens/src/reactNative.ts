@@ -8,6 +8,7 @@ export const nativeTokens = {
   component: mapNativeTokenValues(tokens.component),
   radius: mapCssPixelTokens(tokens.radius),
   spacing: mapCssPixelTokens(tokens.spacing),
+  typography: mapNativeTokenValues(tokens.typography),
 } as const;
 
 type NativeTokenValue<TValue> = TValue extends CssPixelToken

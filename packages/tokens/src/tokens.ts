@@ -38,6 +38,31 @@ const spacing = {
   xxl: "32px",
 } as const;
 
+const typography = {
+  text: {
+    size: {
+      xs: "12px",
+      sm: "14px",
+      md: "16px",
+      lg: "18px",
+      xl: "22px",
+    },
+    lineHeight: {
+      xs: "17px",
+      sm: "21px",
+      md: "26px",
+      lg: "28px",
+      xl: "32px",
+    },
+    weight: {
+      regular: 400,
+      medium: 600,
+      bold: 700,
+      heavy: 800,
+    },
+  },
+} as const;
+
 const component = {
   button: {
     radius: radius.md,
@@ -82,5 +107,6 @@ export const tokens = {
   radius,
   shadow,
   spacing,
+  typography,
   component,
 } as const;
