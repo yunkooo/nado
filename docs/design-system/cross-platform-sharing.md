@@ -81,6 +81,34 @@ v1에서 도입하지 않는 import 경로는 다음과 같다.
 
 예를 들어 `tokens.spacing.md`가 `"12px"`라면, `nativeTokens.spacing.md`는 `12`가 된다.
 
+## v2 목표 패키지 구조
+
+v1에서는 `@nado/ui`가 Web/Desktop React DOM 구현을 직접 제공한다. 장기적으로는 `@nado/ui`를 public facade로 두고, 실제 구현을 `@nado/ui-web`과 `@nado/ui-native`로 분리하는 구조를 목표로 한다.
+
+```txt
+packages/
+  tokens/
+  icons/
+  core/
+  ui/
+  ui-web/
+  ui-native/
+```
+
+목표 import는 다음과 같다.
+
+```tsx
+// Web / Desktop
+import { Button, Text, Stack } from "@nado/ui/web";
+
+// React Native
+import { Button, Text, Stack } from "@nado/ui/native";
+```
+
+기본 `@nado/ui` import는 Next.js, Vite/Tauri, Expo/Metro가 모두 안전하게 해석되는지 검증한 뒤 마지막 단계에서만 cross-platform entry로 검토한다.
+
+세부 migration 순서는 [UI package facade migration](ui-package-facade-migration.md)에 기록한다.
+
 ### 2. 컴포넌트 구현은 플랫폼별로 나눈다
 
 Web/Desktop은 DOM과 CSS를 사용하므로 `@nado/ui` 컴포넌트를 공유할 수 있다.
@@ -313,6 +341,8 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 첫 흐�
 
 - `@nado/tokens` component token을 chip, reviewCard로 확대
 - `@nado/ui/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
+- `@nado/ui/web` subpath 추가
+- `@nado/ui` facade와 `@nado/ui-web`, `@nado/ui-native` 패키지 분리 설계
 - Mobile `mobileStyles`가 주요 반복 UI에서 `nativeTokens`를 계속 사용하는지 점검
 - `@nado/ui-native` 최소 API 설계
 - `@nado/core` 도입 기준과 첫 후보 utility 검토
