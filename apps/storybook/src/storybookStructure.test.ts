@@ -102,6 +102,8 @@ describe("storybook source structure", () => {
       "Chip.stories.tsx",
       "InputComposer.stories.tsx",
       "ReviewCard.stories.tsx",
+      "Stack.stories.tsx",
+      "Text.stories.tsx",
       "VocabularyList.stories.tsx",
       "VocabularySuggestionList.stories.tsx",
     ]);

@@ -2,5 +2,7 @@ export * from "./tokens";
 export * from "./Button";
 export * from "./Chip";
 export * from "./InputComposer";
+export * from "./Stack";
+export * from "./TextPrimitive";
 export * from "./analysis";
 export * from "./study";
