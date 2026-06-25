@@ -116,6 +116,7 @@ describe("storybook source structure", () => {
     expect(storybookConfigSource).toContain(
       "../../../packages/ui/src/index.ts",
     );
+    expect(storybookConfigSource).toContain("@nado\\/ui\\/web\\/styles.css");
     expect(storybookConfigSource).toContain(
       "../../../packages/tokens/src/index.ts",
     );
