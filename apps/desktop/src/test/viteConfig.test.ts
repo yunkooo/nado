@@ -26,6 +26,7 @@ describe("desktop Vite config", () => {
       "../../packages/tokens/src/reactNative.ts",
     );
     expect(viteConfigSource).toContain("../../packages/ui/src/index.ts");
+    expect(viteConfigSource).toContain("@nado\\/ui\\/web\\/styles.css");
     expect(viteConfigSource).toContain("../../packages/ui/src/styles.css");
   });
 });

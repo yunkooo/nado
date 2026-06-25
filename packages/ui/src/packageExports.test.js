@@ -18,6 +18,12 @@ describe("@nado/ui package exports", () => {
     expect(packageJson.exports["./styles.css"].import).toBe(
       "./dist/styles.css",
     );
+    expect(packageJson.exports["./web/styles.css"].development).toBe(
+      "./src/styles.css",
+    );
+    expect(packageJson.exports["./web/styles.css"].import).toBe(
+      "./dist/styles.css",
+    );
   });
 
   it("exposes the Web/Desktop public surface through @nado/ui/web", () => {

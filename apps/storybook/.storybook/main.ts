@@ -38,6 +38,10 @@ const config: StorybookConfig = {
             replacement: toPathname("../../../packages/ui/src/styles.css"),
           },
           {
+            find: /^@nado\/ui\/web\/styles.css$/,
+            replacement: toPathname("../../../packages/ui/src/styles.css"),
+          },
+          {
             find: /^@nado\/tokens$/,
             replacement: toPathname("../../../packages/tokens/src/index.ts"),
           },
