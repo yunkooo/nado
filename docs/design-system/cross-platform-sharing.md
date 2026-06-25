@@ -213,7 +213,7 @@ Mobile에서 반복되는 RN 컴포넌트가 늘어나면 `@nado/ui-native` 패�
 
 처음부터 큰 패키지를 만들기보다 공통 API 계약이 이미 있는 `Button`, `Text`, `Stack`부터 시작하는 것이 좋다. `Chip`과 `ReviewCard`는 component token 반복이 확인될 때 별도 후보로 다룬다.
 
-v1에서는 `@nado/ui-native`를 만들지 않는다. 현재 Mobile은 screen-local `StyleSheet`가 많고, 공통 RN component API를 패키지화할 만큼 반복 경계가 아직 충분히 검증되지 않았다. 먼저 [Component API contracts](component-api-contracts.md)에서 Web/Desktop과 RN이 공유할 prop 의미를 고정한다.
+[RN component repeat audit](rn-component-repeat-audit.md)에서 `Button`, `Text`, `Stack` 반복은 확인되었다. 다음 구현 PR은 `@nado/ui-native` 최소 API를 만들 수 있지만, 앱 전체 마이그레이션은 포함하지 않는다. 먼저 package와 primitive contract를 고정하고, 적용은 token parity demo 같은 낮은 위험 표면부터 시작한다.
 
 ### `@nado/shared`
 
@@ -329,8 +329,8 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 
 - `@nado/tokens` component token을 chip, reviewCard로 확대
 - `@nado/ui/styles.css`와 `@nado/ui/web/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
-- Mobile `mobileStyles`가 주요 반복 UI에서 `nativeTokens`를 계속 사용하는지 점검
-- `@nado/ui-native` 최소 API를 `Button`, `Text`, `Stack`부터 설계
+- `@nado/ui-native` 최소 API를 `Button`, `Text`, `Stack`부터 구현
+- Mobile `mobileStyles`에서 `@nado/ui-native`로 옮길 낮은 위험 적용 표면 선정
 - `@nado/core` 도입 기준과 첫 후보 utility 검토
 - Storybook for React Native 도입 방식 검토
 - Mobile token parity story 추가
