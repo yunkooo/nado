@@ -33,6 +33,44 @@ Mobile React Native UI
 
 Storybook은 디자인 시스템의 원본이 아니다. Storybook은 `@nado/ui`와 mock surface가 기대한 상태로 보이는지 확인하는 preview/verification layer다.
 
+## v1 패키지 경계
+
+v1에서는 패키지를 새로 늘리기보다 현재 경계를 명확히 한다. `@nado/ui-native`와 `@nado/core`는 이름만 먼저 예약하고, 실제 패키지는 반복되는 구현이 생겼을 때 만든다.
+
+| 패키지            | v1 역할                                     | 현재 상태        | 생성/확장 기준                                      |
+| ----------------- | ------------------------------------------- | ---------------- | --------------------------------------------------- |
+| `@nado/tokens`    | primitive, semantic, component token의 원본 | 이미 사용 중     | 모든 플랫폼에 반영되어야 하는 디자인 값 변경        |
+| `@nado/ui`        | Web/Desktop React DOM 컴포넌트              | 이미 사용 중     | DOM, CSS variable, Storybook 검증이 필요한 UI       |
+| `@nado/shared`    | 도메인 스키마, API 타입, 비즈니스 규칙      | 이미 사용 중     | 플랫폼과 무관한 제품 규칙이나 API 계약              |
+| `@nado/ui-native` | React Native 공통 컴포넌트 후보             | 아직 만들지 않음 | 같은 RN UI 패턴이 2곳 이상 반복되고 prop 계약 필요  |
+| `@nado/core`      | theme, hook, i18n, platform utility 후보    | 아직 만들지 않음 | 앱별 중복이 커지고 도메인 규칙과 분리할 필요가 생김 |
+
+`@nado/shared`와 `@nado/core`는 섞지 않는다. `@nado/shared`는 분석 요청/응답, 단어장 타입, 페이지네이션 같은 제품 도메인 계약을 맡고, `@nado/core`는 미래에 플랫폼 공통 runtime utility가 충분히 생겼을 때만 검토한다.
+
+## Import 정책
+
+Web과 Desktop은 React DOM 환경이므로 `@nado/ui`를 직접 사용한다.
+
+```tsx
+import { Button, InputComposer } from "@nado/ui";
+import "@nado/ui/styles.css";
+```
+
+Mobile v1은 `@nado/ui`를 직접 import하지 않는다. React Native 화면은 `@nado/tokens/react-native`와 RN-local component/style 구현을 사용한다.
+
+```tsx
+import { nativeTokens } from "@nado/tokens/react-native";
+```
+
+v1에서 도입하지 않는 import 경로는 다음과 같다.
+
+- `@nado/ui/web`
+- `@nado/ui/native`
+- `Button.web.tsx`
+- `Button.native.tsx`
+
+단일 `@nado/ui` 패키지 안에서 web/native subpath를 모두 제공하면 peer dependency, bundler condition, Storybook, Expo 해석 규칙이 한 번에 복잡해진다. 플랫폼 파일명 방식도 모든 컴포넌트가 1:1로 대응한다는 압력을 만들기 때문에 현재 제품 단계에는 맞지 않는다. v1의 기준은 같은 파일 공유가 아니라 같은 token source와 같은 prop contract 공유다.
+
 ## 추천 원칙
 
 ### 1. 디자인 값은 token에서 시작한다
@@ -55,11 +93,11 @@ Mobile은 React Native라 DOM className, CSS variable, hover 같은 개념을 �
 | --------- | ------------------------------- | ------------------------------- |
 | 역할      | Button                          | NativeButton 후보               |
 | variant   | `primary`, `secondary`, `ghost` | `primary`, `secondary`, `ghost` |
-| size      | `sm`, `md`, `lg`                | `sm`, `md`, `lg`                |
+| size      | `sm`, `md`, `icon`              | `sm`, `md`, `icon`              |
 | state     | `idle`, `disabled`, `loading`   | `idle`, `disabled`, `loading`   |
 | source    | `@nado/ui`                      | 향후 `@nado/ui-native` 후보     |
 
-이렇게 하면 파일은 달라도 제품에서 말하는 버튼의 의미는 같아진다.
+현재 Button의 실제 계약은 `variant: primary | secondary | ghost | send`, `size: sm | md | icon`이다. `lg`는 token과 양쪽 구현이 함께 준비된 뒤 추가할 확장 후보로 둔다. 이렇게 하면 파일은 달라도 제품에서 말하는 버튼의 의미는 같아진다.
 
 ### 3. 웹 디자인 변경은 token 변경으로 표현한다
 
@@ -136,6 +174,35 @@ Mobile에서 반복되는 RN 컴포넌트가 늘어나면 `@nado/ui-native` 패�
 - 단순 screen-local style보다 패키지화했을 때 유지보수 비용이 줄어든다.
 
 처음부터 큰 패키지를 만들기보다 `Button`, `Chip`, `ReviewCard`처럼 작은 컴포넌트부터 시작하는 것이 좋다.
+
+v1에서는 `@nado/ui-native`를 만들지 않는다. 현재 Mobile은 screen-local `StyleSheet`가 많고, 공통 RN component API를 패키지화할 만큼 반복 경계가 아직 충분히 검증되지 않았다. 먼저 [Component API contracts](component-api-contracts.md)에서 Web/Desktop과 RN이 공유할 prop 의미를 고정한다.
+
+### `@nado/shared`
+
+플랫폼과 무관한 제품 도메인 계약을 담는다.
+
+현재 역할:
+
+- 분석 요청/응답 스키마
+- 단어장 타입과 저장 요청 스키마
+- 페이지네이션, realtime refresh, 입력 검증 같은 제품 규칙
+
+주의할 점:
+
+- 디자인 token이나 UI component prop을 `@nado/shared`로 옮기지 않는다.
+- 플랫폼 runtime hook, theme provider, i18n helper는 중복이 충분히 커지기 전까지 앱별 구현 또는 후보 문서로 둔다.
+
+### 향후 `@nado/core`
+
+`@nado/core`는 v1에서 만들지 않는다. 후보 역할은 theme, platform hook, i18n, storage abstraction, platform utility다.
+
+도입 기준:
+
+- Web/Desktop/Mobile에서 같은 runtime utility가 반복된다.
+- 해당 utility가 도메인 스키마가 아니라 앱 실행 지원 성격이다.
+- `@nado/shared`에 넣으면 도메인 계약과 runtime helper가 섞인다.
+
+즉, `@nado/core`는 "있으면 좋아 보이는 공통 폴더"가 아니라 실제 중복과 책임 분리가 생긴 뒤 만든다.
 
 ## Web 변경이 Mobile까지 따라가는 기준
 
@@ -248,11 +315,25 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 첫 흐�
 - `@nado/ui/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
 - Mobile `mobileStyles`가 주요 반복 UI에서 `nativeTokens`를 계속 사용하는지 점검
 - `@nado/ui-native` 최소 API 설계
+- `@nado/core` 도입 기준과 첫 후보 utility 검토
 - Storybook for React Native 도입 방식 검토
 - Mobile token parity story 추가
 - 필요한 경우 Mobile token parity demo screen 추가
 - token 변경이 Web/Desktop/Mobile에 반영되는 demo 구성
 - RN 검증 도구 비교와 도입 기준 정리
+
+## v1 제외 범위와 future capability
+
+다음 기능은 크로스플랫폼 요구가 있지만, v1 런타임 구현 범위에는 넣지 않는다.
+
+| 기능            | v1 판단                       | 이유                                                                      |
+| --------------- | ----------------------------- | ------------------------------------------------------------------------- |
+| 파일 업로드     | future platform adapter 후보  | Web/Desktop의 file input/Tauri API와 Mobile picker 계열이 다르다.         |
+| Tooltip         | future platform-specific 후보 | Web hover/focus와 Mobile touch/popover 또는 sheet interaction이 다르다.   |
+| Toast           | future message contract 후보  | 메시지 타입은 공유할 수 있지만 renderer와 안전 영역 처리는 플랫폼별이다.  |
+| 공통 API client | future `@nado/core` 후보      | 현재는 `@nado/shared` 도메인 계약을 우선하고 앱별 client 중복을 관찰한다. |
+
+이 항목들은 "공통 컴포넌트로 바로 뽑기"보다 먼저 platform adapter의 입력/출력 계약을 정해야 한다. 후속 issue에서는 공통 메시지 타입, 권한/파일 선택 흐름, 접근성 기준, 실패 상태를 별도로 다룬다.
 
 ## 참고 링크
 
