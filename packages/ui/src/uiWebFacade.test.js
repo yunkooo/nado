@@ -20,12 +20,15 @@ describe("@nado/ui facade to @nado/ui-web", () => {
     expect(uiPackageJson.dependencies["@nado/ui-web"]).toBe("workspace:*");
   });
 
-  it("uses the React Native implementation package without making Web/Desktop depend on it", () => {
+  it("declares the React Native implementation package as an optional runtime peer", () => {
     expect(uiPackageJson.dependencies["@nado/ui-native"]).toBeUndefined();
     expect(uiPackageJson.devDependencies["@nado/ui-native"]).toBe(
       "workspace:*",
     );
-    expect(uiPackageJson.peerDependencies["@nado/ui-native"]).toBeUndefined();
+    expect(uiPackageJson.peerDependencies["@nado/ui-native"]).toBe("0.1.0");
+    expect(uiPackageJson.peerDependenciesMeta["@nado/ui-native"].optional).toBe(
+      true,
+    );
     expect(uiPackageJson.peerDependencies["react-native"]).toBeUndefined();
   });
 

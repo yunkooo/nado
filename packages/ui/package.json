@@ -35,8 +35,14 @@
     "lint": "prettier --check src tsconfig.json package.json"
   },
   "peerDependencies": {
+    "@nado/ui-native": "0.1.0",
     "react": "^19.2.3 || ^19.2.7",
     "react-dom": "^19.2.3 || ^19.2.7"
+  },
+  "peerDependenciesMeta": {
+    "@nado/ui-native": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@nado/ui-web": "workspace:*",
