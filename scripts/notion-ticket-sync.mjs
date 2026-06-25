@@ -10,11 +10,11 @@ const NOTION_PAGE_URL_PATTERN =
 const COMPACT_NOTION_ID_PATTERN = /[0-9a-f]{32}/i;
 const DASHED_NOTION_ID_PATTERN =
   /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
-const OPTIONAL_NOTION_PROPERTIES = new Set([
+const REQUIRED_PUSH_METADATA_PROPERTIES = [
   "Last Push At",
   "Last Head SHA",
   "Last Push Summary",
-]);
+];
 
 export function parseTicketUrlFromBody(body = "") {
   const ticketLine = body
@@ -337,14 +337,20 @@ export async function runSync({
     return pageValidation;
   }
 
+  const propertyValidation = validateRequiredPushMetadataProperties({
+    page: pageValidation.page,
+    properties: syncPlan.properties,
+  });
+
+  if (!propertyValidation.ok) {
+    return propertyValidation;
+  }
+
   await updateNotionPage({
     fetchImpl,
     notionToken: env.NOTION_TOKEN,
     pageId: syncPlan.pageId,
-    properties: omitUnavailableOptionalNotionProperties({
-      page: pageValidation.page,
-      properties: syncPlan.properties,
-    }),
+    properties: syncPlan.properties,
   });
 
   return {
@@ -922,18 +928,26 @@ async function validateNotionTicketPage({
   };
 }
 
-function omitUnavailableOptionalNotionProperties({ page, properties }) {
-  if (!page?.properties || typeof page.properties !== "object") {
-    return properties;
+function validateRequiredPushMetadataProperties({ page, properties }) {
+  const notionProperties =
+    page?.properties && typeof page.properties === "object"
+      ? page.properties
+      : {};
+  const missingProperties = REQUIRED_PUSH_METADATA_PROPERTIES.filter(
+    (propertyName) =>
+      propertyName in properties && !(propertyName in notionProperties),
+  );
+
+  if (missingProperties.length === 0) {
+    return {
+      ok: true,
+    };
   }
 
-  return Object.fromEntries(
-    Object.entries(properties).filter(
-      ([propertyName]) =>
-        propertyName in page.properties ||
-        !OPTIONAL_NOTION_PROPERTIES.has(propertyName),
-    ),
-  );
+  return {
+    ok: false,
+    reason: `Notion data source is missing required push metadata properties: ${missingProperties.join(", ")}`,
+  };
 }
 
 async function retrieveNotionPage({ fetchImpl, notionToken, pageId }) {

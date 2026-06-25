@@ -419,7 +419,7 @@ describe("notion ticket sync helpers", () => {
     expect(requests[0].url).toBe(pullRequestUrl);
   });
 
-  it("omits unavailable optional push metadata properties from Notion updates", async () => {
+  it("fails synchronize syncs when required push metadata properties are unavailable", async () => {
     const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
     const requests = [];
 
@@ -443,7 +443,7 @@ describe("notion ticket sync helpers", () => {
             },
             number: 42,
             state: "open",
-            title: "선택 push metadata 속성 안전 처리",
+            title: "필수 push metadata 속성 누락 처리",
             url: pullRequestUrl,
           });
         }
@@ -481,16 +481,16 @@ describe("notion ticket sync helpers", () => {
         }),
     });
 
-    expect(result.ok).toBe(true);
-    const updatedProperties = JSON.parse(
-      requests.at(-1).options.body,
-    ).properties;
-
-    expect(updatedProperties["상태"].status.name).toBe("IN-review");
-    expect(updatedProperties["GitHub Branch"]).toBeDefined();
-    expect(updatedProperties["Last Push At"]).toBeUndefined();
-    expect(updatedProperties["Last Head SHA"]).toBeUndefined();
-    expect(updatedProperties["Last Push Summary"]).toBeUndefined();
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe(
+      "Notion data source is missing required push metadata properties: Last Push At, Last Head SHA, Last Push Summary",
+    );
+    expect(requests).toHaveLength(2);
+    expect(requests[0].url).toBe(pullRequestUrl);
+    expect(requests[1].url).toBe(
+      "https://api.notion.com/v1/pages/11111111-2222-3333-4444-555555555555",
+    );
+    expect(requests[1].options.method).toBe("GET");
   });
 
   it("skips stale active PR events when the current PR is already closed", async () => {
