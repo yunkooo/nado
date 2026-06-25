@@ -37,6 +37,10 @@ describe("mobile project config", () => {
       expect(scriptSource).toContain('"@nado/shared"');
       expect(scriptSource).toContain('"@nado/tokens"');
       expect(scriptSource).toContain('"@nado/ui-native"');
+      expect(scriptSource).toContain('"@nado/ui"');
+      expect(scriptSource.indexOf('"@nado/ui-native"')).toBeLessThan(
+        scriptSource.indexOf('"@nado/ui"'),
+      );
       expect(scriptSource).toContain("buildMobileRuntimePackages()");
       expect(scriptSource).toContain(
         'spawnSync("pnpm", ["--filter", packageName, "build"]',
@@ -46,5 +50,9 @@ describe("mobile project config", () => {
 
   it("declares the native primitive package for documented mobile imports", () => {
     expect(packageJson.dependencies["@nado/ui-native"]).toBe("workspace:*");
+  });
+
+  it("declares the UI facade package for documented @nado/ui/native imports", () => {
+    expect(packageJson.dependencies["@nado/ui"]).toBe("workspace:*");
   });
 });

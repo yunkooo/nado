@@ -21,6 +21,7 @@ const mobileRuntimePackages = [
   "@nado/shared",
   "@nado/tokens",
   "@nado/ui-native",
+  "@nado/ui",
 ];
 
 buildMobileRuntimePackages();
