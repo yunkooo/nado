@@ -16,6 +16,23 @@ describe("@nado/tokens", () => {
     expect(tokens.radius.composer).toBe("18px");
   });
 
+  it("exports typography tokens for shared text primitives", () => {
+    expect(tokens.typography.text.size).toMatchObject({
+      md: "16px",
+      xl: "22px",
+    });
+    expect(tokens.typography.text.lineHeight).toMatchObject({
+      md: "26px",
+      xl: "32px",
+    });
+    expect(tokens.typography.text.weight).toMatchObject({
+      regular: 400,
+      medium: 600,
+      bold: 700,
+      heavy: 800,
+    });
+  });
+
   it("adapts spacing and radius tokens to React Native numbers", () => {
     expect(nativeTokens.spacing).toMatchObject({
       md: 12,
@@ -25,6 +42,18 @@ describe("@nado/tokens", () => {
       composer: 18,
       pill: 999,
     });
+  });
+
+  it("adapts typography size tokens to React Native numbers", () => {
+    expect(nativeTokens.typography.text.size).toMatchObject({
+      md: 16,
+      xl: 22,
+    });
+    expect(nativeTokens.typography.text.lineHeight).toMatchObject({
+      md: 26,
+      xl: 32,
+    });
+    expect(nativeTokens.typography.text.weight.heavy).toBe(800);
   });
 
   it("reuses color tokens without changing their platform value", () => {
