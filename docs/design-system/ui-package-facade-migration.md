@@ -197,7 +197,9 @@ packages/ui-web/
 
 ### Phase 4. `@nado/ui-native` 최소 패키지 생성
 
-RN-local 구현에서 반복이 확인된 뒤 `@nado/ui-native`를 만든다. 첫 후보는 `Button`, `Text`, `Stack`이다.
+RN-local 구현에서 반복이 확인된 뒤 `@nado/ui-native`를 만든다. [RN component repeat audit](rn-component-repeat-audit.md)에서 `Button`, `Text`, `Stack` 반복은 확인되었다.
+
+첫 구현 PR은 앱 전체 마이그레이션이 아니라 `packages/ui-native`와 최소 primitive contract를 만드는 범위로 제한한다. 적용 표면이 필요하면 `MobileTokenParityDemoScreen`처럼 낮은 위험의 token parity demo부터 사용한다.
 
 도입 기준:
 
@@ -231,11 +233,14 @@ import { Button } from "@nado/ui";
 이 설계 뒤의 구현은 아래처럼 나눈다.
 
 1. RN-local Button/Text/Stack 반복 점검
-   - 실제 mobile 화면에서 공통화할 반복 UI가 있는지 확인한다.
-   - 반복이 충분하면 `@nado/ui-native` 생성 티켓을 만든다.
+   - 완료: [RN component repeat audit](rn-component-repeat-audit.md)
+   - `Button`, `Text`, `Stack` 반복은 확인되었다.
+   - 앱 전체 마이그레이션은 아직 하지 않는다.
 
 2. `@nado/ui-native` 최소 API 구현
    - `Button`, `Text`, `Stack`부터 시작한다.
+   - `packages/ui-native` package, export, tests를 먼저 만든다.
+   - `MobileTokenParityDemoScreen` 적용은 선택 가능한 첫 적용 표면으로 둔다.
    - `Card`, `Badge`, `Avatar`는 그 다음 후보로 둔다.
 
 ## 제외 범위

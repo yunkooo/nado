@@ -40,7 +40,7 @@ import { Button } from "@nado/ui/native";
 
 ## 현재 구현
 
-현재 공통 패키지에 실제 구현된 Web/Desktop 기본 component는 `Button`, `Text`, `Stack`이다.
+현재 공통 패키지에 실제 구현된 Web/Desktop 기본 component는 `Button`, `Text`, `Stack`이다. Mobile에는 아직 패키지 export가 없지만, [RN component repeat audit](rn-component-repeat-audit.md)에서 같은 성격의 RN-local 반복을 확인했다.
 
 | Component | Package    | Platform    | Status |
 | --------- | ---------- | ----------- | ------ |
@@ -51,7 +51,7 @@ import { Button } from "@nado/ui/native";
 | `Badge`   | 후보       | 공통 계약   | 미구현 |
 | `Avatar`  | 후보       | 공통 계약   | 미구현 |
 
-미구현 component는 이 문서에서 목표 계약만 고정한다. 실제 export는 별도 작업에서 추가한다.
+미구현 component는 이 문서에서 목표 계약만 고정한다. 실제 export는 별도 작업에서 추가한다. `@nado/ui-native`의 첫 구현 후보는 `Button`, `Text`, `Stack`이며, 앱 전체 마이그레이션은 별도 PR로 분리한다.
 
 ## Button
 
