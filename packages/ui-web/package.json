@@ -1,5 +1,5 @@
 {
-  "name": "@nado/ui",
+  "name": "@nado/ui-web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -8,15 +8,6 @@
       "types": "./src/index.ts",
       "development": "./src/index.ts",
       "import": "./dist/index.js"
-    },
-    "./web": {
-      "types": "./src/web.ts",
-      "development": "./src/web.ts",
-      "import": "./dist/web.js"
-    },
-    "./web/styles.css": {
-      "development": "./src/styles.css",
-      "import": "./dist/styles.css"
     },
     "./styles.css": {
       "development": "./src/styles.css",
@@ -34,7 +25,6 @@
     "react-dom": "^19.2.7"
   },
   "dependencies": {
-    "@nado/ui-web": "workspace:*",
     "@nado/tokens": "workspace:*"
   },
   "devDependencies": {

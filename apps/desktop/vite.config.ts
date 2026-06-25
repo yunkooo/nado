@@ -39,6 +39,14 @@ export default defineConfig(({ mode }) => {
           find: /^@nado\/ui\/web\/styles.css$/,
           replacement: toPathname("../../packages/ui/src/styles.css"),
         },
+        {
+          find: /^@nado\/ui-web$/,
+          replacement: toPathname("../../packages/ui-web/src/index.ts"),
+        },
+        {
+          find: /^@nado\/ui-web\/styles.css$/,
+          replacement: toPathname("../../packages/ui-web/src/styles.css"),
+        },
       ],
     },
     server: {

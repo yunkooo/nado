@@ -42,9 +42,16 @@ const nextConfig = {
       "@nado/ui": "../../packages/ui/src/index.ts",
       "@nado/ui/styles.css": "../../packages/ui/src/styles.css",
       "@nado/ui/web/styles.css": "../../packages/ui/src/styles.css",
+      "@nado/ui-web": "../../packages/ui-web/src/index.ts",
+      "@nado/ui-web/styles.css": "../../packages/ui-web/src/styles.css",
     },
   },
-  transpilePackages: ["@nado/shared", "@nado/tokens", "@nado/ui"],
+  transpilePackages: [
+    "@nado/shared",
+    "@nado/tokens",
+    "@nado/ui",
+    "@nado/ui-web",
+  ],
 };
 
 export default nextConfig;

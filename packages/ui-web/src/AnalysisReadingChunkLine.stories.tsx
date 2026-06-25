@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { ReadingChunkLine } from "@nado/ui";
+import { ReadingChunkLine } from "@nado/ui-web";
 import { analysisMock } from "./analysisStoryFixtures";
 
 const firstSentenceChunks = analysisMock.sentences[0]?.chunks ?? [];
