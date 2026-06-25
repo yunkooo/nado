@@ -16,8 +16,8 @@
 Mobile React Native UI
   @nado/tokens/react-native 기반으로 별도 구현
 
-향후 @nado/ui-native 후보
-  Mobile에서 반복되는 RN 컴포넌트를 패키지화
+@nado/ui-native
+  Mobile에서 반복되는 RN Button/Text/Stack 최소 primitive
 ```
 
 핵심은 웹 CSS를 모바일이 따라 하는 것이 아니라, 양쪽이 같은 token source를 바라보게 만드는 것이다.
@@ -28,14 +28,14 @@ Mobile React Native UI
 | --------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------- |
 | Web       | `@nado/ui`, `@nado/ui/web`, `@nado/tokens`, `@nado/ui/styles.css`, `@nado/ui/web/styles.css` | Web app surface와 Next.js 연결                     | Web app, Storybook     |
 | Desktop   | `@nado/ui`, `@nado/ui/web`, `@nado/tokens`, `@nado/ui/styles.css`, `@nado/ui/web/styles.css` | Desktop shell, Tauri 연결, desktop surface         | Desktop app, Storybook |
-| Mobile    | `@nado/tokens/react-native`                                                                  | React Native 화면, `StyleSheet`, touch interaction | Expo app, mobile tests |
+| Mobile    | `@nado/tokens/react-native`, `@nado/ui-native`                                               | React Native 화면, `StyleSheet`, touch interaction | Expo app, mobile tests |
 | Storybook | Web/Desktop UI 상태 확인, mock surface                                                       | 실제 API/Auth/Supabase 연결                        | `apps/storybook`       |
 
 Storybook은 디자인 시스템의 원본이 아니다. Storybook은 `@nado/ui`와 mock surface가 기대한 상태로 보이는지 확인하는 preview/verification layer다.
 
 ## v1 패키지 경계
 
-v1에서는 패키지를 새로 늘리기보다 현재 경계를 명확히 한다. `@nado/ui-native`와 `@nado/core`는 이름만 먼저 예약하고, 실제 패키지는 반복되는 구현이 생겼을 때 만든다.
+v1에서는 패키지를 늘릴 때도 역할 경계를 작게 유지한다. `@nado/ui-web`과 `@nado/ui-native`는 구현 패키지이고, `@nado/core`는 이름만 먼저 예약한다.
 
 | 패키지            | v1 역할                                     | 현재 상태        | 생성/확장 기준                                      |
 | ----------------- | ------------------------------------------- | ---------------- | --------------------------------------------------- |
@@ -43,7 +43,7 @@ v1에서는 패키지를 새로 늘리기보다 현재 경계를 명확히 한�
 | `@nado/ui`        | Web/Desktop 호환 facade                     | 이미 사용 중     | 기존 앱 import 유지와 deprecation 기간 호환성       |
 | `@nado/ui-web`    | Web/Desktop React DOM 컴포넌트 구현         | 이미 사용 중     | DOM, CSS variable, Storybook 검증이 필요한 UI       |
 | `@nado/shared`    | 도메인 스키마, API 타입, 비즈니스 규칙      | 이미 사용 중     | 플랫폼과 무관한 제품 규칙이나 API 계약              |
-| `@nado/ui-native` | React Native 공통 컴포넌트 후보             | 아직 만들지 않음 | 같은 RN UI 패턴이 2곳 이상 반복되고 prop 계약 필요  |
+| `@nado/ui-native` | React Native 공통 primitive 구현            | 최소 도입됨      | `Button`, `Text`, `Stack` contract와 RN token 검증  |
 | `@nado/core`      | theme, hook, i18n, platform utility 후보    | 아직 만들지 않음 | 앱별 중복이 커지고 도메인 규칙과 분리할 필요가 생김 |
 
 `@nado/shared`와 `@nado/core`는 섞지 않는다. `@nado/shared`는 분석 요청/응답, 단어장 타입, 페이지네이션 같은 제품 도메인 계약을 맡고, `@nado/core`는 미래에 플랫폼 공통 runtime utility가 충분히 생겼을 때만 검토한다.
@@ -133,7 +133,7 @@ Mobile은 React Native라 DOM className, CSS variable, hover 같은 개념을 �
 | variant   | `primary`, `secondary`, `ghost` | `primary`, `secondary`, `ghost` |
 | size      | `sm`, `md`, `icon`              | `sm`, `md`, `icon`              |
 | state     | `idle`, `disabled`, `loading`   | `idle`, `disabled`, `loading`   |
-| source    | `@nado/ui`                      | 향후 `@nado/ui-native` 후보     |
+| source    | `@nado/ui`                      | `@nado/ui-native`               |
 
 현재 Button의 실제 계약은 `variant: primary | secondary | ghost | send`, `size: sm | md | icon`이다. `lg`는 token과 양쪽 구현이 함께 준비된 뒤 추가할 확장 후보로 둔다. 이렇게 하면 파일은 달라도 제품에서 말하는 버튼의 의미는 같아진다.
 
@@ -148,7 +148,7 @@ Mobile은 React Native라 DOM className, CSS variable, hover 같은 개념을 �
 1. 디자인 변경 요구를 token 변경인지, 컴포넌트 구조 변경인지 구분한다.
 2. 색상, 간격, radius, elevation 변경이면 `@nado/tokens`를 먼저 수정한다.
 3. Web/Desktop의 `@nado/ui`가 token을 사용하고 있는지 확인한다.
-4. Mobile의 `mobileStyles` 또는 향후 `@nado/ui-native`가 `nativeTokens`를 사용하고 있는지 확인한다.
+4. Mobile의 `mobileStyles` 또는 `@nado/ui-native`가 `nativeTokens`를 사용하고 있는지 확인한다.
 5. Storybook에서 Web/Desktop 상태를 확인한다.
 6. 현재는 Expo app과 mobile tests에서 Mobile 상태를 확인한다.
 7. Storybook for React Native를 도입한 뒤에는 RN 컴포넌트 상태를 story로 고정한다.
@@ -201,9 +201,9 @@ Web/Desktop의 React DOM 컴포넌트 패키지다.
 - Web CSS class와 CSS variable은 Mobile의 `StyleSheet`로 자동 변환되지 않는다.
 - Web/Desktop 컴포넌트 변경 시 Mobile도 같은 token과 사용 규칙을 따르는지 별도 확인이 필요하다.
 
-### 향후 `@nado/ui-native`
+### `@nado/ui-native`
 
-Mobile에서 반복되는 RN 컴포넌트가 늘어나면 `@nado/ui-native` 패키지를 검토한다.
+Mobile에서 반복되는 RN 컴포넌트를 `@nado/ui-native` 패키지로 분리한다.
 
 도입 기준:
 
@@ -213,7 +213,7 @@ Mobile에서 반복되는 RN 컴포넌트가 늘어나면 `@nado/ui-native` 패�
 
 처음부터 큰 패키지를 만들기보다 공통 API 계약이 이미 있는 `Button`, `Text`, `Stack`부터 시작하는 것이 좋다. `Chip`과 `ReviewCard`는 component token 반복이 확인될 때 별도 후보로 다룬다.
 
-[RN component repeat audit](rn-component-repeat-audit.md)에서 `Button`, `Text`, `Stack` 반복은 확인되었다. 다음 구현 PR은 `@nado/ui-native` 최소 API를 만들 수 있지만, 앱 전체 마이그레이션은 포함하지 않는다. 먼저 package와 primitive contract를 고정하고, 적용은 token parity demo 같은 낮은 위험 표면부터 시작한다.
+[RN component repeat audit](rn-component-repeat-audit.md)에서 `Button`, `Text`, `Stack` 반복은 확인되었다. `@nado/ui-native`는 이 세 primitive의 최소 API부터 제공한다. 앱 전체 마이그레이션은 포함하지 않고, 적용은 token parity demo 같은 낮은 위험 표면부터 시작한다.
 
 ### `@nado/shared`
 
@@ -329,7 +329,7 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 
 - `@nado/tokens` component token을 chip, reviewCard로 확대
 - `@nado/ui/styles.css`와 `@nado/ui/web/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
-- `@nado/ui-native` 최소 API를 `Button`, `Text`, `Stack`부터 구현
+- `@nado/ui/native` facade subpath 개방 조건 검증
 - Mobile `mobileStyles`에서 `@nado/ui-native`로 옮길 낮은 위험 적용 표면 선정
 - `@nado/core` 도입 기준과 첫 후보 utility 검토
 - Storybook for React Native 도입 방식 검토

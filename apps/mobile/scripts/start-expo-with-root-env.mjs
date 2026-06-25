@@ -17,7 +17,11 @@ const env = {
 const expoArgs = process.argv.slice(2).filter((arg, index) => {
   return !(index === 0 && arg === "--");
 });
-const mobileRuntimePackages = ["@nado/shared", "@nado/tokens"];
+const mobileRuntimePackages = [
+  "@nado/shared",
+  "@nado/tokens",
+  "@nado/ui-native",
+];
 
 buildMobileRuntimePackages();
 

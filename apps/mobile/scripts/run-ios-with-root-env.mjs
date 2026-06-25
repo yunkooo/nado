@@ -16,7 +16,11 @@ const env = {
     process.env.DEVELOPER_DIR ?? "/Applications/Xcode.app/Contents/Developer",
   ...readPublicExpoEnv(rootEnvPath),
 };
-const mobileRuntimePackages = ["@nado/shared", "@nado/tokens"];
+const mobileRuntimePackages = [
+  "@nado/shared",
+  "@nado/tokens",
+  "@nado/ui-native",
+];
 
 buildMobileRuntimePackages();
 

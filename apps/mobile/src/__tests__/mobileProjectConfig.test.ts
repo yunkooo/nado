@@ -33,13 +33,18 @@ describe("mobile project config", () => {
 
   it("builds runtime workspace packages before Expo starts", () => {
     for (const scriptSource of [startExpoScript, runIosScript]) {
-      expect(scriptSource).toContain(
-        'const mobileRuntimePackages = ["@nado/shared", "@nado/tokens"]',
-      );
+      expect(scriptSource).toContain("const mobileRuntimePackages = [");
+      expect(scriptSource).toContain('"@nado/shared"');
+      expect(scriptSource).toContain('"@nado/tokens"');
+      expect(scriptSource).toContain('"@nado/ui-native"');
       expect(scriptSource).toContain("buildMobileRuntimePackages()");
       expect(scriptSource).toContain(
         'spawnSync("pnpm", ["--filter", packageName, "build"]',
       );
     }
+  });
+
+  it("declares the native primitive package for documented mobile imports", () => {
+    expect(packageJson.dependencies["@nado/ui-native"]).toBe("workspace:*");
   });
 });
