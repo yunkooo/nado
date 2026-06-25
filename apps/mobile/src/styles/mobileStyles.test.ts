@@ -131,15 +131,6 @@ describe("mobile shared style tokens", () => {
     const demoPrimarySwatchStyle = mobileStylesSource.match(
       /designDemoPrimarySwatch:\s*{(?<body>[\s\S]*?)\n  },/,
     )?.groups?.body;
-    const demoPrimaryButtonStyle = mobileStylesSource.match(
-      /designDemoPrimaryButton:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-    const demoSendIconButtonStyle = mobileStylesSource.match(
-      /designDemoSendIconButton:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-    const demoSendIconButtonTextStyle = mobileStylesSource.match(
-      /designDemoSendIconButtonText:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
     const demoTokenSourceStyle = mobileStylesSource.match(
       /designDemoTokenSource:\s*{(?<body>[\s\S]*?)\n  },/,
     )?.groups?.body;
@@ -158,39 +149,9 @@ describe("mobile shared style tokens", () => {
     expect(demoPrimarySwatchStyle ?? "").toContain(
       "borderRadius: mobileRadius.md",
     );
-    expect(demoPrimaryButtonStyle ?? "").toContain(
-      "backgroundColor: mobileButtonTokens.primary.background",
-    );
-    expect(demoPrimaryButtonStyle ?? "").toContain(
-      "borderRadius: mobileButtonTokens.radius",
-    );
-    expect(demoPrimaryButtonStyle ?? "").toContain(
-      "minHeight: mobileButtonTokens.size.md.height",
-    );
-    expect(demoSendIconButtonStyle ?? "").toContain(
-      "backgroundColor: mobileButtonTokens.send.background",
-    );
-    expect(demoSendIconButtonStyle ?? "").toContain(
-      "borderRadius: mobileButtonTokens.size.icon.radius",
-    );
-    expect(demoSendIconButtonStyle ?? "").toContain(
-      "height: mobileButtonTokens.size.icon.height",
-    );
-    expect(demoSendIconButtonStyle ?? "").toContain(
-      "minHeight: mobileButtonTokens.size.icon.height",
-    );
-    expect(demoSendIconButtonStyle ?? "").toContain(
-      "minWidth: mobileButtonTokens.size.icon.width",
-    );
-    expect(demoSendIconButtonStyle ?? "").toContain(
-      "paddingHorizontal: mobileButtonTokens.size.icon.paddingX",
-    );
-    expect(demoSendIconButtonStyle ?? "").toContain(
-      "width: mobileButtonTokens.size.icon.width",
-    );
-    expect(demoSendIconButtonTextStyle ?? "").toContain(
-      "color: mobileButtonTokens.send.foreground",
-    );
+    expect(mobileStylesSource).not.toContain("designDemoPrimaryButton");
+    expect(mobileStylesSource).not.toContain("designDemoSecondaryButton");
+    expect(mobileStylesSource).not.toContain("designDemoSendIconButton");
     expect(demoTokenSourceStyle ?? "").toContain(
       "backgroundColor: mobileColors.surfaceMuted",
     );

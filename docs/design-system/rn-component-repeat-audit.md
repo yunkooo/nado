@@ -110,4 +110,4 @@
 
 ## 다음 결정
 
-반복 점검 결과에 따라 `@nado/ui-native` 최소 API를 만들었다. 다음 단계는 `MobileTokenParityDemoScreen` 같은 낮은 위험 표면에 적용하거나, `@nado/ui/native` facade 개방 조건을 검증하는 것이다.
+반복 점검 결과에 따라 `@nado/ui-native` 최소 API를 만들었다. 낮은 위험 표면인 `MobileTokenParityDemoScreen`은 `@nado/ui-native`의 `Button`, `Text`, `Stack`을 사용한다. 다음 단계는 `@nado/ui/native` facade 개방 조건을 검증하거나, `Card`, `Badge`, `Avatar`처럼 아직 목표 계약만 있는 component의 실제 반복을 다시 확인하는 것이다.

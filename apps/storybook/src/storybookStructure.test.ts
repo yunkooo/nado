@@ -301,12 +301,15 @@ export const OtherStory: Story = {
     expect(mobileDemoDataSource).toContain(
       "nativeTokens.component.button.send",
     );
-    expect(mobileDemoSource).toContain("designDemoSendIconButton");
-    expect(mobileStylesSource).toContain(
-      "backgroundColor: mobileButtonTokens.primary.background",
+    expect(mobileDemoSource).toContain(
+      'import { Button, Stack, Text } from "@nado/ui-native";',
     );
-    expect(mobileStylesSource).toContain(
-      "backgroundColor: mobileButtonTokens.send.background",
+    expect(mobileDemoSource).toContain('<Button variant="primary"');
+    expect(mobileDemoSource).toContain('variant="send"');
+    expect(mobileStylesSource).not.toContain("designDemoSendIconButton");
+    expect(mobileStylesSource).not.toContain("designDemoPrimaryButton");
+    expect(tokenParityDemoSource).toContain(
+      "낮은 위험 데모 표면이 `@nado/ui-native` primitive를 실제로 import하는지 확인한다",
     );
     expect(tokenParityDemoSource).toContain("Foundations/Tokens");
     expect(tokenParityDemoSource).toContain("UI/Button");
