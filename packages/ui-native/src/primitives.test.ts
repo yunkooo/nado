@@ -1,5 +1,11 @@
 import { nativeTokens } from "@nado/tokens/react-native";
-import { createElement, type ReactElement, type ReactNode } from "react";
+import {
+  Children,
+  Fragment,
+  createElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { describe, expect, it, vi } from "vitest";
 import { Button } from "./Button";
 import {
@@ -32,6 +38,32 @@ describe("@nado/ui-native primitive style contracts", () => {
     expect(labelButton.props.children.type).toBe(nativeMocks.Text);
     expect(labelButton.props.children.props.children).toBe("Save");
     expect(iconButton.props.children).toBe(icon);
+  });
+
+  it("wraps mixed and fragment text children without nesting icon children in Text", () => {
+    const icon = createElement(nativeMocks.View, { testID: "save-icon" });
+    const mixedButton = Button({
+      children: [icon, "Save"],
+    }) as ReactElement<{ children: ReactNode }>;
+    const mixedChildren = Children.toArray(
+      mixedButton.props.children,
+    ) as ReactElement<{ children?: ReactNode }>[];
+
+    expect(mixedChildren[0]?.type).toBe(nativeMocks.View);
+    expect(mixedChildren[1]?.type).toBe(nativeMocks.Text);
+    expect(mixedChildren[1]?.props.children).toBe("Save");
+
+    const fragmentButton = Button({
+      children: createElement(Fragment, null, icon, "Save"),
+    }) as ReactElement<{ children: ReactElement<{ children: ReactNode }> }>;
+    const fragmentChildren = Children.toArray(
+      fragmentButton.props.children.props.children,
+    ) as ReactElement<{ children?: ReactNode }>[];
+
+    expect(fragmentButton.props.children.type).toBe(Fragment);
+    expect(fragmentChildren[0]?.type).toBe(nativeMocks.View);
+    expect(fragmentChildren[1]?.type).toBe(nativeMocks.Text);
+    expect(fragmentChildren[1]?.props.children).toBe("Save");
   });
 
   it("backs Button variants and sizes with native component tokens", () => {

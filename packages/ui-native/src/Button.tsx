@@ -1,4 +1,10 @@
-import { Children, type ReactNode } from "react";
+import {
+  Children,
+  Fragment,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import {
   Pressable,
   Text as NativeText,
@@ -42,7 +48,6 @@ export function Button({
 }: ButtonProps) {
   const isDisabled = Boolean(disabled || isLoading);
   const buttonContent = isLoading ? "Loading" : children;
-  const shouldRenderTextLabel = isTextButtonLabel(buttonContent);
 
   return (
     <Pressable
@@ -60,24 +65,76 @@ export function Button({
         style,
       ]}
     >
-      {shouldRenderTextLabel ? (
-        <NativeText style={[createButtonTextStyle({ variant }), textStyle]}>
-          {buttonContent}
-        </NativeText>
-      ) : (
-        buttonContent
-      )}
+      {renderButtonContent(buttonContent, {
+        textStyle,
+        variant,
+      })}
     </Pressable>
   );
 }
 
-function isTextButtonLabel(children: ReactNode) {
-  const normalizedChildren = Children.toArray(children);
+interface RenderButtonContentOptions {
+  textStyle?: StyleProp<TextStyle>;
+  variant: ButtonVariant;
+}
 
+function renderButtonContent(
+  children: ReactNode,
+  options: RenderButtonContentOptions,
+): ReactNode {
+  if (!hasTextChild(children)) {
+    return children;
+  }
+
+  return renderTextChildren(children, options);
+}
+
+function renderTextChildren(
+  children: ReactNode,
+  { textStyle, variant }: RenderButtonContentOptions,
+): ReactNode {
+  if (isTextChild(children)) {
+    return (
+      <NativeText style={[createButtonTextStyle({ variant }), textStyle]}>
+        {children}
+      </NativeText>
+    );
+  }
+
+  if (isFragmentElement(children)) {
+    return (
+      <Fragment>
+        {renderTextChildren(children.props.children, { textStyle, variant })}
+      </Fragment>
+    );
+  }
+
+  if (isValidElement(children)) {
+    return children;
+  }
+
+  return Children.map(children, (child) =>
+    renderTextChildren(child, { textStyle, variant }),
+  );
+}
+
+function hasTextChild(children: ReactNode): boolean {
   return (
-    normalizedChildren.length > 0 &&
-    normalizedChildren.every(
-      (child) => typeof child === "string" || typeof child === "number",
+    isTextChild(children) ||
+    Children.toArray(children).some(
+      (child) =>
+        isTextChild(child) ||
+        (isFragmentElement(child) && hasTextChild(child.props.children)),
     )
   );
+}
+
+function isTextChild(child: ReactNode) {
+  return typeof child === "string" || typeof child === "number";
+}
+
+function isFragmentElement(
+  child: ReactNode,
+): child is ReactElement<{ children?: ReactNode }, typeof Fragment> {
+  return isValidElement(child) && child.type === Fragment;
 }
