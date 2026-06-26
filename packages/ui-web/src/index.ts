@@ -1,5 +1,6 @@
 export * from "./tokens";
 export * from "./Button";
+export * from "./Card";
 export * from "./Chip";
 export * from "./InputComposer";
 export * from "./Stack";

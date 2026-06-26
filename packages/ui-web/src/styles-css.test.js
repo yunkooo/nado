@@ -204,6 +204,38 @@ describe("analysis component styles", () => {
     );
   });
 
+  it("keeps Card styles aligned with the documented spacing and radius contract", () => {
+    const cardRule = readRule(".nado-card");
+    const surfaceRule = readRule(".nado-card--tone-surface");
+    const mutedRule = readRule(".nado-card--tone-muted");
+    const elevatedRule = readRule(".nado-card--tone-elevated");
+    const smPaddingRule = readRule(".nado-card--padding-sm");
+    const mdPaddingRule = readRule(".nado-card--padding-md");
+    const lgPaddingRule = readRule(".nado-card--padding-lg");
+    const xlPaddingRule = readRule(".nado-card--padding-xl");
+    const smRadiusRule = readRule(".nado-card--radius-sm");
+    const mdRadiusRule = readRule(".nado-card--radius-md");
+    const composerRadiusRule = readRule(".nado-card--radius-composer");
+
+    expect(cardRule).toContain("background: var(--nado-color-surface)");
+    expect(cardRule).toContain("border: 1px solid var(--nado-color-border)");
+    expect(cardRule).toContain("border-radius: var(--nado-radius-md)");
+    expect(cardRule).toContain("color: var(--nado-color-ink)");
+    expect(cardRule).toContain("display: block");
+    expect(surfaceRule).toContain("background: var(--nado-color-surface)");
+    expect(mutedRule).toContain("background: var(--nado-color-surface-muted)");
+    expect(elevatedRule).toContain("box-shadow:");
+    expect(smPaddingRule).toContain("padding: var(--nado-spacing-sm)");
+    expect(mdPaddingRule).toContain("padding: var(--nado-spacing-md)");
+    expect(lgPaddingRule).toContain("padding: var(--nado-spacing-lg)");
+    expect(xlPaddingRule).toContain("padding: var(--nado-spacing-xl)");
+    expect(smRadiusRule).toContain("border-radius: var(--nado-radius-sm)");
+    expect(mdRadiusRule).toContain("border-radius: var(--nado-radius-md)");
+    expect(composerRadiusRule).toContain(
+      "border-radius: var(--nado-radius-composer)",
+    );
+  });
+
   it("keeps review card answer styles aligned with component tokens", () => {
     const answerTokens = tokens.component.reviewCard.answer;
     const revealedReviewCardRule = readRule(".nado-review-card--revealed");

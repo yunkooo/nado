@@ -99,6 +99,7 @@ describe("storybook source structure", () => {
       "AnalysisResult.stories.tsx",
       "AnalysisSentenceAnalysis.stories.tsx",
       "Button.stories.tsx",
+      "Card.stories.tsx",
       "Chip.stories.tsx",
       "InputComposer.stories.tsx",
       "ReviewCard.stories.tsx",

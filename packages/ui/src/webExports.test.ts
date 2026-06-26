@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AnalysisResult,
   Button,
+  Card,
   Chip,
   InputComposer,
   InputSample,
@@ -19,6 +20,7 @@ import {
 describe("@nado/ui/web exports", () => {
   it("re-exports the current Web/Desktop public surface", () => {
     expect(Button).toBeTypeOf("function");
+    expect(Card).toBeTypeOf("function");
     expect(Chip).toBeTypeOf("function");
     expect(InputComposer).toBeTypeOf("function");
     expect(Stack).toBeTypeOf("function");
