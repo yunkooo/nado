@@ -19,7 +19,7 @@
 
 `Button`, `Text`, `Stack` 반복은 확인되었다. 이 점검 결과 다음 독립 PR로 `@nado/ui-native` 최소 API 구현을 선택했다.
 
-현재 `packages/ui-native`는 이 최소 API를 제공한다. 앱 전체 마이그레이션과 `@nado/ui/native` facade 개방은 후속 PR로 분리한다.
+현재 `packages/ui-native`는 이 최소 API를 제공하고, `@nado/ui/native` facade도 이 패키지를 re-export한다. 앱 전체 마이그레이션은 후속 PR로 분리한다.
 
 다만 현재 Mobile은 아직 `App.tsx` 단일 화면 조합과 `mobileStyles` 중심 구조가 강하다. 첫 구현 PR에서 앱 전체를 대규모로 마이그레이션하지 않는다. `packages/ui-native`를 만들더라도 최소 primitive와 테스트를 먼저 만들고, 실제 화면 적용은 token parity demo 같은 낮은 위험 표면부터 시작한다.
 
