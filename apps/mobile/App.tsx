@@ -27,6 +27,7 @@ import {
   getDistinctVocabularyNote,
   type AnalysisModelId,
 } from "@nado/shared";
+import { Button } from "@nado/ui/native";
 import {
   ANALYSIS_INPUT_ACCESSIBILITY_LABEL,
   INITIAL_ANALYSIS_TEXT,
@@ -1345,23 +1346,21 @@ function ReviewPage({
             </View>
 
             <View style={styles.reviewActions}>
-              <Pressable
-                accessibilityRole="button"
+              <Button
                 accessibilityState={{ selected: isAnswerRevealed }}
                 onPress={() => setIsAnswerRevealed((isRevealed) => !isRevealed)}
-                style={[styles.secondaryButton, styles.reviewActionButton]}
+                style={styles.reviewActionButton}
+                variant="secondary"
               >
-                <Text style={styles.secondaryButtonText}>
-                  {isAnswerRevealed ? "정답 가리기" : "정답 보기"}
-                </Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
+                {isAnswerRevealed ? "정답 가리기" : "정답 보기"}
+              </Button>
+              <Button
                 onPress={handleNextReviewCard}
-                style={[styles.primaryButton, styles.reviewActionButton]}
+                style={styles.reviewActionButton}
+                variant="primary"
               >
-                <Text style={styles.primaryButtonText}>다음</Text>
-              </Pressable>
+                다음
+              </Button>
             </View>
           </>
         ) : (
