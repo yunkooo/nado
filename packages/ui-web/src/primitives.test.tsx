@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Stack, Text } from "./index";
+import { Card, Stack, Text } from "./index";
 
 describe("primitive layout and text components", () => {
   it("renders Text with size, weight, tone, align, and custom class contracts", () => {
@@ -47,5 +47,26 @@ describe("primitive layout and text components", () => {
     expect(markup).toContain("custom-stack");
     expect(markup).toContain("<span>One</span>");
     expect(markup).toContain("<span>Two</span>");
+  });
+
+  it("renders Card with padding, tone, radius, and custom class contracts", () => {
+    const markup = renderToStaticMarkup(
+      <Card
+        className="custom-card"
+        padding="lg"
+        radius="composer"
+        tone="elevated"
+      >
+        <span>Card content</span>
+      </Card>,
+    );
+
+    expect(markup).toContain("<div");
+    expect(markup).toContain("nado-card");
+    expect(markup).toContain("nado-card--padding-lg");
+    expect(markup).toContain("nado-card--tone-elevated");
+    expect(markup).toContain("nado-card--radius-composer");
+    expect(markup).toContain("custom-card");
+    expect(markup).toContain("<span>Card content</span>");
   });
 });

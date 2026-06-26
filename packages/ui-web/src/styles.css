@@ -181,6 +181,55 @@
   align-items: stretch;
 }
 
+.nado-card {
+  background: var(--nado-color-surface);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-md);
+  color: var(--nado-color-ink);
+  display: block;
+}
+
+.nado-card--tone-surface {
+  background: var(--nado-color-surface);
+}
+
+.nado-card--tone-muted {
+  background: var(--nado-color-surface-muted);
+}
+
+.nado-card--tone-elevated {
+  background: var(--nado-color-surface);
+  box-shadow: var(--nado-shadow-composer);
+}
+
+.nado-card--padding-sm {
+  padding: var(--nado-spacing-sm);
+}
+
+.nado-card--padding-md {
+  padding: var(--nado-spacing-md);
+}
+
+.nado-card--padding-lg {
+  padding: var(--nado-spacing-lg);
+}
+
+.nado-card--padding-xl {
+  padding: var(--nado-spacing-xl);
+}
+
+.nado-card--radius-sm {
+  border-radius: var(--nado-radius-sm);
+}
+
+.nado-card--radius-md {
+  border-radius: var(--nado-radius-md);
+}
+
+.nado-card--radius-composer {
+  border-radius: var(--nado-radius-composer);
+}
+
 .nado-button,
 .nado-chip {
   align-items: center;

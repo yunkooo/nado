@@ -52,17 +52,17 @@ import { Button } from "@nado/ui/native";
 
 ## 현재 구현
 
-현재 공통 패키지에 실제 구현된 기본 component는 `Button`, `Text`, `Stack`이다. Web/Desktop은 `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`, Mobile은 `@nado/ui/native`와 `@nado/ui-native`가 담당한다.
+현재 공통 패키지에 실제 구현된 기본 component는 `Button`, `Text`, `Stack`, `Card`이다. Web/Desktop은 `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`, Mobile은 `@nado/ui/native`와 `@nado/ui-native`가 담당한다.
 
 | Component | Package                              | Platform    | Status |
 | --------- | ------------------------------------ | ----------- | ------ |
 | `Button`  | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
 | `Text`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
 | `Stack`   | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
+| `Card`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
 | `Button`  | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
 | `Text`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
 | `Stack`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
-| `Card`    | 후보                                 | 공통 계약   | 미구현 |
 | `Badge`   | 후보                                 | 공통 계약   | 미구현 |
 | `Avatar`  | 후보                                 | 공통 계약   | 미구현 |
 
@@ -136,7 +136,7 @@ Web/Desktop은 flex/grid, Mobile은 `View`와 RN style로 구현한다. `gap`은
 
 ## Card
 
-목표 계약:
+현재 Web/Desktop 구현:
 
 ```tsx
 <Card padding="lg" tone="surface">
