@@ -353,7 +353,7 @@
   user-select: none;
 }
 
-.nado-review-card__answer--revealed {
+.nado-review-card p.nado-review-card__answer--revealed {
   filter: none;
   user-select: auto;
 }

@@ -207,6 +207,12 @@ describe("Desktop App source", () => {
     expect(styles).toMatch(
       /\.nado-review-card\s+p\.nado-review-card__answer\s*\{[^}]*color: var\(--nado-review-card-answer-foreground, var\(--nado-color-ink-muted\)\);/,
     );
+    expect(styles).toContain(
+      ".nado-review-card p.nado-review-card__answer--revealed",
+    );
+    expect(styles).toMatch(
+      /\.nado-review-card\s+p\.nado-review-card__answer--revealed\s*\{[^}]*filter: none;[^}]*user-select: auto;/,
+    );
   });
 
   it("uses a drawer sidebar instead of stacking the sidebar on narrow screens", () => {
