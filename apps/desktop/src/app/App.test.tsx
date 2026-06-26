@@ -203,6 +203,10 @@ describe("Desktop App source", () => {
     expect(styles).toContain("width: min(100%, 420px)");
     expect(styles).toContain(".nado-review-controls");
     expect(styles).toContain("flex-wrap: wrap");
+    expect(styles).toContain(".nado-review-card p.nado-review-card__answer");
+    expect(styles).toMatch(
+      /\.nado-review-card\s+p\.nado-review-card__answer\s*\{[^}]*color: var\(--nado-review-card-answer-foreground, var\(--nado-color-ink-muted\)\);/,
+    );
   });
 
   it("uses a drawer sidebar instead of stacking the sidebar on narrow screens", () => {

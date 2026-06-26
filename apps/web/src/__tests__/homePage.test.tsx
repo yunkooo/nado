@@ -216,8 +216,11 @@ describe("HomePage", () => {
   });
 
   it("defines blurred review answer styles", () => {
-    expect(styles).toContain(".nado-review-card__answer");
+    expect(styles).toContain(".nado-review-card p.nado-review-card__answer");
     expect(styles).toContain("filter: blur(5px)");
+    expect(styles).toMatch(
+      /\.nado-review-card\s+p\.nado-review-card__answer\s*\{[^}]*color: var\(--nado-review-card-answer-foreground, var\(--nado-color-ink-muted\)\);/,
+    );
   });
 
   it("keeps the review session in a compact column", () => {
