@@ -157,13 +157,13 @@ Mobile은 React Native라 DOM className, CSS variable, hover 같은 개념을 �
 
 현재 token은 color, radius, shadow, spacing 중심이다. 앞으로 플랫폼 간 디자인 변경을 더 안정적으로 전달하려면 token을 세 단계로 나누는 것이 좋다.
 
-| 단계            | 의미                  | 예시                                                              | 사용처                          |
-| --------------- | --------------------- | ----------------------------------------------------------------- | ------------------------------- |
-| Primitive token | 가장 원시적인 제품 값 | `color.blue`, `spacing.md`, `radius.md`                           | 직접 사용은 최소화              |
-| Semantic token  | 제품 의미를 가진 값   | `color.primary`, `color.surface`, `color.inkMuted`                | 대부분의 컴포넌트               |
-| Component token | 특정 컴포넌트 상태 값 | `button.primary.background`, `reviewCard.answer.hiddenBackground` | Web/RN parity가 중요한 컴포넌트 |
+| 단계            | 의미                  | 예시                                                        | 사용처                          |
+| --------------- | --------------------- | ----------------------------------------------------------- | ------------------------------- |
+| Primitive token | 가장 원시적인 제품 값 | `color.blue`, `spacing.md`, `radius.md`                     | 직접 사용은 최소화              |
+| Semantic token  | 제품 의미를 가진 값   | `color.primary`, `color.surface`, `color.inkMuted`          | 대부분의 컴포넌트               |
+| Component token | 특정 컴포넌트 상태 값 | `button.primary.background`, `reviewCard.answer.background` | Web/RN parity가 중요한 컴포넌트 |
 
-현재 프로젝트에서는 primitive와 semantic이 섞여 있고, component token은 `button`부터 시작한다. 당장 큰 마이그레이션을 하기보다, 새 UI나 parity가 중요한 UI부터 component token을 넓히는 방식이 안전하다.
+현재 프로젝트에서는 primitive와 semantic이 섞여 있고, component token은 `button`과 `reviewCard.answer`부터 시작한다. 당장 큰 마이그레이션을 하기보다, 새 UI나 parity가 중요한 UI부터 component token을 넓히는 방식이 안전하다.
 
 ## Package 역할
 
@@ -175,6 +175,7 @@ Mobile은 React Native라 DOM className, CSS variable, hover 같은 개념을 �
 
 - 공통 color, radius, spacing, shadow token 제공
 - Button component token 제공
+- ReviewCard answer surface component token 제공
 - React Native용 `nativeTokens` adapter 제공
 - Web length token과 RN number token의 차이를 흡수
 - Component token 안의 CSS pixel 값도 React Native에서는 number로 변환
@@ -182,7 +183,7 @@ Mobile은 React Native라 DOM className, CSS variable, hover 같은 개념을 �
 다음 개선 후보:
 
 - CSS custom property output을 token에서 생성
-- chip, reviewCard 같은 component token 확대
+- chip과 ReviewCard의 다른 state로 component token 확대
 - token 변경 시 Web/Desktop/Mobile demo에서 같은 변경이 보이는지 확인하는 테스트 추가
 
 ### `@nado/ui`
@@ -211,7 +212,7 @@ Mobile에서 반복되는 RN 컴포넌트를 `@nado/ui-native` 패키지로 분�
 - Web/Desktop의 `@nado/ui`와 같은 variant/state 계약을 맞춰야 한다.
 - 단순 screen-local style보다 패키지화했을 때 유지보수 비용이 줄어든다.
 
-처음부터 큰 패키지를 만들기보다 공통 API 계약이 이미 있는 `Button`, `Text`, `Stack`부터 시작하는 것이 좋다. `Chip`과 `ReviewCard`는 component token 반복이 확인될 때 별도 후보로 다룬다.
+처음부터 큰 패키지를 만들기보다 공통 API 계약이 이미 있는 `Button`, `Text`, `Stack`부터 시작하는 것이 좋다. `Chip`과 `ReviewCard`의 추가 state는 component token 반복이 확인될 때 별도 후보로 다룬다.
 
 [RN component repeat audit](rn-component-repeat-audit.md)에서 `Button`, `Text`, `Stack` 반복은 확인되었다. `@nado/ui-native`는 이 세 primitive의 최소 API부터 제공하고, `@nado/ui/native`는 이 패키지를 re-export한다. 앱 전체 마이그레이션은 포함하지 않고, 적용은 token parity demo 같은 낮은 위험 표면부터 시작한다.
 
@@ -327,7 +328,7 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 
 이 문서는 전략 정리까지만 다룬다. 실제 구현은 다음 issue로 나눈다.
 
-- `@nado/tokens` component token을 chip, reviewCard로 확대
+- `@nado/tokens` component token을 chip과 ReviewCard의 추가 state로 확대
 - `@nado/ui/styles.css`와 `@nado/ui/web/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
 - `@nado/ui/native` facade를 사용하는 Mobile 적용 표면 확대 기준 검토
 - Mobile `mobileStyles`에서 `@nado/ui-native`로 옮길 낮은 위험 적용 표면 선정

@@ -8,7 +8,7 @@
 
 | 플랫폼                 | 확인 위치                      | 확인 내용                                                                                         |
 | ---------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------- |
-| Web/Desktop foundation | Storybook `Foundations/Tokens` | color, radius, button component token 값                                                          |
+| Web/Desktop foundation | Storybook `Foundations/Tokens` | color, radius, button component token, reviewCard answer component token 값                       |
 | Web/Desktop component  | Storybook `UI/Button`          | `primary`, `secondary`, `send`, `md`, `icon` 버튼 상태                                            |
 | Web app surface        | Storybook `WebSurface`         | 실제 웹 mock surface에서 token이 끊기지 않는지                                                    |
 | Desktop app surface    | Storybook `DesktopSurface`     | desktop shell mock surface에서 token이 끊기지 않는지                                              |
@@ -18,12 +18,13 @@
 
 token 변경 요청이 들어오면 먼저 변경 종류를 나눈다.
 
-| 변경 종류        | 우선 수정 위치                                   | 확인 표면                                                                  |
-| ---------------- | ------------------------------------------------ | -------------------------------------------------------------------------- |
-| 색상 변경        | `packages/tokens/src/tokens.ts`의 `tokens.color` | `Foundations/Tokens`, `WebSurface`, `DesktopSurface`, `Mobile Design Demo` |
-| radius 변경      | `tokens.radius`                                  | `Foundations/Tokens`, Mobile demo surface radius                           |
-| spacing 변경     | `tokens.spacing`                                 | Storybook surface 간격, Mobile demo spacing                                |
-| button 상태 변경 | `tokens.component.button`                        | `Foundations/Tokens`, `UI/Button`, Mobile demo button contract             |
+| 변경 종류          | 우선 수정 위치                                   | 확인 표면                                                                     |
+| ------------------ | ------------------------------------------------ | ----------------------------------------------------------------------------- |
+| 색상 변경          | `packages/tokens/src/tokens.ts`의 `tokens.color` | `Foundations/Tokens`, `WebSurface`, `DesktopSurface`, `Mobile Design Demo`    |
+| radius 변경        | `tokens.radius`                                  | `Foundations/Tokens`, Mobile demo surface radius                              |
+| spacing 변경       | `tokens.spacing`                                 | Storybook surface 간격, Mobile demo spacing                                   |
+| button 상태 변경   | `tokens.component.button`                        | `Foundations/Tokens`, `UI/Button`, Mobile demo button contract                |
+| review answer 변경 | `tokens.component.reviewCard.answer`             | `Foundations/Tokens`, Web/Desktop review card CSS, Mobile review answer style |
 
 특정 플랫폼의 interaction만 바뀌는 경우에는 token 변경으로 밀어붙이지 않는다. 예를 들어 hover, focus, touch, drawer gesture 같은 동작은 플랫폼별 구현으로 다룬다.
 
@@ -61,23 +62,24 @@ git diff --check
 
 - `@nado/tokens` test는 CSS pixel token이 React Native number token으로 변환되는지 확인한다.
 - `@nado/ui` test는 Web/Desktop Button CSS가 component token 계약을 따르는지 확인한다.
-- Storybook 구조 테스트는 `Foundations/Tokens`가 button component token을 보여주는지 확인한다.
+- Storybook 구조 테스트는 `Foundations/Tokens`가 button과 reviewCard answer component token을 보여주는지 확인한다.
 - Storybook build는 등록된 story가 production build에서 실제로 번들링되는지 확인한다.
-- Mobile test는 `mobileStyles`가 `@nado/tokens/react-native`를 쓰는지, Mobile demo가 확인할 token source 목록을 화면과 같은 데이터로 제공하는지, 낮은 위험 데모 표면이 `@nado/ui/native` facade를 실제로 import하는지 확인한다.
+- Mobile test는 `mobileStyles`가 `@nado/tokens/react-native`를 쓰는지, Mobile demo가 확인할 token source 목록을 화면과 같은 데이터로 제공하는지, 낮은 위험 데모 표면이 `@nado/ui/native` facade를 실제로 import하는지, review answer style이 `nativeTokens.component.reviewCard.answer`를 따르는지 확인한다.
 
 ## 관련 파일
 
-| 역할                      | 파일                                                              |
-| ------------------------- | ----------------------------------------------------------------- |
-| token 원본                | `packages/tokens/src/tokens.ts`                                   |
-| RN token adapter          | `packages/tokens/src/reactNative.ts`                              |
-| Web/Desktop Button        | `packages/ui-web/src/Button.tsx`                                  |
-| Web/Desktop Button CSS    | `packages/ui-web/src/styles.css`                                  |
-| Mobile primitive package  | `packages/ui-native/src/`                                         |
-| Mobile facade package     | `packages/ui/src/native.ts`                                       |
-| Storybook foundation demo | `apps/storybook/src/Foundations.stories.tsx`                      |
-| Mobile token demo         | `apps/mobile/src/features/design/MobileTokenParityDemoScreen.tsx` |
-| Mobile shared styles      | `apps/mobile/src/styles/mobileStyles.ts`                          |
+| 역할                       | 파일                                                              |
+| -------------------------- | ----------------------------------------------------------------- |
+| token 원본                 | `packages/tokens/src/tokens.ts`                                   |
+| RN token adapter           | `packages/tokens/src/reactNative.ts`                              |
+| Web/Desktop Button         | `packages/ui-web/src/Button.tsx`                                  |
+| Web/Desktop Button CSS     | `packages/ui-web/src/styles.css`                                  |
+| Web/Desktop ReviewCard CSS | `packages/ui-web/src/styles.css`                                  |
+| Mobile primitive package   | `packages/ui-native/src/`                                         |
+| Mobile facade package      | `packages/ui/src/native.ts`                                       |
+| Storybook foundation demo  | `apps/storybook/src/Foundations.stories.tsx`                      |
+| Mobile token demo          | `apps/mobile/src/features/design/MobileTokenParityDemoScreen.tsx` |
+| Mobile shared styles       | `apps/mobile/src/styles/mobileStyles.ts`                          |
 
 ## 제외 범위
 
