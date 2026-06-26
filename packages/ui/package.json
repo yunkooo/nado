@@ -14,6 +14,11 @@
       "development": "./src/web.ts",
       "import": "./dist/web.js"
     },
+    "./native": {
+      "types": "./src/native.ts",
+      "development": "./src/native.ts",
+      "import": "./dist/native.js"
+    },
     "./web/styles.css": {
       "development": "./src/styles.css",
       "import": "./dist/styles.css"
@@ -30,14 +35,21 @@
     "lint": "prettier --check src tsconfig.json package.json"
   },
   "peerDependencies": {
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "@nado/ui-native": "0.1.0",
+    "react": "^19.2.3 || ^19.2.7",
+    "react-dom": "^19.2.3 || ^19.2.7"
+  },
+  "peerDependenciesMeta": {
+    "@nado/ui-native": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@nado/ui-web": "workspace:*",
     "@nado/tokens": "workspace:*"
   },
   "devDependencies": {
+    "@nado/ui-native": "workspace:*",
     "@nado/shared": "workspace:*",
     "@storybook/react-vite": "^10.4.2",
     "@types/react": "^19.2.17",

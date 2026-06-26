@@ -99,9 +99,9 @@
 
 ## `@nado/ui/native` 개방 기준
 
-`@nado/ui/native` subpath는 `@nado/ui-native`가 생긴 뒤에 연다.
+`@nado/ui/native` subpath는 `@nado/ui-native`가 생긴 뒤에 연다. 현재 이 facade는 열려 있으며 `@nado/ui-native`를 re-export한다.
 
-개방 전 확인할 것:
+추가 적용 전 확인할 것:
 
 - Expo/Metro가 `@nado/ui/native`를 source 또는 build output으로 안정적으로 해석한다.
 - `@nado/mobile` test와 typecheck가 통과한다.
@@ -110,4 +110,4 @@
 
 ## 다음 결정
 
-반복 점검 결과에 따라 `@nado/ui-native` 최소 API를 만들었다. 낮은 위험 표면인 `MobileTokenParityDemoScreen`은 `@nado/ui-native`의 `Button`, `Text`, `Stack`을 사용한다. 다음 단계는 `@nado/ui/native` facade 개방 조건을 검증하거나, `Card`, `Badge`, `Avatar`처럼 아직 목표 계약만 있는 component의 실제 반복을 다시 확인하는 것이다.
+반복 점검 결과에 따라 `@nado/ui-native` 최소 API를 만들었다. 낮은 위험 표면인 `MobileTokenParityDemoScreen`은 `@nado/ui/native` facade를 통해 `Button`, `Text`, `Stack`을 사용한다. 다음 단계는 이 facade를 사용하는 Mobile 적용 표면을 더 늘릴지 판단하거나, `Card`, `Badge`, `Avatar`처럼 아직 목표 계약만 있는 component의 실제 반복을 다시 확인하는 것이다.

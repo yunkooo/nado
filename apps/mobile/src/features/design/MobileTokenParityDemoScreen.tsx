@@ -1,4 +1,4 @@
-import { Button, Stack, Text } from "@nado/ui-native";
+import { Button, Stack, Text } from "@nado/ui/native";
 import { View } from "react-native";
 import { styles } from "../../styles/mobileStyles";
 import { getMobileTokenParityDemoSections } from "./designTokenDemo";

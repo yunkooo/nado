@@ -66,9 +66,9 @@ describe("mobile design token demo flag", () => {
     );
   });
 
-  it("applies the native primitive package on the low-risk demo surface", () => {
+  it("applies the native facade package on the low-risk demo surface", () => {
     expect(mobileTokenParityDemoScreenSource).toContain(
-      'import { Button, Stack, Text } from "@nado/ui-native";',
+      'import { Button, Stack, Text } from "@nado/ui/native";',
     );
     expect(mobileTokenParityDemoScreenSource).toContain("<Stack");
     expect(mobileTokenParityDemoScreenSource).toContain(

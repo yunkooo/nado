@@ -30,9 +30,15 @@ Mobile v1 primitive package:
 import { Button, Stack, Text } from "@nado/ui-native";
 ```
 
-Mobile은 v1에서 `@nado/ui`를 직접 import하지 않는다. `@nado/ui/native`, `Button.web.tsx`, `Button.native.tsx`도 현재 만들지 않는다.
+Mobile v1 facade subpath:
 
-v2 목표는 `@nado/ui`를 facade로 두고 platform subpath를 더 명확히 분리하는 것이다. 현재 facade subpath는 Web/Desktop explicit subpath인 `@nado/ui/web`만 제공하고, Mobile primitive는 독립 패키지 `@nado/ui-native`에서 먼저 제공한다.
+```tsx
+import { Button, Stack, Text } from "@nado/ui/native";
+```
+
+Mobile은 v1에서 `@nado/ui` root를 직접 import하지 않는다. `Button.web.tsx`, `Button.native.tsx`도 현재 만들지 않는다.
+
+v2 목표는 `@nado/ui`를 facade로 두고 platform subpath를 더 명확히 분리하는 것이다. 현재 facade subpath는 Web/Desktop explicit subpath인 `@nado/ui/web`과 Mobile explicit subpath인 `@nado/ui/native`를 제공한다. `@nado/ui/native`는 `@nado/ui-native`를 re-export한다.
 
 ```tsx
 // Web / Desktop
@@ -46,21 +52,21 @@ import { Button } from "@nado/ui/native";
 
 ## 현재 구현
 
-현재 공통 패키지에 실제 구현된 기본 component는 `Button`, `Text`, `Stack`이다. Web/Desktop은 `@nado/ui`와 `@nado/ui-web`, Mobile은 `@nado/ui-native`가 담당한다.
+현재 공통 패키지에 실제 구현된 기본 component는 `Button`, `Text`, `Stack`이다. Web/Desktop은 `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`, Mobile은 `@nado/ui/native`와 `@nado/ui-native`가 담당한다.
 
-| Component | Package           | Platform    | Status |
-| --------- | ----------------- | ----------- | ------ |
-| `Button`  | `@nado/ui`        | Web/Desktop | 구현됨 |
-| `Text`    | `@nado/ui`        | Web/Desktop | 구현됨 |
-| `Stack`   | `@nado/ui`        | Web/Desktop | 구현됨 |
-| `Button`  | `@nado/ui-native` | Mobile      | 구현됨 |
-| `Text`    | `@nado/ui-native` | Mobile      | 구현됨 |
-| `Stack`   | `@nado/ui-native` | Mobile      | 구현됨 |
-| `Card`    | 후보              | 공통 계약   | 미구현 |
-| `Badge`   | 후보              | 공통 계약   | 미구현 |
-| `Avatar`  | 후보              | 공통 계약   | 미구현 |
+| Component | Package                              | Platform    | Status |
+| --------- | ------------------------------------ | ----------- | ------ |
+| `Button`  | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
+| `Text`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
+| `Stack`   | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
+| `Button`  | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
+| `Text`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
+| `Stack`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
+| `Card`    | 후보                                 | 공통 계약   | 미구현 |
+| `Badge`   | 후보                                 | 공통 계약   | 미구현 |
+| `Avatar`  | 후보                                 | 공통 계약   | 미구현 |
 
-미구현 component는 이 문서에서 목표 계약만 고정한다. 실제 export는 별도 작업에서 추가한다. 앱 전체 마이그레이션과 `@nado/ui/native` facade 개방은 별도 PR로 분리한다.
+미구현 component는 이 문서에서 목표 계약만 고정한다. 실제 export는 별도 작업에서 추가한다. 앱 전체 마이그레이션과 기본 `@nado/ui` conditional export 개방은 별도 PR로 분리한다.
 
 ## Button
 
@@ -86,7 +92,7 @@ import { Button } from "@nado/ui/native";
 플랫폼별 구현 원칙:
 
 - Web/Desktop은 `<button>`과 CSS class, CSS custom property를 사용한다.
-- Mobile은 향후 `Pressable` 또는 `Touchable` 계열로 별도 구현한다.
+- Mobile은 `Pressable` 기반 `@nado/ui-native` 구현을 `@nado/ui/native` facade로 사용한다.
 - 양쪽 모두 `variant`, `size`, loading/disabled 의미는 맞춘다.
 - 접근성 label은 icon-only button에서 필수다.
 

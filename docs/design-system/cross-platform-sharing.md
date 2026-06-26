@@ -11,7 +11,7 @@
   디자인 값의 원본
 
 @nado/ui
-  Web / Desktop React DOM 컴포넌트
+  Web / Desktop 호환 facade와 platform subpath
 
 Mobile React Native UI
   @nado/tokens/react-native 기반으로 별도 구현
@@ -28,7 +28,7 @@ Mobile React Native UI
 | --------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------- |
 | Web       | `@nado/ui`, `@nado/ui/web`, `@nado/tokens`, `@nado/ui/styles.css`, `@nado/ui/web/styles.css` | Web app surface와 Next.js 연결                     | Web app, Storybook     |
 | Desktop   | `@nado/ui`, `@nado/ui/web`, `@nado/tokens`, `@nado/ui/styles.css`, `@nado/ui/web/styles.css` | Desktop shell, Tauri 연결, desktop surface         | Desktop app, Storybook |
-| Mobile    | `@nado/tokens/react-native`, `@nado/ui-native`                                               | React Native 화면, `StyleSheet`, touch interaction | Expo app, mobile tests |
+| Mobile    | `@nado/tokens/react-native`, `@nado/ui/native`, `@nado/ui-native`                            | React Native 화면, `StyleSheet`, touch interaction | Expo app, mobile tests |
 | Storybook | Web/Desktop UI 상태 확인, mock surface                                                       | 실제 API/Auth/Supabase 연결                        | `apps/storybook`       |
 
 Storybook은 디자인 시스템의 원본이 아니다. Storybook은 `@nado/ui`와 mock surface가 기대한 상태로 보이는지 확인하는 preview/verification layer다.
@@ -40,7 +40,7 @@ v1에서는 패키지를 늘릴 때도 역할 경계를 작게 유지한다. `@n
 | 패키지            | v1 역할                                     | 현재 상태        | 생성/확장 기준                                      |
 | ----------------- | ------------------------------------------- | ---------------- | --------------------------------------------------- |
 | `@nado/tokens`    | primitive, semantic, component token의 원본 | 이미 사용 중     | 모든 플랫폼에 반영되어야 하는 디자인 값 변경        |
-| `@nado/ui`        | Web/Desktop 호환 facade                     | 이미 사용 중     | 기존 앱 import 유지와 deprecation 기간 호환성       |
+| `@nado/ui`        | Web/Desktop 호환 facade와 platform subpath  | 이미 사용 중     | 기존 앱 import 유지와 명시 subpath 호환성           |
 | `@nado/ui-web`    | Web/Desktop React DOM 컴포넌트 구현         | 이미 사용 중     | DOM, CSS variable, Storybook 검증이 필요한 UI       |
 | `@nado/shared`    | 도메인 스키마, API 타입, 비즈니스 규칙      | 이미 사용 중     | 플랫폼과 무관한 제품 규칙이나 API 계약              |
 | `@nado/ui-native` | React Native 공통 primitive 구현            | 최소 도입됨      | `Button`, `Text`, `Stack` contract와 RN token 검증  |
@@ -64,19 +64,19 @@ import { Button, InputComposer } from "@nado/ui/web";
 import "@nado/ui/web/styles.css";
 ```
 
-Mobile v1은 `@nado/ui`를 직접 import하지 않는다. React Native 화면은 `@nado/tokens/react-native`와 RN-local component/style 구현을 사용한다.
+Mobile v1은 `@nado/ui` root를 직접 import하지 않는다. React Native 화면은 `@nado/tokens/react-native`와 RN-local component/style 구현을 사용하고, 공통 primitive가 필요한 낮은 위험 표면부터 `@nado/ui/native` explicit subpath를 사용한다.
 
 ```tsx
 import { nativeTokens } from "@nado/tokens/react-native";
+import { Button, Stack, Text } from "@nado/ui/native";
 ```
 
 현재 도입하지 않는 import 경로는 다음과 같다.
 
-- `@nado/ui/native`
 - `Button.web.tsx`
 - `Button.native.tsx`
 
-단일 `@nado/ui` 패키지 안에서 web/native subpath를 한 번에 모두 제공하면 peer dependency, bundler condition, Storybook, Expo 해석 규칙이 한 번에 복잡해진다. 그래서 먼저 Web/Desktop 전용 `@nado/ui/web`만 열고, Native subpath와 플랫폼 파일명 방식은 아직 도입하지 않는다. 기준은 같은 파일 공유가 아니라 같은 token source와 같은 prop contract 공유다.
+단일 `@nado/ui` root import를 web/native conditional export로 한 번에 제공하면 peer dependency, bundler condition, Storybook, Expo 해석 규칙이 한 번에 복잡해진다. 그래서 기본 root는 아직 cross-platform entry로 열지 않고, Web/Desktop은 `@nado/ui/web`, Mobile은 `@nado/ui/native`처럼 명시 subpath를 사용한다. 기준은 같은 파일 공유가 아니라 같은 token source와 같은 prop contract 공유다.
 
 ## 추천 원칙
 
@@ -102,7 +102,7 @@ packages/
   ui-native/
 ```
 
-`icons`, `core`, `ui-native`는 v2 목표 구조의 후보 패키지다. `ui-web`은 Web/Desktop 구현 패키지로 먼저 만들었고, 나머지는 v1에서 바로 만들지 않는다. 책임과 도입 기준은 [UI package facade migration](ui-package-facade-migration.md)을 기준으로 판단한다.
+`icons`와 `core`는 v2 목표 구조의 후보 패키지다. `ui-web`과 `ui-native`는 구현 패키지로 만들었고, 책임과 도입 기준은 [UI package facade migration](ui-package-facade-migration.md)을 기준으로 판단한다.
 
 목표 import는 다음과 같다.
 
@@ -127,13 +127,13 @@ Mobile은 React Native라 DOM className, CSS variable, hover 같은 개념을 �
 
 대신 컴포넌트 이름과 사용 규칙은 맞춘다.
 
-| 공통 규칙 | Web/Desktop 예                  | Mobile 예                       |
-| --------- | ------------------------------- | ------------------------------- |
-| 역할      | Button                          | NativeButton 후보               |
-| variant   | `primary`, `secondary`, `ghost` | `primary`, `secondary`, `ghost` |
-| size      | `sm`, `md`, `icon`              | `sm`, `md`, `icon`              |
-| state     | `idle`, `disabled`, `loading`   | `idle`, `disabled`, `loading`   |
-| source    | `@nado/ui`                      | `@nado/ui-native`               |
+| 공통 규칙 | Web/Desktop 예                  | Mobile 예                            |
+| --------- | ------------------------------- | ------------------------------------ |
+| 역할      | Button                          | NativeButton 후보                    |
+| variant   | `primary`, `secondary`, `ghost` | `primary`, `secondary`, `ghost`      |
+| size      | `sm`, `md`, `icon`              | `sm`, `md`, `icon`                   |
+| state     | `idle`, `disabled`, `loading`   | `idle`, `disabled`, `loading`        |
+| source    | `@nado/ui`, `@nado/ui/web`      | `@nado/ui/native`, `@nado/ui-native` |
 
 현재 Button의 실제 계약은 `variant: primary | secondary | ghost | send`, `size: sm | md | icon`이다. `lg`는 token과 양쪽 구현이 함께 준비된 뒤 추가할 확장 후보로 둔다. 이렇게 하면 파일은 달라도 제품에서 말하는 버튼의 의미는 같아진다.
 
@@ -213,7 +213,7 @@ Mobile에서 반복되는 RN 컴포넌트를 `@nado/ui-native` 패키지로 분�
 
 처음부터 큰 패키지를 만들기보다 공통 API 계약이 이미 있는 `Button`, `Text`, `Stack`부터 시작하는 것이 좋다. `Chip`과 `ReviewCard`는 component token 반복이 확인될 때 별도 후보로 다룬다.
 
-[RN component repeat audit](rn-component-repeat-audit.md)에서 `Button`, `Text`, `Stack` 반복은 확인되었다. `@nado/ui-native`는 이 세 primitive의 최소 API부터 제공한다. 앱 전체 마이그레이션은 포함하지 않고, 적용은 token parity demo 같은 낮은 위험 표면부터 시작한다.
+[RN component repeat audit](rn-component-repeat-audit.md)에서 `Button`, `Text`, `Stack` 반복은 확인되었다. `@nado/ui-native`는 이 세 primitive의 최소 API부터 제공하고, `@nado/ui/native`는 이 패키지를 re-export한다. 앱 전체 마이그레이션은 포함하지 않고, 적용은 token parity demo 같은 낮은 위험 표면부터 시작한다.
 
 ### `@nado/shared`
 
@@ -329,7 +329,7 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 
 - `@nado/tokens` component token을 chip, reviewCard로 확대
 - `@nado/ui/styles.css`와 `@nado/ui/web/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
-- `@nado/ui/native` facade subpath 개방 조건 검증
+- `@nado/ui/native` facade를 사용하는 Mobile 적용 표면 확대 기준 검토
 - Mobile `mobileStyles`에서 `@nado/ui-native`로 옮길 낮은 위험 적용 표면 선정
 - `@nado/core` 도입 기준과 첫 후보 utility 검토
 - Storybook for React Native 도입 방식 검토

@@ -66,7 +66,7 @@ import { Button, Stack, Text } from "@nado/ui/native";
 import { Button, Stack, Text } from "@nado/ui";
 ```
 
-기본 `@nado/ui` export는 Next.js, Vite/Tauri, Expo/Metro가 모두 같은 의도로 해석하는지 검증되기 전까지 cross-platform import로 홍보하지 않는다. 현재는 Web/Desktop 전용 `@nado/ui/web`과 독립 패키지 `@nado/ui-native`만 제공하고, `@nado/ui/native` facade는 별도 검증 뒤 연다.
+기본 `@nado/ui` export는 Next.js, Vite/Tauri, Expo/Metro가 모두 같은 의도로 해석하는지 검증되기 전까지 cross-platform import로 홍보하지 않는다. 현재는 Web/Desktop 전용 `@nado/ui/web`과 Mobile 전용 `@nado/ui/native` 명시 subpath를 제공한다. `@nado/ui/native`는 독립 패키지 `@nado/ui-native`를 re-export한다.
 
 ## Component API 범위
 
@@ -74,9 +74,9 @@ facade가 보장해야 하는 공통 API 대상은 다음 여섯 가지다.
 
 | Component | 공통 API 상태  | Web 구현  | Native 구현 |
 | --------- | -------------- | --------- | ----------- |
-| `Button`  | 현재 계약 있음 | 구현됨    | 향후 구현   |
-| `Text`    | 현재 계약 있음 | 구현됨    | 향후 구현   |
-| `Stack`   | 현재 계약 있음 | 구현됨    | 향후 구현   |
+| `Button`  | 현재 계약 있음 | 구현됨    | 구현됨      |
+| `Text`    | 현재 계약 있음 | 구현됨    | 구현됨      |
+| `Stack`   | 현재 계약 있음 | 구현됨    | 구현됨      |
 | `Card`    | 목표 계약 있음 | 향후 구현 | 향후 구현   |
 | `Badge`   | 목표 계약 있음 | 향후 구현 | 향후 구현   |
 | `Avatar`  | 목표 계약 있음 | 향후 구현 | 향후 구현   |
@@ -208,7 +208,7 @@ RN-local 구현에서 반복이 확인된 뒤 `@nado/ui-native`를 만든다. [R
 - `@nado/ui-web`과 같은 prop contract를 지킬 수 있다.
 - `@nado/mobile` test 또는 React Native Testing Library로 회귀를 잡을 수 있다.
 
-`@nado/ui/native`가 `@nado/ui-native`를 re-export하는 facade 작업은 Expo/Metro와 Web/Desktop import 영향 검증을 따로 거친 뒤 진행한다.
+`@nado/ui/native`가 `@nado/ui-native`를 re-export하는 facade 작업도 완료되어 있다. Mobile startup script는 `@nado/ui-native`를 먼저 build하고 `@nado/ui`를 이어서 build해서 Expo/Metro가 production import branch를 보더라도 `dist/native.js`를 찾을 수 있게 한다. Mobile token parity demo는 낮은 위험 표면으로 `@nado/ui/native`를 실제 import한다.
 
 ### Phase 5. 기본 `@nado/ui` conditional export 검토
 
@@ -245,8 +245,9 @@ import { Button } from "@nado/ui";
    - `Card`, `Badge`, `Avatar`는 그 다음 후보로 둔다.
 
 3. `@nado/ui/native` facade 검증
-   - `@nado/ui/native`가 `@nado/ui-native`를 re-export할 수 있는지 확인한다.
-   - Expo/Metro, type resolution, Web/Desktop import 영향이 없는지 검증한다.
+   - 완료: `@nado/ui/native`가 `@nado/ui-native`를 re-export한다.
+   - 완료: Mobile startup build 순서, type resolution, Web/Desktop import 영향 테스트를 추가했다.
+   - 완료: `MobileTokenParityDemoScreen`이 `@nado/ui/native`를 첫 낮은 위험 적용 표면으로 사용한다.
 
 ## 제외 범위
 
@@ -254,7 +255,7 @@ import { Button } from "@nado/ui";
 
 - `packages/core` 실제 생성
 - 기존 앱 import migration
-- `@nado/ui/native` facade 개방
+- `@nado/ui/native` facade를 사용하는 추가 Mobile 적용 표면 선정
 - Card, Badge, Avatar 구현
 - Storybook for React Native 도입
 
@@ -278,4 +279,4 @@ import { Button } from "@nado/ui";
 
 Nado의 목표 구조는 `@nado/ui` facade와 `@nado/ui-web`, `@nado/ui-native` 구현 패키지 분리다.
 
-다만 실제 이동은 단계적으로 한다. 먼저 `@nado/ui/web` subpath를 열었고, 그 다음 DOM 구현을 `@nado/ui-web`으로 이동했다. RN 쪽은 `@nado/ui-native` 최소 primitive부터 만들고, `@nado/ui/native` facade와 앱 적용은 후속 검증 뒤 진행한다.
+다만 실제 이동은 단계적으로 한다. 먼저 `@nado/ui/web` subpath를 열었고, 그 다음 DOM 구현을 `@nado/ui-web`으로 이동했다. RN 쪽은 `@nado/ui-native` 최소 primitive를 만든 뒤 `@nado/ui/native` facade를 열었고, 앱 적용은 token parity demo 같은 낮은 위험 표면부터 진행한다.

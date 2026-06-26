@@ -31,4 +31,10 @@ describe("@nado/ui package exports", () => {
     expect(packageJson.exports["./web"].development).toBe("./src/web.ts");
     expect(packageJson.exports["./web"].import).toBe("./dist/web.js");
   });
+
+  it("exposes the React Native public surface through @nado/ui/native", () => {
+    expect(packageJson.exports["./native"].types).toBe("./src/native.ts");
+    expect(packageJson.exports["./native"].development).toBe("./src/native.ts");
+    expect(packageJson.exports["./native"].import).toBe("./dist/native.js");
+  });
 });
