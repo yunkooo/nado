@@ -216,8 +216,17 @@ describe("HomePage", () => {
   });
 
   it("defines blurred review answer styles", () => {
-    expect(styles).toContain(".nado-review-card__answer");
+    expect(styles).toContain(".nado-review-card p.nado-review-card__answer");
     expect(styles).toContain("filter: blur(5px)");
+    expect(styles).toMatch(
+      /\.nado-review-card\s+p\.nado-review-card__answer\s*\{[^}]*color: var\(--nado-review-card-answer-foreground, var\(--nado-color-ink-muted\)\);/,
+    );
+    expect(styles).toContain(
+      ".nado-review-card p.nado-review-card__answer--revealed",
+    );
+    expect(styles).toMatch(
+      /\.nado-review-card\s+p\.nado-review-card__answer--revealed\s*\{[^}]*filter: none;[^}]*user-select: auto;/,
+    );
   });
 
   it("keeps the review session in a compact column", () => {
@@ -232,6 +241,8 @@ describe("HomePage", () => {
     expect(styles).toContain(".nado-vocabulary-type");
     expect(styles).toContain(".nado-vocabulary-item__date");
     expect(styles).toContain(".nado-vocabulary-meaning");
-    expect(styles).toContain(".nado-review-card__answer--revealed");
+    expect(styles).toContain(
+      ".nado-review-card p.nado-review-card__answer--revealed",
+    );
   });
 });

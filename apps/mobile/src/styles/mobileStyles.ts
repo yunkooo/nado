@@ -17,6 +17,7 @@ export const mobileColors = {
 export const mobileRadius = nativeTokens.radius;
 export const mobileSpacing = nativeTokens.spacing;
 export const mobileButtonTokens = nativeTokens.component.button;
+export const mobileReviewCardTokens = nativeTokens.component.reviewCard;
 
 export const styles = StyleSheet.create({
   analyzeButton: {
@@ -597,17 +598,17 @@ export const styles = StyleSheet.create({
   },
   reviewAnswer: {
     alignSelf: "stretch",
-    backgroundColor: "#f6f8ff",
-    borderColor: "#d5dbea",
-    borderRadius: 7,
+    backgroundColor: mobileReviewCardTokens.answer.background,
+    borderColor: mobileReviewCardTokens.answer.border,
+    borderRadius: mobileReviewCardTokens.answer.radius,
     borderWidth: 1,
-    color: mobileColors.inkMuted,
+    color: mobileReviewCardTokens.answer.foreground,
     filter: "blur(5px)",
     fontSize: 14,
     fontWeight: "800",
     lineHeight: 22,
     minHeight: 22,
-    padding: 14,
+    padding: mobileReviewCardTokens.answer.padding,
     textAlign: "center",
     userSelect: "none",
   },

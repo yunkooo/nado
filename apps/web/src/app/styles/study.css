@@ -346,13 +346,14 @@
   font-weight: 800;
 }
 
-.nado-review-card__answer {
+.nado-review-card p.nado-review-card__answer {
+  color: var(--nado-review-card-answer-foreground, var(--nado-color-ink-muted));
   filter: blur(5px);
   font-weight: 800;
   user-select: none;
 }
 
-.nado-review-card__answer--revealed {
+.nado-review-card p.nado-review-card__answer--revealed {
   filter: none;
   user-select: auto;
 }
