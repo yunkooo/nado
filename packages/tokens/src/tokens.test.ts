@@ -84,6 +84,16 @@ describe("@nado/tokens", () => {
     });
   });
 
+  it("exports component tokens for the review card answer surface", () => {
+    expect(tokens.component.reviewCard.answer).toMatchObject({
+      background: "#f6f8ff",
+      border: "#d5dbea",
+      foreground: tokens.color.inkMuted,
+      padding: "14px",
+      radius: "7px",
+    });
+  });
+
   it("adapts component size tokens to React Native numbers", () => {
     expect(nativeTokens.component.button.size).toMatchObject({
       sm: {
@@ -106,5 +116,15 @@ describe("@nado/tokens", () => {
     expect(nativeTokens.component.button.send.background).toBe(
       tokens.color.primary,
     );
+  });
+
+  it("adapts review card answer surface tokens to React Native values", () => {
+    expect(nativeTokens.component.reviewCard.answer).toMatchObject({
+      background: "#f6f8ff",
+      border: "#d5dbea",
+      foreground: tokens.color.inkMuted,
+      padding: 14,
+      radius: 7,
+    });
   });
 });

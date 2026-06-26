@@ -100,6 +100,15 @@ const component = {
       },
     },
   },
+  reviewCard: {
+    answer: {
+      background: "#f6f8ff",
+      border: "#d5dbea",
+      foreground: color.inkMuted,
+      padding: "14px",
+      radius: "7px",
+    },
+  },
 } as const;
 
 export const tokens = {

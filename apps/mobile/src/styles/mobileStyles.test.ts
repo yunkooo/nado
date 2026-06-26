@@ -27,6 +27,9 @@ describe("mobile shared style tokens", () => {
     expect(mobileStylesSource).toContain(
       "export const mobileButtonTokens = nativeTokens.component.button;",
     );
+    expect(mobileStylesSource).toContain(
+      "export const mobileReviewCardTokens = nativeTokens.component.reviewCard;",
+    );
   });
 
   it("keeps core mobile color aliases backed by shared color tokens", () => {
@@ -224,9 +227,21 @@ describe("mobile shared style tokens", () => {
 
     expect(mobileStylesSource).not.toContain("reviewAnswerHiddenBox");
     expect(mobileStylesSource).not.toContain("reviewAnswerHidden");
-    expect(reviewAnswerStyle).toContain('backgroundColor: "#f6f8ff"');
-    expect(reviewAnswerStyle).toContain('borderColor: "#d5dbea"');
-    expect(reviewAnswerStyle).toContain("color: mobileColors.inkMuted");
+    expect(reviewAnswerStyle).toContain(
+      "backgroundColor: mobileReviewCardTokens.answer.background",
+    );
+    expect(reviewAnswerStyle).toContain(
+      "borderColor: mobileReviewCardTokens.answer.border",
+    );
+    expect(reviewAnswerStyle).toContain(
+      "borderRadius: mobileReviewCardTokens.answer.radius",
+    );
+    expect(reviewAnswerStyle).toContain(
+      "color: mobileReviewCardTokens.answer.foreground",
+    );
+    expect(reviewAnswerStyle).toContain(
+      "padding: mobileReviewCardTokens.answer.padding",
+    );
     expect(reviewAnswerStyle).toContain('filter: "blur(5px)"');
     expect(reviewAnswerStyle).toContain('userSelect: "none"');
     expect(reviewAnswerRevealedStyle).toContain('filter: "none"');

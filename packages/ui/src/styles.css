@@ -830,7 +830,7 @@
 }
 
 .nado-review-card--revealed {
-  border-color: #d5dbea;
+  border-color: var(--nado-review-card-answer-border, #d5dbea);
 }
 
 .nado-review-card__prompt {
@@ -853,12 +853,12 @@
 }
 
 .nado-review-card__answer {
-  background: #f6f8ff;
-  border: 1px solid #d5dbea;
-  border-radius: 7px;
+  background: var(--nado-review-card-answer-background, #f6f8ff);
+  border: 1px solid var(--nado-review-card-answer-border, #d5dbea);
+  border-radius: var(--nado-review-card-answer-radius, 7px);
   display: grid;
   gap: 8px;
-  padding: 14px;
+  padding: var(--nado-review-card-answer-padding, 14px);
 }
 
 .nado-review-card__answer span {
