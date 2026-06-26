@@ -856,19 +856,20 @@
   background: var(--nado-review-card-answer-background, #f6f8ff);
   border: 1px solid var(--nado-review-card-answer-border, #d5dbea);
   border-radius: var(--nado-review-card-answer-radius, 7px);
+  color: var(--nado-review-card-answer-foreground, var(--nado-color-ink-muted));
   display: grid;
   gap: 8px;
   padding: var(--nado-review-card-answer-padding, 14px);
 }
 
 .nado-review-card__answer span {
-  color: var(--nado-color-primary);
+  color: inherit;
   font-size: 1.125rem;
   font-weight: 900;
 }
 
 .nado-review-card__answer p {
-  color: #55554f;
+  color: inherit;
   font-size: 0.875rem;
   line-height: 1.6;
   margin: 0;

@@ -23,6 +23,7 @@ const cssTokenValue = (value) =>
   value === "transparent"
     ? "transparent"
     : (cssPrimitiveReferences.get(value) ?? value);
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 describe("analysis component styles", () => {
   it("uses result-card container queries for embedded narrow layouts", () => {
@@ -207,6 +208,8 @@ describe("analysis component styles", () => {
     const answerTokens = tokens.component.reviewCard.answer;
     const revealedReviewCardRule = readRule(".nado-review-card--revealed");
     const answerRule = readRule(".nado-review-card__answer");
+    const answerLabelRule = readRule(".nado-review-card__answer span");
+    const answerExampleRule = readRule(".nado-review-card__answer p");
 
     expect(revealedReviewCardRule).toContain(
       `border-color: var(--nado-review-card-answer-border, ${cssTokenValue(answerTokens.border)})`,
@@ -220,9 +223,18 @@ describe("analysis component styles", () => {
     expect(answerRule).toContain(
       `border-radius: var(--nado-review-card-answer-radius, ${cssTokenValue(answerTokens.radius)})`,
     );
+    expect(answerRule).toMatch(
+      new RegExp(
+        `color:\\s*var\\(\\s*--nado-review-card-answer-foreground,\\s*${escapeRegex(cssTokenValue(answerTokens.foreground))}\\s*\\)`,
+      ),
+    );
     expect(answerRule).toContain(
       `padding: var(--nado-review-card-answer-padding, ${cssTokenValue(answerTokens.padding)})`,
     );
+    expect(answerLabelRule).toContain("color: inherit");
+    expect(answerLabelRule).not.toContain("var(--nado-color-primary)");
+    expect(answerExampleRule).toContain("color: inherit");
+    expect(answerExampleRule).not.toContain("#55554f");
   });
 
   it("shows the composer model select affordance with a chevron", () => {
