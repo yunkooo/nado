@@ -295,6 +295,8 @@ export const OtherStory: Story = {
 
     expect(foundationsSource).toContain("Button component");
     expect(foundationsSource).toContain("tokens.component.button");
+    expect(foundationsSource).toContain("ReviewCard answer");
+    expect(foundationsSource).toContain("tokens.component.reviewCard.answer");
     expect(foundationsSource).toContain("storybook-component-token-grid");
     expect(mobileDemoSource).toContain("getMobileTokenParityDemoSections");
     expect(mobileDemoDataSource).toContain("Button contract");
@@ -309,7 +311,10 @@ export const OtherStory: Story = {
     expect(mobileStylesSource).not.toContain("designDemoSendIconButton");
     expect(mobileStylesSource).not.toContain("designDemoPrimaryButton");
     expect(tokenParityDemoSource).toContain(
-      "낮은 위험 데모 표면이 `@nado/ui/native` facade를 실제로 import하는지 확인한다",
+      "낮은 위험 데모 표면이 `@nado/ui/native` facade를 실제로 import하는지",
+    );
+    expect(tokenParityDemoSource).toContain(
+      "review answer style이 `nativeTokens.component.reviewCard.answer`를 따르는지",
     );
     expect(tokenParityDemoSource).toContain("Foundations/Tokens");
     expect(tokenParityDemoSource).toContain("UI/Button");

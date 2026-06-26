@@ -32,6 +32,14 @@ const buttonSizeEntries = [
   ["icon radius", tokens.component.button.size.icon.radius],
 ] as const;
 
+const reviewCardAnswerTokenEntries = [
+  ["answer.background", tokens.component.reviewCard.answer.background],
+  ["answer.border", tokens.component.reviewCard.answer.border],
+  ["answer.foreground", tokens.component.reviewCard.answer.foreground],
+  ["answer.radius", tokens.component.reviewCard.answer.radius],
+  ["answer.padding", tokens.component.reviewCard.answer.padding],
+] as const;
+
 const meta = {
   title: "Foundations/Tokens",
 } satisfies Meta;
@@ -91,6 +99,17 @@ export const Tokens: Story = {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+      <section>
+        <h2>ReviewCard answer</h2>
+        <div className="storybook-component-token-grid">
+          {reviewCardAnswerTokenEntries.map(([name, value]) => (
+            <div className="storybook-component-token" key={name}>
+              <strong>{name}</strong>
+              <code>{value}</code>
+            </div>
+          ))}
         </div>
       </section>
       <section>
