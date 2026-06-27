@@ -224,6 +224,26 @@ describe("mobile App API wiring", () => {
     );
   });
 
+  it("uses ui-native Button primitives for mobile review actions", () => {
+    const reviewActionsStart = appSource.indexOf(
+      "<View style={styles.reviewActions}>",
+    );
+    const reviewActionsEnd = appSource.indexOf("</View>", reviewActionsStart);
+    const reviewActionsSource = appSource.slice(
+      reviewActionsStart,
+      reviewActionsEnd,
+    );
+
+    expect(appSource).toContain('import { Button } from "@nado/ui/native";');
+    expect(reviewActionsSource).toContain("<Button");
+    expect(reviewActionsSource).toContain('variant="secondary"');
+    expect(reviewActionsSource).toContain('variant="primary"');
+    expect(reviewActionsSource).toContain("style={styles.reviewActionButton}");
+    expect(reviewActionsSource).not.toContain("<Pressable");
+    expect(reviewActionsSource).not.toContain("styles.secondaryButton");
+    expect(reviewActionsSource).not.toContain("styles.primaryButton");
+  });
+
   it("renders tappable sentence vocabulary tokens with save actions", () => {
     expect(appSource).toContain("MobileSentenceAnalysisCard");
     expect(appSource).toContain("MobileVocabularyWordCard");
