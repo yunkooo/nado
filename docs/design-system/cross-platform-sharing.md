@@ -332,6 +332,7 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 - `@nado/ui/styles.css`와 `@nado/ui/web/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
 - `@nado/ui/native` facade를 사용하는 Mobile 적용 표면 확대 기준 검토
 - Mobile `mobileStyles`에서 `@nado/ui-native`로 옮길 낮은 위험 적용 표면 선정
+- Web/Desktop `Card` 구현 이후 Mobile Card 반복 점검과 token 후보 정리
 - `@nado/core` 도입 기준과 첫 후보 utility 검토
 - Storybook for React Native 도입 방식 검토
 - Mobile token parity story 추가

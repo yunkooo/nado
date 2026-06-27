@@ -77,7 +77,7 @@ facade가 보장해야 하는 공통 API 대상은 다음 여섯 가지다.
 | `Button`  | 현재 계약 있음 | 구현됨    | 구현됨      |
 | `Text`    | 현재 계약 있음 | 구현됨    | 구현됨      |
 | `Stack`   | 현재 계약 있음 | 구현됨    | 구현됨      |
-| `Card`    | 목표 계약 있음 | 향후 구현 | 향후 구현   |
+| `Card`    | 현재 계약 있음 | 구현됨    | 향후 구현   |
 | `Badge`   | 목표 계약 있음 | 향후 구현 | 향후 구현   |
 | `Avatar`  | 목표 계약 있음 | 향후 구현 | 향후 구현   |
 
@@ -249,6 +249,18 @@ import { Button } from "@nado/ui";
    - 완료: Mobile startup build 순서, type resolution, Web/Desktop import 영향 테스트를 추가했다.
    - 완료: `MobileTokenParityDemoScreen`이 `@nado/ui/native`를 첫 낮은 위험 적용 표면으로 사용한다.
 
+4. Web/Desktop `Card` 기본 컴포넌트 구현
+   - 완료: `@nado/ui-web`에 `Card`를 추가하고 `@nado/ui`, `@nado/ui/web` facade에서 re-export한다.
+   - 완료: `padding`, `tone`, `radius` 계약을 Storybook story와 테스트로 고정했다.
+   - Native `Card`는 아직 만들지 않고 Mobile 반복 점검과 token 후보 정리를 먼저 진행한다.
+
+현재 남은 후보는 다음처럼 분리한다.
+
+- `@nado/ui/native` facade를 사용하는 Mobile 실제 화면 적용 표면 1곳 선정
+- Mobile Card 반복 점검과 token 후보 정리
+- 반복 점검 결과가 충분할 때 Native Card 구현
+- Badge와 Avatar는 실제 반복 강도가 확인될 때 별도 구현
+
 ## 제외 범위
 
 이 설계는 패키지 구조의 방향을 정하기 위한 것이다. 다음은 별도 티켓으로 분리한다.
@@ -256,7 +268,8 @@ import { Button } from "@nado/ui";
 - `packages/core` 실제 생성
 - 기존 앱 import migration
 - `@nado/ui/native` facade를 사용하는 추가 Mobile 적용 표면 선정
-- Card, Badge, Avatar 구현
+- Mobile Card 반복 점검과 Native Card 구현 여부 판단
+- Badge, Avatar 구현
 - Storybook for React Native 도입
 
 ## 검증 기준
