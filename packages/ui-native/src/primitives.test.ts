@@ -7,12 +7,15 @@ import {
   type ReactNode,
 } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { Badge } from "./Badge";
 import { Button } from "./Button";
 import { Card } from "./Card";
 import {
-  createCardStyle,
+  createBadgeStyle,
+  createBadgeTextStyle,
   createButtonStyle,
   createButtonTextStyle,
+  createCardStyle,
   createStackStyle,
   createTextStyle,
 } from "./styles";
@@ -171,6 +174,104 @@ describe("@nado/ui-native primitive style contracts", () => {
     expect(createCardStyle({ tone: "surface" })).not.toHaveProperty(
       "elevation",
     );
+  });
+
+  it("renders Badge as a View with token-backed label styles", () => {
+    const customStyle = { marginTop: nativeTokens.spacing.xs };
+    const textStyle = { letterSpacing: 0.2 };
+    const badge = Badge({
+      children: "noun",
+      size: "md",
+      style: customStyle,
+      testID: "word-type",
+      textStyle,
+      tone: "warning",
+    }) as ReactElement<{
+      children: ReactElement<{ children: ReactNode; style: unknown[] }>;
+      style: unknown[];
+      testID: string;
+    }>;
+
+    expect(badge.type).toBe(nativeMocks.View);
+    expect(badge.props.testID).toBe("word-type");
+    expect(badge.props.children.type).toBe(nativeMocks.Text);
+    expect(badge.props.children.props.children).toBe("noun");
+    expect(badge.props.children.props.style).toEqual([
+      expect.objectContaining({
+        color: nativeTokens.color.ink,
+        fontSize: nativeTokens.typography.text.size.sm,
+        fontWeight: "700",
+        lineHeight: nativeTokens.typography.text.lineHeight.sm,
+      }),
+      textStyle,
+    ]);
+    expect(badge.props.style).toEqual([
+      expect.objectContaining({
+        backgroundColor: nativeTokens.color.surfaceMuted,
+        borderColor: nativeTokens.color.inkMuted,
+        borderRadius: nativeTokens.radius.pill,
+        borderWidth: 1,
+        paddingHorizontal: nativeTokens.spacing.md,
+        paddingVertical: nativeTokens.spacing.sm,
+      }),
+      customStyle,
+    ]);
+  });
+
+  it("wraps mixed Badge text children without wrapping element children", () => {
+    const icon = createElement(nativeMocks.View, { testID: "badge-icon" });
+    const mixedBadge = Badge({
+      children: [icon, "Beta"],
+      tone: "primary",
+    }) as ReactElement<{ children: ReactNode }>;
+    const mixedChildren = Children.toArray(
+      mixedBadge.props.children,
+    ) as ReactElement<{ children?: ReactNode }>[];
+
+    expect(mixedChildren[0]?.type).toBe(nativeMocks.View);
+    expect(mixedChildren[1]?.type).toBe(nativeMocks.Text);
+    expect(mixedChildren[1]?.props.children).toBe("Beta");
+
+    const fragmentBadge = Badge({
+      children: createElement(Fragment, null, icon, "Beta"),
+    }) as ReactElement<{ children: ReactElement<{ children: ReactNode }> }>;
+    const fragmentChildren = Children.toArray(
+      fragmentBadge.props.children.props.children,
+    ) as ReactElement<{ children?: ReactNode }>[];
+
+    expect(fragmentBadge.props.children.type).toBe(Fragment);
+    expect(fragmentChildren[0]?.type).toBe(nativeMocks.View);
+    expect(fragmentChildren[1]?.type).toBe(nativeMocks.Text);
+    expect(fragmentChildren[1]?.props.children).toBe("Beta");
+  });
+
+  it("maps Badge tones and sizes to native tokens", () => {
+    expect(createBadgeStyle({ size: "sm", tone: "neutral" })).toMatchObject({
+      backgroundColor: nativeTokens.color.surfaceMuted,
+      borderColor: nativeTokens.color.border,
+      borderRadius: nativeTokens.radius.pill,
+      borderWidth: 1,
+      paddingHorizontal: nativeTokens.spacing.sm,
+      paddingVertical: nativeTokens.spacing.xs,
+    });
+
+    expect(createBadgeStyle({ tone: "primary" })).toMatchObject({
+      backgroundColor: nativeTokens.color.primary,
+      borderColor: nativeTokens.color.primary,
+    });
+    expect(createBadgeTextStyle({ tone: "primary" })).toMatchObject({
+      color: nativeTokens.color.primaryInk,
+    });
+
+    expect(createBadgeTextStyle({ tone: "success" })).toMatchObject({
+      color: nativeTokens.color.primary,
+    });
+    expect(createBadgeTextStyle({ tone: "warning" })).toMatchObject({
+      color: nativeTokens.color.ink,
+    });
+    expect(createBadgeTextStyle({ tone: "danger" })).toMatchObject({
+      color: nativeTokens.color.accent,
+    });
   });
 
   it("maps Text props to native typography and semantic color tokens", () => {

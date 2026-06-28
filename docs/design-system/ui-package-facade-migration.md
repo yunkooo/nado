@@ -78,7 +78,7 @@ facade가 보장해야 하는 공통 API 대상은 다음 여섯 가지다.
 | `Text`    | 현재 계약 있음 | 구현됨    | 구현됨      |
 | `Stack`   | 현재 계약 있음 | 구현됨    | 구현됨      |
 | `Card`    | 현재 계약 있음 | 구현됨    | 구현됨      |
-| `Badge`   | 목표 계약 있음 | 향후 구현 | 향후 구현   |
+| `Badge`   | 목표 계약 있음 | 향후 구현 | 구현됨      |
 | `Avatar`  | 목표 계약 있음 | 향후 구현 | 향후 구현   |
 
 공통 API는 prop 이름과 제품 의미를 공유한다. DOM element, CSS class, `Pressable`, `View`, `StyleSheet` 같은 구현 방식은 공유하지 않는다.
@@ -199,7 +199,7 @@ packages/ui-web/
 
 RN-local 구현에서 반복이 확인된 뒤 `@nado/ui-native`를 만든다. [RN component repeat audit](rn-component-repeat-audit.md)에서 `Button`, `Text`, `Stack` 반복은 확인되었다.
 
-현재 이 단계는 최소 패키지 생성과 첫 낮은 위험 적용 표면까지 완료되어 있다. `packages/ui-native`는 `Button`, `Text`, `Stack`, `Card`를 export하고, `@nado/tokens/react-native` 기반 style contract를 테스트로 고정한다. `MobileTokenParityDemoScreen`은 primitive를 실제로 import해 token parity demo의 button sample을 렌더링한다. 앱 전체 마이그레이션은 하지 않는다.
+현재 이 단계는 최소 패키지 생성과 첫 낮은 위험 적용 표면까지 완료되어 있다. `packages/ui-native`는 `Button`, `Text`, `Stack`, `Card`, `Badge`를 export하고, `@nado/tokens/react-native` 기반 style contract를 테스트로 고정한다. `MobileTokenParityDemoScreen`은 primitive를 실제로 import해 token parity demo의 button sample을 렌더링한다. 앱 전체 마이그레이션은 하지 않는다.
 
 도입 기준:
 
@@ -270,12 +270,18 @@ import { Button } from "@nado/ui";
    - 완료: 저장 단어 뜻 목록의 nested muted surface를 `@nado/ui/native` `Card`로 적용한다.
    - 완료: 뜻 텍스트와 note 렌더링 구조는 기존 앱 구현에 남긴다.
 
+9. `@nado/ui-native Badge` 최소 구현
+   - 완료: `@nado/ui-native`에 `Badge`와 `createBadgeStyle`, `createBadgeTextStyle`을 추가한다.
+   - 완료: `tone`, `size`, `children` 계약을 고정하고 `warning` tone을 포함한다.
+   - 완료: 앱 화면 치환은 하지 않는다.
+
 현재 남은 후보는 다음처럼 분리한다.
 
 - Mobile `reviewCard`와 `vocabularyItem` 추가 적용 여부 판단
-- `@nado/ui-native Badge` 최소 구현과 Mobile `vocabularyType` 적용 여부 판단
+- Mobile `vocabularyType`에 Native Badge 적용 여부 판단
+- Web/Desktop Badge 구현 필요성 판단
 - Mobile/Web Chip 경계 점검과 action chip 후보 정리
-- Badge와 Avatar는 실제 반복 강도가 확인될 때 별도 구현
+- Avatar는 실제 반복 강도가 확인될 때 별도 구현
 
 ## 제외 범위
 
@@ -285,7 +291,8 @@ import { Button } from "@nado/ui";
 - 기존 앱 import migration
 - `@nado/ui/native` facade를 사용하는 추가 Mobile 적용 표면 선정
 - 추가 Mobile Card 적용
-- Badge, Avatar 구현
+- Web/Desktop Badge 구현
+- Avatar 구현
 - Storybook for React Native 도입
 
 ## 검증 기준
