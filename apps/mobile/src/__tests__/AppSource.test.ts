@@ -265,6 +265,35 @@ describe("mobile App API wiring", () => {
     expect(summarySource).not.toContain("<View");
   });
 
+  it("uses the ui-native Card primitive for mobile vocabulary meaning cards", () => {
+    const meaningListStart = appSource.indexOf(
+      "<View style={styles.meaningList}>",
+    );
+    const meaningKeyStart = appSource.indexOf(
+      "key={createVocabularyMeaningRenderKey",
+      meaningListStart,
+    );
+    const meaningCardStart = appSource.lastIndexOf("<Card", meaningKeyStart);
+    const meaningCardEnd = appSource.indexOf("</Card>", meaningCardStart);
+    const meaningCardSource = appSource.slice(meaningCardStart, meaningCardEnd);
+
+    expect(appSource).toContain(
+      'import { Button, Card } from "@nado/ui/native";',
+    );
+    expect(meaningListStart).toBeGreaterThan(-1);
+    expect(meaningCardStart).toBeGreaterThan(meaningListStart);
+    expect(meaningCardSource).toContain(
+      "key={createVocabularyMeaningRenderKey",
+    );
+    expect(meaningCardSource).toContain('padding="md"');
+    expect(meaningCardSource).toContain('radius="md"');
+    expect(meaningCardSource).toContain('tone="muted"');
+    expect(meaningCardSource).toContain("style={styles.meaningCard}");
+    expect(meaningCardSource).not.toContain(
+      "<View\n                          key={createVocabularyMeaningRenderKey",
+    );
+  });
+
   it("uses the ui-native Card primitive for mobile word definition cards", () => {
     const wordCardStart = appSource.indexOf(
       "function MobileVocabularyWordCard",

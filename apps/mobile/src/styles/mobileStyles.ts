@@ -437,13 +437,7 @@ export const styles = StyleSheet.create({
     lineHeight: 16,
   },
   meaningCard: {
-    backgroundColor: mobileColors.surfaceMuted,
-    borderColor: "#eeeeea",
-    borderRadius: 7,
-    borderWidth: 1,
     gap: mobileSpacing.xs,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
   },
   meaningNote: {
     color: mobileColors.inkMuted,

@@ -1189,13 +1189,16 @@ function VocabularyPage({
                       );
 
                       return (
-                        <View
+                        <Card
                           key={createVocabularyMeaningRenderKey(
                             item.id,
                             meaning,
                             meaningIndex,
                           )}
+                          padding="md"
+                          radius="md"
                           style={styles.meaningCard}
+                          tone="muted"
                         >
                           <Text style={styles.meaningText}>
                             {meaning.meaning}
@@ -1205,7 +1208,7 @@ function VocabularyPage({
                               {meaningDisplayNote}
                             </Text>
                           ) : null}
-                        </View>
+                        </Card>
                       );
                     })}
                   </View>

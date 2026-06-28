@@ -16,7 +16,7 @@ Mobile에는 Card로 볼 수 있는 반복 surface가 충분하다. `@nado/ui-na
 | `reviewCard`         | 복습 flashcard            | surface, border, radius, padding, shadow 반복  | `Card tone="elevated"` 후보     |
 | `wordDefinitionCard` | 분석 단어 뜻 카드/Popover | surface, border, radius, padding, shadow 반복  | `Card tone="elevated"` 후보     |
 | `summaryItem`        | 단어장 요약               | compact surface, border, radius, padding 반복  | `Card tone="surface"` 적용 완료 |
-| `meaningCard`        | 단어 뜻 내부 meaning 항목 | nested muted surface, compact padding 반복     | `Card tone="muted"` 후보        |
+| `meaningCard`        | 단어 뜻 내부 meaning 항목 | nested muted surface, compact padding 반복     | `Card tone="muted"` 적용 완료   |
 | `emptyPanel`         | 빈 상태/에러 상태         | feedback panel surface 반복                    | Card보다 Panel 후보에 가깝다    |
 | `statusCard`         | 분석 상태 메시지          | feedback panel surface 반복                    | Card보다 Panel 후보에 가깝다    |
 | `modelSelectorCard`  | 모델 선택 overlay         | popup-specific position과 shadow가 핵심        | Card 공통화 대상에서 제외       |
@@ -63,7 +63,7 @@ Card 최소 구현은 기존 primitive/semantic token으로 시작한다. 다음
 2. Mobile 실제 화면에 Native Card 적용
    - 완료: `VocabularyPage`의 `summaryItem`을 `@nado/ui/native` `Card`로 적용한다.
    - 완료: 분석 단어 뜻 카드/Popover의 `wordDefinitionCard`를 `@nado/ui/native` `Card`로 적용한다.
-   - `meaningCard`는 nested muted surface라 다음 낮은 위험 적용 후보로 남긴다.
+   - 완료: 저장 단어 뜻 목록의 `meaningCard`를 `@nado/ui/native` `Card`로 적용한다.
    - `reviewCard`와 `vocabularyItem`은 shadow와 minHeight 영향이 커서 한 단계 뒤로 둔다.
 
 3. Badge 반복 점검
