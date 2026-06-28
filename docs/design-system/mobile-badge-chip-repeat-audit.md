@@ -67,8 +67,8 @@ component token은 여러 tone이 실제 화면에서 반복될 때 검토한다
    - 완료: `suggestionChip`과 `reviewDirection`은 변경하지 않았다.
 
 3. Mobile/Web Chip 경계 점검
-   - 저장 추천 action chip을 Web/Desktop `Chip` 계약과 맞출 수 있는지 별도 판단한다.
-   - saved/saving/disabled 상태가 Button contract와 더 맞는지도 함께 본다.
+   - 완료: [Mobile/Web Chip 경계와 action chip 후보](mobile-web-chip-boundary-audit.md)에서 저장 추천 action chip을 Web/Desktop `Chip` 계약과 비교했다.
+   - 완료: saved/saving/disabled 상태가 Button contract와 더 맞는지도 함께 봤다.
 
 4. Segmented control 후보 분리
    - `reviewDirection`은 Badge/Chip이 아니라 선택 control로 별도 후보에 남긴다.
