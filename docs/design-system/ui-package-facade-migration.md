@@ -292,11 +292,15 @@ import { Button } from "@nado/ui";
     - 완료: `label`, `prefix`, `disabled`, `onPress` 계약을 고정한다.
     - 완료: 앱 화면 치환은 하지 않는다.
 
+13. Mobile `suggestionChip` Native Chip 적용
+    - 완료: 분석 결과 저장 추천 chip을 `@nado/ui/native` `Chip`으로 적용한다.
+    - 완료: saved/saving 상태 override는 앱 style에 남기고 base layout과 pressed feedback은 primitive에 맡긴다.
+    - 완료: word popover 저장 버튼과 `reviewDirection`은 변경하지 않는다.
+
 현재 남은 후보는 다음처럼 분리한다.
 
 - Mobile `reviewCard`와 `vocabularyItem` 추가 적용 여부 판단
 - Web/Desktop Badge 구현 필요성 판단
-- Mobile `suggestionChip`에 Native Chip 적용 여부 판단
 - Avatar는 실제 반복 강도가 확인될 때 별도 구현
 
 ## 제외 범위
@@ -308,7 +312,6 @@ import { Button } from "@nado/ui";
 - `@nado/ui/native` facade를 사용하는 추가 Mobile 적용 표면 선정
 - 추가 Mobile Card 적용
 - Web/Desktop Badge 구현
-- Mobile `suggestionChip` 치환
 - Avatar 구현
 - Storybook for React Native 도입
 

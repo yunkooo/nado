@@ -218,12 +218,21 @@ describe("mobile shared style tokens", () => {
     expect(mobileStylesSource).toContain("flexShrink: 1");
   });
 
-  it("allows long mobile vocabulary suggestions to wrap within the screen", () => {
-    expect(mobileStylesSource).toContain("suggestionChip");
-    expect(mobileStylesSource).toContain('maxWidth: "100%"');
-    expect(mobileStylesSource).toContain("suggestionText");
-    expect(mobileStylesSource).toContain("flexShrink: 1");
-    expect(mobileStylesSource).toContain("minWidth: 0");
+  it("keeps only suggestion chip state overrides after moving base layout to ui-native Chip", () => {
+    const suggestionChipSavedStyle = mobileStylesSource.match(
+      /suggestionChipSaved:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+    const suggestionChipSavingStyle = mobileStylesSource.match(
+      /suggestionChipSaving:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+
+    expect(mobileStylesSource).not.toContain("suggestionChip: {");
+    expect(mobileStylesSource).not.toContain("suggestionPrefix: {");
+    expect(mobileStylesSource).not.toContain("suggestionText: {");
+    expect(mobileStylesSource).toContain("suggestionChipSaved");
+    expect(mobileStylesSource).toContain("suggestionChipSaving");
+    expect(suggestionChipSavedStyle).toContain("opacity: 1");
+    expect(suggestionChipSavingStyle).toContain("opacity: 0.64");
   });
 
   it("shows a chevron affordance in the mobile model selector trigger", () => {

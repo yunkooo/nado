@@ -6,7 +6,7 @@
 
 Mobile `suggestionChip`은 Badge가 아니라 action chip 후보다. Web/Desktop의 `Chip`과 의미가 가장 가깝지만, Mobile에는 `saved`, `saving`, `disabled`, pressed feedback이 저장 action 흐름에 강하게 묶여 있다.
 
-따라서 다음 구현을 바로 앱 치환으로 시작하지 않는다. 먼저 `Chip` 공통 API 후보를 작게 정의하고, 그 다음 `@nado/ui-native Chip` 최소 구현 또는 Mobile `suggestionChip` 적용 중 하나를 별도 티켓으로 진행한다.
+따라서 바로 앱 전체 치환으로 시작하지 않고, 먼저 `Chip` 공통 API 후보와 `@nado/ui-native Chip` 최소 구현을 분리했다. 이후 실제 앱 표면은 분석 결과의 저장 추천 `suggestionChip` 1곳에만 `@nado/ui/native` `Chip`을 적용했다.
 
 ## 현재 Web/Desktop Chip
 
@@ -24,7 +24,7 @@ Mobile `suggestionChip`은 Badge가 아니라 action chip 후보다. Web/Desktop
 
 ## 현재 Mobile suggestionChip
 
-Mobile `suggestionChip`은 `Pressable` 기반 저장 action이다.
+Mobile `suggestionChip`은 저장 action이며, 현재 분석 결과의 저장 추천 목록은 `@nado/ui/native` `Chip`을 사용한다.
 
 | 상태     | 현재 렌더링                                   |
 | -------- | --------------------------------------------- |
@@ -32,11 +32,8 @@ Mobile `suggestionChip`은 `Pressable` 기반 저장 action이다.
 | `saving` | 저장 중 prefix, disabled, opacity 감소        |
 | `saved`  | `✓` prefix, disabled, saved background/border |
 
-현재 style은 chip 형태를 직접 가진다.
+현재 base layout, pressed feedback, 긴 label overflow 제약은 `@nado/ui-native Chip` primitive가 담당한다. 앱 style은 저장 상태 override만 남긴다.
 
-- `backgroundColor`, `borderColor`, `borderRadius`, `borderWidth`
-- `flexDirection: "row"`, `gap`, `maxWidth`
-- `paddingHorizontal`, `paddingVertical`
 - state별 `suggestionChipSaved`, `suggestionChipSaving`
 
 ## Badge와 구분
@@ -95,8 +92,8 @@ component token은 Web/Desktop `nado-chip`과 Mobile `suggestionChip`을 같은 
    - 완료: 앱 화면 치환은 하지 않는다.
 
 3. Mobile `suggestionChip`에 Native Chip 적용
-   - 분석 저장 추천 chip만 적용한다.
-   - word popover 저장 버튼과 review direction은 변경하지 않는다.
+   - 완료: 분석 저장 추천 chip만 적용한다.
+   - 완료: word popover 저장 버튼과 review direction은 변경하지 않는다.
 
 4. Segmented control 후보 분리
    - `reviewDirection`은 Chip이 아니라 선택 control로 계속 분리한다.
