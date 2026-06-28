@@ -236,6 +236,42 @@ describe("analysis component styles", () => {
     );
   });
 
+  it("keeps Badge styles aligned with the documented tone and size contract", () => {
+    const badgeRule = readRule(".nado-badge");
+    const neutralRule = readRule(".nado-badge--tone-neutral");
+    const primaryRule = readRule(".nado-badge--tone-primary");
+    const successRule = readRule(".nado-badge--tone-success");
+    const warningRule = readRule(".nado-badge--tone-warning");
+    const dangerRule = readRule(".nado-badge--tone-danger");
+    const smRule = readRule(".nado-badge--size-sm");
+    const mdRule = readRule(".nado-badge--size-md");
+
+    expect(badgeRule).toContain("align-items: center");
+    expect(badgeRule).toContain("border: 1px solid var(--nado-color-border)");
+    expect(badgeRule).toContain("border-radius: var(--nado-radius-pill)");
+    expect(badgeRule).toContain("display: inline-flex");
+    expect(badgeRule).toContain("font-weight: 700");
+    expect(neutralRule).toContain(
+      "background: var(--nado-color-surface-muted)",
+    );
+    expect(neutralRule).toContain("color: var(--nado-color-ink-muted)");
+    expect(primaryRule).toContain("background: var(--nado-color-primary)");
+    expect(primaryRule).toContain("color: var(--nado-color-primary-ink)");
+    expect(successRule).toContain("border-color: var(--nado-color-primary)");
+    expect(successRule).toContain("color: var(--nado-color-primary)");
+    expect(warningRule).toContain("color: var(--nado-color-ink)");
+    expect(dangerRule).toContain("border-color: var(--nado-color-accent)");
+    expect(dangerRule).toContain("color: var(--nado-color-accent)");
+    expect(smRule).toContain("font-size: var(--nado-text-size-xs)");
+    expect(smRule).toContain(
+      "padding: var(--nado-spacing-xs) var(--nado-spacing-sm)",
+    );
+    expect(mdRule).toContain("font-size: var(--nado-text-size-sm)");
+    expect(mdRule).toContain(
+      "padding: var(--nado-spacing-sm) var(--nado-spacing-md)",
+    );
+  });
+
   it("keeps review card answer styles aligned with component tokens", () => {
     const answerTokens = tokens.component.reviewCard.answer;
     const revealedReviewCardRule = readRule(".nado-review-card--revealed");

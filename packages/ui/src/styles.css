@@ -230,6 +230,63 @@
   border-radius: var(--nado-radius-composer);
 }
 
+.nado-badge {
+  align-items: center;
+  background: var(--nado-color-surface-muted);
+  border: 1px solid var(--nado-color-border);
+  border-radius: var(--nado-radius-pill);
+  box-sizing: border-box;
+  color: var(--nado-color-ink-muted);
+  display: inline-flex;
+  font-weight: 700;
+  gap: var(--nado-spacing-xs);
+  letter-spacing: 0;
+  line-height: 1;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
+.nado-badge--tone-neutral {
+  background: var(--nado-color-surface-muted);
+  border-color: var(--nado-color-border);
+  color: var(--nado-color-ink-muted);
+}
+
+.nado-badge--tone-primary {
+  background: var(--nado-color-primary);
+  border-color: var(--nado-color-primary);
+  color: var(--nado-color-primary-ink);
+}
+
+.nado-badge--tone-success {
+  background: var(--nado-color-surface-muted);
+  border-color: var(--nado-color-primary);
+  color: var(--nado-color-primary);
+}
+
+.nado-badge--tone-warning {
+  background: var(--nado-color-surface-muted);
+  border-color: var(--nado-color-ink-muted);
+  color: var(--nado-color-ink);
+}
+
+.nado-badge--tone-danger {
+  background: var(--nado-color-surface-muted);
+  border-color: var(--nado-color-accent);
+  color: var(--nado-color-accent);
+}
+
+.nado-badge--size-sm {
+  font-size: var(--nado-text-size-xs);
+  padding: var(--nado-spacing-xs) var(--nado-spacing-sm);
+}
+
+.nado-badge--size-md {
+  font-size: var(--nado-text-size-sm);
+  padding: var(--nado-spacing-sm) var(--nado-spacing-md);
+}
+
 .nado-button,
 .nado-chip {
   align-items: center;

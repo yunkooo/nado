@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Card, Stack, Text } from "./index";
+import { Badge, Card, Stack, Text } from "./index";
 
 describe("primitive layout and text components", () => {
   it("renders Text with size, weight, tone, align, and custom class contracts", () => {
@@ -68,5 +68,20 @@ describe("primitive layout and text components", () => {
     expect(markup).toContain("nado-card--radius-composer");
     expect(markup).toContain("custom-card");
     expect(markup).toContain("<span>Card content</span>");
+  });
+
+  it("renders Badge with tone, size, and custom class contracts", () => {
+    const markup = renderToStaticMarkup(
+      <Badge className="custom-badge" size="md" tone="success">
+        Saved
+      </Badge>,
+    );
+
+    expect(markup).toContain("<span");
+    expect(markup).toContain("nado-badge");
+    expect(markup).toContain("nado-badge--tone-success");
+    expect(markup).toContain("nado-badge--size-md");
+    expect(markup).toContain("custom-badge");
+    expect(markup).toContain("Saved");
   });
 });

@@ -37,14 +37,14 @@ Storybook은 디자인 시스템의 원본이 아니다. Storybook은 `@nado/ui`
 
 v1에서는 패키지를 늘릴 때도 역할 경계를 작게 유지한다. `@nado/ui-web`과 `@nado/ui-native`는 구현 패키지이고, `@nado/core`는 이름만 먼저 예약한다.
 
-| 패키지            | v1 역할                                     | 현재 상태        | 생성/확장 기준                                                      |
-| ----------------- | ------------------------------------------- | ---------------- | ------------------------------------------------------------------- |
-| `@nado/tokens`    | primitive, semantic, component token의 원본 | 이미 사용 중     | 모든 플랫폼에 반영되어야 하는 디자인 값 변경                        |
-| `@nado/ui`        | Web/Desktop 호환 facade와 platform subpath  | 이미 사용 중     | 기존 앱 import 유지와 명시 subpath 호환성                           |
-| `@nado/ui-web`    | Web/Desktop React DOM 컴포넌트 구현         | 이미 사용 중     | DOM, CSS variable, Storybook 검증이 필요한 UI                       |
-| `@nado/shared`    | 도메인 스키마, API 타입, 비즈니스 규칙      | 이미 사용 중     | 플랫폼과 무관한 제품 규칙이나 API 계약                              |
-| `@nado/ui-native` | React Native 공통 primitive 구현            | 최소 도입됨      | `Button`, `Text`, `Stack`, `Card`, `Badge` contract와 RN token 검증 |
-| `@nado/core`      | theme, hook, i18n, platform utility 후보    | 아직 만들지 않음 | 앱별 중복이 커지고 도메인 규칙과 분리할 필요가 생김                 |
+| 패키지            | v1 역할                                     | 현재 상태        | 생성/확장 기준                                                              |
+| ----------------- | ------------------------------------------- | ---------------- | --------------------------------------------------------------------------- |
+| `@nado/tokens`    | primitive, semantic, component token의 원본 | 이미 사용 중     | 모든 플랫폼에 반영되어야 하는 디자인 값 변경                                |
+| `@nado/ui`        | Web/Desktop 호환 facade와 platform subpath  | 이미 사용 중     | 기존 앱 import 유지와 명시 subpath 호환성                                   |
+| `@nado/ui-web`    | Web/Desktop React DOM 컴포넌트 구현         | 이미 사용 중     | DOM, CSS variable, Storybook 검증이 필요한 UI                               |
+| `@nado/shared`    | 도메인 스키마, API 타입, 비즈니스 규칙      | 이미 사용 중     | 플랫폼과 무관한 제품 규칙이나 API 계약                                      |
+| `@nado/ui-native` | React Native 공통 primitive 구현            | 최소 도입됨      | `Button`, `Text`, `Stack`, `Card`, `Badge`, `Chip` contract와 RN token 검증 |
+| `@nado/core`      | theme, hook, i18n, platform utility 후보    | 아직 만들지 않음 | 앱별 중복이 커지고 도메인 규칙과 분리할 필요가 생김                         |
 
 `@nado/shared`와 `@nado/core`는 섞지 않는다. `@nado/shared`는 분석 요청/응답, 단어장 타입, 페이지네이션 같은 제품 도메인 계약을 맡고, `@nado/core`는 미래에 플랫폼 공통 runtime utility가 충분히 생겼을 때만 검토한다.
 

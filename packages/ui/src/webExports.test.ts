@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import * as rootExports from "./index";
 import {
   AnalysisResult,
+  Badge,
   Button,
   Card,
   Chip,
@@ -20,6 +22,7 @@ import {
 describe("@nado/ui/web exports", () => {
   it("re-exports the current Web/Desktop public surface", () => {
     expect(Button).toBeTypeOf("function");
+    expect(Badge).toBeTypeOf("function");
     expect(Card).toBeTypeOf("function");
     expect(Chip).toBeTypeOf("function");
     expect(InputComposer).toBeTypeOf("function");
@@ -34,5 +37,6 @@ describe("@nado/ui/web exports", () => {
     expect(ReviewCard).toBeTypeOf("function");
     expect(VocabularyListItem).toBeTypeOf("function");
     expect(tokens.color.primary).toBeTypeOf("string");
+    expect(rootExports.Badge).toBe(Badge);
   });
 });
