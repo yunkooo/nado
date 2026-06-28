@@ -67,4 +67,4 @@ Card 최소 구현은 기존 primitive/semantic token으로 시작한다. 다음
    - `reviewCard`와 `vocabularyItem`은 shadow와 minHeight 영향이 커서 한 단계 뒤로 둔다.
 
 3. Badge 반복 점검
-   - `vocabularyType`, suggestion chip, review direction pill은 Badge/Chip 경계를 따로 판단한다.
+   - 완료: [Mobile Badge/Chip 반복 점검과 경계](mobile-badge-chip-repeat-audit.md)에서 `vocabularyType`, suggestion chip, review direction pill의 Badge/Chip/segmented control 경계를 분리한다.

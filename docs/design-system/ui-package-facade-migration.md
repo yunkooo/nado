@@ -273,7 +273,8 @@ import { Button } from "@nado/ui";
 현재 남은 후보는 다음처럼 분리한다.
 
 - Mobile `reviewCard`와 `vocabularyItem` 추가 적용 여부 판단
-- Badge 반복 점검과 Badge/Chip 경계 정리
+- `@nado/ui-native Badge` 최소 구현과 Mobile `vocabularyType` 적용 여부 판단
+- Mobile/Web Chip 경계 점검과 action chip 후보 정리
 - Badge와 Avatar는 실제 반복 강도가 확인될 때 별도 구현
 
 ## 제외 범위
