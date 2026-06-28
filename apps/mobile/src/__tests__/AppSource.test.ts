@@ -247,7 +247,9 @@ describe("mobile App API wiring", () => {
   });
 
   it("uses the ui-native Card primitive for the vocabulary summary item", () => {
-    const summaryStart = appSource.indexOf("<Card");
+    const summaryLabel = 'accessibilityLabel="단어장 요약"';
+    const summaryLabelStart = appSource.indexOf(summaryLabel);
+    const summaryStart = appSource.lastIndexOf("<Card", summaryLabelStart);
     const summaryEnd = appSource.indexOf("</Card>", summaryStart);
     const summarySource = appSource.slice(summaryStart, summaryEnd);
 
@@ -255,12 +257,40 @@ describe("mobile App API wiring", () => {
       'import { Button, Card } from "@nado/ui/native";',
     );
     expect(summaryStart).toBeGreaterThan(-1);
-    expect(summarySource).toContain('accessibilityLabel="단어장 요약"');
+    expect(summarySource).toContain(summaryLabel);
     expect(summarySource).toContain('padding="md"');
     expect(summarySource).toContain('radius="md"');
     expect(summarySource).toContain('tone="surface"');
     expect(summarySource).toContain("style={styles.summaryItem}");
     expect(summarySource).not.toContain("<View");
+  });
+
+  it("uses the ui-native Card primitive for mobile word definition cards", () => {
+    const wordCardStart = appSource.indexOf(
+      "function MobileVocabularyWordCard",
+    );
+    const wordCardEnd = appSource.indexOf(
+      "function MobileVocabularyWordPopover",
+      wordCardStart,
+    );
+    const wordCardSource = appSource.slice(wordCardStart, wordCardEnd);
+
+    expect(appSource).toContain(
+      'import { Button, Card } from "@nado/ui/native";',
+    );
+    expect(wordCardSource).toContain("<Card");
+    expect(wordCardSource).toContain(
+      "accessibilityLabel={`${item.term} 뜻과 저장 액션`}",
+    );
+    expect(wordCardSource).toContain('padding="lg"');
+    expect(wordCardSource).toContain('radius="md"');
+    expect(wordCardSource).toContain('tone="elevated"');
+    expect(wordCardSource).toContain(
+      "style={[styles.wordDefinitionCard, style]}",
+    );
+    expect(wordCardSource).not.toContain(
+      "<View\n      accessibilityLabel={`${item.term} 뜻과 저장 액션`}",
+    );
   });
 
   it("renders tappable sentence vocabulary tokens with save actions", () => {

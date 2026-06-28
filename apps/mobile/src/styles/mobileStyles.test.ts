@@ -176,6 +176,18 @@ describe("mobile shared style tokens", () => {
 
     expect(mobileStylesSource).toContain("wordDefinitionCard");
     expect(wordDefinitionCardStyle).toContain('alignSelf: "stretch"');
+    expect(wordDefinitionCardStyle).toContain("gap: 10");
+    expect(wordDefinitionCardStyle).not.toContain("backgroundColor:");
+    expect(wordDefinitionCardStyle).not.toContain("borderColor:");
+    expect(wordDefinitionCardStyle).not.toContain("borderRadius:");
+    expect(wordDefinitionCardStyle).not.toContain("borderWidth:");
+    expect(wordDefinitionCardStyle).not.toContain("elevation:");
+    expect(wordDefinitionCardStyle).not.toContain("paddingHorizontal:");
+    expect(wordDefinitionCardStyle).not.toContain("paddingVertical:");
+    expect(wordDefinitionCardStyle).not.toContain("shadowColor:");
+    expect(wordDefinitionCardStyle).not.toContain("shadowOffset:");
+    expect(wordDefinitionCardStyle).not.toContain("shadowOpacity:");
+    expect(wordDefinitionCardStyle).not.toContain("shadowRadius:");
     expect(mobileStylesSource).toContain("wordPopoverOverlay");
     expect(wordDefinitionPopoverCardStyle).toContain('position: "absolute"');
     expect(wordDefinitionPopoverCardStyle).toContain("zIndex: 40");

@@ -728,10 +728,13 @@ function MobileVocabularyWordCard({
   const isSaveDisabled = suggestionState !== "idle";
 
   return (
-    <View
+    <Card
       accessibilityLabel={`${item.term} 뜻과 저장 액션`}
       onLayout={onLayout}
+      padding="lg"
+      radius="md"
       style={[styles.wordDefinitionCard, style]}
+      tone="elevated"
     >
       <View style={styles.wordDefinitionHeader}>
         <Text style={styles.wordDefinitionTerm}>{item.term}</Text>
@@ -764,7 +767,7 @@ function MobileVocabularyWordCard({
           {readSuggestionSaveActionText(suggestionState)}
         </Text>
       </Pressable>
-    </View>
+    </Card>
   );
 }
 

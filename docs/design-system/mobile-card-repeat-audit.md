@@ -60,10 +60,11 @@ Card 최소 구현은 기존 primitive/semantic token으로 시작한다. 다음
    - 완료: `tone`, `padding`, `radius` prop contract를 Web/Desktop Card와 맞춘다.
    - 완료: 앱 화면 치환은 하지 않는다.
 
-2. Mobile 실제 화면 1곳에 Native Card 적용
+2. Mobile 실제 화면에 Native Card 적용
    - 완료: `VocabularyPage`의 `summaryItem`을 `@nado/ui/native` `Card`로 적용한다.
-   - `wordDefinitionCard`는 다음 추가 적용 후보로 남긴다.
-   - `reviewCard`와 `vocabularyItem`은 shadow와 minHeight 영향이 커서 첫 적용 후보에서는 한 단계 뒤로 둔다.
+   - 완료: 분석 단어 뜻 카드/Popover의 `wordDefinitionCard`를 `@nado/ui/native` `Card`로 적용한다.
+   - `meaningCard`는 nested muted surface라 다음 낮은 위험 적용 후보로 남긴다.
+   - `reviewCard`와 `vocabularyItem`은 shadow와 minHeight 영향이 커서 한 단계 뒤로 둔다.
 
 3. Badge 반복 점검
    - `vocabularyType`, suggestion chip, review direction pill은 Badge/Chip 경계를 따로 판단한다.
