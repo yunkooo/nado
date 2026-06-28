@@ -51,6 +51,10 @@ type CreateCardStyleOptions = {
   tone?: CardTone;
 };
 
+type CreateChipStyleOptions = {
+  disabled?: boolean;
+};
+
 type CreateTextStyleOptions = {
   align?: TextAlign;
   size?: TextSize;
@@ -172,6 +176,42 @@ export function createCardStyle({
   } satisfies ViewStyle;
 }
 
+export function createChipStyle({
+  disabled = false,
+}: CreateChipStyleOptions = {}) {
+  return {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: chipToneTokens.background,
+    borderColor: chipToneTokens.border,
+    borderRadius: nativeTokens.radius.md,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: nativeTokens.spacing.xs,
+    opacity: disabled ? 0.64 : 1,
+    paddingHorizontal: nativeTokens.spacing.md,
+    paddingVertical: nativeTokens.spacing.sm,
+  } satisfies ViewStyle;
+}
+
+export function createChipLabelStyle() {
+  return {
+    color: chipToneTokens.foreground,
+    fontSize: nativeTokens.typography.text.size.sm,
+    fontWeight: toNativeFontWeight(nativeTokens.typography.text.weight.bold),
+    lineHeight: nativeTokens.typography.text.lineHeight.sm,
+  } satisfies TextStyle;
+}
+
+export function createChipPrefixStyle() {
+  return {
+    color: chipToneTokens.prefix,
+    fontSize: nativeTokens.typography.text.size.xs,
+    fontWeight: toNativeFontWeight(nativeTokens.typography.text.weight.heavy),
+    lineHeight: nativeTokens.typography.text.lineHeight.xs,
+  } satisfies TextStyle;
+}
+
 export function createTextStyle({
   align = "start",
   size = "md",
@@ -268,6 +308,18 @@ const badgeTextSize = {
   md: "sm",
   sm: "xs",
 } satisfies Record<BadgeSize, TextSize>;
+
+const chipToneTokens = {
+  background: nativeTokens.color.surfaceMuted,
+  border: nativeTokens.color.border,
+  foreground: nativeTokens.color.ink,
+  prefix: nativeTokens.color.primary,
+} satisfies {
+  background: string;
+  border: string;
+  foreground: string;
+  prefix: string;
+};
 
 const elevatedCardStyle = {
   elevation: 4,

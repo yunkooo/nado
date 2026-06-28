@@ -10,12 +10,16 @@ import { describe, expect, it, vi } from "vitest";
 import { Badge } from "./Badge";
 import { Button } from "./Button";
 import { Card } from "./Card";
+import { Chip } from "./Chip";
 import {
   createBadgeStyle,
   createBadgeTextStyle,
   createButtonStyle,
   createButtonTextStyle,
   createCardStyle,
+  createChipLabelStyle,
+  createChipPrefixStyle,
+  createChipStyle,
   createStackStyle,
   createTextStyle,
 } from "./styles";
@@ -271,6 +275,91 @@ describe("@nado/ui-native primitive style contracts", () => {
     });
     expect(createBadgeTextStyle({ tone: "danger" })).toMatchObject({
       color: nativeTokens.color.accent,
+    });
+  });
+
+  it("renders Chip as a Pressable with token-backed prefix and label text", () => {
+    const customStyle = { marginTop: nativeTokens.spacing.xs };
+    const labelStyle = { letterSpacing: 0.2 };
+    const prefixStyle = { opacity: 0.9 };
+    const onPress = vi.fn();
+    const chip = Chip({
+      disabled: true,
+      label: "setup",
+      onPress,
+      prefix: "+ 저장",
+      prefixStyle,
+      style: customStyle,
+      labelStyle,
+      testID: "suggestion-chip",
+    }) as ReactElement<{
+      accessibilityRole: string;
+      accessibilityState: { disabled?: boolean };
+      children: ReactNode;
+      disabled: boolean;
+      onPress: typeof onPress;
+      style: unknown[];
+      testID: string;
+    }>;
+    const children = Children.toArray(chip.props.children) as ReactElement<{
+      children?: ReactNode;
+      style: unknown[];
+    }>[];
+
+    expect(chip.type).toBe(nativeMocks.Pressable);
+    expect(chip.props.accessibilityRole).toBe("button");
+    expect(chip.props.accessibilityState.disabled).toBe(true);
+    expect(chip.props.disabled).toBe(true);
+    expect(chip.props.onPress).toBe(onPress);
+    expect(chip.props.testID).toBe("suggestion-chip");
+    expect(children[0]?.type).toBe(nativeMocks.Text);
+    expect(children[0]?.props.children).toBe("+ 저장");
+    expect(children[0]?.props.style).toEqual([
+      expect.objectContaining({
+        color: nativeTokens.color.primary,
+        fontSize: nativeTokens.typography.text.size.xs,
+        fontWeight: "800",
+      }),
+      prefixStyle,
+    ]);
+    expect(children[1]?.type).toBe(nativeMocks.Text);
+    expect(children[1]?.props.children).toBe("setup");
+    expect(children[1]?.props.style).toEqual([
+      expect.objectContaining({
+        color: nativeTokens.color.ink,
+        fontSize: nativeTokens.typography.text.size.sm,
+      }),
+      labelStyle,
+    ]);
+    expect(chip.props.style).toContain(customStyle);
+  });
+
+  it("maps Chip styles to native tokens without adding state tokens yet", () => {
+    expect(createChipStyle({ disabled: true })).toMatchObject({
+      alignItems: "center",
+      alignSelf: "flex-start",
+      backgroundColor: nativeTokens.color.surfaceMuted,
+      borderColor: nativeTokens.color.border,
+      borderRadius: nativeTokens.radius.md,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: nativeTokens.spacing.xs,
+      opacity: 0.64,
+      paddingHorizontal: nativeTokens.spacing.md,
+      paddingVertical: nativeTokens.spacing.sm,
+    });
+
+    expect(createChipLabelStyle()).toMatchObject({
+      color: nativeTokens.color.ink,
+      fontSize: nativeTokens.typography.text.size.sm,
+      fontWeight: "700",
+      lineHeight: nativeTokens.typography.text.lineHeight.sm,
+    });
+    expect(createChipPrefixStyle()).toMatchObject({
+      color: nativeTokens.color.primary,
+      fontSize: nativeTokens.typography.text.size.xs,
+      fontWeight: "800",
+      lineHeight: nativeTokens.typography.text.lineHeight.xs,
     });
   });
 

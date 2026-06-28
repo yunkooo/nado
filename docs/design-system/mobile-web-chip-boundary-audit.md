@@ -91,8 +91,8 @@ component token은 Web/Desktop `nado-chip`과 Mobile `suggestionChip`을 같은 
    - 완료: `onPress`와 `onClick`, DOM `as`, RN 비상호작용 렌더링 방식의 v1 판단을 기록한다.
 
 2. `@nado/ui-native Chip` 최소 구현
-   - package component와 style helper를 먼저 만든다.
-   - 앱 화면 치환은 하지 않는다.
+   - 완료: package component와 style helper를 먼저 만든다.
+   - 완료: 앱 화면 치환은 하지 않는다.
 
 3. Mobile `suggestionChip`에 Native Chip 적용
    - 분석 저장 추천 chip만 적용한다.
