@@ -344,6 +344,8 @@ describe("@nado/ui-native primitive style contracts", () => {
       borderWidth: 1,
       flexDirection: "row",
       gap: nativeTokens.spacing.xs,
+      maxWidth: "100%",
+      minWidth: 0,
       opacity: 0.64,
       paddingHorizontal: nativeTokens.spacing.md,
       paddingVertical: nativeTokens.spacing.sm,
@@ -351,9 +353,11 @@ describe("@nado/ui-native primitive style contracts", () => {
 
     expect(createChipLabelStyle()).toMatchObject({
       color: nativeTokens.color.ink,
+      flexShrink: 1,
       fontSize: nativeTokens.typography.text.size.sm,
       fontWeight: "700",
       lineHeight: nativeTokens.typography.text.lineHeight.sm,
+      minWidth: 0,
     });
     expect(createChipPrefixStyle()).toMatchObject({
       color: nativeTokens.color.primary,

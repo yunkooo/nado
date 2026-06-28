@@ -188,6 +188,8 @@ export function createChipStyle({
     borderWidth: 1,
     flexDirection: "row",
     gap: nativeTokens.spacing.xs,
+    maxWidth: "100%",
+    minWidth: 0,
     opacity: disabled ? 0.64 : 1,
     paddingHorizontal: nativeTokens.spacing.md,
     paddingVertical: nativeTokens.spacing.sm,
@@ -197,9 +199,11 @@ export function createChipStyle({
 export function createChipLabelStyle() {
   return {
     color: chipToneTokens.foreground,
+    flexShrink: 1,
     fontSize: nativeTokens.typography.text.size.sm,
     fontWeight: toNativeFontWeight(nativeTokens.typography.text.weight.bold),
     lineHeight: nativeTokens.typography.text.lineHeight.sm,
+    minWidth: 0,
   } satisfies TextStyle;
 }
 
