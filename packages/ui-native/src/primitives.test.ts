@@ -112,7 +112,8 @@ describe("@nado/ui-native primitive style contracts", () => {
     }>;
 
     expect(card.type).toBe(nativeMocks.View);
-    expect(card.props.children).toBe("Summary");
+    expect(card.props.children.type).toBe(nativeMocks.Text);
+    expect(card.props.children.props.children).toBe("Summary");
     expect(card.props.testID).toBe("summary-card");
     expect(card.props.style).toEqual([
       expect.objectContaining({
@@ -128,6 +129,32 @@ describe("@nado/ui-native primitive style contracts", () => {
       }),
       customStyle,
     ]);
+  });
+
+  it("wraps mixed Card text children without wrapping element children", () => {
+    const icon = createElement(nativeMocks.View, { testID: "summary-icon" });
+    const mixedCard = Card({
+      children: [icon, "Summary"],
+    }) as ReactElement<{ children: ReactNode }>;
+    const mixedChildren = Children.toArray(
+      mixedCard.props.children,
+    ) as ReactElement<{ children?: ReactNode }>[];
+
+    expect(mixedChildren[0]?.type).toBe(nativeMocks.View);
+    expect(mixedChildren[1]?.type).toBe(nativeMocks.Text);
+    expect(mixedChildren[1]?.props.children).toBe("Summary");
+
+    const fragmentCard = Card({
+      children: createElement(Fragment, null, icon, "Summary"),
+    }) as ReactElement<{ children: ReactElement<{ children: ReactNode }> }>;
+    const fragmentChildren = Children.toArray(
+      fragmentCard.props.children.props.children,
+    ) as ReactElement<{ children?: ReactNode }>[];
+
+    expect(fragmentCard.props.children.type).toBe(Fragment);
+    expect(fragmentChildren[0]?.type).toBe(nativeMocks.View);
+    expect(fragmentChildren[1]?.type).toBe(nativeMocks.Text);
+    expect(fragmentChildren[1]?.props.children).toBe("Summary");
   });
 
   it("maps Card tone, padding, and radius props to native tokens", () => {
