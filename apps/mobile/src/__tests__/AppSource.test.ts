@@ -234,7 +234,9 @@ describe("mobile App API wiring", () => {
       reviewActionsEnd,
     );
 
-    expect(appSource).toContain('import { Button } from "@nado/ui/native";');
+    expect(appSource).toContain(
+      'import { Button, Card } from "@nado/ui/native";',
+    );
     expect(reviewActionsSource).toContain("<Button");
     expect(reviewActionsSource).toContain('variant="secondary"');
     expect(reviewActionsSource).toContain('variant="primary"');
@@ -242,6 +244,23 @@ describe("mobile App API wiring", () => {
     expect(reviewActionsSource).not.toContain("<Pressable");
     expect(reviewActionsSource).not.toContain("styles.secondaryButton");
     expect(reviewActionsSource).not.toContain("styles.primaryButton");
+  });
+
+  it("uses the ui-native Card primitive for the vocabulary summary item", () => {
+    const summaryStart = appSource.indexOf("<Card");
+    const summaryEnd = appSource.indexOf("</Card>", summaryStart);
+    const summarySource = appSource.slice(summaryStart, summaryEnd);
+
+    expect(appSource).toContain(
+      'import { Button, Card } from "@nado/ui/native";',
+    );
+    expect(summaryStart).toBeGreaterThan(-1);
+    expect(summarySource).toContain('accessibilityLabel="단어장 요약"');
+    expect(summarySource).toContain('padding="md"');
+    expect(summarySource).toContain('radius="md"');
+    expect(summarySource).toContain('tone="surface"');
+    expect(summarySource).toContain("style={styles.summaryItem}");
+    expect(summarySource).not.toContain("<View");
   });
 
   it("renders tappable sentence vocabulary tokens with save actions", () => {

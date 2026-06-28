@@ -6,23 +6,23 @@
 
 Mobile에는 Card로 볼 수 있는 반복 surface가 충분하다. `@nado/ui-native Card` 최소 구현은 package component, style helper, unit test 범위로 진행하고, 앱 전체 치환은 하지 않는다.
 
-이 점검 결과에 따라 `@nado/ui-native Card`는 `padding`, `tone`, `radius` 계약으로 구현한다. `VocabularyPage`나 `ReviewPage` 적용은 후속 티켓에서 낮은 위험 표면 1곳만 선택한다.
+이 점검 결과에 따라 `@nado/ui-native Card`는 `padding`, `tone`, `radius` 계약으로 구현한다. 첫 실제 화면 적용은 `VocabularyPage`의 `summaryItem`으로 제한하고, 추가 적용은 별도 티켓에서 다시 판단한다.
 
 ## Card 후보
 
-| 후보 style           | 현재 위치                 | 반복 성격                                      | 판단                         |
-| -------------------- | ------------------------- | ---------------------------------------------- | ---------------------------- |
-| `vocabularyItem`     | 단어장 저장 항목          | surface, border, radius, padding, shadow 반복  | `Card tone="elevated"` 후보  |
-| `reviewCard`         | 복습 flashcard            | surface, border, radius, padding, shadow 반복  | `Card tone="elevated"` 후보  |
-| `wordDefinitionCard` | 분석 단어 뜻 카드/Popover | surface, border, radius, padding, shadow 반복  | `Card tone="elevated"` 후보  |
-| `summaryItem`        | 단어장 요약               | compact surface, border, radius, padding 반복  | `Card tone="surface"` 후보   |
-| `meaningCard`        | 단어 뜻 내부 meaning 항목 | nested muted surface, compact padding 반복     | `Card tone="muted"` 후보     |
-| `emptyPanel`         | 빈 상태/에러 상태         | feedback panel surface 반복                    | Card보다 Panel 후보에 가깝다 |
-| `statusCard`         | 분석 상태 메시지          | feedback panel surface 반복                    | Card보다 Panel 후보에 가깝다 |
-| `modelSelectorCard`  | 모델 선택 overlay         | popup-specific position과 shadow가 핵심        | Card 공통화 대상에서 제외    |
-| `resultArea`         | 분석 결과 전체 shell      | header, section separator, overflow 조합       | layout shell이라 제외        |
-| `sentenceCard`       | 문장별 분석 항목          | surface 없이 text/chunk layout이 핵심          | 현재 Card 후보 아님          |
-| `composer`           | 분석 입력기               | input container state와 composer radius가 핵심 | Card 공통화 대상에서 제외    |
+| 후보 style           | 현재 위치                 | 반복 성격                                      | 판단                            |
+| -------------------- | ------------------------- | ---------------------------------------------- | ------------------------------- |
+| `vocabularyItem`     | 단어장 저장 항목          | surface, border, radius, padding, shadow 반복  | `Card tone="elevated"` 후보     |
+| `reviewCard`         | 복습 flashcard            | surface, border, radius, padding, shadow 반복  | `Card tone="elevated"` 후보     |
+| `wordDefinitionCard` | 분석 단어 뜻 카드/Popover | surface, border, radius, padding, shadow 반복  | `Card tone="elevated"` 후보     |
+| `summaryItem`        | 단어장 요약               | compact surface, border, radius, padding 반복  | `Card tone="surface"` 적용 완료 |
+| `meaningCard`        | 단어 뜻 내부 meaning 항목 | nested muted surface, compact padding 반복     | `Card tone="muted"` 후보        |
+| `emptyPanel`         | 빈 상태/에러 상태         | feedback panel surface 반복                    | Card보다 Panel 후보에 가깝다    |
+| `statusCard`         | 분석 상태 메시지          | feedback panel surface 반복                    | Card보다 Panel 후보에 가깝다    |
+| `modelSelectorCard`  | 모델 선택 overlay         | popup-specific position과 shadow가 핵심        | Card 공통화 대상에서 제외       |
+| `resultArea`         | 분석 결과 전체 shell      | header, section separator, overflow 조합       | layout shell이라 제외           |
+| `sentenceCard`       | 문장별 분석 항목          | surface 없이 text/chunk layout이 핵심          | 현재 Card 후보 아님             |
+| `composer`           | 분석 입력기               | input container state와 composer radius가 핵심 | Card 공통화 대상에서 제외       |
 
 ## Web/Desktop Card 계약 매핑
 
@@ -61,7 +61,8 @@ Card 최소 구현은 기존 primitive/semantic token으로 시작한다. 다음
    - 완료: 앱 화면 치환은 하지 않는다.
 
 2. Mobile 실제 화면 1곳에 Native Card 적용
-   - `summaryItem`이나 `wordDefinitionCard`처럼 범위가 작고 시각 회귀를 확인하기 쉬운 표면을 고른다.
+   - 완료: `VocabularyPage`의 `summaryItem`을 `@nado/ui/native` `Card`로 적용한다.
+   - `wordDefinitionCard`는 다음 추가 적용 후보로 남긴다.
    - `reviewCard`와 `vocabularyItem`은 shadow와 minHeight 영향이 커서 첫 적용 후보에서는 한 단계 뒤로 둔다.
 
 3. Badge 반복 점검

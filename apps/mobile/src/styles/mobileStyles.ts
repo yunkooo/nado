@@ -949,16 +949,10 @@ export const styles = StyleSheet.create({
   },
   summaryItem: {
     alignItems: "center",
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: mobileRadius.md,
-    borderWidth: 1,
     flexDirection: "row",
     gap: mobileSpacing.sm,
     justifyContent: "space-between",
     minHeight: 66,
-    paddingHorizontal: mobileSpacing.lg,
-    paddingVertical: 14,
   },
   summaryLabel: {
     color: mobileColors.inkMuted,
