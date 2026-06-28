@@ -27,7 +27,7 @@ import {
   getDistinctVocabularyNote,
   type AnalysisModelId,
 } from "@nado/shared";
-import { Button } from "@nado/ui/native";
+import { Button, Card } from "@nado/ui/native";
 import {
   ANALYSIS_INPUT_ACCESSIBILITY_LABEL,
   INITIAL_ANALYSIS_TEXT,
@@ -1145,12 +1145,18 @@ function VocabularyPage({
       </View>
 
       <View style={styles.pageLayout}>
-        <View style={styles.summaryItem} accessibilityLabel="단어장 요약">
+        <Card
+          accessibilityLabel="단어장 요약"
+          padding="md"
+          radius="md"
+          style={styles.summaryItem}
+          tone="surface"
+        >
           <Text style={styles.summaryLabel}>저장 항목</Text>
           <Text style={styles.summaryValue}>
             {isSummaryAvailable ? String(vocabularyState.items.length) : "-"}
           </Text>
-        </View>
+        </Card>
 
         <View style={styles.vocabularyListWrap}>
           {panelState === "list" ? (

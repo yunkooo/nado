@@ -258,9 +258,13 @@ import { Button } from "@nado/ui";
    - 완료: `padding`, `tone`, `radius` 계약을 Web/Desktop Card와 맞춘다.
    - 완료: 앱 화면 치환은 하지 않는다.
 
+6. Mobile `summaryItem` Native Card 적용
+   - 완료: `VocabularyPage`의 단어장 요약 surface를 `@nado/ui/native` `Card`로 적용한다.
+   - 완료: 앱 전체 마이그레이션 없이 실제 화면 1곳만 바꾼다.
+
 현재 남은 후보는 다음처럼 분리한다.
 
-- Mobile 실제 화면 1곳에 Native Card 적용
+- Mobile `wordDefinitionCard` 추가 적용 여부 판단
 - Badge 반복 점검과 Badge/Chip 경계 정리
 - Badge와 Avatar는 실제 반복 강도가 확인될 때 별도 구현
 
@@ -271,7 +275,7 @@ import { Button } from "@nado/ui";
 - `packages/core` 실제 생성
 - 기존 앱 import migration
 - `@nado/ui/native` facade를 사용하는 추가 Mobile 적용 표면 선정
-- Mobile 실제 화면 Card 적용
+- 추가 Mobile Card 적용
 - Badge, Avatar 구현
 - Storybook for React Native 도입
 
