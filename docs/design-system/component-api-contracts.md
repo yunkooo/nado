@@ -52,7 +52,7 @@ import { Button } from "@nado/ui/native";
 
 ## 현재 구현
 
-현재 Web/Desktop 공통 패키지에 실제 구현된 기본 component는 `Button`, `Text`, `Stack`, `Card`이다. Mobile 공통 패키지는 `Button`, `Text`, `Stack`, `Card`, `Badge`를 구현한다. Web/Desktop은 `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`, Mobile은 `@nado/ui/native`와 `@nado/ui-native`가 담당한다.
+현재 Web/Desktop 공통 패키지에 실제 구현된 기본 component는 `Button`, `Text`, `Stack`, `Card`이다. Web/Desktop에는 기존 DOM surface인 `Chip`도 있다. Mobile 공통 패키지는 `Button`, `Text`, `Stack`, `Card`, `Badge`를 구현한다. Web/Desktop은 `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`, Mobile은 `@nado/ui/native`와 `@nado/ui-native`가 담당한다.
 
 | Component | Package                              | Platform    | Status    |
 | --------- | ------------------------------------ | ----------- | --------- |
@@ -60,12 +60,14 @@ import { Button } from "@nado/ui/native";
 | `Text`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨    |
 | `Stack`   | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨    |
 | `Card`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨    |
+| `Chip`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨    |
 | `Button`  | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨    |
 | `Text`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨    |
 | `Stack`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨    |
 | `Card`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨    |
 | `Badge`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨    |
 | `Badge`   | 후보                                 | Web/Desktop | 향후 구현 |
+| `Chip`    | 후보                                 | Mobile      | 향후 판단 |
 | `Avatar`  | 후보                                 | 공통 계약   | 미구현    |
 
 미구현 component는 이 문서에서 목표 계약만 고정한다. 실제 export는 별도 작업에서 추가한다. 앱 전체 마이그레이션과 기본 `@nado/ui` conditional export 개방은 별도 PR로 분리한다.
@@ -170,6 +172,43 @@ Card는 layout shell과 repeated item card를 구분해서 도입한다. 모든 
 | `size` | `sm`, `md`                                           | 높이와 padding 단계 |
 
 Badge는 상태 표시 전용이다. 클릭 가능한 요소가 필요하면 Button 또는 Chip 계열로 분리한다.
+
+## Chip
+
+현재 Web/Desktop 구현은 `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`에서 제공한다. Mobile 구현은 아직 없으므로 Mobile import 예시에는 Chip을 포함하지 않는다.
+
+현재 Web/Desktop 계약:
+
+```tsx
+<Chip as="button" label="setup · 준비" prefix="+ 저장" disabled />
+<Chip as="span" label="setup · 준비" prefix="+" />
+```
+
+| Prop       | 현재 값/타입               | 의미                                       |
+| ---------- | -------------------------- | ------------------------------------------ |
+| `label`    | `string`                   | chip의 주 텍스트                           |
+| `prefix`   | `string`                   | 저장 상태나 분류를 나타내는 보조 텍스트    |
+| `disabled` | `boolean`                  | 저장 중/저장됨 등 interaction 비활성화     |
+| `as`       | `button`, `span`           | DOM 전용 렌더링 선택                       |
+| DOM attrs  | button/span 기본 attribute | Web/Desktop 이벤트와 접근성 attribute 전달 |
+
+공통 API 후보:
+
+```tsx
+<Chip label="setup" prefix="+ 저장" disabled />
+```
+
+| Prop       | 후보 값/타입       | 판단                                                                                   |
+| ---------- | ------------------ | -------------------------------------------------------------------------------------- |
+| `label`    | `string`           | Web/Desktop 현재 계약과 Mobile `suggestionChip` 후보가 공유할 수 있다.                 |
+| `prefix`   | `string`           | 저장 가능, 저장 중, 저장됨 같은 compact 상태 표시를 맡는다.                            |
+| `disabled` | `boolean`          | action chip의 interaction 차단 의미로 유지한다.                                        |
+| `onClick`  | Web/Desktop event  | 기존 DOM `Chip` 계약을 유지한다.                                                       |
+| `onPress`  | React Native event | `@nado/ui-native Chip`을 만들 때 후보로 둔다.                                          |
+| `as`       | Web/Desktop only   | Mobile public contract로 옮기지 않는다. 비상호작용 Mobile Chip은 별도 판단이 필요하다. |
+| `tone`     | 보류               | saved/saving state token이 생기기 전까지 공통 계약에 넣지 않는다.                      |
+
+v1에서 Chip은 아직 facade가 보장하는 공통 API 대상이 아니라 후보 계약이다. `label`, `prefix`, `disabled`는 공유 가능한 핵심 prop으로 본다. action handler 이름은 현재 Web/Desktop의 `onClick`과 React Native의 `onPress`가 달라서, 기본 `@nado/ui` cross-platform entry로 홍보하지 않는다. `@nado/ui-native Chip`을 구현하는 PR에서는 Mobile 전용 `onPress`를 먼저 쓰고, 나중에 양쪽 구현이 모두 준비되면 공통 action prop을 별도 PR에서 검토한다.
 
 ## Avatar
 

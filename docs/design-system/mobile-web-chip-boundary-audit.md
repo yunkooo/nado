@@ -87,8 +87,8 @@ component token은 Web/Desktop `nado-chip`과 Mobile `suggestionChip`을 같은 
 ## 다음 티켓 후보
 
 1. Chip 공통 API 후보 문서화
-   - `component-api-contracts.md`에 Chip을 공통 계약 후보로 추가할지 판단한다.
-   - `onPress`와 `onClick`, DOM `as`, RN 비상호작용 렌더링 방식을 정한다.
+   - 완료: `component-api-contracts.md`에 Chip을 공통 계약 후보로 추가한다.
+   - 완료: `onPress`와 `onClick`, DOM `as`, RN 비상호작용 렌더링 방식의 v1 판단을 기록한다.
 
 2. `@nado/ui-native Chip` 최소 구현
    - package component와 style helper를 먼저 만든다.
