@@ -19,6 +19,7 @@ describe("@nado/ui-native package exports", () => {
   });
 
   it("exports the primitive component contracts", () => {
+    expect(indexSource).toContain('export * from "./Badge";');
     expect(indexSource).toContain('export * from "./Button";');
     expect(indexSource).toContain('export * from "./Card";');
     expect(indexSource).toContain('export * from "./Text";');

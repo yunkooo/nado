@@ -27,13 +27,13 @@ import { nativeTokens } from "@nado/tokens/react-native";
 Mobile v1 primitive package:
 
 ```tsx
-import { Button, Card, Stack, Text } from "@nado/ui-native";
+import { Badge, Button, Card, Stack, Text } from "@nado/ui-native";
 ```
 
 Mobile v1 facade subpath:
 
 ```tsx
-import { Button, Card, Stack, Text } from "@nado/ui/native";
+import { Badge, Button, Card, Stack, Text } from "@nado/ui/native";
 ```
 
 Mobile은 v1에서 `@nado/ui` root를 직접 import하지 않는다. `Button.web.tsx`, `Button.native.tsx`도 현재 만들지 않는다.
@@ -52,20 +52,21 @@ import { Button } from "@nado/ui/native";
 
 ## 현재 구현
 
-현재 Web/Desktop 공통 패키지에 실제 구현된 기본 component는 `Button`, `Text`, `Stack`, `Card`이다. Mobile 공통 패키지도 `Button`, `Text`, `Stack`, `Card`를 구현한다. Web/Desktop은 `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`, Mobile은 `@nado/ui/native`와 `@nado/ui-native`가 담당한다.
+현재 Web/Desktop 공통 패키지에 실제 구현된 기본 component는 `Button`, `Text`, `Stack`, `Card`이다. Mobile 공통 패키지는 `Button`, `Text`, `Stack`, `Card`, `Badge`를 구현한다. Web/Desktop은 `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`, Mobile은 `@nado/ui/native`와 `@nado/ui-native`가 담당한다.
 
-| Component | Package                              | Platform    | Status |
-| --------- | ------------------------------------ | ----------- | ------ |
-| `Button`  | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
-| `Text`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
-| `Stack`   | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
-| `Card`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
-| `Button`  | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
-| `Text`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
-| `Stack`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
-| `Card`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
-| `Badge`   | 후보                                 | 공통 계약   | 미구현 |
-| `Avatar`  | 후보                                 | 공통 계약   | 미구현 |
+| Component | Package                              | Platform    | Status    |
+| --------- | ------------------------------------ | ----------- | --------- |
+| `Button`  | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨    |
+| `Text`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨    |
+| `Stack`   | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨    |
+| `Card`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨    |
+| `Button`  | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨    |
+| `Text`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨    |
+| `Stack`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨    |
+| `Card`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨    |
+| `Badge`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨    |
+| `Badge`   | 후보                                 | Web/Desktop | 향후 구현 |
+| `Avatar`  | 후보                                 | 공통 계약   | 미구현    |
 
 미구현 component는 이 문서에서 목표 계약만 고정한다. 실제 export는 별도 작업에서 추가한다. 앱 전체 마이그레이션과 기본 `@nado/ui` conditional export 개방은 별도 PR로 분리한다.
 
@@ -154,6 +155,8 @@ Web/Desktop은 flex/grid, Mobile은 `View`와 RN style로 구현한다. `gap`은
 Card는 layout shell과 repeated item card를 구분해서 도입한다. 모든 section을 Card로 감싸는 패턴은 피한다.
 
 ## Badge
+
+현재 Mobile 구현은 `@nado/ui-native`와 `@nado/ui/native`에서 제공한다. Web/Desktop 구현은 아직 없으므로 Web/Desktop import 예시에는 Badge를 포함하지 않는다.
 
 목표 계약:
 

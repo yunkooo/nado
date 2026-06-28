@@ -1,12 +1,12 @@
 # Mobile Badge/Chip 반복 점검과 경계
 
-이 문서는 `@nado/ui-native Badge` 또는 `Chip` 구현을 바로 만들기 전에 Mobile 화면의 작은 표시/선택 UI를 점검한 기록이다. 기준 소스는 `apps/mobile/App.tsx`, `apps/mobile/src/styles/mobileStyles.ts`, Web/Desktop의 `packages/ui-web/src/Chip.tsx`, 공통 목표 계약은 `docs/design-system/component-api-contracts.md`이다.
+이 문서는 `@nado/ui-native Badge` 또는 `Chip` 구현을 진행하기 전에 Mobile 화면의 작은 표시/선택 UI를 점검한 기록이다. 기준 소스는 `apps/mobile/App.tsx`, `apps/mobile/src/styles/mobileStyles.ts`, Web/Desktop의 `packages/ui-web/src/Chip.tsx`, 공통 목표 계약은 `docs/design-system/component-api-contracts.md`이다.
 
 ## 결론
 
 Mobile에는 Badge 후보가 있지만, 모든 pill 형태 UI를 Badge로 묶으면 안 된다. `Badge`는 상태나 분류를 표시하는 비상호작용 UI로 제한하고, 누를 수 있는 추천 단어 저장 UI는 `Chip`, 선택 모드는 segmented control 성격으로 분리한다.
 
-따라서 다음 구현 후보는 `vocabularyType`을 대상으로 한 `@nado/ui-native Badge` 최소 구현이다. `suggestionChip`과 `reviewDirection`은 Badge 구현 PR에 섞지 않는다.
+따라서 `@nado/ui-native Badge` 최소 구현은 앱 화면 치환 없이 먼저 만들고, 다음 실제 적용 후보는 `vocabularyType` 하나로 제한한다. `suggestionChip`과 `reviewDirection`은 Badge 적용 PR에 섞지 않는다.
 
 ## 후보 점검
 
@@ -45,7 +45,7 @@ Web/Desktop에는 이미 `Chip` public surface가 있다.
 
 ## Token 후보
 
-첫 구현은 기존 primitive/semantic token으로 시작한다.
+첫 구현은 기존 primitive/semantic token으로 시작했다.
 
 - background: `color.surfaceMuted`
 - foreground: `color.inkMuted`
@@ -58,9 +58,9 @@ component token은 여러 tone이 실제 화면에서 반복될 때 검토한다
 ## 다음 티켓 후보
 
 1. `@nado/ui-native Badge` 최소 구현
-   - `Badge` component와 style helper를 추가한다.
-   - `tone`, `size`, `children` 계약을 고정한다.
-   - 앱 화면 치환은 하지 않는다.
+   - 완료: `Badge` component와 style helper를 추가했다.
+   - 완료: `tone`, `size`, `children` 계약을 고정했다.
+   - 완료: 앱 화면 치환은 하지 않았다.
 
 2. Mobile `vocabularyType`에 Native Badge 적용
    - 저장 단어 품사 pill만 `@nado/ui/native` Badge로 적용한다.

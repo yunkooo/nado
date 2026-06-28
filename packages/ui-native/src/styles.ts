@@ -4,6 +4,14 @@ import type { TextStyle, ViewStyle } from "react-native";
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "send";
 export type ButtonSize = "sm" | "md" | "icon";
 
+export type BadgeTone =
+  | "neutral"
+  | "primary"
+  | "success"
+  | "warning"
+  | "danger";
+export type BadgeSize = "sm" | "md";
+
 export type CardPadding = "sm" | "md" | "lg" | "xl";
 export type CardTone = "surface" | "muted" | "elevated";
 export type CardRadius = "sm" | "md" | "composer";
@@ -25,6 +33,16 @@ type CreateButtonStyleOptions = {
 
 type CreateButtonTextStyleOptions = {
   variant?: ButtonVariant;
+};
+
+type CreateBadgeStyleOptions = {
+  size?: BadgeSize;
+  tone?: BadgeTone;
+};
+
+type CreateBadgeTextStyleOptions = {
+  size?: BadgeSize;
+  tone?: BadgeTone;
 };
 
 type CreateCardStyleOptions = {
@@ -103,6 +121,42 @@ export function createButtonTextStyle({
   } satisfies TextStyle;
 }
 
+export function createBadgeStyle({
+  size = "sm",
+  tone = "neutral",
+}: CreateBadgeStyleOptions = {}) {
+  const toneTokens = badgeToneTokens[tone];
+  const sizeStyle = badgeSizeStyle[size];
+
+  return {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: toneTokens.background,
+    borderColor: toneTokens.border,
+    borderRadius: nativeTokens.radius.pill,
+    borderWidth: 1,
+    justifyContent: "center",
+    paddingHorizontal: sizeStyle.paddingHorizontal,
+    paddingVertical: sizeStyle.paddingVertical,
+  } satisfies ViewStyle;
+}
+
+export function createBadgeTextStyle({
+  size = "sm",
+  tone = "neutral",
+}: CreateBadgeTextStyleOptions = {}) {
+  const toneTokens = badgeToneTokens[tone];
+  const textSize = badgeTextSize[size];
+
+  return {
+    color: toneTokens.foreground,
+    fontSize: nativeTokens.typography.text.size[textSize],
+    fontWeight: toNativeFontWeight(nativeTokens.typography.text.weight.bold),
+    lineHeight: nativeTokens.typography.text.lineHeight[textSize],
+    textAlign: "center",
+  } satisfies TextStyle;
+}
+
 export function createCardStyle({
   padding = "md",
   radius = "md",
@@ -157,6 +211,63 @@ const cardToneBackground = {
   muted: nativeTokens.color.surfaceMuted,
   surface: nativeTokens.color.surface,
 } satisfies Record<CardTone, string>;
+
+const badgeToneTokens = {
+  danger: {
+    background: nativeTokens.color.surfaceMuted,
+    border: nativeTokens.color.accent,
+    foreground: nativeTokens.color.accent,
+  },
+  neutral: {
+    background: nativeTokens.color.surfaceMuted,
+    border: nativeTokens.color.border,
+    foreground: nativeTokens.color.inkMuted,
+  },
+  primary: {
+    background: nativeTokens.color.primary,
+    border: nativeTokens.color.primary,
+    foreground: nativeTokens.color.primaryInk,
+  },
+  success: {
+    background: nativeTokens.color.surfaceMuted,
+    border: nativeTokens.color.primary,
+    foreground: nativeTokens.color.primary,
+  },
+  warning: {
+    background: nativeTokens.color.surfaceMuted,
+    border: nativeTokens.color.inkMuted,
+    foreground: nativeTokens.color.ink,
+  },
+} satisfies Record<
+  BadgeTone,
+  {
+    background: string;
+    border: string;
+    foreground: string;
+  }
+>;
+
+const badgeSizeStyle = {
+  md: {
+    paddingHorizontal: nativeTokens.spacing.md,
+    paddingVertical: nativeTokens.spacing.sm,
+  },
+  sm: {
+    paddingHorizontal: nativeTokens.spacing.sm,
+    paddingVertical: nativeTokens.spacing.xs,
+  },
+} satisfies Record<
+  BadgeSize,
+  {
+    paddingHorizontal: number;
+    paddingVertical: number;
+  }
+>;
+
+const badgeTextSize = {
+  md: "sm",
+  sm: "xs",
+} satisfies Record<BadgeSize, TextSize>;
 
 const elevatedCardStyle = {
   elevation: 4,
