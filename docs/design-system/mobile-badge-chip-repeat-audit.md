@@ -38,10 +38,10 @@ Web/Desktop에는 이미 `Chip` public surface가 있다.
 </Badge>
 ```
 
-| Prop   | Mobile 첫 매핑 후보                       | 비고                                  |
-| ------ | ----------------------------------------- | ------------------------------------- |
-| `tone` | `neutral`, `primary`, `success`, `danger` | `warning`은 실제 사용처가 생기면 추가 |
-| `size` | `sm`, `md`                                | 첫 적용은 `vocabularyType`의 `sm`     |
+| Prop   | Mobile 첫 매핑 후보                                  | 비고                                                      |
+| ------ | ---------------------------------------------------- | --------------------------------------------------------- |
+| `tone` | `neutral`, `primary`, `success`, `warning`, `danger` | 공통 Badge 계약을 유지한다. 첫 실제 적용은 `neutral` 후보 |
+| `size` | `sm`, `md`                                           | 첫 적용은 `vocabularyType`의 `sm`                         |
 
 ## Token 후보
 
