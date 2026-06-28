@@ -70,7 +70,7 @@ import { Button, Stack, Text } from "@nado/ui";
 
 ## Component API 범위
 
-facade가 보장해야 하는 공통 API 대상은 다음 여섯 가지다.
+facade가 보장해야 하는 기본 공통 API 대상은 다음 여섯 가지다. 아래 표는 기본 대상과 함께, Web/Desktop 기존 구현과 Mobile action chip 후보를 맞출 후속 후보인 `Chip`도 표시한다.
 
 | Component | 공통 API 상태  | Web 구현  | Native 구현 |
 | --------- | -------------- | --------- | ----------- |
@@ -80,6 +80,7 @@ facade가 보장해야 하는 공통 API 대상은 다음 여섯 가지다.
 | `Card`    | 현재 계약 있음 | 구현됨    | 구현됨      |
 | `Badge`   | 목표 계약 있음 | 향후 구현 | 구현됨      |
 | `Avatar`  | 목표 계약 있음 | 향후 구현 | 향후 구현   |
+| `Chip`    | 후보 계약 있음 | 구현됨    | 향후 판단   |
 
 공통 API는 prop 이름과 제품 의미를 공유한다. DOM element, CSS class, `Pressable`, `View`, `StyleSheet` 같은 구현 방식은 공유하지 않는다.
 
@@ -92,7 +93,10 @@ facade가 보장해야 하는 공통 API 대상은 다음 여섯 가지다.
 <Text tone="muted" />
 <Stack gap="md" />
 <Card padding="lg" />
+<Chip label="setup" prefix="+ 저장" disabled />
 ```
+
+`Chip` 예시는 후보 계약 예시다. Mobile에서 import 가능한 API로 홍보하지 않고, `@nado/ui-native Chip` 구현 여부를 별도 PR에서 판단한다.
 
 `lg` button size는 아직 현재 Button 계약에 포함하지 않는다. `tokens.component.button.size.lg`, Web 구현, Native 구현이 함께 준비된 뒤 추가한다.
 
@@ -287,7 +291,8 @@ import { Button } from "@nado/ui";
 
 - Mobile `reviewCard`와 `vocabularyItem` 추가 적용 여부 판단
 - Web/Desktop Badge 구현 필요성 판단
-- Chip 공통 API 후보 문서화와 `@nado/ui-native Chip` 최소 구현 여부 판단
+- `@nado/ui-native Chip` 최소 구현 여부 판단
+- Mobile `suggestionChip`에 Native Chip 적용 여부 판단
 - Avatar는 실제 반복 강도가 확인될 때 별도 구현
 
 ## 제외 범위
@@ -299,6 +304,8 @@ import { Button } from "@nado/ui";
 - `@nado/ui/native` facade를 사용하는 추가 Mobile 적용 표면 선정
 - 추가 Mobile Card 적용
 - Web/Desktop Badge 구현
+- `@nado/ui-native Chip` 구현
+- Mobile `suggestionChip` 치환
 - Avatar 구현
 - Storybook for React Native 도입
 
