@@ -24,6 +24,8 @@ const mobileVocabularyRealtimeSource = readFileSync(
   ),
   "utf8",
 );
+const uiNativeImport =
+  'import { Badge, Button, Card, Chip } from "@nado/ui/native";';
 
 describe("mobile App API wiring", () => {
   it("submits analysis text through the mobile analyze API client", () => {
@@ -234,9 +236,7 @@ describe("mobile App API wiring", () => {
       reviewActionsEnd,
     );
 
-    expect(appSource).toContain(
-      'import { Badge, Button, Card } from "@nado/ui/native";',
-    );
+    expect(appSource).toContain(uiNativeImport);
     expect(reviewActionsSource).toContain("<Button");
     expect(reviewActionsSource).toContain('variant="secondary"');
     expect(reviewActionsSource).toContain('variant="primary"');
@@ -253,9 +253,7 @@ describe("mobile App API wiring", () => {
     const summaryEnd = appSource.indexOf("</Card>", summaryStart);
     const summarySource = appSource.slice(summaryStart, summaryEnd);
 
-    expect(appSource).toContain(
-      'import { Badge, Button, Card } from "@nado/ui/native";',
-    );
+    expect(appSource).toContain(uiNativeImport);
     expect(summaryStart).toBeGreaterThan(-1);
     expect(summarySource).toContain(summaryLabel);
     expect(summarySource).toContain('padding="md"');
@@ -277,9 +275,7 @@ describe("mobile App API wiring", () => {
     const meaningCardEnd = appSource.indexOf("</Card>", meaningCardStart);
     const meaningCardSource = appSource.slice(meaningCardStart, meaningCardEnd);
 
-    expect(appSource).toContain(
-      'import { Badge, Button, Card } from "@nado/ui/native";',
-    );
+    expect(appSource).toContain(uiNativeImport);
     expect(meaningListStart).toBeGreaterThan(-1);
     expect(meaningCardStart).toBeGreaterThan(meaningListStart);
     expect(meaningCardSource).toContain(
@@ -299,9 +295,7 @@ describe("mobile App API wiring", () => {
     const termGroupEnd = appSource.indexOf("</View>", termGroupStart);
     const termGroupSource = appSource.slice(termGroupStart, termGroupEnd);
 
-    expect(appSource).toContain(
-      'import { Badge, Button, Card } from "@nado/ui/native";',
-    );
+    expect(appSource).toContain(uiNativeImport);
     expect(termGroupStart).toBeGreaterThan(-1);
     expect(termGroupSource).toContain("<Badge");
     expect(termGroupSource).toContain('tone="neutral"');
@@ -323,9 +317,7 @@ describe("mobile App API wiring", () => {
     );
     const wordCardSource = appSource.slice(wordCardStart, wordCardEnd);
 
-    expect(appSource).toContain(
-      'import { Badge, Button, Card } from "@nado/ui/native";',
-    );
+    expect(appSource).toContain(uiNativeImport);
     expect(wordCardSource).toContain("<Card");
     expect(wordCardSource).toContain(
       "accessibilityLabel={`${item.term} 뜻과 저장 액션`}",
@@ -339,6 +331,39 @@ describe("mobile App API wiring", () => {
     expect(wordCardSource).not.toContain(
       "<View\n      accessibilityLabel={`${item.term} 뜻과 저장 액션`}",
     );
+  });
+
+  it("uses the ui-native Chip primitive for mobile vocabulary suggestions", () => {
+    const suggestionSectionStart = appSource.indexOf(
+      '<ResultSection isLast title="우선 저장 추천">',
+    );
+    const suggestionSectionEnd = appSource.indexOf(
+      "</ResultSection>",
+      suggestionSectionStart,
+    );
+    const suggestionSource = appSource.slice(
+      suggestionSectionStart,
+      suggestionSectionEnd,
+    );
+
+    expect(appSource).toContain(uiNativeImport);
+    expect(suggestionSource).toContain("<Chip");
+    expect(suggestionSource).toContain(
+      "accessibilityState={{ disabled: isSavingDisabled }}",
+    );
+    expect(suggestionSource).toContain("disabled={isSavingDisabled}");
+    expect(suggestionSource).toContain(
+      "label={`${suggestion.term} · ${suggestion.meaning}`}",
+    );
+    expect(suggestionSource).toContain(
+      "prefix={readSuggestionSavePrefix(suggestionState)}",
+    );
+    expect(suggestionSource).toContain("void onSaveSuggestion(suggestion);");
+    expect(suggestionSource).toContain("styles.suggestionChipSaved");
+    expect(suggestionSource).toContain("styles.suggestionChipSaving");
+    expect(suggestionSource).not.toContain("<Pressable");
+    expect(suggestionSource).not.toContain("styles.suggestionChip,");
+    expect(suggestionSource).not.toContain("styles.pressed");
   });
 
   it("renders tappable sentence vocabulary tokens with save actions", () => {

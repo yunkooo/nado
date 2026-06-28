@@ -27,7 +27,7 @@ import {
   getDistinctVocabularyNote,
   type AnalysisModelId,
 } from "@nado/shared";
-import { Badge, Button, Card } from "@nado/ui/native";
+import { Badge, Button, Card, Chip } from "@nado/ui/native";
 import {
   ANALYSIS_INPUT_ACCESSIBILITY_LABEL,
   INITIAL_ANALYSIS_TEXT,
@@ -578,32 +578,28 @@ function AnalysisResultPanel({
               const isSavingDisabled = suggestionState !== "idle";
 
               return (
-                <Pressable
-                  accessibilityRole="button"
+                <Chip
+                  accessibilityLabel={readSuggestionSaveActionLabel(
+                    suggestion.term,
+                    suggestionState,
+                  )}
                   accessibilityState={{ disabled: isSavingDisabled }}
                   disabled={isSavingDisabled}
                   key={`${suggestion.term}-${suggestion.meaning}`}
+                  label={`${suggestion.term} · ${suggestion.meaning}`}
                   onPress={() => {
                     void onSaveSuggestion(suggestion);
                   }}
-                  style={({ pressed }) => [
-                    styles.suggestionChip,
+                  prefix={readSuggestionSavePrefix(suggestionState)}
+                  style={[
                     suggestionState === "saved"
                       ? styles.suggestionChipSaved
                       : null,
                     suggestionState === "saving"
                       ? styles.suggestionChipSaving
                       : null,
-                    pressed && !isSavingDisabled ? styles.pressed : null,
                   ]}
-                >
-                  <Text style={styles.suggestionPrefix}>
-                    {readSuggestionSavePrefix(suggestionState)}
-                  </Text>
-                  <Text style={styles.suggestionText}>
-                    {suggestion.term} · {suggestion.meaning}
-                  </Text>
-                </Pressable>
+                />
               );
             })}
           </View>
