@@ -10,12 +10,17 @@ import { describe, expect, it, vi } from "vitest";
 import { Badge } from "./Badge";
 import { Button } from "./Button";
 import { Card } from "./Card";
+import { Chip } from "./Chip";
 import {
   createBadgeStyle,
   createBadgeTextStyle,
+  buttonPressedStyle,
   createButtonStyle,
   createButtonTextStyle,
   createCardStyle,
+  createChipLabelStyle,
+  createChipPrefixStyle,
+  createChipStyle,
   createStackStyle,
   createTextStyle,
 } from "./styles";
@@ -271,6 +276,126 @@ describe("@nado/ui-native primitive style contracts", () => {
     });
     expect(createBadgeTextStyle({ tone: "danger" })).toMatchObject({
       color: nativeTokens.color.accent,
+    });
+  });
+
+  it("renders Chip as a Pressable with token-backed prefix and label text", () => {
+    const customStyle = { marginTop: nativeTokens.spacing.xs };
+    const labelStyle = { letterSpacing: 0.2 };
+    const prefixStyle = { opacity: 0.9 };
+    const onPress = vi.fn();
+    const chip = Chip({
+      disabled: true,
+      label: "setup",
+      onPress,
+      prefix: "+ 저장",
+      prefixStyle,
+      style: customStyle,
+      labelStyle,
+      testID: "suggestion-chip",
+    }) as ReactElement<{
+      accessibilityRole: string;
+      accessibilityState: { disabled?: boolean };
+      children: ReactNode;
+      disabled: boolean;
+      onPress: typeof onPress;
+      style: (state: { pressed: boolean }) => unknown[];
+      testID: string;
+    }>;
+    const children = Children.toArray(chip.props.children) as ReactElement<{
+      children?: ReactNode;
+      style: unknown[];
+    }>[];
+
+    expect(chip.type).toBe(nativeMocks.Pressable);
+    expect(chip.props.accessibilityRole).toBe("button");
+    expect(chip.props.accessibilityState.disabled).toBe(true);
+    expect(chip.props.disabled).toBe(true);
+    expect(chip.props.onPress).toBe(onPress);
+    expect(chip.props.testID).toBe("suggestion-chip");
+    expect(chip.props.style({ pressed: true })).toEqual([
+      expect.objectContaining({ opacity: 0.64 }),
+      null,
+      customStyle,
+    ]);
+    expect(children[0]?.type).toBe(nativeMocks.Text);
+    expect(children[0]?.props.children).toBe("+ 저장");
+    expect(children[0]?.props.style).toEqual([
+      expect.objectContaining({
+        color: nativeTokens.color.primary,
+        fontSize: nativeTokens.typography.text.size.xs,
+        fontWeight: "800",
+      }),
+      prefixStyle,
+    ]);
+    expect(children[1]?.type).toBe(nativeMocks.Text);
+    expect(children[1]?.props.children).toBe("setup");
+    expect(children[1]?.props.style).toEqual([
+      expect.objectContaining({
+        color: nativeTokens.color.ink,
+        fontSize: nativeTokens.typography.text.size.sm,
+      }),
+      labelStyle,
+    ]);
+  });
+
+  it("adds pressed feedback for enabled Chip while preserving caller style callbacks", () => {
+    const idleStyle = { borderWidth: 1 };
+    const pressedStyle = { borderWidth: 2 };
+    const style = vi.fn(({ pressed }: { pressed: boolean }) =>
+      pressed ? pressedStyle : idleStyle,
+    );
+    const chip = Chip({
+      label: "long term · detailed meaning",
+      style,
+    }) as ReactElement<{
+      style: (state: { pressed: boolean }) => unknown[];
+    }>;
+
+    expect(chip.props.style({ pressed: false })).toEqual([
+      expect.objectContaining({ opacity: 1 }),
+      null,
+      idleStyle,
+    ]);
+    expect(chip.props.style({ pressed: true })).toEqual([
+      expect.objectContaining({ opacity: 1 }),
+      buttonPressedStyle,
+      pressedStyle,
+    ]);
+    expect(style).toHaveBeenNthCalledWith(1, { pressed: false });
+    expect(style).toHaveBeenNthCalledWith(2, { pressed: true });
+  });
+
+  it("maps Chip styles to native tokens without adding state tokens yet", () => {
+    expect(createChipStyle({ disabled: true })).toMatchObject({
+      alignItems: "center",
+      alignSelf: "flex-start",
+      backgroundColor: nativeTokens.color.surfaceMuted,
+      borderColor: nativeTokens.color.border,
+      borderRadius: nativeTokens.radius.md,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: nativeTokens.spacing.xs,
+      maxWidth: "100%",
+      minWidth: 0,
+      opacity: 0.64,
+      paddingHorizontal: nativeTokens.spacing.md,
+      paddingVertical: nativeTokens.spacing.sm,
+    });
+
+    expect(createChipLabelStyle()).toMatchObject({
+      color: nativeTokens.color.ink,
+      flexShrink: 1,
+      fontSize: nativeTokens.typography.text.size.sm,
+      fontWeight: "700",
+      lineHeight: nativeTokens.typography.text.lineHeight.sm,
+      minWidth: 0,
+    });
+    expect(createChipPrefixStyle()).toMatchObject({
+      color: nativeTokens.color.primary,
+      fontSize: nativeTokens.typography.text.size.xs,
+      fontWeight: "800",
+      lineHeight: nativeTokens.typography.text.lineHeight.xs,
     });
   });
 
