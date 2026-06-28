@@ -351,6 +351,9 @@ describe("mobile App API wiring", () => {
     expect(suggestionSource).toContain(
       "accessibilityState={{ disabled: isSavingDisabled }}",
     );
+    expect(suggestionSource).toContain(
+      "accessibilityLabel={readSuggestionSaveActionLabel(\n                    suggestion.term,\n                    suggestion.meaning,\n                    suggestionState,\n                  )}",
+    );
     expect(suggestionSource).toContain("disabled={isSavingDisabled}");
     expect(suggestionSource).toContain(
       "label={`${suggestion.term} · ${suggestion.meaning}`}",
@@ -399,6 +402,6 @@ describe("mobile App API wiring", () => {
   it("uses a check mark instead of visible saved text for disabled saved actions", () => {
     expect(appSource).toContain('return "✓"');
     expect(appSource).not.toContain('return "저장됨"');
-    expect(appSource).toContain("return `${term} 저장됨`");
+    expect(appSource).toContain("return `${term}, ${meaning} 저장됨`");
   });
 });

@@ -581,6 +581,7 @@ function AnalysisResultPanel({
                 <Chip
                   accessibilityLabel={readSuggestionSaveActionLabel(
                     suggestion.term,
+                    suggestion.meaning,
                     suggestionState,
                   )}
                   accessibilityState={{ disabled: isSavingDisabled }}
@@ -745,6 +746,7 @@ function MobileVocabularyWordCard({
       <Pressable
         accessibilityLabel={readSuggestionSaveActionLabel(
           item.term,
+          item.meaning,
           suggestionState,
         )}
         accessibilityRole="button"
@@ -1055,17 +1057,18 @@ function readSuggestionSaveActionText(state: "idle" | "saved" | "saving") {
 
 function readSuggestionSaveActionLabel(
   term: string,
+  meaning: string,
   state: "idle" | "saved" | "saving",
 ) {
   if (state === "saving") {
-    return `${term} 저장 중`;
+    return `${term}, ${meaning} 저장 중`;
   }
 
   if (state === "saved") {
-    return `${term} 저장됨`;
+    return `${term}, ${meaning} 저장됨`;
   }
 
-  return `${term} 저장`;
+  return `${term}, ${meaning} 저장`;
 }
 
 function ResultSection({
