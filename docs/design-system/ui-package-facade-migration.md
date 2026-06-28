@@ -275,10 +275,13 @@ import { Button } from "@nado/ui";
    - 완료: `tone`, `size`, `children` 계약을 고정하고 `warning` tone을 포함한다.
    - 완료: 앱 화면 치환은 하지 않는다.
 
+10. Mobile `vocabularyType` Native Badge 적용
+    - 완료: 저장 단어 품사 pill을 `@nado/ui/native` `Badge`로 적용한다.
+    - 완료: `suggestionChip`과 `reviewDirection`은 변경하지 않는다.
+
 현재 남은 후보는 다음처럼 분리한다.
 
 - Mobile `reviewCard`와 `vocabularyItem` 추가 적용 여부 판단
-- Mobile `vocabularyType`에 Native Badge 적용 여부 판단
 - Web/Desktop Badge 구현 필요성 판단
 - Mobile/Web Chip 경계 점검과 action chip 후보 정리
 - Avatar는 실제 반복 강도가 확인될 때 별도 구현

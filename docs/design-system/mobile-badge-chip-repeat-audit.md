@@ -63,8 +63,8 @@ component token은 여러 tone이 실제 화면에서 반복될 때 검토한다
    - 완료: 앱 화면 치환은 하지 않았다.
 
 2. Mobile `vocabularyType`에 Native Badge 적용
-   - 저장 단어 품사 pill만 `@nado/ui/native` Badge로 적용한다.
-   - `suggestionChip`과 `reviewDirection`은 변경하지 않는다.
+   - 완료: 저장 단어 품사 pill만 `@nado/ui/native` Badge로 적용했다.
+   - 완료: `suggestionChip`과 `reviewDirection`은 변경하지 않았다.
 
 3. Mobile/Web Chip 경계 점검
    - 저장 추천 action chip을 Web/Desktop `Chip` 계약과 맞출 수 있는지 별도 판단한다.
