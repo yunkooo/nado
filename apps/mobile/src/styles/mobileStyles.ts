@@ -786,18 +786,7 @@ export const styles = StyleSheet.create({
   },
   wordDefinitionCard: {
     alignSelf: "stretch",
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: mobileRadius.md,
-    borderWidth: 1,
-    elevation: 4,
     gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    shadowColor: mobileColors.ink,
-    shadowOffset: { height: 8, width: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
   },
   wordDefinitionPopoverCard: {
     elevation: 12,
