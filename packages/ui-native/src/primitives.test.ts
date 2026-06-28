@@ -14,6 +14,7 @@ import { Chip } from "./Chip";
 import {
   createBadgeStyle,
   createBadgeTextStyle,
+  buttonPressedStyle,
   createButtonStyle,
   createButtonTextStyle,
   createCardStyle,
@@ -298,7 +299,7 @@ describe("@nado/ui-native primitive style contracts", () => {
       children: ReactNode;
       disabled: boolean;
       onPress: typeof onPress;
-      style: unknown[];
+      style: (state: { pressed: boolean }) => unknown[];
       testID: string;
     }>;
     const children = Children.toArray(chip.props.children) as ReactElement<{
@@ -312,6 +313,11 @@ describe("@nado/ui-native primitive style contracts", () => {
     expect(chip.props.disabled).toBe(true);
     expect(chip.props.onPress).toBe(onPress);
     expect(chip.props.testID).toBe("suggestion-chip");
+    expect(chip.props.style({ pressed: true })).toEqual([
+      expect.objectContaining({ opacity: 0.64 }),
+      null,
+      customStyle,
+    ]);
     expect(children[0]?.type).toBe(nativeMocks.Text);
     expect(children[0]?.props.children).toBe("+ 저장");
     expect(children[0]?.props.style).toEqual([
@@ -331,7 +337,33 @@ describe("@nado/ui-native primitive style contracts", () => {
       }),
       labelStyle,
     ]);
-    expect(chip.props.style).toContain(customStyle);
+  });
+
+  it("adds pressed feedback for enabled Chip while preserving caller style callbacks", () => {
+    const idleStyle = { borderWidth: 1 };
+    const pressedStyle = { borderWidth: 2 };
+    const style = vi.fn(({ pressed }: { pressed: boolean }) =>
+      pressed ? pressedStyle : idleStyle,
+    );
+    const chip = Chip({
+      label: "long term · detailed meaning",
+      style,
+    }) as ReactElement<{
+      style: (state: { pressed: boolean }) => unknown[];
+    }>;
+
+    expect(chip.props.style({ pressed: false })).toEqual([
+      expect.objectContaining({ opacity: 1 }),
+      null,
+      idleStyle,
+    ]);
+    expect(chip.props.style({ pressed: true })).toEqual([
+      expect.objectContaining({ opacity: 1 }),
+      buttonPressedStyle,
+      pressedStyle,
+    ]);
+    expect(style).toHaveBeenNthCalledWith(1, { pressed: false });
+    expect(style).toHaveBeenNthCalledWith(2, { pressed: true });
   });
 
   it("maps Chip styles to native tokens without adding state tokens yet", () => {

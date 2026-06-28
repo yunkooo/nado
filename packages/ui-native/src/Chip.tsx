@@ -2,11 +2,12 @@ import {
   Pressable,
   Text as NativeText,
   type PressableProps,
+  type PressableStateCallbackType,
   type StyleProp,
   type TextStyle,
-  type ViewStyle,
 } from "react-native";
 import {
+  buttonPressedStyle,
   createChipLabelStyle,
   createChipPrefixStyle,
   createChipStyle,
@@ -17,7 +18,7 @@ export interface ChipProps extends Omit<PressableProps, "children" | "style"> {
   labelStyle?: StyleProp<TextStyle>;
   prefix?: string;
   prefixStyle?: StyleProp<TextStyle>;
-  style?: StyleProp<ViewStyle>;
+  style?: PressableProps["style"];
 }
 
 export function Chip({
@@ -31,6 +32,12 @@ export function Chip({
   ...props
 }: ChipProps) {
   const isDisabled = Boolean(disabled);
+  const chipStyle = createChipStyle({ disabled: isDisabled });
+  const resolveStyle = (state: PressableStateCallbackType) => [
+    chipStyle,
+    state.pressed && !isDisabled ? buttonPressedStyle : null,
+    typeof style === "function" ? style(state) : style,
+  ];
 
   return (
     <Pressable
@@ -41,7 +48,7 @@ export function Chip({
         disabled: isDisabled || accessibilityState?.disabled,
       }}
       disabled={isDisabled}
-      style={[createChipStyle({ disabled: isDisabled }), style]}
+      style={resolveStyle}
     >
       {prefix ? (
         <NativeText style={[createChipPrefixStyle(), prefixStyle]}>
