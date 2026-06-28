@@ -166,6 +166,21 @@ describe("mobile shared style tokens", () => {
     expect(demoTokenSourceTextStyle ?? "").toContain("minWidth: 0");
   });
 
+  it("keeps mobile vocabulary meaning card styles limited to inner layout", () => {
+    const meaningCardStyle = mobileStylesSource.match(
+      /meaningCard:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+
+    expect(mobileStylesSource).toContain("meaningCard");
+    expect(meaningCardStyle).toContain("gap: mobileSpacing.xs");
+    expect(meaningCardStyle).not.toContain("backgroundColor:");
+    expect(meaningCardStyle).not.toContain("borderColor:");
+    expect(meaningCardStyle).not.toContain("borderRadius:");
+    expect(meaningCardStyle).not.toContain("borderWidth:");
+    expect(meaningCardStyle).not.toContain("paddingHorizontal:");
+    expect(meaningCardStyle).not.toContain("paddingVertical:");
+  });
+
   it("renders the mobile word definition card as an anchored overlay", () => {
     const wordDefinitionCardStyle = mobileStylesSource.match(
       /wordDefinitionCard:\s*{(?<body>[\s\S]*?)\n  },/,

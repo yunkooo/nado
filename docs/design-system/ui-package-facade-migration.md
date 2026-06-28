@@ -266,9 +266,13 @@ import { Button } from "@nado/ui";
    - 완료: 분석 단어 뜻 카드/Popover의 surface를 `@nado/ui/native` `Card`로 적용한다.
    - 완료: popover positioning과 내부 save action 구조는 기존 앱 구현에 남긴다.
 
+8. Mobile `meaningCard` Native Card 적용
+   - 완료: 저장 단어 뜻 목록의 nested muted surface를 `@nado/ui/native` `Card`로 적용한다.
+   - 완료: 뜻 텍스트와 note 렌더링 구조는 기존 앱 구현에 남긴다.
+
 현재 남은 후보는 다음처럼 분리한다.
 
-- Mobile `meaningCard` 추가 적용 여부 판단
+- Mobile `reviewCard`와 `vocabularyItem` 추가 적용 여부 판단
 - Badge 반복 점검과 Badge/Chip 경계 정리
 - Badge와 Avatar는 실제 반복 강도가 확인될 때 별도 구현
 
