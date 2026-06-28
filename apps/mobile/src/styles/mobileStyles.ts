@@ -1048,19 +1048,6 @@ export const styles = StyleSheet.create({
   vocabularyListWrap: {
     gap: mobileSpacing.md,
   },
-  vocabularyType: {
-    alignSelf: "flex-start",
-    backgroundColor: mobileColors.surfaceMuted,
-    borderColor: mobileColors.border,
-    borderRadius: mobileRadius.pill,
-    borderWidth: 1,
-    color: mobileColors.inkMuted,
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 12,
-    paddingHorizontal: mobileSpacing.sm,
-    paddingVertical: 5,
-  },
   secondaryButton: {
     alignItems: "center",
     backgroundColor: mobileColors.surfaceMuted,

@@ -27,7 +27,7 @@ import {
   getDistinctVocabularyNote,
   type AnalysisModelId,
 } from "@nado/shared";
-import { Button, Card } from "@nado/ui/native";
+import { Badge, Button, Card } from "@nado/ui/native";
 import {
   ANALYSIS_INPUT_ACCESSIBILITY_LABEL,
   INITIAL_ANALYSIS_TEXT,
@@ -1178,7 +1178,9 @@ function VocabularyPage({
                   <View style={styles.cardHeader}>
                     <View style={styles.termGroup}>
                       <Text style={styles.termText}>{item.term}</Text>
-                      <Text style={styles.vocabularyType}>{item.type}</Text>
+                      <Badge size="sm" tone="neutral">
+                        {item.type}
+                      </Badge>
                     </View>
                   </View>
                   <View style={styles.meaningList}>

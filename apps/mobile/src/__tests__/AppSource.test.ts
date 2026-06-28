@@ -235,7 +235,7 @@ describe("mobile App API wiring", () => {
     );
 
     expect(appSource).toContain(
-      'import { Button, Card } from "@nado/ui/native";',
+      'import { Badge, Button, Card } from "@nado/ui/native";',
     );
     expect(reviewActionsSource).toContain("<Button");
     expect(reviewActionsSource).toContain('variant="secondary"');
@@ -254,7 +254,7 @@ describe("mobile App API wiring", () => {
     const summarySource = appSource.slice(summaryStart, summaryEnd);
 
     expect(appSource).toContain(
-      'import { Button, Card } from "@nado/ui/native";',
+      'import { Badge, Button, Card } from "@nado/ui/native";',
     );
     expect(summaryStart).toBeGreaterThan(-1);
     expect(summarySource).toContain(summaryLabel);
@@ -278,7 +278,7 @@ describe("mobile App API wiring", () => {
     const meaningCardSource = appSource.slice(meaningCardStart, meaningCardEnd);
 
     expect(appSource).toContain(
-      'import { Button, Card } from "@nado/ui/native";',
+      'import { Badge, Button, Card } from "@nado/ui/native";',
     );
     expect(meaningListStart).toBeGreaterThan(-1);
     expect(meaningCardStart).toBeGreaterThan(meaningListStart);
@@ -294,6 +294,25 @@ describe("mobile App API wiring", () => {
     );
   });
 
+  it("uses the ui-native Badge primitive for mobile vocabulary type labels", () => {
+    const termGroupStart = appSource.indexOf("<View style={styles.termGroup}>");
+    const termGroupEnd = appSource.indexOf("</View>", termGroupStart);
+    const termGroupSource = appSource.slice(termGroupStart, termGroupEnd);
+
+    expect(appSource).toContain(
+      'import { Badge, Button, Card } from "@nado/ui/native";',
+    );
+    expect(termGroupStart).toBeGreaterThan(-1);
+    expect(termGroupSource).toContain("<Badge");
+    expect(termGroupSource).toContain('tone="neutral"');
+    expect(termGroupSource).toContain('size="sm"');
+    expect(termGroupSource).toContain("{item.type}");
+    expect(termGroupSource).not.toContain("styles.vocabularyType");
+    expect(termGroupSource).not.toContain(
+      "<Text style={styles.vocabularyType}>",
+    );
+  });
+
   it("uses the ui-native Card primitive for mobile word definition cards", () => {
     const wordCardStart = appSource.indexOf(
       "function MobileVocabularyWordCard",
@@ -305,7 +324,7 @@ describe("mobile App API wiring", () => {
     const wordCardSource = appSource.slice(wordCardStart, wordCardEnd);
 
     expect(appSource).toContain(
-      'import { Button, Card } from "@nado/ui/native";',
+      'import { Badge, Button, Card } from "@nado/ui/native";',
     );
     expect(wordCardSource).toContain("<Card");
     expect(wordCardSource).toContain(
