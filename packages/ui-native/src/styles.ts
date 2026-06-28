@@ -4,6 +4,10 @@ import type { TextStyle, ViewStyle } from "react-native";
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "send";
 export type ButtonSize = "sm" | "md" | "icon";
 
+export type CardPadding = "sm" | "md" | "lg" | "xl";
+export type CardTone = "surface" | "muted" | "elevated";
+export type CardRadius = "sm" | "md" | "composer";
+
 export type TextSize = "xs" | "sm" | "md" | "lg" | "xl";
 export type TextWeight = "regular" | "medium" | "bold" | "heavy";
 export type TextTone = "default" | "muted" | "primary" | "danger";
@@ -21,6 +25,12 @@ type CreateButtonStyleOptions = {
 
 type CreateButtonTextStyleOptions = {
   variant?: ButtonVariant;
+};
+
+type CreateCardStyleOptions = {
+  padding?: CardPadding;
+  radius?: CardRadius;
+  tone?: CardTone;
 };
 
 type CreateTextStyleOptions = {
@@ -93,6 +103,21 @@ export function createButtonTextStyle({
   } satisfies TextStyle;
 }
 
+export function createCardStyle({
+  padding = "md",
+  radius = "md",
+  tone = "surface",
+}: CreateCardStyleOptions = {}) {
+  return {
+    backgroundColor: cardToneBackground[tone],
+    borderColor: nativeTokens.color.border,
+    borderRadius: nativeTokens.radius[radius],
+    borderWidth: 1,
+    padding: nativeTokens.spacing[padding],
+    ...(tone === "elevated" ? elevatedCardStyle : {}),
+  } satisfies ViewStyle;
+}
+
 export function createTextStyle({
   align = "start",
   size = "md",
@@ -126,6 +151,23 @@ const textToneColor = {
   muted: nativeTokens.color.inkMuted,
   primary: nativeTokens.color.primary,
 } satisfies Record<TextTone, string>;
+
+const cardToneBackground = {
+  elevated: nativeTokens.color.surface,
+  muted: nativeTokens.color.surfaceMuted,
+  surface: nativeTokens.color.surface,
+} satisfies Record<CardTone, string>;
+
+const elevatedCardStyle = {
+  elevation: 4,
+  shadowColor: nativeTokens.color.ink,
+  shadowOffset: {
+    height: 10,
+    width: 0,
+  },
+  shadowOpacity: 0.08,
+  shadowRadius: 18,
+} satisfies ViewStyle;
 
 const textAlignValue = {
   center: "center",

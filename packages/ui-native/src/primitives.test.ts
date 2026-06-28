@@ -8,7 +8,9 @@ import {
 } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { Button } from "./Button";
+import { Card } from "./Card";
 import {
+  createCardStyle,
   createButtonStyle,
   createButtonTextStyle,
   createStackStyle,
@@ -92,6 +94,56 @@ describe("@nado/ui-native primitive style contracts", () => {
       paddingHorizontal: nativeTokens.component.button.size.icon.paddingX,
       width: nativeTokens.component.button.size.icon.width,
     });
+  });
+
+  it("renders Card as a View with token-backed styles and custom style", () => {
+    const customStyle = { marginTop: nativeTokens.spacing.xs };
+    const card = Card({
+      children: "Summary",
+      padding: "lg",
+      radius: "composer",
+      style: customStyle,
+      testID: "summary-card",
+      tone: "elevated",
+    }) as ReactElement<{
+      children: ReactNode;
+      style: unknown[];
+      testID: string;
+    }>;
+
+    expect(card.type).toBe(nativeMocks.View);
+    expect(card.props.children).toBe("Summary");
+    expect(card.props.testID).toBe("summary-card");
+    expect(card.props.style).toEqual([
+      expect.objectContaining({
+        backgroundColor: nativeTokens.color.surface,
+        borderColor: nativeTokens.color.border,
+        borderRadius: nativeTokens.radius.composer,
+        borderWidth: 1,
+        elevation: 4,
+        padding: nativeTokens.spacing.lg,
+        shadowColor: nativeTokens.color.ink,
+        shadowOpacity: 0.08,
+        shadowRadius: 18,
+      }),
+      customStyle,
+    ]);
+  });
+
+  it("maps Card tone, padding, and radius props to native tokens", () => {
+    expect(
+      createCardStyle({ padding: "sm", radius: "sm", tone: "muted" }),
+    ).toMatchObject({
+      backgroundColor: nativeTokens.color.surfaceMuted,
+      borderColor: nativeTokens.color.border,
+      borderRadius: nativeTokens.radius.sm,
+      borderWidth: 1,
+      padding: nativeTokens.spacing.sm,
+    });
+
+    expect(createCardStyle({ tone: "surface" })).not.toHaveProperty(
+      "elevation",
+    );
   });
 
   it("maps Text props to native typography and semantic color tokens", () => {
