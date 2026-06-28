@@ -77,7 +77,7 @@ facade가 보장해야 하는 공통 API 대상은 다음 여섯 가지다.
 | `Button`  | 현재 계약 있음 | 구현됨    | 구현됨      |
 | `Text`    | 현재 계약 있음 | 구현됨    | 구현됨      |
 | `Stack`   | 현재 계약 있음 | 구현됨    | 구현됨      |
-| `Card`    | 현재 계약 있음 | 구현됨    | 향후 구현   |
+| `Card`    | 현재 계약 있음 | 구현됨    | 구현됨      |
 | `Badge`   | 목표 계약 있음 | 향후 구현 | 향후 구현   |
 | `Avatar`  | 목표 계약 있음 | 향후 구현 | 향후 구현   |
 
@@ -199,7 +199,7 @@ packages/ui-web/
 
 RN-local 구현에서 반복이 확인된 뒤 `@nado/ui-native`를 만든다. [RN component repeat audit](rn-component-repeat-audit.md)에서 `Button`, `Text`, `Stack` 반복은 확인되었다.
 
-현재 이 단계는 최소 패키지 생성과 첫 낮은 위험 적용 표면까지 완료되어 있다. `packages/ui-native`는 `Button`, `Text`, `Stack`을 export하고, `@nado/tokens/react-native` 기반 style contract를 테스트로 고정한다. `MobileTokenParityDemoScreen`은 이 primitive를 실제로 import해 token parity demo의 button sample을 렌더링한다. 앱 전체 마이그레이션은 하지 않는다.
+현재 이 단계는 최소 패키지 생성과 첫 낮은 위험 적용 표면까지 완료되어 있다. `packages/ui-native`는 `Button`, `Text`, `Stack`, `Card`를 export하고, `@nado/tokens/react-native` 기반 style contract를 테스트로 고정한다. `MobileTokenParityDemoScreen`은 primitive를 실제로 import해 token parity demo의 button sample을 렌더링한다. 앱 전체 마이그레이션은 하지 않는다.
 
 도입 기준:
 
@@ -242,7 +242,7 @@ import { Button } from "@nado/ui";
    - `Button`, `Text`, `Stack`부터 시작한다.
    - `packages/ui-native` package, export, tests를 먼저 만든다.
    - 완료: `MobileTokenParityDemoScreen`을 첫 낮은 위험 적용 표면으로 사용한다.
-   - `Card`, `Badge`, `Avatar`는 그 다음 후보로 둔다.
+   - `Badge`, `Avatar`는 실제 반복 강도가 확인될 때 다음 후보로 둔다.
 
 3. `@nado/ui/native` facade 검증
    - 완료: `@nado/ui/native`가 `@nado/ui-native`를 re-export한다.
@@ -252,13 +252,16 @@ import { Button } from "@nado/ui";
 4. Web/Desktop `Card` 기본 컴포넌트 구현
    - 완료: `@nado/ui-web`에 `Card`를 추가하고 `@nado/ui`, `@nado/ui/web` facade에서 re-export한다.
    - 완료: `padding`, `tone`, `radius` 계약을 Storybook story와 테스트로 고정했다.
-   - Native `Card`는 아직 만들지 않고 Mobile 반복 점검과 token 후보 정리를 먼저 진행한다.
+
+5. `@nado/ui-native Card` 최소 구현
+   - 완료: `@nado/ui-native`에 `Card`와 `createCardStyle`을 추가한다.
+   - 완료: `padding`, `tone`, `radius` 계약을 Web/Desktop Card와 맞춘다.
+   - 완료: 앱 화면 치환은 하지 않는다.
 
 현재 남은 후보는 다음처럼 분리한다.
 
-- `@nado/ui/native` facade를 사용하는 Mobile 실제 화면 적용 표면 1곳 선정
-- Mobile Card 반복 점검과 token 후보 정리
-- 반복 점검 결과가 충분할 때 Native Card 구현
+- Mobile 실제 화면 1곳에 Native Card 적용
+- Badge 반복 점검과 Badge/Chip 경계 정리
 - Badge와 Avatar는 실제 반복 강도가 확인될 때 별도 구현
 
 ## 제외 범위
@@ -268,7 +271,7 @@ import { Button } from "@nado/ui";
 - `packages/core` 실제 생성
 - 기존 앱 import migration
 - `@nado/ui/native` facade를 사용하는 추가 Mobile 적용 표면 선정
-- Mobile Card 반복 점검과 Native Card 구현 여부 판단
+- Mobile 실제 화면 Card 적용
 - Badge, Avatar 구현
 - Storybook for React Native 도입
 

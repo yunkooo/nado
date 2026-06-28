@@ -8,7 +8,9 @@ import {
 } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { Button } from "./Button";
+import { Card } from "./Card";
 import {
+  createCardStyle,
   createButtonStyle,
   createButtonTextStyle,
   createStackStyle,
@@ -92,6 +94,83 @@ describe("@nado/ui-native primitive style contracts", () => {
       paddingHorizontal: nativeTokens.component.button.size.icon.paddingX,
       width: nativeTokens.component.button.size.icon.width,
     });
+  });
+
+  it("renders Card as a View with token-backed styles and custom style", () => {
+    const customStyle = { marginTop: nativeTokens.spacing.xs };
+    const card = Card({
+      children: "Summary",
+      padding: "lg",
+      radius: "composer",
+      style: customStyle,
+      testID: "summary-card",
+      tone: "elevated",
+    }) as ReactElement<{
+      children: ReactNode;
+      style: unknown[];
+      testID: string;
+    }>;
+
+    expect(card.type).toBe(nativeMocks.View);
+    expect(card.props.children.type).toBe(nativeMocks.Text);
+    expect(card.props.children.props.children).toBe("Summary");
+    expect(card.props.testID).toBe("summary-card");
+    expect(card.props.style).toEqual([
+      expect.objectContaining({
+        backgroundColor: nativeTokens.color.surface,
+        borderColor: nativeTokens.color.border,
+        borderRadius: nativeTokens.radius.composer,
+        borderWidth: 1,
+        elevation: 4,
+        padding: nativeTokens.spacing.lg,
+        shadowColor: nativeTokens.color.ink,
+        shadowOpacity: 0.08,
+        shadowRadius: 18,
+      }),
+      customStyle,
+    ]);
+  });
+
+  it("wraps mixed Card text children without wrapping element children", () => {
+    const icon = createElement(nativeMocks.View, { testID: "summary-icon" });
+    const mixedCard = Card({
+      children: [icon, "Summary"],
+    }) as ReactElement<{ children: ReactNode }>;
+    const mixedChildren = Children.toArray(
+      mixedCard.props.children,
+    ) as ReactElement<{ children?: ReactNode }>[];
+
+    expect(mixedChildren[0]?.type).toBe(nativeMocks.View);
+    expect(mixedChildren[1]?.type).toBe(nativeMocks.Text);
+    expect(mixedChildren[1]?.props.children).toBe("Summary");
+
+    const fragmentCard = Card({
+      children: createElement(Fragment, null, icon, "Summary"),
+    }) as ReactElement<{ children: ReactElement<{ children: ReactNode }> }>;
+    const fragmentChildren = Children.toArray(
+      fragmentCard.props.children.props.children,
+    ) as ReactElement<{ children?: ReactNode }>[];
+
+    expect(fragmentCard.props.children.type).toBe(Fragment);
+    expect(fragmentChildren[0]?.type).toBe(nativeMocks.View);
+    expect(fragmentChildren[1]?.type).toBe(nativeMocks.Text);
+    expect(fragmentChildren[1]?.props.children).toBe("Summary");
+  });
+
+  it("maps Card tone, padding, and radius props to native tokens", () => {
+    expect(
+      createCardStyle({ padding: "sm", radius: "sm", tone: "muted" }),
+    ).toMatchObject({
+      backgroundColor: nativeTokens.color.surfaceMuted,
+      borderColor: nativeTokens.color.border,
+      borderRadius: nativeTokens.radius.sm,
+      borderWidth: 1,
+      padding: nativeTokens.spacing.sm,
+    });
+
+    expect(createCardStyle({ tone: "surface" })).not.toHaveProperty(
+      "elevation",
+    );
   });
 
   it("maps Text props to native typography and semantic color tokens", () => {

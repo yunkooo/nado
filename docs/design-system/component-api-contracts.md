@@ -27,13 +27,13 @@ import { nativeTokens } from "@nado/tokens/react-native";
 Mobile v1 primitive package:
 
 ```tsx
-import { Button, Stack, Text } from "@nado/ui-native";
+import { Button, Card, Stack, Text } from "@nado/ui-native";
 ```
 
 Mobile v1 facade subpath:
 
 ```tsx
-import { Button, Stack, Text } from "@nado/ui/native";
+import { Button, Card, Stack, Text } from "@nado/ui/native";
 ```
 
 Mobile은 v1에서 `@nado/ui` root를 직접 import하지 않는다. `Button.web.tsx`, `Button.native.tsx`도 현재 만들지 않는다.
@@ -52,7 +52,7 @@ import { Button } from "@nado/ui/native";
 
 ## 현재 구현
 
-현재 Web/Desktop 공통 패키지에 실제 구현된 기본 component는 `Button`, `Text`, `Stack`, `Card`이다. Mobile 공통 패키지는 `Button`, `Text`, `Stack`까지만 구현되어 있다. Web/Desktop은 `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`, Mobile은 `@nado/ui/native`와 `@nado/ui-native`가 담당한다.
+현재 Web/Desktop 공통 패키지에 실제 구현된 기본 component는 `Button`, `Text`, `Stack`, `Card`이다. Mobile 공통 패키지도 `Button`, `Text`, `Stack`, `Card`를 구현한다. Web/Desktop은 `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`, Mobile은 `@nado/ui/native`와 `@nado/ui-native`가 담당한다.
 
 | Component | Package                              | Platform    | Status |
 | --------- | ------------------------------------ | ----------- | ------ |
@@ -63,7 +63,7 @@ import { Button } from "@nado/ui/native";
 | `Button`  | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
 | `Text`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
 | `Stack`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
-| `Card`    | 후보                                 | Mobile      | 미구현 |
+| `Card`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
 | `Badge`   | 후보                                 | 공통 계약   | 미구현 |
 | `Avatar`  | 후보                                 | 공통 계약   | 미구현 |
 
@@ -99,7 +99,7 @@ import { Button } from "@nado/ui/native";
 
 ## Text
 
-현재 Web/Desktop 구현:
+현재 Web/Desktop 및 Mobile 구현:
 
 ```tsx
 <Text size="lg" tone="muted">
@@ -114,11 +114,11 @@ import { Button } from "@nado/ui/native";
 | `tone`   | `default`, `muted`, `primary`, `danger` | semantic color 의미          |
 | `align`  | `start`, `center`, `end`                | 텍스트 정렬                  |
 
-Web/Desktop은 `<p>`와 CSS class, CSS custom property를 사용한다. `size`, `line-height`, `weight` 값은 `@nado/tokens`의 `tokens.typography.text`를 기준으로 맞춘다. Mobile은 향후 RN-local 구현에서 같은 prop 이름과 의미를 따른다.
+Web/Desktop은 `<p>`와 CSS class, CSS custom property를 사용한다. `size`, `line-height`, `weight` 값은 `@nado/tokens`의 `tokens.typography.text`를 기준으로 맞춘다. Mobile은 `Text`와 RN style로 구현하되 같은 prop 이름과 의미를 따른다.
 
 ## Stack
 
-현재 Web/Desktop 구현:
+현재 Web/Desktop 및 Mobile 구현:
 
 ```tsx
 <Stack gap="md" direction="vertical">
@@ -137,7 +137,7 @@ Web/Desktop은 flex/grid, Mobile은 `View`와 RN style로 구현한다. `gap`은
 
 ## Card
 
-현재 Web/Desktop 구현:
+현재 Web/Desktop 및 Mobile 구현:
 
 ```tsx
 <Card padding="lg" tone="surface">
@@ -145,7 +145,7 @@ Web/Desktop은 flex/grid, Mobile은 `View`와 RN style로 구현한다. `gap`은
 </Card>
 ```
 
-| Prop      | 후보 값                        | 의미                         |
+| Prop      | 값                             | 의미                         |
 | --------- | ------------------------------ | ---------------------------- |
 | `padding` | `sm`, `md`, `lg`, `xl`         | 내부 여백 token 단계         |
 | `tone`    | `surface`, `muted`, `elevated` | 배경과 border/elevation 의미 |

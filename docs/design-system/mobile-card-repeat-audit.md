@@ -1,12 +1,12 @@
 # Mobile Card 반복 점검과 token 후보
 
-이 문서는 `@nado/ui-native Card` 구현 전에 Mobile 화면의 Card 성격 반복과 token 후보를 점검한 기록이다. 기준 소스는 `apps/mobile/App.tsx`와 `apps/mobile/src/styles/mobileStyles.ts`이다.
+이 문서는 `@nado/ui-native Card` 구현을 판단하기 위해 Mobile 화면의 Card 성격 반복과 token 후보를 점검한 기록이다. 기준 소스는 `apps/mobile/App.tsx`와 `apps/mobile/src/styles/mobileStyles.ts`이다.
 
 ## 결론
 
-Mobile에는 Card로 볼 수 있는 반복 surface가 충분하다. 다만 `@nado/ui-native Card`를 만들더라도 앱 전체를 바로 치환하지 않고, 패키지 primitive 구현과 실제 화면 적용을 별도 PR로 나눈다.
+Mobile에는 Card로 볼 수 있는 반복 surface가 충분하다. `@nado/ui-native Card` 최소 구현은 package component, style helper, unit test 범위로 진행하고, 앱 전체 치환은 하지 않는다.
 
-다음 단계는 `@nado/ui-native Card` 최소 구현 티켓을 별도로 만들 수 있다. 구현 범위는 package component, style helper, unit test까지로 제한하고, `VocabularyPage`나 `ReviewPage` 적용은 후속 티켓에서 낮은 위험 표면 1곳만 선택한다.
+이 점검 결과에 따라 `@nado/ui-native Card`는 `padding`, `tone`, `radius` 계약으로 구현한다. `VocabularyPage`나 `ReviewPage` 적용은 후속 티켓에서 낮은 위험 표면 1곳만 선택한다.
 
 ## Card 후보
 
@@ -41,7 +41,7 @@ primitive/semantic token은 이미 대부분 존재한다.
 - primitive/semantic: `color.surface`, `color.surfaceMuted`, `color.border`, `radius.md`, `spacing`
 - component: `button`, `reviewCard.answer`
 
-Card 구현 전에 추가를 검토할 component token 후보는 다음과 같다.
+Card 최소 구현은 기존 primitive/semantic token으로 시작한다. 다음 component token은 실제 화면 적용 중 반복과 차이가 커질 때 추가를 검토한다.
 
 | Token 후보                | 성격      | 이유                                     |
 | ------------------------- | --------- | ---------------------------------------- |
@@ -53,12 +53,12 @@ Card 구현 전에 추가를 검토할 component token 후보는 다음과 같�
 
 `reviewCard.answer`는 Card container가 아니라 answer state surface이므로 `component.card`로 합치지 않는다. 품사 pill인 `vocabularyType`은 Card가 아니라 Badge 후보로 분리한다.
 
-## 다음 티켓 후보
+## 진행 상태와 다음 티켓 후보
 
 1. `@nado/ui-native Card` 최소 구현
-   - `Card` component와 `createCardStyle`을 추가한다.
-   - `tone`, `padding`, `radius` prop contract를 Web/Desktop Card와 맞춘다.
-   - 앱 화면 치환은 하지 않는다.
+   - 완료: `Card` component와 `createCardStyle`을 추가한다.
+   - 완료: `tone`, `padding`, `radius` prop contract를 Web/Desktop Card와 맞춘다.
+   - 완료: 앱 화면 치환은 하지 않는다.
 
 2. Mobile 실제 화면 1곳에 Native Card 적용
    - `summaryItem`이나 `wordDefinitionCard`처럼 범위가 작고 시각 회귀를 확인하기 쉬운 표면을 고른다.
