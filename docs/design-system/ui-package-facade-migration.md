@@ -308,9 +308,14 @@ import { Button } from "@nado/ui";
     - 완료: surface, border, radius, padding, shadow는 primitive에 맡기고 앱 style에는 layout 값만 남긴다.
     - 완료: 내부 `Badge`, `meaningCard`, 삭제 버튼 구조는 변경하지 않는다.
 
+16. Mobile `reviewCard` Native Card 적용
+    - 완료: 복습 flashcard wrapper를 `@nado/ui/native` `Card`로 적용한다.
+    - 완료: surface, border, radius, padding, shadow는 primitive에 맡기고 앱 style에는 layout 값만 남긴다.
+    - 완료: answer reveal/blur state와 `reviewAnswer` token style은 기존 앱 style에 남긴다.
+
 현재 남은 후보는 다음처럼 분리한다.
 
-- Mobile `reviewCard` 추가 적용 여부 판단
+- Mobile Card 적용 표면은 v1 후보 기준으로 완료되었으므로, 새 반복 surface가 생길 때 별도 판단한다.
 - Avatar는 실제 반복 강도가 확인될 때 별도 구현
 
 ## 제외 범위
@@ -320,7 +325,7 @@ import { Button } from "@nado/ui";
 - `packages/core` 실제 생성
 - 기존 앱 import migration
 - `@nado/ui/native` facade를 사용하는 추가 Mobile 적용 표면 선정
-- 추가 Mobile Card 적용
+- 새 반복 surface의 추가 Mobile Card 적용
 - Avatar 구현
 - Storybook for React Native 도입
 

@@ -1342,7 +1342,12 @@ function ReviewPage({
               })}
             </View>
 
-            <View style={styles.reviewCard}>
+            <Card
+              padding="xl"
+              radius="md"
+              style={styles.reviewCard}
+              tone="elevated"
+            >
               <Text style={styles.eyebrow}>My flashcard</Text>
               <Text style={styles.reviewMeta}>
                 {currentCardIndex + 1} / {vocabularyState.items.length}
@@ -1362,7 +1367,7 @@ function ReviewPage({
               >
                 {currentCard.answer}
               </Text>
-            </View>
+            </Card>
 
             <View style={styles.reviewActions}>
               <Button

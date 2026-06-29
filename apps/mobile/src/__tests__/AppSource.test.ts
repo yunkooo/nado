@@ -246,6 +246,32 @@ describe("mobile App API wiring", () => {
     expect(reviewActionsSource).not.toContain("styles.primaryButton");
   });
 
+  it("uses the ui-native Card primitive for the mobile review card", () => {
+    const reviewPageStart = appSource.indexOf("function ReviewPage");
+    const reviewCardContentStart = appSource.indexOf(
+      "<Text style={styles.eyebrow}>My flashcard</Text>",
+      reviewPageStart,
+    );
+    const reviewCardStart = appSource.lastIndexOf(
+      "<Card",
+      reviewCardContentStart,
+    );
+    const reviewCardEnd = appSource.indexOf("</Card>", reviewCardStart);
+    const reviewCardSource = appSource.slice(reviewCardStart, reviewCardEnd);
+
+    expect(appSource).toContain(uiNativeImport);
+    expect(reviewPageStart).toBeGreaterThan(-1);
+    expect(reviewCardStart).toBeGreaterThan(reviewPageStart);
+    expect(reviewCardSource).toContain('padding="xl"');
+    expect(reviewCardSource).toContain('radius="md"');
+    expect(reviewCardSource).toContain('tone="elevated"');
+    expect(reviewCardSource).toContain("style={styles.reviewCard}");
+    expect(reviewCardSource).toContain(
+      "isAnswerRevealed ? styles.reviewAnswerRevealed : null",
+    );
+    expect(reviewCardSource).not.toContain("<View style={styles.reviewCard}>");
+  });
+
   it("uses the ui-native Card primitive for the vocabulary summary item", () => {
     const summaryLabel = 'accessibilityLabel="단어장 요약"';
     const summaryLabelStart = appSource.indexOf(summaryLabel);
