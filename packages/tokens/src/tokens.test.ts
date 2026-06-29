@@ -136,9 +136,20 @@ describe("@nado/tokens", () => {
     expect(createCssCustomPropertyMap()).toMatchObject({
       "--nado-button-size-md-height": "40px",
       "--nado-color-primary": tokens.color.primary,
-      "--nado-review-card-answer-foreground": tokens.color.inkMuted,
+      "--nado-review-card-answer-radius":
+        tokens.component.reviewCard.answer.radius,
       "--nado-spacing-md": tokens.spacing.md,
       "--nado-text-line-height-md": tokens.typography.text.lineHeight.md,
+    });
+  });
+
+  it("preserves semantic token aliases for generated component variables", () => {
+    expect(createCssCustomPropertyMap()).toMatchObject({
+      "--nado-button-primary-background": "var(--nado-color-primary)",
+      "--nado-button-primary-foreground": "var(--nado-color-primary-ink)",
+      "--nado-button-send-background": "var(--nado-color-primary)",
+      "--nado-button-size-md-padding-x": "var(--nado-spacing-lg)",
+      "--nado-review-card-answer-foreground": "var(--nado-color-ink-muted)",
     });
   });
 

@@ -5,6 +5,10 @@ type CssTokenSource = {
 };
 
 type CssTokenValue = string | number | CssTokenSource;
+type CssTokenAlias = {
+  path: string[];
+  variableName: `--${string}`;
+};
 
 export type CssCustomPropertyMap = Record<`--${string}`, string>;
 
@@ -18,9 +22,11 @@ export function createCssCustomPropertyMap(
   options: CssCustomPropertyOptions = {},
 ) {
   const prefix = options.prefix ?? "nado";
+  const aliases = createNonComponentAliasMap(tokenSource, prefix);
   const properties: CssCustomPropertyMap = {};
 
   collectCssCustomProperties({
+    aliases,
     path: [],
     prefix,
     properties,
@@ -44,11 +50,13 @@ export function createCssCustomPropertyString(
 }
 
 function collectCssCustomProperties({
+  aliases,
   path,
   prefix,
   properties,
   value,
 }: {
+  aliases: Map<string, CssTokenAlias[]>;
   path: string[];
   prefix: string;
   properties: CssCustomPropertyMap;
@@ -57,6 +65,7 @@ function collectCssCustomProperties({
   if (isCssTokenSource(value)) {
     for (const [name, nestedValue] of Object.entries(value)) {
       collectCssCustomProperties({
+        aliases,
         path: [...path, name],
         prefix,
         properties,
@@ -69,7 +78,133 @@ function collectCssCustomProperties({
   const variableName = [`--${prefix}`, ...normalizeTokenPath(path)]
     .map(toKebabCase)
     .join("-");
-  properties[variableName as `--${string}`] = String(value);
+  properties[variableName as `--${string}`] = getCssCustomPropertyValue({
+    aliases,
+    path,
+    value,
+  });
+}
+
+function createNonComponentAliasMap(
+  tokenSource: CssTokenSource,
+  prefix: string,
+) {
+  const aliases = new Map<string, CssTokenAlias[]>();
+  collectNonComponentAliases({
+    aliases,
+    path: [],
+    prefix,
+    value: tokenSource,
+  });
+  return aliases;
+}
+
+function collectNonComponentAliases({
+  aliases,
+  path,
+  prefix,
+  value,
+}: {
+  aliases: Map<string, CssTokenAlias[]>;
+  path: string[];
+  prefix: string;
+  value: CssTokenValue;
+}) {
+  if (isCssTokenSource(value)) {
+    for (const [name, nestedValue] of Object.entries(value)) {
+      collectNonComponentAliases({
+        aliases,
+        path: [...path, name],
+        prefix,
+        value: nestedValue,
+      });
+    }
+    return;
+  }
+
+  if (path[0] === "component") {
+    return;
+  }
+
+  const variableName = [`--${prefix}`, ...normalizeTokenPath(path)]
+    .map(toKebabCase)
+    .join("-") as `--${string}`;
+  const aliasKey = createAliasKey(value);
+
+  aliases.set(aliasKey, [
+    ...(aliases.get(aliasKey) ?? []),
+    { path, variableName },
+  ]);
+}
+
+function getCssCustomPropertyValue({
+  aliases,
+  path,
+  value,
+}: {
+  aliases: Map<string, CssTokenAlias[]>;
+  path: string[];
+  value: string | number;
+}) {
+  if (path[0] !== "component") {
+    return String(value);
+  }
+
+  const alias = findBestAlias(aliases.get(createAliasKey(value)), path);
+
+  return alias ? `var(${alias})` : String(value);
+}
+
+function findBestAlias(aliases: CssTokenAlias[] | undefined, path: string[]) {
+  if (!aliases || aliases.length === 0) {
+    return null;
+  }
+
+  return [...aliases].sort(
+    (left, right) =>
+      getAliasScore(right.path, path) - getAliasScore(left.path, path),
+  )[0]?.variableName;
+}
+
+function getAliasScore(aliasPath: string[], componentPath: string[]) {
+  const aliasTerms = new Set(aliasPath.flatMap(splitNameTerms));
+  const componentTerms = new Set(componentPath.flatMap(splitNameTerms));
+  let score = 0;
+
+  for (const term of aliasTerms) {
+    if (componentTerms.has(term)) {
+      score += 2;
+    }
+  }
+
+  const leafName = componentPath.at(-1);
+  const leafTerms = new Set(splitNameTerms(leafName ?? ""));
+
+  if (leafName === "foreground" && aliasTerms.has("ink")) {
+    score += 3;
+  }
+
+  if (leafName === "background" && aliasTerms.has("surface")) {
+    score += 1;
+  }
+
+  if (leafTerms.has("padding") && aliasTerms.has("spacing")) {
+    score += 6;
+  }
+
+  if (leafName === "radius" && aliasTerms.has("radius")) {
+    score += 6;
+  }
+
+  return score;
+}
+
+function splitNameTerms(value: string) {
+  return toKebabCase(value).split("-");
+}
+
+function createAliasKey(value: string | number) {
+  return `${typeof value}:${String(value)}`;
 }
 
 function normalizeTokenPath(path: string[]) {
