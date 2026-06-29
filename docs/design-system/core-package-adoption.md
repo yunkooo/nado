@@ -22,16 +22,16 @@
 
 ## 후보 점검
 
-| 후보                               | 확인한 파일                                                                                                             | 판단                                                                                                           |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| API URL/config                     | `apps/web/src/lib/apiClient.ts`, `apps/desktop/src/api/apiConfig.ts`, `apps/mobile/src/api/apiConfig.ts`                | 보류. Next relative API, Tauri production URL, Expo emulator URL이 다르다.                                     |
-| API fetch/transport                | `apps/web/src/lib/apiClient.ts`, `apps/desktop/src/api/apiFetch.ts`, `apps/mobile/src/api/*.ts`                         | 보류. Web은 timeout wrapper, Desktop은 Tauri HTTP plugin, Mobile은 Expo/RN fetch와 configuration error를 쓴다. |
-| API response helpers               | Web/Desktop/Mobile의 `readJson`, `readErrorMessage`, `createAuthHeaders`                                                | 첫 후보 가능. 다만 현재 유틸 크기가 작고 migration 이득보다 package 비용이 크다.                               |
-| Supabase auth client               | `apps/web/src/features/auth/authClient.ts`, `apps/desktop/src/auth/authClient.ts`, `apps/mobile/src/auth/authClient.ts` | 보류. browser hash, Tauri PKCE/deep link, RN AsyncStorage/Linking이 분리된다.                                  |
-| Auth state hook                    | `apps/web/src/features/auth/authState.ts`, `apps/desktop/src/auth/authState.ts`, `apps/mobile/src/auth/authState.ts`    | 보류. session refresh, URL callback, Linking subscription 차이가 있다.                                         |
-| Analysis page state store          | `apps/web/src/features/analysis/analysisState.ts`, `apps/desktop/src/features/analysis/analysisState.ts`                | 보류. 제품 화면 상태이며 storage key와 reset/persist 정책이 앱별로 다르다.                                     |
-| Vocabulary realtime/manual refresh | `@nado/shared`, Web/Desktop vocabulary state, Mobile vocabulary state                                                   | `@nado/shared` 유지. refresh timing과 topic 생성은 이미 domain rule로 공유한다.                                |
-| i18n/theme/storage abstraction     | 현재 dedicated 공통 구현 없음                                                                                           | 후보 부족. 반복된 API contract가 생긴 뒤 다시 판단한다.                                                        |
+| 후보                               | 확인한 파일                                                                                                             | 판단                                                                                                               |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| API URL/config                     | `apps/web/src/lib/apiClient.ts`, `apps/desktop/src/api/apiConfig.ts`, `apps/mobile/src/api/apiConfig.ts`                | 보류. Next relative API, Tauri production URL, Expo emulator URL이 다르다.                                         |
+| API fetch/transport                | `apps/web/src/lib/apiClient.ts`, `apps/desktop/src/api/apiFetch.ts`, `apps/mobile/src/api/*.ts`                         | 보류. Web은 timeout wrapper, Desktop은 Tauri HTTP plugin, Mobile은 Expo/RN fetch와 configuration error를 쓴다.     |
+| API response helpers               | Web/Desktop/Mobile의 `readJson`, `readErrorMessage`, `createAuthHeaders`                                                | 일부 정리. error message reader는 `@nado/shared` API error contract로 모으고, `readJson`과 auth header는 보류한다. |
+| Supabase auth client               | `apps/web/src/features/auth/authClient.ts`, `apps/desktop/src/auth/authClient.ts`, `apps/mobile/src/auth/authClient.ts` | 보류. browser hash, Tauri PKCE/deep link, RN AsyncStorage/Linking이 분리된다.                                      |
+| Auth state hook                    | `apps/web/src/features/auth/authState.ts`, `apps/desktop/src/auth/authState.ts`, `apps/mobile/src/auth/authState.ts`    | 보류. session refresh, URL callback, Linking subscription 차이가 있다.                                             |
+| Analysis page state store          | `apps/web/src/features/analysis/analysisState.ts`, `apps/desktop/src/features/analysis/analysisState.ts`                | 보류. 제품 화면 상태이며 storage key와 reset/persist 정책이 앱별로 다르다.                                         |
+| Vocabulary realtime/manual refresh | `@nado/shared`, Web/Desktop vocabulary state, Mobile vocabulary state                                                   | `@nado/shared` 유지. refresh timing과 topic 생성은 이미 domain rule로 공유한다.                                    |
+| i18n/theme/storage abstraction     | 현재 dedicated 공통 구현 없음                                                                                           | 후보 부족. 반복된 API contract가 생긴 뒤 다시 판단한다.                                                            |
 
 ## `@nado/shared`에 남겨야 하는 것
 
@@ -69,6 +69,13 @@ type ApiResult<TSuccess, TError> =
 - Tauri fetch, Expo base URL, timeout, Supabase auth client 생성은 앱별 adapter로 남긴다.
 - 새 package를 만들기 전에 한 앱 안에서 helper shape를 먼저 검증한다.
 
+2026-06-29 spike 결과:
+
+- `readApiErrorMessage`는 새 `@nado/core`가 아니라 `@nado/shared`의 API error response contract로 모은다.
+- Web/Desktop/Mobile vocabulary client의 app-local error message reader는 제거한다.
+- `readJson`은 여전히 Web/Desktop/Mobile API client에 반복되지만, 함수 크기가 작고 fetch/timeout/base URL adapter 차이가 커서 아직 package 생성 이득이 작다.
+- `createAuthHeaders`는 vocabulary와 analysis의 optional auth, content type, platform adapter 차이가 있어 앱별 helper 또는 inline object로 유지한다.
+
 ## 생성 조건
 
 아래 조건이 모두 충족될 때만 `packages/core` 생성을 검토한다.
@@ -92,8 +99,11 @@ type ApiResult<TSuccess, TError> =
 
 ## 다음 행동
 
-당장은 `@nado/core`를 만들지 않고, API client 중복이 더 커질 때 다음 티켓으로 나눈다.
+당장은 `@nado/core`를 만들지 않는다. API error message 중복은 `@nado/shared`로 줄였고, 남은 helper는 package 생성 비용보다 adapter 차이가 크다.
 
-1. Web/Desktop/Mobile API helper 중복을 다시 세고 삭제 가능한 line을 확인한다.
-2. transport-free helper만 한 파일로 묶을 수 있는지 작은 spike를 한다.
-3. Supabase auth와 screen state는 플랫폼 차이가 줄어들기 전까지 앱별 구현으로 유지한다.
+다음 재검토 조건:
+
+1. Web/Desktop/Mobile 중 2개 이상에서 `readJson` 이상의 response normalization 중복이 다시 커진다.
+2. helper가 `@nado/shared`의 API/domain contract가 아니라 순수 runtime utility로 분리된다.
+3. 첫 PR에서 app-local helper 삭제와 package test를 함께 제시할 수 있다.
+4. Supabase auth와 screen state는 플랫폼 차이가 줄어들기 전까지 앱별 구현으로 유지한다.

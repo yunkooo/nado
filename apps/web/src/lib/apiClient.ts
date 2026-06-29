@@ -65,19 +65,6 @@ export async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-export function readApiErrorMessage(
-  payload: unknown,
-  fallbackMessage: string,
-): string {
-  if (isRecord(payload) && isRecord(payload.error)) {
-    return typeof payload.error.message === "string"
-      ? payload.error.message
-      : fallbackMessage;
-  }
-
-  return fallbackMessage;
-}
-
 function isAbortError(error: unknown) {
   return (
     (error instanceof DOMException && error.name === "AbortError") ||

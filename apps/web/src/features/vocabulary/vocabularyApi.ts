@@ -1,4 +1,5 @@
 import {
+  readApiErrorMessage,
   saveVocabularyResponseSchema,
   vocabularyListResponseSchema,
   type SaveVocabularyRequest,
@@ -6,7 +7,6 @@ import {
 } from "@nado/shared";
 import {
   fetchWithTimeout,
-  readApiErrorMessage,
   readJson,
   type ApiRequestOptions,
 } from "../../lib/apiClient";
