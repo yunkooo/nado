@@ -37,16 +37,16 @@ Storybook은 디자인 시스템의 원본이 아니다. Storybook은 `@nado/ui`
 
 v1에서는 패키지를 늘릴 때도 역할 경계를 작게 유지한다. `@nado/ui-web`과 `@nado/ui-native`는 구현 패키지이고, `@nado/core`는 이름만 먼저 예약한다.
 
-| 패키지            | v1 역할                                     | 현재 상태        | 생성/확장 기준                                                              |
-| ----------------- | ------------------------------------------- | ---------------- | --------------------------------------------------------------------------- |
-| `@nado/tokens`    | primitive, semantic, component token의 원본 | 이미 사용 중     | 모든 플랫폼에 반영되어야 하는 디자인 값 변경                                |
-| `@nado/ui`        | Web/Desktop 호환 facade와 platform subpath  | 이미 사용 중     | 기존 앱 import 유지와 명시 subpath 호환성                                   |
-| `@nado/ui-web`    | Web/Desktop React DOM 컴포넌트 구현         | 이미 사용 중     | DOM, CSS variable, Storybook 검증이 필요한 UI                               |
-| `@nado/shared`    | 도메인 스키마, API 타입, 비즈니스 규칙      | 이미 사용 중     | 플랫폼과 무관한 제품 규칙이나 API 계약                                      |
-| `@nado/ui-native` | React Native 공통 primitive 구현            | 최소 도입됨      | `Button`, `Text`, `Stack`, `Card`, `Badge`, `Chip` contract와 RN token 검증 |
-| `@nado/core`      | theme, hook, i18n, platform utility 후보    | 아직 만들지 않음 | 앱별 중복이 커지고 도메인 규칙과 분리할 필요가 생김                         |
+| 패키지            | v1 역할                                     | 현재 상태    | 생성/확장 기준                                                              |
+| ----------------- | ------------------------------------------- | ------------ | --------------------------------------------------------------------------- |
+| `@nado/tokens`    | primitive, semantic, component token의 원본 | 이미 사용 중 | 모든 플랫폼에 반영되어야 하는 디자인 값 변경                                |
+| `@nado/ui`        | Web/Desktop 호환 facade와 platform subpath  | 이미 사용 중 | 기존 앱 import 유지와 명시 subpath 호환성                                   |
+| `@nado/ui-web`    | Web/Desktop React DOM 컴포넌트 구현         | 이미 사용 중 | DOM, CSS variable, Storybook 검증이 필요한 UI                               |
+| `@nado/shared`    | 도메인 스키마, API 타입, 비즈니스 규칙      | 이미 사용 중 | 플랫폼과 무관한 제품 규칙이나 API 계약                                      |
+| `@nado/ui-native` | React Native 공통 primitive 구현            | 최소 도입됨  | `Button`, `Text`, `Stack`, `Card`, `Badge`, `Chip` contract와 RN token 검증 |
+| `@nado/core`      | theme, hook, i18n, platform utility 후보    | 검토 후 보류 | 앱별 중복이 커지고 도메인 규칙과 분리할 필요가 생김                         |
 
-`@nado/shared`와 `@nado/core`는 섞지 않는다. `@nado/shared`는 분석 요청/응답, 단어장 타입, 페이지네이션 같은 제품 도메인 계약을 맡고, `@nado/core`는 미래에 플랫폼 공통 runtime utility가 충분히 생겼을 때만 검토한다.
+`@nado/shared`와 `@nado/core`는 섞지 않는다. `@nado/shared`는 분석 요청/응답, 단어장 타입, 페이지네이션 같은 제품 도메인 계약을 맡고, `@nado/core`는 미래에 플랫폼 공통 runtime utility가 충분히 생겼을 때만 검토한다. 현재 판단은 [`@nado/core` 도입 기준 검토](core-package-adoption.md)를 따른다.
 
 ## Import 정책
 
@@ -236,7 +236,7 @@ Mobile에서 반복되는 RN 컴포넌트를 `@nado/ui-native` 패키지로 분�
 
 ### 향후 `@nado/core`
 
-`@nado/core`는 v1에서 만들지 않는다. 후보 역할은 theme, platform hook, i18n, storage abstraction, platform utility다.
+`@nado/core`는 v1에서 만들지 않는다. 후보 역할은 theme, platform hook, i18n, storage abstraction, platform utility다. 2026-06-29 기준으로는 [도입 기준 검토](core-package-adoption.md) 결과 package 생성을 보류한다.
 
 도입 기준:
 
@@ -244,7 +244,7 @@ Mobile에서 반복되는 RN 컴포넌트를 `@nado/ui-native` 패키지로 분�
 - 해당 utility가 도메인 스키마가 아니라 앱 실행 지원 성격이다.
 - `@nado/shared`에 넣으면 도메인 계약과 runtime helper가 섞인다.
 
-즉, `@nado/core`는 "있으면 좋아 보이는 공통 폴더"가 아니라 실제 중복과 책임 분리가 생긴 뒤 만든다.
+즉, `@nado/core`는 "있으면 좋아 보이는 공통 폴더"가 아니라 실제 중복과 책임 분리가 생긴 뒤 만든다. 첫 후보는 공통 API client 전체가 아니라 transport와 무관한 작은 API response helper contract가 될 수 있지만, 현재는 package 비용보다 앱별 adapter 차이가 더 크다.
 
 ## Web 변경이 Mobile까지 따라가는 기준
 
@@ -337,7 +337,7 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 - 새 반복 surface가 생길 때 Mobile `mobileStyles`에서 `@nado/ui-native`로 옮길 낮은 위험 적용 표면 선정
 - review direction 외 선택 control 반복이 확인될 때 SegmentedControl 구현 검토
 - profile/account 또는 작성자 표시처럼 identity visual이 반복될 때 Avatar 구현 검토
-- `@nado/core` 도입 기준과 첫 후보 utility 검토
+- `@nado/core` 생성 조건 재점검. 현재는 [도입 기준 검토](core-package-adoption.md)에 따라 보류한다.
 - React Native Storybook 재검토 조건 충족 여부 점검
 - Mobile token parity story 추가
 
@@ -345,12 +345,12 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 
 다음 기능은 크로스플랫폼 요구가 있지만, v1 런타임 구현 범위에는 넣지 않는다.
 
-| 기능            | v1 판단                       | 이유                                                                      |
-| --------------- | ----------------------------- | ------------------------------------------------------------------------- |
-| 파일 업로드     | future platform adapter 후보  | Web/Desktop의 file input/Tauri API와 Mobile picker 계열이 다르다.         |
-| Tooltip         | future platform-specific 후보 | Web hover/focus와 Mobile touch/popover 또는 sheet interaction이 다르다.   |
-| Toast           | future message contract 후보  | 메시지 타입은 공유할 수 있지만 renderer와 안전 영역 처리는 플랫폼별이다.  |
-| 공통 API client | future `@nado/core` 후보      | 현재는 `@nado/shared` 도메인 계약을 우선하고 앱별 client 중복을 관찰한다. |
+| 기능            | v1 판단                       | 이유                                                                       |
+| --------------- | ----------------------------- | -------------------------------------------------------------------------- |
+| 파일 업로드     | future platform adapter 후보  | Web/Desktop의 file input/Tauri API와 Mobile picker 계열이 다르다.          |
+| Tooltip         | future platform-specific 후보 | Web hover/focus와 Mobile touch/popover 또는 sheet interaction이 다르다.    |
+| Toast           | future message contract 후보  | 메시지 타입은 공유할 수 있지만 renderer와 안전 영역 처리는 플랫폼별이다.   |
+| 공통 API client | future `@nado/core` 후보      | 현재는 `@nado/shared` 도메인 계약을 우선하고 앱별 adapter 차이를 관찰한다. |
 
 이 항목들은 "공통 컴포넌트로 바로 뽑기"보다 먼저 platform adapter의 입력/출력 계약을 정해야 한다. 후속 issue에서는 공통 메시지 타입, 권한/파일 선택 흐름, 접근성 기준, 실패 상태를 별도로 다룬다.
 
