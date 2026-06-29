@@ -25,14 +25,14 @@ packages/
 
 각 패키지의 책임은 다음처럼 나눈다.
 
-| Package           | 역할                                                     | 도입 기준                             |
-| ----------------- | -------------------------------------------------------- | ------------------------------------- |
-| `@nado/tokens`    | color, spacing, typography, radius, component token 원본 | 이미 사용 중                          |
-| `@nado/icons`     | 공통 icon asset 또는 wrapper 후보                        | 같은 아이콘 asset 관리가 반복될 때    |
-| `@nado/core`      | theme, hooks, i18n, storage, platform utility 후보       | 앱별 runtime utility 중복이 확인될 때 |
-| `@nado/ui`        | public facade와 공통 type/prop contract                  | `ui-web`, `ui-native`가 생긴 뒤 전환  |
-| `@nado/ui-web`    | React DOM/Web/Desktop 구현                               | 현재 `@nado/ui` DOM 구현을 옮길 때    |
-| `@nado/ui-native` | React Native 구현                                        | RN 공통 컴포넌트가 2곳 이상 반복될 때 |
+| Package           | 역할                                                     | 도입 기준                                                                                            |
+| ----------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `@nado/tokens`    | color, spacing, typography, radius, component token 원본 | 이미 사용 중                                                                                         |
+| `@nado/icons`     | 공통 icon asset 또는 wrapper 후보                        | 같은 아이콘 asset 관리가 반복될 때                                                                   |
+| `@nado/core`      | theme, hooks, i18n, storage, platform utility 후보       | 앱별 runtime utility 중복이 확인될 때. 현재는 [도입 기준 검토](core-package-adoption.md)에 따라 보류 |
+| `@nado/ui`        | public facade와 공통 type/prop contract                  | `ui-web`, `ui-native`가 생긴 뒤 전환                                                                 |
+| `@nado/ui-web`    | React DOM/Web/Desktop 구현                               | 현재 `@nado/ui` DOM 구현을 옮길 때                                                                   |
+| `@nado/ui-native` | React Native 구현                                        | RN 공통 컴포넌트가 2곳 이상 반복될 때                                                                |
 
 `@nado/shared`는 이 구조에 포함하지 않는다. `@nado/shared`는 분석 요청/응답, 단어장 타입, 저장 요청 같은 제품 도메인 계약을 담당한다.
 
@@ -338,7 +338,7 @@ import { Button } from "@nado/ui";
 
 이 설계는 패키지 구조의 방향을 정하기 위한 것이다. 다음은 별도 티켓으로 분리한다.
 
-- `packages/core` 실제 생성
+- `packages/core` 실제 생성. 현재는 [도입 기준 검토](core-package-adoption.md)에 따라 보류한다.
 - 기존 앱 import migration
 - `@nado/ui/native` facade를 사용하는 추가 Mobile 적용 표면 선정
 - 새 반복 surface의 추가 Mobile Card 적용

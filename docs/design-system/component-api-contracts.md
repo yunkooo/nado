@@ -263,12 +263,12 @@ Avatar는 이미지 로딩 실패, initials fallback, accessibility label을 기
 
 다음 항목은 component API가 아니라 platform adapter 또는 service contract로 다룬다.
 
-| Capability  | v1 처리                  | 후속 설계 기준                               |
-| ----------- | ------------------------ | -------------------------------------------- |
-| File upload | 구현하지 않음            | picker/input 결과 shape부터 정의             |
-| Tooltip     | 구현하지 않음            | hover/focus와 touch 대체 UI 분리             |
-| Toast       | renderer 구현하지 않음   | message contract와 platform renderer 분리    |
-| Common API  | `@nado/shared` 계약 우선 | 앱별 client 중복이 커질 때 `@nado/core` 검토 |
+| Capability  | v1 처리                  | 후속 설계 기준                                                                      |
+| ----------- | ------------------------ | ----------------------------------------------------------------------------------- |
+| File upload | 구현하지 않음            | picker/input 결과 shape부터 정의                                                    |
+| Tooltip     | 구현하지 않음            | hover/focus와 touch 대체 UI 분리                                                    |
+| Toast       | renderer 구현하지 않음   | message contract와 platform renderer 분리                                           |
+| Common API  | `@nado/shared` 계약 우선 | 앱별 client 중복이 커질 때 [`@nado/core` 기준](core-package-adoption.md)으로 재검토 |
 
 ## Acceptance 기준
 
