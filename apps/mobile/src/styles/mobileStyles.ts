@@ -1005,17 +1005,8 @@ export const styles = StyleSheet.create({
     textAlign: "center",
   },
   vocabularyItem: {
-    backgroundColor: mobileColors.surface,
-    borderColor: mobileColors.border,
-    borderRadius: mobileRadius.md,
-    borderWidth: 1,
     gap: 14,
     minHeight: 220,
-    padding: 18,
-    shadowColor: mobileColors.ink,
-    shadowOffset: { height: 10, width: 0 },
-    shadowOpacity: 0.04,
-    shadowRadius: 24,
   },
   vocabularyListWrap: {
     gap: mobileSpacing.md,

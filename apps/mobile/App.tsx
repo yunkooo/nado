@@ -1173,7 +1173,13 @@ function VocabularyPage({
               </View>
 
               {vocabularyState.items.map((item) => (
-                <View key={item.id} style={styles.vocabularyItem}>
+                <Card
+                  key={item.id}
+                  padding="lg"
+                  radius="md"
+                  style={styles.vocabularyItem}
+                  tone="elevated"
+                >
                   <View style={styles.cardHeader}>
                     <View style={styles.termGroup}>
                       <Text style={styles.termText}>{item.term}</Text>
@@ -1231,7 +1237,7 @@ function VocabularyPage({
                       </Text>
                     </Pressable>
                   </View>
-                </View>
+                </Card>
               ))}
             </>
           ) : (
