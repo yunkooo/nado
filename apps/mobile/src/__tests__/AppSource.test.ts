@@ -263,6 +263,31 @@ describe("mobile App API wiring", () => {
     expect(summarySource).not.toContain("<View");
   });
 
+  it("uses the ui-native Card primitive for mobile vocabulary items", () => {
+    const vocabularyListStart = appSource.indexOf(
+      "{vocabularyState.items.map((item) => (",
+    );
+    const itemKeyStart = appSource.indexOf(
+      "key={item.id}",
+      vocabularyListStart,
+    );
+    const itemCardStart = appSource.lastIndexOf("<Card", itemKeyStart);
+    const itemCardEnd = appSource.indexOf("</Card>", itemCardStart);
+    const itemCardSource = appSource.slice(itemCardStart, itemCardEnd);
+
+    expect(appSource).toContain(uiNativeImport);
+    expect(vocabularyListStart).toBeGreaterThan(-1);
+    expect(itemCardStart).toBeGreaterThan(vocabularyListStart);
+    expect(itemCardSource).toContain("key={item.id}");
+    expect(itemCardSource).toContain('padding="lg"');
+    expect(itemCardSource).toContain('radius="md"');
+    expect(itemCardSource).toContain('tone="elevated"');
+    expect(itemCardSource).toContain("style={styles.vocabularyItem}");
+    expect(itemCardSource).not.toContain(
+      "<View key={item.id} style={styles.vocabularyItem}>",
+    );
+  });
+
   it("uses the ui-native Card primitive for mobile vocabulary meaning cards", () => {
     const meaningListStart = appSource.indexOf(
       "<View style={styles.meaningList}>",

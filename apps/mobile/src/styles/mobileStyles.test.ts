@@ -181,6 +181,25 @@ describe("mobile shared style tokens", () => {
     expect(meaningCardStyle).not.toContain("paddingVertical:");
   });
 
+  it("keeps mobile vocabulary item styles limited to card layout after moving the surface to ui-native Card", () => {
+    const vocabularyItemStyle = mobileStylesSource.match(
+      /vocabularyItem:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+
+    expect(mobileStylesSource).toContain("vocabularyItem");
+    expect(vocabularyItemStyle).toContain("gap: 14");
+    expect(vocabularyItemStyle).toContain("minHeight: 220");
+    expect(vocabularyItemStyle).not.toContain("backgroundColor:");
+    expect(vocabularyItemStyle).not.toContain("borderColor:");
+    expect(vocabularyItemStyle).not.toContain("borderRadius:");
+    expect(vocabularyItemStyle).not.toContain("borderWidth:");
+    expect(vocabularyItemStyle).not.toContain("padding:");
+    expect(vocabularyItemStyle).not.toContain("shadowColor:");
+    expect(vocabularyItemStyle).not.toContain("shadowOffset:");
+    expect(vocabularyItemStyle).not.toContain("shadowOpacity:");
+    expect(vocabularyItemStyle).not.toContain("shadowRadius:");
+  });
+
   it("renders the mobile word definition card as an anchored overlay", () => {
     const wordDefinitionCardStyle = mobileStylesSource.match(
       /wordDefinitionCard:\s*{(?<body>[\s\S]*?)\n  },/,
