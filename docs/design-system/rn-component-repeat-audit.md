@@ -95,7 +95,7 @@
 - `Card`, `Badge`, `Avatar` 같은 추가 component 구현
 - toast, tooltip, popover, tab, refresh button 일반화
 - `@nado/ui` 기본 conditional export 개방
-- Storybook for React Native 도입
+- Storybook for React Native 도입. 도입 방식은 [React Native Storybook 도입 검토](react-native-storybook-adoption.md)에 따라 현재 보류한다.
 
 ## 후속 진행 상태
 
@@ -122,4 +122,4 @@
 
 ## 다음 결정
 
-반복 점검 결과에 따라 `@nado/ui-native` 최소 API를 만들었다. 낮은 위험 표면인 `MobileTokenParityDemoScreen`은 `@nado/ui/native` facade를 통해 `Button`, `Text`, `Stack`을 사용한다. 이후 `Card`, `Badge`, `Chip`은 작은 PR로 확장되었다. 다음 단계는 새 반복 surface가 생길 때만 추가 Mobile 적용 표면을 고르고, `SegmentedControl`은 선택 control 반복이 확인될 때, `Avatar`는 identity visual 반복이 확인될 때 다시 구현 여부를 판단하는 것이다.
+반복 점검 결과에 따라 `@nado/ui-native` 최소 API를 만들었다. 낮은 위험 표면인 `MobileTokenParityDemoScreen`은 `@nado/ui/native` facade를 통해 `Button`, `Text`, `Stack`을 사용한다. 이후 `Card`, `Badge`, `Chip`은 작은 PR로 확장되었다. 다음 단계는 새 반복 surface가 생길 때만 추가 Mobile 적용 표면을 고르고, `SegmentedControl`은 선택 control 반복이 확인될 때, `Avatar`는 identity visual 반복이 확인될 때 다시 구현 여부를 판단하는 것이다. RN Storybook은 현재 보류하고, state 조합과 적용 표면이 충분히 늘어날 때 다시 검토한다.
