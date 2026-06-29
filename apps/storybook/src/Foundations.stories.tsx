@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Button, tokens } from "@nado/ui";
+import { Button, Chip, tokens } from "@nado/ui";
 
 const colorEntries = [
   ["Canvas", tokens.color.canvas],
@@ -38,6 +38,18 @@ const reviewCardAnswerTokenEntries = [
   ["answer.foreground", tokens.component.reviewCard.answer.foreground],
   ["answer.radius", tokens.component.reviewCard.answer.radius],
   ["answer.padding", tokens.component.reviewCard.answer.padding],
+] as const;
+
+const chipTokenEntries = [
+  ["background", tokens.component.chip.background],
+  ["border", tokens.component.chip.border],
+  ["foreground", tokens.component.chip.foreground],
+  ["prefix", tokens.component.chip.prefix],
+  ["radius", tokens.component.chip.radius],
+  ["gap", tokens.component.chip.gap],
+  ["minHeight", tokens.component.chip.minHeight],
+  ["paddingX", tokens.component.chip.paddingX],
+  ["paddingY", tokens.component.chip.paddingY],
 ] as const;
 
 const meta = {
@@ -95,6 +107,23 @@ export const Tokens: Story = {
             {buttonSizeEntries.map(([name, value]) => (
               <div className="storybook-component-size" key={name}>
                 <span>{name}</span>
+                <code>{value}</code>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section>
+        <h2>Chip component</h2>
+        <div className="storybook-button-token-demo">
+          <div className="storybook-button-token-row">
+            <Chip label="setup" prefix="+" />
+            <Chip label="shipping" prefix="저장" />
+          </div>
+          <div className="storybook-component-token-grid">
+            {chipTokenEntries.map(([name, value]) => (
+              <div className="storybook-component-token" key={name}>
+                <strong>{name}</strong>
                 <code>{value}</code>
               </div>
             ))}

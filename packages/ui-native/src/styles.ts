@@ -184,15 +184,16 @@ export function createChipStyle({
     alignSelf: "flex-start",
     backgroundColor: chipToneTokens.background,
     borderColor: chipToneTokens.border,
-    borderRadius: nativeTokens.radius.md,
+    borderRadius: chipToneTokens.radius,
     borderWidth: 1,
     flexDirection: "row",
-    gap: nativeTokens.spacing.xs,
+    gap: chipToneTokens.gap,
     maxWidth: "100%",
+    minHeight: chipToneTokens.minHeight,
     minWidth: 0,
     opacity: disabled ? 0.64 : 1,
-    paddingHorizontal: nativeTokens.spacing.md,
-    paddingVertical: nativeTokens.spacing.sm,
+    paddingHorizontal: chipToneTokens.paddingX,
+    paddingVertical: chipToneTokens.paddingY,
   } satisfies ViewStyle;
 }
 
@@ -313,17 +314,7 @@ const badgeTextSize = {
   sm: "xs",
 } satisfies Record<BadgeSize, TextSize>;
 
-const chipToneTokens = {
-  background: nativeTokens.color.surfaceMuted,
-  border: nativeTokens.color.border,
-  foreground: nativeTokens.color.ink,
-  prefix: nativeTokens.color.primary,
-} satisfies {
-  background: string;
-  border: string;
-  foreground: string;
-  prefix: string;
-};
+const chipToneTokens = nativeTokens.component.chip;
 
 const elevatedCardStyle = {
   elevation: 4,

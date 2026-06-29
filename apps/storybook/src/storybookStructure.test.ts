@@ -297,6 +297,8 @@ export const OtherStory: Story = {
 
     expect(foundationsSource).toContain("Button component");
     expect(foundationsSource).toContain("tokens.component.button");
+    expect(foundationsSource).toContain("Chip component");
+    expect(foundationsSource).toContain("tokens.component.chip");
     expect(foundationsSource).toContain("ReviewCard answer");
     expect(foundationsSource).toContain("tokens.component.reviewCard.answer");
     expect(foundationsSource).toContain("storybook-component-token-grid");

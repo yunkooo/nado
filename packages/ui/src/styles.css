@@ -47,6 +47,13 @@
   --nado-button-size-icon-height: 38px;
   --nado-button-size-icon-padding-x: 0px;
   --nado-button-size-icon-width: 38px;
+  --nado-chip-background: #f6f8ff;
+  --nado-chip-border: #d8d8d2;
+  --nado-chip-gap: 6px;
+  --nado-chip-min-height: 31px;
+  --nado-chip-padding-x: 10px;
+  --nado-chip-padding-y: 7px;
+  --nado-chip-radius: 7px;
   --nado-review-card-answer-background: #f6f8ff;
   --nado-review-card-answer-border: #d5dbea;
   --nado-review-card-answer-padding: 14px;
@@ -379,18 +386,18 @@
 }
 
 .nado-chip {
-  background: #f6f8ff;
-  border-color: #d8d8d2;
-  border-radius: 7px;
-  color: var(--nado-color-primary);
-  gap: 6px;
-  min-height: 31px;
-  padding: 7px 10px;
+  background: var(--nado-chip-background, #f6f8ff);
+  border-color: var(--nado-chip-border, #d8d8d2);
+  border-radius: var(--nado-chip-radius, 7px);
+  color: var(--nado-chip-foreground, var(--nado-color-primary));
+  gap: var(--nado-chip-gap, 6px);
+  min-height: var(--nado-chip-min-height, 31px);
+  padding: var(--nado-chip-padding-y, 7px) var(--nado-chip-padding-x, 10px);
   white-space: nowrap;
 }
 
 .nado-chip__prefix {
-  color: inherit;
+  color: var(--nado-chip-prefix, var(--nado-color-primary));
   font-size: 0.75rem;
 }
 

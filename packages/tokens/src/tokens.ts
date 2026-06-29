@@ -100,6 +100,17 @@ const component = {
       },
     },
   },
+  chip: {
+    background: "#f6f8ff",
+    border: "#d8d8d2",
+    foreground: color.primary,
+    gap: "6px",
+    minHeight: "31px",
+    paddingX: "10px",
+    paddingY: "7px",
+    prefix: color.primary,
+    radius: "7px",
+  },
   reviewCard: {
     answer: {
       background: "#f6f8ff",
