@@ -741,8 +741,31 @@ export function readApiErrorDetail(
   };
 }
 
+export function readApiErrorMessage(
+  payload: unknown,
+  fallbackMessage: string,
+): string {
+  const parsed = apiErrorResponseSchema.safeParse(payload);
+
+  if (parsed.success) {
+    return parsed.data.error.message;
+  }
+
+  if (isRecord(payload) && isRecord(payload.error)) {
+    return typeof payload.error.message === "string"
+      ? payload.error.message
+      : fallbackMessage;
+  }
+
+  return fallbackMessage;
+}
+
 export function normalizeVocabularyTerm(term: string): string {
   return term.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 export function getDistinctVocabularyNote(

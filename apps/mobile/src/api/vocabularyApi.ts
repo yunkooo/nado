@@ -1,4 +1,5 @@
 import {
+  readApiErrorMessage,
   saveVocabularyResponseSchema,
   vocabularyListResponseSchema,
   type SaveVocabularyRequest,
@@ -70,7 +71,7 @@ export async function listVocabulary(
 
   if (!response.ok) {
     return {
-      message: readErrorMessage(payload),
+      message: readApiErrorMessage(payload, VOCABULARY_ERROR_MESSAGE),
       status: "error",
     };
   }
@@ -125,7 +126,10 @@ export async function deleteVocabularyItem(
 
   if (!response.ok) {
     return {
-      message: readErrorMessage(await readJson(response)),
+      message: readApiErrorMessage(
+        await readJson(response),
+        VOCABULARY_ERROR_MESSAGE,
+      ),
       status: "error",
     };
   }
@@ -170,7 +174,7 @@ export async function saveVocabularyItem(
 
   if (!response.ok) {
     return {
-      message: readErrorMessage(payload, SAVE_VOCABULARY_ERROR_MESSAGE),
+      message: readApiErrorMessage(payload, SAVE_VOCABULARY_ERROR_MESSAGE),
       status: "error",
     };
   }
@@ -196,21 +200,4 @@ async function readJson(response: Response): Promise<unknown> {
   } catch {
     return null;
   }
-}
-
-function readErrorMessage(
-  payload: unknown,
-  fallbackMessage = VOCABULARY_ERROR_MESSAGE,
-): string {
-  if (isRecord(payload) && isRecord(payload.error)) {
-    return typeof payload.error.message === "string"
-      ? payload.error.message
-      : fallbackMessage;
-  }
-
-  return fallbackMessage;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

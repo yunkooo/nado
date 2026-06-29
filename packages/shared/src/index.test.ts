@@ -22,11 +22,12 @@ import {
   normalizeVocabularyTerm,
   paginateVocabularyItems,
   parseAnalyzeRequest,
+  readApiErrorDetail,
+  readApiErrorMessage,
   resetVocabularyPaginationScroll,
   saveVocabularyRequestSchema,
   shouldStartVocabularyManualRefresh,
   shouldRefreshVocabularyFromLifecycle,
-  readApiErrorDetail,
 } from "./index";
 
 describe("parseAnalyzeRequest", () => {
@@ -157,6 +158,33 @@ describe("api error response helpers", () => {
       code: "unknown_error",
       message: ANALYSIS_ERROR_MESSAGES.analysis_failed,
     });
+  });
+
+  it("reads API error messages without requiring app-local helpers", () => {
+    expect(
+      readApiErrorMessage(
+        {
+          error: {
+            code: "unauthorized",
+            message: "로그인이 필요해요.",
+          },
+        },
+        "fallback",
+      ),
+    ).toBe("로그인이 필요해요.");
+  });
+
+  it("keeps message-only error payloads backwards compatible", () => {
+    expect(
+      readApiErrorMessage(
+        {
+          error: {
+            message: "단어장 항목을 찾을 수 없습니다.",
+          },
+        },
+        "fallback",
+      ),
+    ).toBe("단어장 항목을 찾을 수 없습니다.");
   });
 });
 
