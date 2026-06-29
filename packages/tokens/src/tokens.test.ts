@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { tokens } from "@nado/tokens";
+import {
+  createCssCustomPropertyMap,
+  createCssCustomPropertyString,
+  tokens,
+} from "@nado/tokens";
 import { nativeTokens } from "@nado/tokens/react-native";
 
 describe("@nado/tokens", () => {
@@ -126,5 +130,23 @@ describe("@nado/tokens", () => {
       padding: 14,
       radius: 7,
     });
+  });
+
+  it("creates CSS custom properties with the Web/Desktop variable naming contract", () => {
+    expect(createCssCustomPropertyMap()).toMatchObject({
+      "--nado-button-size-md-height": "40px",
+      "--nado-color-primary": tokens.color.primary,
+      "--nado-review-card-answer-foreground": tokens.color.inkMuted,
+      "--nado-spacing-md": tokens.spacing.md,
+      "--nado-text-line-height-md": tokens.typography.text.lineHeight.md,
+    });
+  });
+
+  it("serializes CSS custom properties as a root rule", () => {
+    const css = createCssCustomPropertyString();
+
+    expect(css).toContain("  --nado-color-primary: #26365f;\n");
+    expect(css).toContain("  --nado-review-card-answer-radius: 7px;\n}");
+    expect(css.startsWith(":root {\n")).toBe(true);
   });
 });
