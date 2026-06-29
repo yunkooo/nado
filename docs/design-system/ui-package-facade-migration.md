@@ -331,7 +331,7 @@ import { Button } from "@nado/ui";
 
 - Mobile Card 적용 표면은 v1 후보 기준으로 완료되었으므로, 새 반복 surface가 생길 때 별도 판단한다.
 - Avatar는 profile/account 또는 작성자 표시처럼 identity visual 반복이 확인될 때 별도 구현한다.
-- Chip saved/saving state는 저장 action 반복이 더 확인될 때 component token으로 올릴지 판단한다.
+- Chip saved/saving state는 2026-06-29 재점검 결과, 저장 action 반복 근거가 부족해 component token 승격을 보류한다.
 - SegmentedControl은 review direction 외 선택 control 반복이 확인될 때 별도 구현한다.
 
 ## 제외 범위
