@@ -1,9 +1,13 @@
-import { Button, Stack, Text } from "@nado/ui/native";
+import { Badge, Button, Card, Chip, Stack, Text } from "@nado/ui/native";
 import { View } from "react-native";
 import { styles } from "../../styles/mobileStyles";
-import { getMobileTokenParityDemoSections } from "./designTokenDemo";
+import {
+  getMobileTokenParityDemoSections,
+  type MobileTokenParityDemoSection,
+} from "./designTokenDemo";
 
 const mobileTokenParityDemoSections = getMobileTokenParityDemoSections();
+const handleDemoChipPress = () => undefined;
 
 export function MobileTokenParityDemoScreen() {
   return (
@@ -29,32 +33,7 @@ export function MobileTokenParityDemoScreen() {
             <Text style={styles.panelText}>{section.description}</Text>
           </Stack>
 
-          {section.title === "Primary color" ? (
-            <Stack
-              direction="horizontal"
-              gap="sm"
-              style={styles.designDemoSwatchRow}
-            >
-              <View style={styles.designDemoPrimarySwatch} />
-              <View style={styles.designDemoSurfaceSwatch} />
-            </Stack>
-          ) : (
-            <Stack
-              direction="horizontal"
-              gap="sm"
-              style={styles.designDemoButtonRow}
-            >
-              <Button variant="primary">Primary</Button>
-              <Button variant="secondary">Secondary</Button>
-              <Button
-                accessibilityLabel="Send icon token sample"
-                size="icon"
-                variant="send"
-              >
-                ↗
-              </Button>
-            </Stack>
-          )}
+          {renderMobileTokenParityDemoSample(section)}
 
           <Stack
             direction="horizontal"
@@ -73,4 +52,69 @@ export function MobileTokenParityDemoScreen() {
       ))}
     </Stack>
   );
+}
+
+function renderMobileTokenParityDemoSample(
+  section: MobileTokenParityDemoSection,
+) {
+  switch (section.kind) {
+    case "color":
+      return (
+        <Stack
+          direction="horizontal"
+          gap="sm"
+          style={styles.designDemoSwatchRow}
+        >
+          <View style={styles.designDemoPrimarySwatch} />
+          <View style={styles.designDemoSurfaceSwatch} />
+        </Stack>
+      );
+    case "button":
+      return (
+        <Stack
+          direction="horizontal"
+          gap="sm"
+          style={styles.designDemoButtonRow}
+        >
+          <Button variant="primary">Primary</Button>
+          <Button variant="secondary">Secondary</Button>
+          <Button
+            accessibilityLabel="Send icon token sample"
+            size="icon"
+            variant="send"
+          >
+            ↗
+          </Button>
+        </Stack>
+      );
+    case "primitive":
+      return (
+        <Card
+          accessibilityLabel="Card Badge Chip token sample"
+          padding="md"
+          radius="md"
+          tone="surface"
+        >
+          <Stack gap="sm">
+            <Stack
+              direction="horizontal"
+              gap="xs"
+              style={styles.designDemoPrimitiveHeader}
+            >
+              <Badge tone="neutral">neutral</Badge>
+              <Badge tone="warning">warning</Badge>
+            </Stack>
+            <Text size="sm" tone="muted">
+              Card surface와 action chip이 같은 native facade에서 렌더링돼요.
+            </Text>
+            <Chip
+              accessibilityLabel="Save setup sample"
+              label="setup · 준비"
+              onPress={handleDemoChipPress}
+              prefix="+ 저장"
+            />
+          </Stack>
+        </Card>
+      );
+  }
 }

@@ -307,15 +307,22 @@ export const OtherStory: Story = {
     expect(mobileDemoDataSource).toContain(
       "nativeTokens.component.button.send",
     );
+    expect(mobileDemoDataSource).toContain("Card, Badge, Chip contract");
+    expect(mobileDemoDataSource).toContain(
+      "nativeTokens.component.chip.background",
+    );
     expect(mobileDemoSource).toContain(
-      'import { Button, Stack, Text } from "@nado/ui/native";',
+      'import { Badge, Button, Card, Chip, Stack, Text } from "@nado/ui/native";',
     );
     expect(mobileDemoSource).toContain('<Button variant="primary"');
     expect(mobileDemoSource).toContain('variant="send"');
+    expect(mobileDemoSource).toContain("<Card");
+    expect(mobileDemoSource).toContain('<Badge tone="neutral">');
+    expect(mobileDemoSource).toContain("<Chip");
     expect(mobileStylesSource).not.toContain("designDemoSendIconButton");
     expect(mobileStylesSource).not.toContain("designDemoPrimaryButton");
     expect(tokenParityDemoSource).toContain(
-      "낮은 위험 데모 표면이 `@nado/ui/native` facade를 실제로 import하는지",
+      "낮은 위험 데모 표면이 `@nado/ui/native` facade의 Button, Stack, Text, Card, Badge, Chip을 실제로 import하는지",
     );
     expect(tokenParityDemoSource).toContain(
       "review answer style이 `nativeTokens.component.reviewCard.answer`를 따르는지",
