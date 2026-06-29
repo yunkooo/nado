@@ -62,7 +62,7 @@ git diff --check
 
 - `@nado/tokens` test는 CSS pixel token이 React Native number token으로 변환되는지 확인한다.
 - `@nado/tokens` test는 token에서 생성되는 CSS custom property 이름이 Web/Desktop variable naming과 맞는지도 확인한다.
-- `@nado/ui` test는 Web/Desktop Button CSS가 component token 계약을 따르는지 확인한다.
+- `@nado/ui`와 `@nado/ui-web` test는 Web/Desktop CSS `:root`가 token 생성 output과 동기화되는지, Button CSS가 component token 계약을 따르는지 확인한다.
 - Storybook 구조 테스트는 `Foundations/Tokens`가 button과 reviewCard answer component token을 보여주는지 확인한다.
 - Storybook build는 등록된 story가 production build에서 실제로 번들링되는지 확인한다.
 - Mobile test는 `mobileStyles`가 `@nado/tokens/react-native`를 쓰는지, Mobile demo가 확인할 token source 목록을 화면과 같은 데이터로 제공하는지, 낮은 위험 데모 표면이 `@nado/ui/native` facade를 실제로 import하는지, review answer style이 `nativeTokens.component.reviewCard.answer`를 따르는지 확인한다.

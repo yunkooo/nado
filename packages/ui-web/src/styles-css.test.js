@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { tokens } from "@nado/tokens";
+import { createCssCustomPropertyString, tokens } from "@nado/tokens";
 
 const styles = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
+const expectedRootRule = createCssCustomPropertyString();
 const cssPrimitiveTokenEntries = [
   ["--nado-color-primary", tokens.color.primary],
   ["--nado-color-primary-ink", tokens.color.primaryInk],
@@ -28,6 +29,10 @@ const cssTokenValue = (value) =>
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 describe("analysis component styles", () => {
+  it("keeps root custom properties aligned with generated token output", () => {
+    expect(readRule(":root", { includeClosing: true })).toBe(expectedRootRule);
+  });
+
   it("uses result-card container queries for embedded narrow layouts", () => {
     expect(styles).toContain("container: nado-result-card / inline-size");
     expect(styles).toContain("@container nado-result-card");
@@ -331,7 +336,7 @@ describe("analysis component styles", () => {
   });
 });
 
-function readRule(selector) {
+function readRule(selector, options = {}) {
   const startIndex = styles.indexOf(`${selector} {`);
 
   if (startIndex === -1) {
@@ -340,5 +345,8 @@ function readRule(selector) {
 
   const endIndex = styles.indexOf("}", startIndex);
 
-  return styles.slice(startIndex, endIndex);
+  return styles.slice(
+    startIndex,
+    options.includeClosing ? endIndex + 1 : endIndex,
+  );
 }
