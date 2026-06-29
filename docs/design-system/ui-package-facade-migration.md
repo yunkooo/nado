@@ -322,11 +322,17 @@ import { Button } from "@nado/ui";
     - 완료: `@nado/ui-web`, `@nado/ui` compatibility CSS, `@nado/ui-native` style helper가 같은 기본 token을 사용한다.
     - 완료: saved/saving 상태 token은 앱 local override로 남기고 별도 후보로 둔다.
 
+19. Mobile `reviewDirection` segmented control 경계 점검
+    - 완료: [Mobile reviewDirection segmented control 경계](mobile-review-direction-segmented-audit.md)에서 Badge/Chip/Button과의 경계를 정리한다.
+    - 완료: 현재 반복 표면이 1곳뿐이므로 `SegmentedControl` 런타임 primitive 구현은 보류한다.
+    - 완료: 목표 계약 후보만 `component-api-contracts.md`에 남긴다.
+
 현재 남은 후보는 다음처럼 분리한다.
 
 - Mobile Card 적용 표면은 v1 후보 기준으로 완료되었으므로, 새 반복 surface가 생길 때 별도 판단한다.
 - Avatar는 profile/account 또는 작성자 표시처럼 identity visual 반복이 확인될 때 별도 구현한다.
 - Chip saved/saving state는 저장 action 반복이 더 확인될 때 component token으로 올릴지 판단한다.
+- SegmentedControl은 review direction 외 선택 control 반복이 확인될 때 별도 구현한다.
 
 ## 제외 범위
 
@@ -337,6 +343,7 @@ import { Button } from "@nado/ui";
 - `@nado/ui/native` facade를 사용하는 추가 Mobile 적용 표면 선정
 - 새 반복 surface의 추가 Mobile Card 적용
 - Avatar 반복 기준 충족 후 구현
+- SegmentedControl 반복 기준 충족 후 구현
 - Storybook for React Native 도입
 
 ## 검증 기준

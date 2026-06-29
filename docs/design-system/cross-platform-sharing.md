@@ -335,6 +335,7 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 - `@nado/ui/styles.css`와 `@nado/ui/web/styles.css`의 component별 CSS variable fallback을 token 생성 output 정책과 계속 맞추기
 - `@nado/ui/native` facade를 사용하는 Mobile 적용 표면 확대 기준 검토
 - 새 반복 surface가 생길 때 Mobile `mobileStyles`에서 `@nado/ui-native`로 옮길 낮은 위험 적용 표면 선정
+- review direction 외 선택 control 반복이 확인될 때 SegmentedControl 구현 검토
 - profile/account 또는 작성자 표시처럼 identity visual이 반복될 때 Avatar 구현 검토
 - `@nado/core` 도입 기준과 첫 후보 utility 검토
 - Storybook for React Native 도입 방식 검토
