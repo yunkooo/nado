@@ -160,10 +160,47 @@ function findBestAlias(aliases: CssTokenAlias[] | undefined, path: string[]) {
     return null;
   }
 
-  return [...aliases].sort(
+  const allowedAliases = aliases.filter((alias) =>
+    isAliasFamilyAllowed(alias.path, path),
+  );
+
+  if (allowedAliases.length === 0) {
+    return null;
+  }
+
+  return [...allowedAliases].sort(
     (left, right) =>
       getAliasScore(right.path, path) - getAliasScore(left.path, path),
   )[0]?.variableName;
+}
+
+function isAliasFamilyAllowed(aliasPath: string[], componentPath: string[]) {
+  const aliasFamily = aliasPath[0];
+  const leafName = componentPath.at(-1);
+  const leafTerms = new Set(splitNameTerms(leafName ?? ""));
+
+  if (
+    aliasFamily === "color" &&
+    (leafName === "background" ||
+      leafName === "foreground" ||
+      leafName === "border")
+  ) {
+    return true;
+  }
+
+  if (aliasFamily === "spacing" && leafTerms.has("padding")) {
+    return true;
+  }
+
+  if (aliasFamily === "radius" && leafName === "radius") {
+    return true;
+  }
+
+  if (aliasFamily === "shadow" && leafName === "shadow") {
+    return true;
+  }
+
+  return false;
 }
 
 function getAliasScore(aliasPath: string[], componentPath: string[]) {

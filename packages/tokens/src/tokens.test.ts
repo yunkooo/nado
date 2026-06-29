@@ -153,6 +153,13 @@ describe("@nado/tokens", () => {
     });
   });
 
+  it("keeps equal but unrelated component values as literals", () => {
+    expect(createCssCustomPropertyMap()).toMatchObject({
+      "--nado-button-size-sm-height": "32px",
+      "--nado-review-card-answer-padding": "14px",
+    });
+  });
+
   it("serializes CSS custom properties as a root rule", () => {
     const css = createCssCustomPropertyString();
 
