@@ -200,6 +200,28 @@ describe("mobile shared style tokens", () => {
     expect(vocabularyItemStyle).not.toContain("shadowRadius:");
   });
 
+  it("keeps mobile review card styles limited to card layout after moving the surface to ui-native Card", () => {
+    const reviewCardStyle = mobileStylesSource.match(
+      /reviewCard:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
+
+    expect(mobileStylesSource).toContain("reviewCard");
+    expect(reviewCardStyle).toContain('alignItems: "center"');
+    expect(reviewCardStyle).toContain("gap: 10");
+    expect(reviewCardStyle).toContain('justifyContent: "center"');
+    expect(reviewCardStyle).toContain("minHeight: 220");
+    expect(reviewCardStyle).not.toContain("backgroundColor:");
+    expect(reviewCardStyle).not.toContain("borderColor:");
+    expect(reviewCardStyle).not.toContain("borderRadius:");
+    expect(reviewCardStyle).not.toContain("borderWidth:");
+    expect(reviewCardStyle).not.toContain("paddingHorizontal:");
+    expect(reviewCardStyle).not.toContain("paddingVertical:");
+    expect(reviewCardStyle).not.toContain("shadowColor:");
+    expect(reviewCardStyle).not.toContain("shadowOffset:");
+    expect(reviewCardStyle).not.toContain("shadowOpacity:");
+    expect(reviewCardStyle).not.toContain("shadowRadius:");
+  });
+
   it("renders the mobile word definition card as an anchored overlay", () => {
     const wordDefinitionCardStyle = mobileStylesSource.match(
       /wordDefinitionCard:\s*{(?<body>[\s\S]*?)\n  },/,

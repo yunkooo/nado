@@ -13,8 +13,8 @@ Mobile에는 Card로 볼 수 있는 반복 surface가 충분하다. `@nado/ui-na
 | 후보 style           | 현재 위치                 | 반복 성격                                      | 판단                             |
 | -------------------- | ------------------------- | ---------------------------------------------- | -------------------------------- |
 | `vocabularyItem`     | 단어장 저장 항목          | surface, border, radius, padding, shadow 반복  | `Card tone="elevated"` 적용 완료 |
-| `reviewCard`         | 복습 flashcard            | surface, border, radius, padding, shadow 반복  | `Card tone="elevated"` 후보      |
-| `wordDefinitionCard` | 분석 단어 뜻 카드/Popover | surface, border, radius, padding, shadow 반복  | `Card tone="elevated"` 후보      |
+| `reviewCard`         | 복습 flashcard            | surface, border, radius, padding, shadow 반복  | `Card tone="elevated"` 적용 완료 |
+| `wordDefinitionCard` | 분석 단어 뜻 카드/Popover | surface, border, radius, padding, shadow 반복  | `Card tone="elevated"` 적용 완료 |
 | `summaryItem`        | 단어장 요약               | compact surface, border, radius, padding 반복  | `Card tone="surface"` 적용 완료  |
 | `meaningCard`        | 단어 뜻 내부 meaning 항목 | nested muted surface, compact padding 반복     | `Card tone="muted"` 적용 완료    |
 | `emptyPanel`         | 빈 상태/에러 상태         | feedback panel surface 반복                    | Card보다 Panel 후보에 가깝다     |
@@ -65,7 +65,8 @@ Card 최소 구현은 기존 primitive/semantic token으로 시작한다. 다음
    - 완료: 분석 단어 뜻 카드/Popover의 `wordDefinitionCard`를 `@nado/ui/native` `Card`로 적용한다.
    - 완료: 저장 단어 뜻 목록의 `meaningCard`를 `@nado/ui/native` `Card`로 적용한다.
    - 완료: 저장 단어 항목의 `vocabularyItem`을 `@nado/ui/native` `Card`로 적용한다.
-   - `reviewCard`는 reveal/answer state와 minHeight 영향이 커서 한 단계 뒤로 둔다.
+   - 완료: 복습 flashcard의 `reviewCard`를 `@nado/ui/native` `Card`로 적용한다.
+   - `reviewAnswer` reveal/blur state와 answer component token은 Card container가 아니라 기존 answer style에 남긴다.
 
 3. Badge 반복 점검
    - 완료: [Mobile Badge/Chip 반복 점검과 경계](mobile-badge-chip-repeat-audit.md)에서 `vocabularyType`, suggestion chip, review direction pill의 Badge/Chip/segmented control 경계를 분리한다.
