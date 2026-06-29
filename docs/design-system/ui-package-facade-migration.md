@@ -72,15 +72,15 @@ import { Button, Stack, Text } from "@nado/ui";
 
 facade가 보장해야 하는 기본 공통 API 대상은 기존 여섯 가지다. 아래 표는 기본 대상과 함께, Web/Desktop 기존 구현과 Mobile action chip 후보를 맞춘 `Chip`도 표시한다.
 
-| Component | 공통 API 상태  | Web 구현  | Native 구현 |
-| --------- | -------------- | --------- | ----------- |
-| `Button`  | 현재 계약 있음 | 구현됨    | 구현됨      |
-| `Text`    | 현재 계약 있음 | 구현됨    | 구현됨      |
-| `Stack`   | 현재 계약 있음 | 구현됨    | 구현됨      |
-| `Card`    | 현재 계약 있음 | 구현됨    | 구현됨      |
-| `Badge`   | 현재 계약 있음 | 구현됨    | 구현됨      |
-| `Avatar`  | 목표 계약 있음 | 향후 구현 | 향후 구현   |
-| `Chip`    | 현재 계약 있음 | 구현됨    | 구현됨      |
+| Component | 공통 API 상태  | Web 구현 | Native 구현 |
+| --------- | -------------- | -------- | ----------- |
+| `Button`  | 현재 계약 있음 | 구현됨   | 구현됨      |
+| `Text`    | 현재 계약 있음 | 구현됨   | 구현됨      |
+| `Stack`   | 현재 계약 있음 | 구현됨   | 구현됨      |
+| `Card`    | 현재 계약 있음 | 구현됨   | 구현됨      |
+| `Badge`   | 현재 계약 있음 | 구현됨   | 구현됨      |
+| `Avatar`  | 목표 계약 있음 | 보류     | 보류        |
+| `Chip`    | 현재 계약 있음 | 구현됨   | 구현됨      |
 
 공통 API는 prop 이름과 제품 의미를 공유한다. DOM element, CSS class, `Pressable`, `View`, `StyleSheet` 같은 구현 방식은 공유하지 않는다.
 
@@ -247,7 +247,7 @@ import { Button } from "@nado/ui";
    - `packages/ui-native` package, export, tests를 먼저 만든다.
    - 완료: `MobileTokenParityDemoScreen`을 첫 낮은 위험 적용 표면으로 사용한다.
    - 완료: `Badge`는 Mobile 반복 확인 뒤 Web/Desktop과 Mobile 양쪽에 구현했다.
-   - `Avatar`는 실제 반복 강도가 확인될 때 다음 후보로 둔다.
+   - 완료: `Avatar`는 반복 점검 뒤 구현 보류로 정리했다.
 
 3. `@nado/ui/native` facade 검증
    - 완료: `@nado/ui/native`가 `@nado/ui-native`를 re-export한다.
@@ -313,10 +313,14 @@ import { Button } from "@nado/ui";
     - 완료: surface, border, radius, padding, shadow는 primitive에 맡기고 앱 style에는 layout 값만 남긴다.
     - 완료: answer reveal/blur state와 `reviewAnswer` token style은 기존 앱 style에 남긴다.
 
+17. Avatar 반복 점검과 도입 기준 정리
+    - 완료: [Avatar 반복 점검과 도입 기준](avatar-repeat-audit.md)에서 현재 제품 표면에는 공통 Avatar로 추출할 반복이 부족하다고 정리했다.
+    - 완료: `Avatar`는 목표 계약만 유지하고 Web/Desktop, Mobile 런타임 구현은 보류한다.
+
 현재 남은 후보는 다음처럼 분리한다.
 
 - Mobile Card 적용 표면은 v1 후보 기준으로 완료되었으므로, 새 반복 surface가 생길 때 별도 판단한다.
-- Avatar는 실제 반복 강도가 확인될 때 별도 구현
+- Avatar는 profile/account 또는 작성자 표시처럼 identity visual 반복이 확인될 때 별도 구현한다.
 
 ## 제외 범위
 
@@ -326,7 +330,7 @@ import { Button } from "@nado/ui";
 - 기존 앱 import migration
 - `@nado/ui/native` facade를 사용하는 추가 Mobile 적용 표면 선정
 - 새 반복 surface의 추가 Mobile Card 적용
-- Avatar 구현
+- Avatar 반복 기준 충족 후 구현
 - Storybook for React Native 도입
 
 ## 검증 기준

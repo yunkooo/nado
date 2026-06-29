@@ -54,23 +54,23 @@ import { Button } from "@nado/ui/native";
 
 현재 Web/Desktop 공통 패키지에 실제 구현된 기본 component는 `Button`, `Text`, `Stack`, `Card`, `Badge`이다. Web/Desktop에는 기존 DOM surface인 `Chip`도 있다. Mobile 공통 패키지는 `Button`, `Text`, `Stack`, `Card`, `Badge`, `Chip`을 구현한다. Web/Desktop은 `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`, Mobile은 `@nado/ui/native`와 `@nado/ui-native`가 담당한다.
 
-| Component | Package                              | Platform    | Status |
-| --------- | ------------------------------------ | ----------- | ------ |
-| `Button`  | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
-| `Text`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
-| `Stack`   | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
-| `Card`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
-| `Badge`   | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
-| `Chip`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨 |
-| `Button`  | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
-| `Text`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
-| `Stack`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
-| `Card`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
-| `Badge`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
-| `Chip`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨 |
-| `Avatar`  | 후보                                 | 공통 계약   | 미구현 |
+| Component | Package                              | Platform    | Status      |
+| --------- | ------------------------------------ | ----------- | ----------- |
+| `Button`  | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
+| `Text`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
+| `Stack`   | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
+| `Card`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
+| `Badge`   | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
+| `Chip`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
+| `Button`  | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
+| `Text`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
+| `Stack`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
+| `Card`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
+| `Badge`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
+| `Chip`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
+| `Avatar`  | 후보                                 | 공통 계약   | 목표 계약만 |
 
-미구현 component는 이 문서에서 목표 계약만 고정한다. 실제 export는 별도 작업에서 추가한다. 앱 전체 마이그레이션과 기본 `@nado/ui` conditional export 개방은 별도 PR로 분리한다.
+미구현 component는 이 문서에서 목표 계약만 고정한다. 실제 export는 별도 작업에서 추가한다. Avatar는 [Avatar 반복 점검과 도입 기준](avatar-repeat-audit.md)에서 현재 반복 기준을 충족하지 않는 것으로 정리했으므로, 구현은 반복 surface가 생긴 뒤 별도 PR로 판단한다. 앱 전체 마이그레이션과 기본 `@nado/ui` conditional export 개방도 별도 PR로 분리한다.
 
 ## Button
 
@@ -212,6 +212,8 @@ v1에서 Chip은 `label`, `prefix`, `disabled`를 공유 가능한 핵심 prop�
 
 ## Avatar
 
+현재 구현 상태: Web/Desktop과 Mobile 모두 런타임 구현은 없다. 현재 제품 표면에는 사용자 이미지, initials fallback, profile identity visual이 2곳 이상 반복되지 않으므로 목표 계약만 유지한다.
+
 목표 계약:
 
 ```tsx
@@ -225,6 +227,8 @@ v1에서 Chip은 `label`, `prefix`, `disabled`를 공유 가능한 핵심 prop�
 | `size` | `sm`, `md`, `lg` | 정사각형 크기 token 단계                |
 
 Avatar는 이미지 로딩 실패, initials fallback, accessibility label을 기본 계약에 포함한다.
+
+구현은 실제 profile/account 또는 작성자 표시 표면이 반복될 때 진행한다. 브랜드 mark, 로그인 버튼, email 텍스트만 있는 인증 상태 표시는 Avatar 도입 근거로 보지 않는다.
 
 ## Future capabilities
 

@@ -19,7 +19,7 @@
 
 `Button`, `Text`, `Stack` 반복은 확인되었다. 이 점검 결과 다음 독립 PR로 `@nado/ui-native` 최소 API 구현을 선택했다.
 
-현재 `packages/ui-native`는 이 최소 API를 제공하고, `@nado/ui/native` facade도 이 패키지를 re-export한다. 앱 전체 마이그레이션은 후속 PR로 분리한다.
+현재 `packages/ui-native`는 이 최소 API에서 시작해 `Button`, `Text`, `Stack`, `Card`, `Badge`, `Chip`을 제공하고, `@nado/ui/native` facade도 이 패키지를 re-export한다. 앱 전체 마이그레이션은 여전히 후속 PR 단위로 작게 분리한다.
 
 다만 현재 Mobile은 아직 `App.tsx` 단일 화면 조합과 `mobileStyles` 중심 구조가 강하다. 첫 구현 PR에서 앱 전체를 대규모로 마이그레이션하지 않는다. `packages/ui-native`를 만들더라도 최소 primitive와 테스트를 먼저 만들고, 실제 화면 적용은 token parity demo 같은 낮은 위험 표면부터 시작한다.
 
@@ -92,10 +92,21 @@
 첫 PR에서 하지 않는 일:
 
 - `App.tsx` 전체 버튼, 텍스트, 레이아웃 마이그레이션
-- `Card`, `Badge`, `Avatar` 구현
+- `Card`, `Badge`, `Avatar` 같은 추가 component 구현
 - toast, tooltip, popover, tab, refresh button 일반화
 - `@nado/ui` 기본 conditional export 개방
 - Storybook for React Native 도입
+
+## 후속 진행 상태
+
+이후 별도 PR에서 `Card`, `Badge`, `Chip`은 반복 점검과 최소 구현, 일부 실제 화면 적용까지 진행했다.
+
+| Component | 현재 상태                                                                                     |
+| --------- | --------------------------------------------------------------------------------------------- |
+| `Card`    | Mobile card 반복 점검 뒤 `@nado/ui-native` 구현과 낮은 위험 화면 적용 완료                    |
+| `Badge`   | `vocabularyType` 반복을 기준으로 Web/Desktop과 Mobile 구현 완료                               |
+| `Chip`    | Mobile `suggestionChip`을 action chip 후보로 분리하고 Native Chip 적용 완료                   |
+| `Avatar`  | [Avatar 반복 점검과 도입 기준](avatar-repeat-audit.md)에 따라 반복 기준 충족 전까지 구현 보류 |
 
 ## `@nado/ui/native` 개방 기준
 
@@ -110,4 +121,4 @@
 
 ## 다음 결정
 
-반복 점검 결과에 따라 `@nado/ui-native` 최소 API를 만들었다. 낮은 위험 표면인 `MobileTokenParityDemoScreen`은 `@nado/ui/native` facade를 통해 `Button`, `Text`, `Stack`을 사용한다. 다음 단계는 이 facade를 사용하는 Mobile 적용 표면을 더 늘릴지 판단하거나, `Card`, `Badge`, `Avatar`처럼 아직 목표 계약만 있는 component의 실제 반복을 다시 확인하는 것이다.
+반복 점검 결과에 따라 `@nado/ui-native` 최소 API를 만들었다. 낮은 위험 표면인 `MobileTokenParityDemoScreen`은 `@nado/ui/native` facade를 통해 `Button`, `Text`, `Stack`을 사용한다. 이후 `Card`, `Badge`, `Chip`은 작은 PR로 확장되었다. 다음 단계는 새 반복 surface가 생길 때만 추가 Mobile 적용 표면을 고르고, `Avatar`는 identity visual 반복이 확인될 때 다시 구현 여부를 판단하는 것이다.
