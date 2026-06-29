@@ -83,6 +83,29 @@ Button으로 치환하면 `label + prefix`, wrap row layout, 저장 추천 목�
 
 saved/saving state는 아직 앱 흐름에 강하게 묶여 있으므로 component token으로 올리지 않는다. 두 플랫폼의 기본 action chip surface가 함께 움직여야 할 때는 `component.chip`을 쓰고, 저장 상태 전용 색상은 반복이 더 확인될 때 별도 state token으로 검토한다.
 
+## saved/saving state token 재점검
+
+재점검일: 2026-06-29
+
+결론: saved/saving state token은 아직 추가하지 않는다.
+
+현재 반복은 다음처럼 갈린다.
+
+| 표면                                   | saved/saving 표현                                                    | 판단                                                          |
+| -------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Web/Desktop `VocabularySuggestionList` | `prefix`, `disabled`, 접근성 label만 바뀐다. 별도 색상 class는 없다. | base `component.chip`과 disabled style로 충분하다.            |
+| Mobile analysis `suggestionChip`       | `suggestionChipSaved`, `suggestionChipSaving` local override를 쓴다. | 현재 Mobile 저장 추천 1곳의 제품 상태에 가깝다.               |
+| Web/Desktop word popover save action   | 저장 action 상태는 있지만 `Chip` state token 표면은 아니다.          | Button/action flow와 섞여 있어 Chip token 근거로 보지 않는다. |
+
+따라서 현재 단계에서 `component.chip.saved`나 `component.chip.saving`을 만들면 Web/Desktop에는 실사용 surface가 없고, Mobile의 제품 저장 상태를 design token으로 먼저 고정하게 된다. 이 상태는 아직 공통 primitive contract가 아니라 app-local state override로 유지한다.
+
+다시 검토할 조건:
+
+- Web/Desktop과 Mobile 모두에서 같은 `Chip` state visual이 필요해진다.
+- saved/saving 상태가 저장 추천 1곳을 넘어 여러 Chip action surface에서 반복된다.
+- `tone` 또는 `state` prop을 추가해도 Badge/Button 의미와 충돌하지 않는 contract가 정리된다.
+- token을 추가했을 때 app-local override가 실제로 줄고 Web/RN 테스트 경계가 더 명확해진다.
+
 ## 다음 티켓 후보
 
 1. Chip 공통 API 후보 문서화
@@ -103,3 +126,6 @@ saved/saving state는 아직 앱 흐름에 강하게 묶여 있으므로 compone
 5. Chip 기본 component token 추가
    - 완료: `component.chip`을 추가하고 Web/Desktop CSS와 `@nado/ui-native` style helper가 같은 기본 surface token을 사용한다.
    - 완료: saved/saving 상태 token은 추가하지 않고 앱 local override로 유지한다.
+
+6. saved/saving state token 후보 재점검
+   - 완료: 2026-06-29 재점검 결과, 반복 근거가 부족해 계속 보류한다.

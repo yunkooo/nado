@@ -207,7 +207,7 @@ Mobile 현재 계약:
 | `onClick`  | Web/Desktop event  | 기존 DOM `Chip` 계약을 유지한다.                                                       |
 | `onPress`  | React Native event | Mobile `Chip` interaction handler다.                                                   |
 | `as`       | Web/Desktop only   | Mobile public contract로 옮기지 않는다. 비상호작용 Mobile Chip은 별도 판단이 필요하다. |
-| `tone`     | 보류               | saved/saving state token이 생기기 전까지 공통 계약에 넣지 않는다.                      |
+| `tone`     | 보류               | 2026-06-29 재점검 결과 saved/saving 반복 근거가 부족해 공통 계약에 넣지 않는다.        |
 
 v1에서 Chip은 `label`, `prefix`, `disabled`를 공유 가능한 핵심 prop으로 본다. action handler 이름은 현재 Web/Desktop의 `onClick`과 React Native의 `onPress`가 달라서, 기본 `@nado/ui` cross-platform entry로 홍보하지 않는다. 나중에 양쪽 구현이 모두 준비되면 공통 action prop을 별도 PR에서 검토한다.
 

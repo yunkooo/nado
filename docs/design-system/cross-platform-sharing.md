@@ -331,7 +331,8 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 
 이 문서는 전략 정리까지만 다룬다. 실제 구현은 다음 issue로 나눈다.
 
-- `@nado/tokens` component token을 Chip saved/saving state와 ReviewCard의 추가 state로 확대
+- `@nado/tokens` component token을 ReviewCard의 추가 state로 확대할지 검토
+- Chip saved/saving state token은 [Mobile/Web Chip 경계와 action chip 후보](mobile-web-chip-boundary-audit.md)의 2026-06-29 재점검 결과에 따라, 저장 action surface 반복이 더 확인될 때만 다시 검토
 - `@nado/ui/styles.css`와 `@nado/ui/web/styles.css`의 component별 CSS variable fallback을 token 생성 output 정책과 계속 맞추기
 - `@nado/ui/native` facade를 사용하는 Mobile 적용 표면 확대 기준 검토
 - 새 반복 surface가 생길 때 Mobile `mobileStyles`에서 `@nado/ui-native`로 옮길 낮은 위험 적용 표면 선정
