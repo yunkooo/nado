@@ -151,7 +151,7 @@ Mobile은 React Native라 DOM className, CSS variable, hover 같은 개념을 �
 4. Mobile의 `mobileStyles` 또는 `@nado/ui-native`가 `nativeTokens`를 사용하고 있는지 확인한다.
 5. Storybook에서 Web/Desktop 상태를 확인한다.
 6. 현재는 Expo app과 mobile tests에서 Mobile 상태를 확인한다.
-7. Storybook for React Native를 도입한 뒤에는 RN 컴포넌트 상태를 story로 고정한다.
+7. Storybook for React Native는 [도입 검토](react-native-storybook-adoption.md)의 재검토 조건이 충족된 뒤에만 RN 컴포넌트 상태 catalog로 추가한다.
 
 ## Token layer 제안
 
@@ -283,26 +283,26 @@ Storybook을 기본 검증 표면으로 사용한다.
 
 현재 Mobile에서 실제로 사용할 수 있는 검증 표면은 Expo app과 mobile tests다.
 
-Storybook for React Native는 아직 이 저장소에 설정되어 있지 않으므로 현재 검증 위치처럼 취급하지 않는다. 다만 RN 공통 컴포넌트가 늘어나면 가장 먼저 검토할 Mobile component catalog 후보로 둔다.
+Storybook for React Native는 아직 이 저장소에 설정되어 있지 않으므로 현재 검증 위치처럼 취급하지 않는다. [도입 검토](react-native-storybook-adoption.md) 결과, 지금은 설치하지 않고 Expo app, mobile tests, `@nado/ui-native` tests를 현재 검증 표면으로 유지한다.
 
 도입하더라도 Storybook for RN은 디자인 값의 원본이 아니다. 디자인 값의 원본은 계속 `@nado/tokens`이고, Storybook for RN은 RN 컴포넌트가 그 token과 state 규칙을 잘 따르는지 확인하는 공간이다.
 
-| 도구                         | 현재 상태 | 역할                                   | 도입 기준                                           |
-| ---------------------------- | --------- | -------------------------------------- | --------------------------------------------------- |
-| Expo app                     | 사용 가능 | 실제 앱 안에서 RN 디자인을 빠르게 확인 | 현재 Mobile 화면 확인                               |
-| Mobile tests                 | 사용 가능 | token adapter와 mobile style 계약 확인 | 현재 회귀 확인                                      |
-| Storybook for React Native   | 후속 후보 | RN 컴포넌트 catalog와 state 확인       | Mobile 공통 컴포넌트를 만들기 시작할 때             |
-| React Native Testing Library | 후속 후보 | 컴포넌트 state와 accessibility 확인    | RN 공통 컴포넌트가 생길 때                          |
-| Maestro                      | 후속 후보 | 실제 앱 흐름과 터치 interaction 확인   | onboarding, analysis, vocabulary flow가 안정화될 때 |
+| 도구                         | 현재 상태    | 역할                                   | 도입 기준                                           |
+| ---------------------------- | ------------ | -------------------------------------- | --------------------------------------------------- |
+| Expo app                     | 사용 가능    | 실제 앱 안에서 RN 디자인을 빠르게 확인 | 현재 Mobile 화면 확인                               |
+| Mobile tests                 | 사용 가능    | token adapter와 mobile style 계약 확인 | 현재 회귀 확인                                      |
+| Storybook for React Native   | 검토 후 보류 | RN 컴포넌트 catalog와 state 확인       | state 조합과 적용 표면이 충분히 늘어날 때           |
+| React Native Testing Library | 후속 후보    | 컴포넌트 state와 accessibility 확인    | RN 공통 컴포넌트가 생길 때                          |
+| Maestro                      | 후속 후보    | 실제 앱 흐름과 터치 interaction 확인   | onboarding, analysis, vocabulary flow가 안정화될 때 |
 
 도구별 판단 기준은 다음처럼 나눈다.
 
-| 후보                         | 현재 사용 가능 여부                                   | 확인 범위                                      | 우선순위와 한계                                                                                                 |
-| ---------------------------- | ----------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Expo 기반 Mobile Design Demo | 사용 가능. `@nado/mobile`의 Expo app에서 확인한다.    | 실제 RN 화면, token 반영, touch 상태           | 지금 바로 쓸 수 있는 1순위 경로다. 단, demo screen을 만들기 전에는 기존 화면에서 수동 확인해야 한다.            |
-| Storybook for React Native   | 미설치. 현재 repo의 Storybook은 React Vite 기반이다.  | RN 공통 컴포넌트의 variant/state catalog       | 현재 검증 표면이 아니라 후속 도입 후보다. `@nado/ui-native`나 RN 공통 컴포넌트가 생긴 뒤 도입 효과가 커진다.    |
-| React Native Testing Library | 미설치. 현재 mobile tests는 Vitest 중심이다.          | RN 컴포넌트 렌더링, accessibility, press state | 시각 preview 도구가 아니라 컴포넌트 동작 회귀 방지 도구다. 공통 RN 컴포넌트 API가 생긴 뒤 테스트 기준으로 둔다. |
-| Maestro 또는 E2E             | 미설치. 현재 E2E는 Web Playwright 앱으로 분리돼 있다. | 실제 앱 실행 흐름, navigation, touch flow      | 디자인 token 자체보다 사용자 흐름 검증에 맞다. 주요 모바일 플로우가 안정화된 뒤 smoke 수준부터 도입을 검토한다. |
+| 후보                         | 현재 사용 가능 여부                                                           | 확인 범위                                      | 우선순위와 한계                                                                                                 |
+| ---------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Expo 기반 Mobile Design Demo | 사용 가능. `@nado/mobile`의 Expo app에서 확인한다.                            | 실제 RN 화면, token 반영, touch 상태           | 지금 바로 쓸 수 있는 1순위 경로다. 단, demo screen을 만들기 전에는 기존 화면에서 수동 확인해야 한다.            |
+| Storybook for React Native   | 미설치. 현재 repo의 Storybook은 React Vite 기반이다. 도입은 검토 후 보류했다. | RN 공통 컴포넌트의 variant/state catalog       | 현재 검증 표면이 아니다. [재검토 조건](react-native-storybook-adoption.md)이 충족되면 별도 PR로 판단한다.       |
+| React Native Testing Library | 미설치. 현재 mobile tests는 Vitest 중심이다.                                  | RN 컴포넌트 렌더링, accessibility, press state | 시각 preview 도구가 아니라 컴포넌트 동작 회귀 방지 도구다. 공통 RN 컴포넌트 API가 생긴 뒤 테스트 기준으로 둔다. |
+| Maestro 또는 E2E             | 미설치. 현재 E2E는 Web Playwright 앱으로 분리돼 있다.                         | 실제 앱 실행 흐름, navigation, touch flow      | 디자인 token 자체보다 사용자 흐름 검증에 맞다. 주요 모바일 플로우가 안정화된 뒤 smoke 수준부터 도입을 검토한다. |
 
 추천 순서:
 
@@ -310,10 +310,10 @@ Storybook for React Native는 아직 이 저장소에 설정되어 있지 않으
 2. Mobile RN 컴포넌트가 `nativeTokens`를 사용하도록 만든다.
 3. 현재는 Expo app과 mobile tests로 변경 결과를 확인한다.
 4. RN 공통 컴포넌트가 생기면 React Native Testing Library로 state와 accessibility 계약을 먼저 고정한다.
-5. Storybook for React Native를 도입한 뒤에는 story로 주요 RN 컴포넌트 상태를 고정한다.
+5. Storybook for React Native는 재검토 조건이 충족된 뒤에만 story로 주요 RN 컴포넌트 상태를 고정한다.
 6. 앱 단위 회귀가 필요해지면 Maestro 또는 RN E2E로 핵심 touch flow를 smoke test로 확인한다.
 
-즉, 지금 당장 후속 모바일 디자인 변경자가 실행할 수 있는 경로는 Expo app과 mobile tests다. Storybook for RN은 준비된 경로가 아니라 다음 도입 후보로 문서화한다.
+즉, 지금 당장 후속 모바일 디자인 변경자가 실행할 수 있는 경로는 Expo app과 mobile tests다. Storybook for RN은 준비된 경로가 아니라 보류된 후보이며, 재검토 조건은 [React Native Storybook 도입 검토](react-native-storybook-adoption.md)를 따른다.
 
 ## Token parity demo
 
@@ -338,7 +338,7 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 - review direction 외 선택 control 반복이 확인될 때 SegmentedControl 구현 검토
 - profile/account 또는 작성자 표시처럼 identity visual이 반복될 때 Avatar 구현 검토
 - `@nado/core` 도입 기준과 첫 후보 utility 검토
-- Storybook for React Native 도입 방식 검토
+- React Native Storybook 재검토 조건 충족 여부 점검
 - Mobile token parity story 추가
 
 ## v1 제외 범위와 future capability

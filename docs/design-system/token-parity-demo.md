@@ -86,4 +86,4 @@ git diff --check
 
 ## 제외 범위
 
-이 흐름은 현재 가능한 검증 표면을 연결하는 것이다. Storybook for React Native, Tamagui, NativeWind 같은 도구 도입 여부는 별도 issue에서 판단한다.
+이 흐름은 현재 가능한 검증 표면을 연결하는 것이다. Storybook for React Native는 [도입 검토](react-native-storybook-adoption.md)에 따라 지금은 설치하지 않고, 재검토 조건이 충족될 때 별도 PR로 판단한다. Tamagui, NativeWind 같은 도구도 같은 방식으로 현재 token parity 검증 흐름과 분리한다.

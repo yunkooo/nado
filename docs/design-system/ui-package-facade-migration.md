@@ -344,7 +344,7 @@ import { Button } from "@nado/ui";
 - 새 반복 surface의 추가 Mobile Card 적용
 - Avatar 반복 기준 충족 후 구현
 - SegmentedControl 반복 기준 충족 후 구현
-- Storybook for React Native 도입
+- Storybook for React Native 도입. 현재는 [React Native Storybook 도입 검토](react-native-storybook-adoption.md)에 따라 보류한다.
 
 ## 검증 기준
 
