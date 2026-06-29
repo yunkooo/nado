@@ -143,14 +143,17 @@ describe("@nado/tokens", () => {
     });
   });
 
-  it("preserves semantic token aliases for generated component variables", () => {
-    expect(createCssCustomPropertyMap()).toMatchObject({
-      "--nado-button-primary-background": "var(--nado-color-primary)",
-      "--nado-button-primary-foreground": "var(--nado-color-primary-ink)",
-      "--nado-button-send-background": "var(--nado-color-primary)",
-      "--nado-button-size-md-padding-x": "var(--nado-spacing-lg)",
-      "--nado-review-card-answer-foreground": "var(--nado-color-ink-muted)",
-    });
+  it("omits aliased component variables from root output so scoped semantic overrides can recompute", () => {
+    const properties = createCssCustomPropertyMap();
+
+    expect(properties).not.toHaveProperty("--nado-button-primary-background");
+    expect(properties).not.toHaveProperty("--nado-button-primary-foreground");
+    expect(properties).not.toHaveProperty("--nado-button-send-background");
+    expect(properties).not.toHaveProperty("--nado-button-size-sm-padding-x");
+    expect(properties).not.toHaveProperty("--nado-button-size-md-padding-x");
+    expect(properties).not.toHaveProperty(
+      "--nado-review-card-answer-foreground",
+    );
   });
 
   it("keeps equal but unrelated component values as literals", () => {
@@ -164,6 +167,7 @@ describe("@nado/tokens", () => {
     const css = createCssCustomPropertyString();
 
     expect(css).toContain("  --nado-color-primary: #26365f;\n");
+    expect(css).not.toContain("--nado-button-primary-background:");
     expect(css).toContain("  --nado-review-card-answer-radius: 7px;\n}");
     expect(css.startsWith(":root {\n")).toBe(true);
   });

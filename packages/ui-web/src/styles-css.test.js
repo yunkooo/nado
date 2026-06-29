@@ -12,6 +12,8 @@ const cssPrimitiveTokenEntries = [
   ["--nado-color-ink-muted", tokens.color.inkMuted],
   ["--nado-radius-md", tokens.radius.md],
   ["--nado-radius-pill", tokens.radius.pill],
+  ["--nado-spacing-md", tokens.spacing.md],
+  ["--nado-spacing-lg", tokens.spacing.lg],
 ];
 const cssPrimitiveReferences = new Map(
   cssPrimitiveTokenEntries.map(([variableName, value]) => [
@@ -134,15 +136,11 @@ describe("analysis component styles", () => {
     expect(rootRule).toContain(
       `--nado-button-size-sm-height: ${buttonTokens.size.sm.height}`,
     );
-    expect(rootRule).toContain(
-      `--nado-button-size-sm-padding-x: ${buttonTokens.size.sm.paddingX}`,
-    );
+    expect(rootRule).not.toContain("--nado-button-size-sm-padding-x:");
     expect(rootRule).toContain(
       `--nado-button-size-md-height: ${buttonTokens.size.md.height}`,
     );
-    expect(rootRule).toContain(
-      `--nado-button-size-md-padding-x: ${buttonTokens.size.md.paddingX}`,
-    );
+    expect(rootRule).not.toContain("--nado-button-size-md-padding-x:");
     expect(rootRule).toContain(
       `--nado-button-size-icon-height: ${buttonTokens.size.icon.height}`,
     );
@@ -163,8 +161,11 @@ describe("analysis component styles", () => {
     expect(smButtonRule).toContain(
       "min-height: var(--nado-button-size-sm-height)",
     );
+    expect(smButtonRule).toContain(
+      `padding: 0 var(--nado-button-size-sm-padding-x, ${cssTokenValue(buttonTokens.size.sm.paddingX)})`,
+    );
     expect(mdButtonRule).toContain(
-      "padding: 0 var(--nado-button-size-md-padding-x)",
+      `padding: 0 var(--nado-button-size-md-padding-x, ${cssTokenValue(buttonTokens.size.md.paddingX)})`,
     );
     expect(iconButtonRule).toContain(
       `border-radius: var(--nado-button-size-icon-radius, ${cssTokenValue(buttonTokens.size.icon.radius)})`,

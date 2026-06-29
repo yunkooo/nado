@@ -31,9 +31,7 @@
   --nado-text-line-height-lg: 28px;
   --nado-text-line-height-xl: 32px;
   --nado-button-size-sm-height: 32px;
-  --nado-button-size-sm-padding-x: 12px;
   --nado-button-size-md-height: 40px;
-  --nado-button-size-md-padding-x: 16px;
   --nado-button-size-icon-height: 38px;
   --nado-button-size-icon-padding-x: 0px;
   --nado-button-size-icon-width: 38px;
@@ -323,11 +321,11 @@
 
 .nado-button--sm {
   min-height: var(--nado-button-size-sm-height);
-  padding: 0 var(--nado-button-size-sm-padding-x);
+  padding: 0 var(--nado-button-size-sm-padding-x, var(--nado-spacing-md));
 }
 
 .nado-button--md {
-  padding: 0 var(--nado-button-size-md-padding-x);
+  padding: 0 var(--nado-button-size-md-padding-x, var(--nado-spacing-lg));
 }
 
 .nado-button--icon {

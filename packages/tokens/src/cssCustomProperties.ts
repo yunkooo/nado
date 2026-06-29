@@ -78,11 +78,17 @@ function collectCssCustomProperties({
   const variableName = [`--${prefix}`, ...normalizeTokenPath(path)]
     .map(toKebabCase)
     .join("-");
-  properties[variableName as `--${string}`] = getCssCustomPropertyValue({
+  const propertyValue = getCssCustomPropertyValue({
     aliases,
     path,
     value,
   });
+
+  if (propertyValue === null) {
+    return;
+  }
+
+  properties[variableName as `--${string}`] = propertyValue;
 }
 
 function createNonComponentAliasMap(
@@ -150,28 +156,17 @@ function getCssCustomPropertyValue({
     return String(value);
   }
 
-  const alias = findBestAlias(aliases.get(createAliasKey(value)), path);
+  const hasAlias = hasAllowedAlias(aliases.get(createAliasKey(value)), path);
 
-  return alias ? `var(${alias})` : String(value);
+  return hasAlias ? null : String(value);
 }
 
-function findBestAlias(aliases: CssTokenAlias[] | undefined, path: string[]) {
+function hasAllowedAlias(aliases: CssTokenAlias[] | undefined, path: string[]) {
   if (!aliases || aliases.length === 0) {
-    return null;
+    return false;
   }
 
-  const allowedAliases = aliases.filter((alias) =>
-    isAliasFamilyAllowed(alias.path, path),
-  );
-
-  if (allowedAliases.length === 0) {
-    return null;
-  }
-
-  return [...allowedAliases].sort(
-    (left, right) =>
-      getAliasScore(right.path, path) - getAliasScore(left.path, path),
-  )[0]?.variableName;
+  return aliases.some((alias) => isAliasFamilyAllowed(alias.path, path));
 }
 
 function isAliasFamilyAllowed(aliasPath: string[], componentPath: string[]) {
@@ -201,39 +196,6 @@ function isAliasFamilyAllowed(aliasPath: string[], componentPath: string[]) {
   }
 
   return false;
-}
-
-function getAliasScore(aliasPath: string[], componentPath: string[]) {
-  const aliasTerms = new Set(aliasPath.flatMap(splitNameTerms));
-  const componentTerms = new Set(componentPath.flatMap(splitNameTerms));
-  let score = 0;
-
-  for (const term of aliasTerms) {
-    if (componentTerms.has(term)) {
-      score += 2;
-    }
-  }
-
-  const leafName = componentPath.at(-1);
-  const leafTerms = new Set(splitNameTerms(leafName ?? ""));
-
-  if (leafName === "foreground" && aliasTerms.has("ink")) {
-    score += 3;
-  }
-
-  if (leafName === "background" && aliasTerms.has("surface")) {
-    score += 1;
-  }
-
-  if (leafTerms.has("padding") && aliasTerms.has("spacing")) {
-    score += 6;
-  }
-
-  if (leafName === "radius" && aliasTerms.has("radius")) {
-    score += 6;
-  }
-
-  return score;
 }
 
 function splitNameTerms(value: string) {
