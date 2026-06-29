@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { tokens } from "@nado/tokens";
+import {
+  createCssCustomPropertyMap,
+  createCssCustomPropertyString,
+  tokens,
+} from "@nado/tokens";
 import { nativeTokens } from "@nado/tokens/react-native";
 
 describe("@nado/tokens", () => {
@@ -126,5 +130,45 @@ describe("@nado/tokens", () => {
       padding: 14,
       radius: 7,
     });
+  });
+
+  it("creates CSS custom properties with the Web/Desktop variable naming contract", () => {
+    expect(createCssCustomPropertyMap()).toMatchObject({
+      "--nado-button-size-md-height": "40px",
+      "--nado-color-primary": tokens.color.primary,
+      "--nado-review-card-answer-radius":
+        tokens.component.reviewCard.answer.radius,
+      "--nado-spacing-md": tokens.spacing.md,
+      "--nado-text-line-height-md": tokens.typography.text.lineHeight.md,
+    });
+  });
+
+  it("omits aliased component variables from root output so scoped semantic overrides can recompute", () => {
+    const properties = createCssCustomPropertyMap();
+
+    expect(properties).not.toHaveProperty("--nado-button-primary-background");
+    expect(properties).not.toHaveProperty("--nado-button-primary-foreground");
+    expect(properties).not.toHaveProperty("--nado-button-send-background");
+    expect(properties).not.toHaveProperty("--nado-button-size-sm-padding-x");
+    expect(properties).not.toHaveProperty("--nado-button-size-md-padding-x");
+    expect(properties).not.toHaveProperty(
+      "--nado-review-card-answer-foreground",
+    );
+  });
+
+  it("keeps equal but unrelated component values as literals", () => {
+    expect(createCssCustomPropertyMap()).toMatchObject({
+      "--nado-button-size-sm-height": "32px",
+      "--nado-review-card-answer-padding": "14px",
+    });
+  });
+
+  it("serializes CSS custom properties as a root rule", () => {
+    const css = createCssCustomPropertyString();
+
+    expect(css).toContain("  --nado-color-primary: #26365f;\n");
+    expect(css).not.toContain("--nado-button-primary-background:");
+    expect(css).toContain("  --nado-review-card-answer-radius: 7px;\n}");
+    expect(css.startsWith(":root {\n")).toBe(true);
   });
 });

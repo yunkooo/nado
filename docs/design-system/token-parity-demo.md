@@ -61,6 +61,7 @@ git diff --check
 검증이 보는 계약:
 
 - `@nado/tokens` test는 CSS pixel token이 React Native number token으로 변환되는지 확인한다.
+- `@nado/tokens` test는 token에서 생성되는 CSS custom property 이름이 Web/Desktop variable naming과 맞는지도 확인한다.
 - `@nado/ui` test는 Web/Desktop Button CSS가 component token 계약을 따르는지 확인한다.
 - Storybook 구조 테스트는 `Foundations/Tokens`가 button과 reviewCard answer component token을 보여주는지 확인한다.
 - Storybook build는 등록된 story가 production build에서 실제로 번들링되는지 확인한다.
@@ -71,6 +72,7 @@ git diff --check
 | 역할                       | 파일                                                              |
 | -------------------------- | ----------------------------------------------------------------- |
 | token 원본                 | `packages/tokens/src/tokens.ts`                                   |
+| CSS variable generator     | `packages/tokens/src/cssCustomProperties.ts`                      |
 | RN token adapter           | `packages/tokens/src/reactNative.ts`                              |
 | Web/Desktop Button         | `packages/ui-web/src/Button.tsx`                                  |
 | Web/Desktop Button CSS     | `packages/ui-web/src/styles.css`                                  |

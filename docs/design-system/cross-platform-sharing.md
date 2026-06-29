@@ -179,10 +179,11 @@ Mobile은 React Native라 DOM className, CSS variable, hover 같은 개념을 �
 - React Native용 `nativeTokens` adapter 제공
 - Web length token과 RN number token의 차이를 흡수
 - Component token 안의 CSS pixel 값도 React Native에서는 number로 변환
+- CSS custom property map과 `:root` rule 생성 helper 제공
 
 다음 개선 후보:
 
-- CSS custom property output을 token에서 생성
+- `@nado/ui-web` CSS 변수를 token 생성 output으로 단계적 치환
 - chip과 ReviewCard의 다른 state로 component token 확대
 - token 변경 시 Web/Desktop/Mobile demo에서 같은 변경이 보이는지 확인하는 테스트 추가
 
@@ -329,7 +330,7 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 이 문서는 전략 정리까지만 다룬다. 실제 구현은 다음 issue로 나눈다.
 
 - `@nado/tokens` component token을 chip과 ReviewCard의 추가 state로 확대
-- `@nado/ui/styles.css`와 `@nado/ui/web/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
+- `@nado/ui/styles.css`와 `@nado/ui/web/styles.css`의 CSS custom property를 token 생성 output으로 단계적 치환
 - `@nado/ui/native` facade를 사용하는 Mobile 적용 표면 확대 기준 검토
 - 새 반복 surface가 생길 때 Mobile `mobileStyles`에서 `@nado/ui-native`로 옮길 낮은 위험 적용 표면 선정
 - profile/account 또는 작성자 표시처럼 identity visual이 반복될 때 Avatar 구현 검토
