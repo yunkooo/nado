@@ -71,4 +71,5 @@ component token은 여러 tone이 실제 화면에서 반복될 때 검토한다
    - 완료: saved/saving/disabled 상태가 Button contract와 더 맞는지도 함께 봤다.
 
 4. Segmented control 후보 분리
-   - `reviewDirection`은 Badge/Chip이 아니라 선택 control로 별도 후보에 남긴다.
+   - 완료: [Mobile reviewDirection segmented control 경계](mobile-review-direction-segmented-audit.md)에서 `reviewDirection`을 segmented control 후보로 분리했다.
+   - 완료: 현재 반복 표면이 1곳뿐이라 런타임 primitive 구현은 보류한다.

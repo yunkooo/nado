@@ -54,23 +54,24 @@ import { Button } from "@nado/ui/native";
 
 현재 Web/Desktop 공통 패키지에 실제 구현된 기본 component는 `Button`, `Text`, `Stack`, `Card`, `Badge`이다. Web/Desktop에는 기존 DOM surface인 `Chip`도 있다. Mobile 공통 패키지는 `Button`, `Text`, `Stack`, `Card`, `Badge`, `Chip`을 구현한다. Web/Desktop은 `@nado/ui`, `@nado/ui/web`, `@nado/ui-web`, Mobile은 `@nado/ui/native`와 `@nado/ui-native`가 담당한다.
 
-| Component | Package                              | Platform    | Status      |
-| --------- | ------------------------------------ | ----------- | ----------- |
-| `Button`  | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
-| `Text`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
-| `Stack`   | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
-| `Card`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
-| `Badge`   | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
-| `Chip`    | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
-| `Button`  | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
-| `Text`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
-| `Stack`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
-| `Card`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
-| `Badge`   | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
-| `Chip`    | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
-| `Avatar`  | 후보                                 | 공통 계약   | 목표 계약만 |
+| Component          | Package                              | Platform    | Status      |
+| ------------------ | ------------------------------------ | ----------- | ----------- |
+| `Button`           | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
+| `Text`             | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
+| `Stack`            | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
+| `Card`             | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
+| `Badge`            | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
+| `Chip`             | `@nado/ui`, `@nado/ui/web`           | Web/Desktop | 구현됨      |
+| `Button`           | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
+| `Text`             | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
+| `Stack`            | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
+| `Card`             | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
+| `Badge`            | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
+| `Chip`             | `@nado/ui/native`, `@nado/ui-native` | Mobile      | 구현됨      |
+| `SegmentedControl` | 후보                                 | 공통 계약   | 목표 계약만 |
+| `Avatar`           | 후보                                 | 공통 계약   | 목표 계약만 |
 
-미구현 component는 이 문서에서 목표 계약만 고정한다. 실제 export는 별도 작업에서 추가한다. Avatar는 [Avatar 반복 점검과 도입 기준](avatar-repeat-audit.md)에서 현재 반복 기준을 충족하지 않는 것으로 정리했으므로, 구현은 반복 surface가 생긴 뒤 별도 PR로 판단한다. 앱 전체 마이그레이션과 기본 `@nado/ui` conditional export 개방도 별도 PR로 분리한다.
+미구현 component는 이 문서에서 목표 계약만 고정한다. 실제 export는 별도 작업에서 추가한다. SegmentedControl은 [Mobile reviewDirection segmented control 경계](mobile-review-direction-segmented-audit.md)에서 현재 반복 기준을 충족하지 않는 것으로 정리했으므로, 구현은 선택 control surface가 더 생긴 뒤 별도 PR로 판단한다. Avatar는 [Avatar 반복 점검과 도입 기준](avatar-repeat-audit.md)에서 현재 반복 기준을 충족하지 않는 것으로 정리했으므로, 구현은 반복 surface가 생긴 뒤 별도 PR로 판단한다. 앱 전체 마이그레이션과 기본 `@nado/ui` conditional export 개방도 별도 PR로 분리한다.
 
 ## Button
 
@@ -209,6 +210,34 @@ Mobile 현재 계약:
 | `tone`     | 보류               | saved/saving state token이 생기기 전까지 공통 계약에 넣지 않는다.                      |
 
 v1에서 Chip은 `label`, `prefix`, `disabled`를 공유 가능한 핵심 prop으로 본다. action handler 이름은 현재 Web/Desktop의 `onClick`과 React Native의 `onPress`가 달라서, 기본 `@nado/ui` cross-platform entry로 홍보하지 않는다. 나중에 양쪽 구현이 모두 준비되면 공통 action prop을 별도 PR에서 검토한다.
+
+## SegmentedControl
+
+현재 구현 상태: Web/Desktop과 Mobile 모두 런타임 공통 컴포넌트는 없다. 현재 제품 표면에서는 복습 방향 선택 1곳만 segmented control 후보로 확인되었으므로 목표 계약만 유지한다.
+
+목표 계약 후보:
+
+```tsx
+<SegmentedControl
+  accessibilityLabel="복습 방향"
+  options={[
+    { label: "영어 -> 한국어", value: "english-to-korean" },
+    { label: "한국어 -> 영어", value: "korean-to-english" },
+  ]}
+  value={direction}
+  onValueChange={setDirection}
+/>
+```
+
+| Prop                 | 후보 값/타입                         | 의미                        |
+| -------------------- | ------------------------------------ | --------------------------- |
+| `accessibilityLabel` | `string`                             | control group 접근성 이름   |
+| `options`            | `{ label: string; value: string }[]` | 선택 가능한 값과 표시 label |
+| `value`              | `string`                             | 현재 선택값                 |
+| `onValueChange`      | `(value: string) => void`            | 선택 변경 callback          |
+| `disabled`           | `boolean`                            | 전체 control 비활성화 후보  |
+
+Web/Desktop은 button group 또는 radio group semantics를 검토하고, Mobile은 `Pressable`과 `accessibilityState.selected`를 사용한다. 구체적인 keyboard arrow 이동, role, touch target 기준은 실제 구현 PR에서 정한다.
 
 ## Avatar
 

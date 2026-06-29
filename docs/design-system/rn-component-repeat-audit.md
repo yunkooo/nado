@@ -101,12 +101,13 @@
 
 이후 별도 PR에서 `Card`, `Badge`, `Chip`은 반복 점검과 최소 구현, 일부 실제 화면 적용까지 진행했다.
 
-| Component | 현재 상태                                                                                     |
-| --------- | --------------------------------------------------------------------------------------------- |
-| `Card`    | Mobile card 반복 점검 뒤 `@nado/ui-native` 구현과 낮은 위험 화면 적용 완료                    |
-| `Badge`   | `vocabularyType` 반복을 기준으로 Web/Desktop과 Mobile 구현 완료                               |
-| `Chip`    | Mobile `suggestionChip`을 action chip 후보로 분리하고 Native Chip 적용 완료                   |
-| `Avatar`  | [Avatar 반복 점검과 도입 기준](avatar-repeat-audit.md)에 따라 반복 기준 충족 전까지 구현 보류 |
+| Component          | 현재 상태                                                                                                                          |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `Card`             | Mobile card 반복 점검 뒤 `@nado/ui-native` 구현과 낮은 위험 화면 적용 완료                                                         |
+| `Badge`            | `vocabularyType` 반복을 기준으로 Web/Desktop과 Mobile 구현 완료                                                                    |
+| `Chip`             | Mobile `suggestionChip`을 action chip 후보로 분리하고 Native Chip 적용 완료                                                        |
+| `SegmentedControl` | [Mobile reviewDirection segmented control 경계](mobile-review-direction-segmented-audit.md)에 따라 반복 기준 충족 전까지 구현 보류 |
+| `Avatar`           | [Avatar 반복 점검과 도입 기준](avatar-repeat-audit.md)에 따라 반복 기준 충족 전까지 구현 보류                                      |
 
 ## `@nado/ui/native` 개방 기준
 
@@ -121,4 +122,4 @@
 
 ## 다음 결정
 
-반복 점검 결과에 따라 `@nado/ui-native` 최소 API를 만들었다. 낮은 위험 표면인 `MobileTokenParityDemoScreen`은 `@nado/ui/native` facade를 통해 `Button`, `Text`, `Stack`을 사용한다. 이후 `Card`, `Badge`, `Chip`은 작은 PR로 확장되었다. 다음 단계는 새 반복 surface가 생길 때만 추가 Mobile 적용 표면을 고르고, `Avatar`는 identity visual 반복이 확인될 때 다시 구현 여부를 판단하는 것이다.
+반복 점검 결과에 따라 `@nado/ui-native` 최소 API를 만들었다. 낮은 위험 표면인 `MobileTokenParityDemoScreen`은 `@nado/ui/native` facade를 통해 `Button`, `Text`, `Stack`을 사용한다. 이후 `Card`, `Badge`, `Chip`은 작은 PR로 확장되었다. 다음 단계는 새 반복 surface가 생길 때만 추가 Mobile 적용 표면을 고르고, `SegmentedControl`은 선택 control 반복이 확인될 때, `Avatar`는 identity visual 반복이 확인될 때 다시 구현 여부를 판단하는 것이다.

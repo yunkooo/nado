@@ -98,7 +98,7 @@ saved/saving state는 아직 앱 흐름에 강하게 묶여 있으므로 compone
    - 완료: word popover 저장 버튼과 review direction은 변경하지 않는다.
 
 4. Segmented control 후보 분리
-   - `reviewDirection`은 Chip이 아니라 선택 control로 계속 분리한다.
+   - 완료: [Mobile reviewDirection segmented control 경계](mobile-review-direction-segmented-audit.md)에서 `reviewDirection`은 Chip이 아니라 선택 control로 계속 분리한다.
 
 5. Chip 기본 component token 추가
    - 완료: `component.chip`을 추가하고 Web/Desktop CSS와 `@nado/ui-native` style helper가 같은 기본 surface token을 사용한다.
