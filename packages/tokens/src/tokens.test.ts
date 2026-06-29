@@ -98,6 +98,20 @@ describe("@nado/tokens", () => {
     });
   });
 
+  it("exports component tokens for the chip surface", () => {
+    expect(tokens.component.chip).toMatchObject({
+      background: "#f6f8ff",
+      border: "#d8d8d2",
+      foreground: tokens.color.primary,
+      gap: "6px",
+      minHeight: "31px",
+      paddingX: "10px",
+      paddingY: "7px",
+      prefix: tokens.color.primary,
+      radius: "7px",
+    });
+  });
+
   it("adapts component size tokens to React Native numbers", () => {
     expect(nativeTokens.component.button.size).toMatchObject({
       sm: {
@@ -132,9 +146,25 @@ describe("@nado/tokens", () => {
     });
   });
 
+  it("adapts chip surface tokens to React Native values", () => {
+    expect(nativeTokens.component.chip).toMatchObject({
+      background: "#f6f8ff",
+      border: "#d8d8d2",
+      foreground: tokens.color.primary,
+      gap: 6,
+      minHeight: 31,
+      paddingX: 10,
+      paddingY: 7,
+      prefix: tokens.color.primary,
+      radius: 7,
+    });
+  });
+
   it("creates CSS custom properties with the Web/Desktop variable naming contract", () => {
     expect(createCssCustomPropertyMap()).toMatchObject({
       "--nado-button-size-md-height": "40px",
+      "--nado-chip-border": tokens.component.chip.border,
+      "--nado-chip-radius": tokens.component.chip.radius,
       "--nado-color-primary": tokens.color.primary,
       "--nado-review-card-answer-radius":
         tokens.component.reviewCard.answer.radius,
@@ -151,6 +181,8 @@ describe("@nado/tokens", () => {
     expect(properties).not.toHaveProperty("--nado-button-send-background");
     expect(properties).not.toHaveProperty("--nado-button-size-sm-padding-x");
     expect(properties).not.toHaveProperty("--nado-button-size-md-padding-x");
+    expect(properties).not.toHaveProperty("--nado-chip-foreground");
+    expect(properties).not.toHaveProperty("--nado-chip-prefix");
     expect(properties).not.toHaveProperty(
       "--nado-review-card-answer-foreground",
     );

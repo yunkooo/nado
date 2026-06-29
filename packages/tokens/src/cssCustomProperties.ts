@@ -178,7 +178,8 @@ function isAliasFamilyAllowed(aliasPath: string[], componentPath: string[]) {
     aliasFamily === "color" &&
     (leafName === "background" ||
       leafName === "foreground" ||
-      leafName === "border")
+      leafName === "border" ||
+      leafName === "prefix")
   ) {
     return true;
   }

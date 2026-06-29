@@ -322,7 +322,7 @@ describe("@nado/ui-native primitive style contracts", () => {
     expect(children[0]?.props.children).toBe("+ 저장");
     expect(children[0]?.props.style).toEqual([
       expect.objectContaining({
-        color: nativeTokens.color.primary,
+        color: nativeTokens.component.chip.prefix,
         fontSize: nativeTokens.typography.text.size.xs,
         fontWeight: "800",
       }),
@@ -332,7 +332,7 @@ describe("@nado/ui-native primitive style contracts", () => {
     expect(children[1]?.props.children).toBe("setup");
     expect(children[1]?.props.style).toEqual([
       expect.objectContaining({
-        color: nativeTokens.color.ink,
+        color: nativeTokens.component.chip.foreground,
         fontSize: nativeTokens.typography.text.size.sm,
       }),
       labelStyle,
@@ -366,25 +366,26 @@ describe("@nado/ui-native primitive style contracts", () => {
     expect(style).toHaveBeenNthCalledWith(2, { pressed: true });
   });
 
-  it("maps Chip styles to native tokens without adding state tokens yet", () => {
+  it("maps Chip styles to native component tokens without adding state tokens yet", () => {
     expect(createChipStyle({ disabled: true })).toMatchObject({
       alignItems: "center",
       alignSelf: "flex-start",
-      backgroundColor: nativeTokens.color.surfaceMuted,
-      borderColor: nativeTokens.color.border,
-      borderRadius: nativeTokens.radius.md,
+      backgroundColor: nativeTokens.component.chip.background,
+      borderColor: nativeTokens.component.chip.border,
+      borderRadius: nativeTokens.component.chip.radius,
       borderWidth: 1,
       flexDirection: "row",
-      gap: nativeTokens.spacing.xs,
+      gap: nativeTokens.component.chip.gap,
       maxWidth: "100%",
+      minHeight: nativeTokens.component.chip.minHeight,
       minWidth: 0,
       opacity: 0.64,
-      paddingHorizontal: nativeTokens.spacing.md,
-      paddingVertical: nativeTokens.spacing.sm,
+      paddingHorizontal: nativeTokens.component.chip.paddingX,
+      paddingVertical: nativeTokens.component.chip.paddingY,
     });
 
     expect(createChipLabelStyle()).toMatchObject({
-      color: nativeTokens.color.ink,
+      color: nativeTokens.component.chip.foreground,
       flexShrink: 1,
       fontSize: nativeTokens.typography.text.size.sm,
       fontWeight: "700",
@@ -392,7 +393,7 @@ describe("@nado/ui-native primitive style contracts", () => {
       minWidth: 0,
     });
     expect(createChipPrefixStyle()).toMatchObject({
-      color: nativeTokens.color.primary,
+      color: nativeTokens.component.chip.prefix,
       fontSize: nativeTokens.typography.text.size.xs,
       fontWeight: "800",
       lineHeight: nativeTokens.typography.text.lineHeight.xs,

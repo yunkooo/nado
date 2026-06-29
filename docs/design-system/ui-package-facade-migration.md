@@ -317,10 +317,16 @@ import { Button } from "@nado/ui";
     - 완료: [Avatar 반복 점검과 도입 기준](avatar-repeat-audit.md)에서 현재 제품 표면에는 공통 Avatar로 추출할 반복이 부족하다고 정리했다.
     - 완료: `Avatar`는 목표 계약만 유지하고 Web/Desktop, Mobile 런타임 구현은 보류한다.
 
+18. Chip 기본 component token 추가
+    - 완료: `@nado/tokens`에 `component.chip` 기본 surface token을 추가한다.
+    - 완료: `@nado/ui-web`, `@nado/ui` compatibility CSS, `@nado/ui-native` style helper가 같은 기본 token을 사용한다.
+    - 완료: saved/saving 상태 token은 앱 local override로 남기고 별도 후보로 둔다.
+
 현재 남은 후보는 다음처럼 분리한다.
 
 - Mobile Card 적용 표면은 v1 후보 기준으로 완료되었으므로, 새 반복 surface가 생길 때 별도 판단한다.
 - Avatar는 profile/account 또는 작성자 표시처럼 identity visual 반복이 확인될 때 별도 구현한다.
+- Chip saved/saving state는 저장 action 반복이 더 확인될 때 component token으로 올릴지 판단한다.
 
 ## 제외 범위
 

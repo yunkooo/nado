@@ -210,6 +210,54 @@ describe("analysis component styles", () => {
     );
   });
 
+  it("keeps Chip styles aligned with component tokens", () => {
+    const chipTokens = tokens.component.chip;
+    const rootRule = readRule(":root");
+    const chipRule = readLastRule(".nado-chip");
+    const prefixRule = readRule(".nado-chip__prefix");
+
+    expect(rootRule).toContain(
+      `--nado-chip-background: ${chipTokens.background}`,
+    );
+    expect(rootRule).toContain(`--nado-chip-border: ${chipTokens.border}`);
+    expect(rootRule).not.toContain("--nado-chip-foreground:");
+    expect(rootRule).not.toContain("--nado-chip-prefix:");
+    expect(rootRule).toContain(`--nado-chip-radius: ${chipTokens.radius}`);
+    expect(rootRule).toContain(`--nado-chip-gap: ${chipTokens.gap}`);
+    expect(rootRule).toContain(
+      `--nado-chip-min-height: ${chipTokens.minHeight}`,
+    );
+    expect(rootRule).toContain(`--nado-chip-padding-x: ${chipTokens.paddingX}`);
+    expect(rootRule).toContain(`--nado-chip-padding-y: ${chipTokens.paddingY}`);
+
+    expect(chipRule).toContain(
+      `background: var(--nado-chip-background, ${cssTokenValue(chipTokens.background)})`,
+    );
+    expect(chipRule).toContain(
+      `border-color: var(--nado-chip-border, ${cssTokenValue(chipTokens.border)})`,
+    );
+    expect(chipRule).toContain(
+      `border-radius: var(--nado-chip-radius, ${cssTokenValue(chipTokens.radius)})`,
+    );
+    expect(chipRule).toContain(
+      `color: var(--nado-chip-foreground, ${cssTokenValue(chipTokens.foreground)})`,
+    );
+    expect(chipRule).toContain(
+      `gap: var(--nado-chip-gap, ${cssTokenValue(chipTokens.gap)})`,
+    );
+    expect(chipRule).toContain(
+      `min-height: var(--nado-chip-min-height, ${cssTokenValue(chipTokens.minHeight)})`,
+    );
+    expect(chipRule).toMatch(
+      new RegExp(
+        `padding:\\s*var\\(\\s*--nado-chip-padding-y,\\s*${escapeRegex(cssTokenValue(chipTokens.paddingY))}\\s*\\)\\s*var\\(\\s*--nado-chip-padding-x,\\s*${escapeRegex(cssTokenValue(chipTokens.paddingX))}\\s*\\)`,
+      ),
+    );
+    expect(prefixRule).toContain(
+      `color: var(--nado-chip-prefix, ${cssTokenValue(chipTokens.prefix)})`,
+    );
+  });
+
   it("keeps Card styles aligned with the documented spacing and radius contract", () => {
     const cardRule = readRule(".nado-card");
     const surfaceRule = readRule(".nado-card--tone-surface");
@@ -338,6 +386,21 @@ describe("analysis component styles", () => {
 
 function readRule(selector, options = {}) {
   const startIndex = styles.indexOf(`${selector} {`);
+
+  if (startIndex === -1) {
+    return "";
+  }
+
+  const endIndex = styles.indexOf("}", startIndex);
+
+  return styles.slice(
+    startIndex,
+    options.includeClosing ? endIndex + 1 : endIndex,
+  );
+}
+
+function readLastRule(selector, options = {}) {
+  const startIndex = styles.lastIndexOf(`${selector} {`);
 
   if (startIndex === -1) {
     return "";

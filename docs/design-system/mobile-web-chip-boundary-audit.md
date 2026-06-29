@@ -68,18 +68,20 @@ Button으로 치환하면 `label + prefix`, wrap row layout, 저장 추천 목�
 
 ## Token 후보
 
-첫 구현은 기존 primitive/semantic token으로 시작한다.
+첫 구현은 기존 primitive/semantic token으로 시작했고, Web/Desktop `nado-chip`과 Mobile `suggestionChip` 실제 적용 뒤 기본 surface를 `component.chip`으로 승격했다.
 
-- background: `color.surfaceMuted`
-- foreground: `color.ink`
-- prefix foreground: `color.primary`
-- border: `color.border`
+- background: `component.chip.background`
+- foreground: `component.chip.foreground`
+- prefix foreground: `component.chip.prefix`
+- border: `component.chip.border`
+- radius: `component.chip.radius`
+- gap: `component.chip.gap`
+- min height: `component.chip.minHeight`
+- padding: `component.chip.paddingX`, `component.chip.paddingY`
 - saved background: `color.sidebar`
 - saved border: `color.sidebarActive`
-- radius: `radius.md`
-- padding: `spacing.md` 기반
 
-component token은 Web/Desktop `nado-chip`과 Mobile `suggestionChip`을 같은 의미로 두 번 이상 조정할 때 추가한다. 첫 후보 이름은 `component.chip.action` 또는 `component.chip.suggestion`이 될 수 있지만, 저장 action에만 갇히지 않도록 실제 적용 표면을 더 확인한다.
+saved/saving state는 아직 앱 흐름에 강하게 묶여 있으므로 component token으로 올리지 않는다. 두 플랫폼의 기본 action chip surface가 함께 움직여야 할 때는 `component.chip`을 쓰고, 저장 상태 전용 색상은 반복이 더 확인될 때 별도 state token으로 검토한다.
 
 ## 다음 티켓 후보
 
@@ -97,3 +99,7 @@ component token은 Web/Desktop `nado-chip`과 Mobile `suggestionChip`을 같은 
 
 4. Segmented control 후보 분리
    - `reviewDirection`은 Chip이 아니라 선택 control로 계속 분리한다.
+
+5. Chip 기본 component token 추가
+   - 완료: `component.chip`을 추가하고 Web/Desktop CSS와 `@nado/ui-native` style helper가 같은 기본 surface token을 사용한다.
+   - 완료: saved/saving 상태 token은 추가하지 않고 앱 local override로 유지한다.
