@@ -36,6 +36,7 @@ describe("mobile design token demo flag", () => {
       {
         description:
           "primary와 surfaceMuted 색상이 React Native 화면까지 같은 token source에서 이어지는지 확인합니다.",
+        kind: "color",
         tokenSources: [
           "nativeTokens.color.primary",
           "nativeTokens.color.surfaceMuted",
@@ -45,6 +46,7 @@ describe("mobile design token demo flag", () => {
       {
         description:
           "primary, secondary, send, md, icon button contract가 component token을 통과하는지 확인합니다.",
+        kind: "button",
         tokenSources: [
           "nativeTokens.component.button.primary",
           "nativeTokens.component.button.secondary",
@@ -53,6 +55,20 @@ describe("mobile design token demo flag", () => {
           "nativeTokens.component.button.size.icon",
         ],
         title: "Button contract",
+      },
+      {
+        description:
+          "Card, Badge, Chip primitive가 semantic token과 component token을 같은 RN facade에서 확인할 수 있는지 봅니다.",
+        kind: "primitive",
+        tokenSources: [
+          "nativeTokens.color.surface",
+          "nativeTokens.color.surfaceMuted",
+          "nativeTokens.radius.pill",
+          "nativeTokens.component.chip.background",
+          "nativeTokens.component.chip.foreground",
+          "nativeTokens.component.chip.prefix",
+        ],
+        title: "Card, Badge, Chip contract",
       },
     ]);
   });
@@ -68,7 +84,7 @@ describe("mobile design token demo flag", () => {
 
   it("applies the native facade package on the low-risk demo surface", () => {
     expect(mobileTokenParityDemoScreenSource).toContain(
-      'import { Button, Stack, Text } from "@nado/ui/native";',
+      'import { Badge, Button, Card, Chip, Stack, Text } from "@nado/ui/native";',
     );
     expect(mobileTokenParityDemoScreenSource).toContain("<Stack");
     expect(mobileTokenParityDemoScreenSource).toContain(
@@ -79,5 +95,18 @@ describe("mobile design token demo flag", () => {
     );
     expect(mobileTokenParityDemoScreenSource).toContain('size="icon"');
     expect(mobileTokenParityDemoScreenSource).toContain('variant="send"');
+    expect(mobileTokenParityDemoScreenSource).toContain("<Card");
+    expect(mobileTokenParityDemoScreenSource).toContain(
+      'accessibilityLabel="Card Badge Chip token sample"',
+    );
+    expect(mobileTokenParityDemoScreenSource).toContain(
+      '<Badge tone="neutral">',
+    );
+    expect(mobileTokenParityDemoScreenSource).toContain(
+      '<Badge tone="warning">',
+    );
+    expect(mobileTokenParityDemoScreenSource).toContain("<Chip");
+    expect(mobileTokenParityDemoScreenSource).toContain('label="setup · 준비"');
+    expect(mobileTokenParityDemoScreenSource).toContain('prefix="+ 저장"');
   });
 });

@@ -134,6 +134,9 @@ describe("mobile shared style tokens", () => {
     const demoPrimarySwatchStyle = mobileStylesSource.match(
       /designDemoPrimarySwatch:\s*{(?<body>[\s\S]*?)\n  },/,
     )?.groups?.body;
+    const demoPrimitiveHeaderStyle = mobileStylesSource.match(
+      /designDemoPrimitiveHeader:\s*{(?<body>[\s\S]*?)\n  },/,
+    )?.groups?.body;
     const demoTokenSourceStyle = mobileStylesSource.match(
       /designDemoTokenSource:\s*{(?<body>[\s\S]*?)\n  },/,
     )?.groups?.body;
@@ -155,6 +158,9 @@ describe("mobile shared style tokens", () => {
     expect(mobileStylesSource).not.toContain("designDemoPrimaryButton");
     expect(mobileStylesSource).not.toContain("designDemoSecondaryButton");
     expect(mobileStylesSource).not.toContain("designDemoSendIconButton");
+    expect(demoPrimitiveHeaderStyle ?? "").toContain('flexDirection: "row"');
+    expect(demoPrimitiveHeaderStyle ?? "").toContain('flexWrap: "wrap"');
+    expect(demoPrimitiveHeaderStyle ?? "").toContain("gap: mobileSpacing.xs");
     expect(demoTokenSourceStyle ?? "").toContain(
       "backgroundColor: mobileColors.surfaceMuted",
     );

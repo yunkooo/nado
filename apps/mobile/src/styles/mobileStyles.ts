@@ -246,6 +246,11 @@ export const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: mobileSpacing.sm,
   },
+  designDemoPrimitiveHeader: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: mobileSpacing.xs,
+  },
   designDemoPrimarySwatch: {
     backgroundColor: mobileColors.primary,
     borderRadius: mobileRadius.md,
