@@ -17,7 +17,7 @@ Mobile React Native UI
   @nado/tokens/react-native 기반으로 별도 구현
 
 @nado/ui-native
-  Mobile에서 반복되는 RN Button/Text/Stack/Card 최소 primitive
+  Mobile에서 반복되는 RN Button/Text/Stack/Card/Badge/Chip 최소 primitive
 ```
 
 핵심은 웹 CSS를 모바일이 따라 하는 것이 아니라, 양쪽이 같은 token source를 바라보게 만드는 것이다.
@@ -212,9 +212,9 @@ Mobile에서 반복되는 RN 컴포넌트를 `@nado/ui-native` 패키지로 분�
 - Web/Desktop의 `@nado/ui`와 같은 variant/state 계약을 맞춰야 한다.
 - 단순 screen-local style보다 패키지화했을 때 유지보수 비용이 줄어든다.
 
-처음부터 큰 패키지를 만들기보다 공통 API 계약이 이미 있는 `Button`, `Text`, `Stack`, `Card`, `Badge`처럼 반복이 확인된 primitive부터 순차적으로 확장하는 것이 좋다. `Chip`과 `ReviewCard`의 추가 state는 component token 반복이 확인될 때 별도 후보로 다룬다.
+처음부터 큰 패키지를 만들기보다 공통 API 계약이 이미 있는 `Button`, `Text`, `Stack`, `Card`, `Badge`처럼 반복이 확인된 primitive부터 순차적으로 확장하는 것이 좋다. `Chip`은 action chip 반복을 확인한 뒤 최소 primitive로 추가했다. `Avatar`와 `ReviewCard`의 추가 state는 실제 반복이 확인될 때 별도 후보로 다룬다.
 
-[RN component repeat audit](rn-component-repeat-audit.md)에서 `Button`, `Text`, `Stack` 반복은 확인되었고, [Mobile Card repeat audit](mobile-card-repeat-audit.md)에서 Card 후보도 확인되었다. [Mobile Badge/Chip 반복 점검과 경계](mobile-badge-chip-repeat-audit.md)에서는 `vocabularyType`을 Badge 후보로 분리했다. `@nado/ui-native`는 이 primitive의 최소 API를 제공하고, `@nado/ui/native`는 이 패키지를 re-export한다. 앱 전체 마이그레이션은 포함하지 않고, 적용은 token parity demo나 작은 실제 화면 표면부터 시작한다.
+[RN component repeat audit](rn-component-repeat-audit.md)에서 `Button`, `Text`, `Stack` 반복은 확인되었고, [Mobile Card repeat audit](mobile-card-repeat-audit.md)에서 Card 후보도 확인되었다. [Mobile Badge/Chip 반복 점검과 경계](mobile-badge-chip-repeat-audit.md)에서는 `vocabularyType`을 Badge 후보로, [Mobile/Web Chip 경계와 action chip 후보](mobile-web-chip-boundary-audit.md)에서는 `suggestionChip`을 Chip 후보로 분리했다. [Avatar 반복 점검과 도입 기준](avatar-repeat-audit.md)에서는 현재 제품 표면에 Avatar 반복이 부족하므로 목표 계약만 유지한다고 정리했다. `@nado/ui-native`는 이 primitive의 최소 API를 제공하고, `@nado/ui/native`는 이 패키지를 re-export한다. 앱 전체 마이그레이션은 포함하지 않고, 적용은 token parity demo나 작은 실제 화면 표면부터 시작한다.
 
 ### `@nado/shared`
 
@@ -332,6 +332,7 @@ token 변경이 Web/Desktop/Mobile에 함께 보이는지 확인하는 현재 �
 - `@nado/ui/styles.css`와 `@nado/ui/web/styles.css`의 CSS custom property를 token에서 생성할 수 있는지 검토
 - `@nado/ui/native` facade를 사용하는 Mobile 적용 표면 확대 기준 검토
 - 새 반복 surface가 생길 때 Mobile `mobileStyles`에서 `@nado/ui-native`로 옮길 낮은 위험 적용 표면 선정
+- profile/account 또는 작성자 표시처럼 identity visual이 반복될 때 Avatar 구현 검토
 - `@nado/core` 도입 기준과 첫 후보 utility 검토
 - Storybook for React Native 도입 방식 검토
 - Mobile token parity story 추가
