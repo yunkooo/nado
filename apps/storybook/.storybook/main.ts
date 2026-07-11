@@ -1,6 +1,7 @@
 import type { StorybookConfig } from "@storybook/react-vite";
 
 const toPathname = (path: string) => new URL(path, import.meta.url).pathname;
+const STORYBOOK_CHUNK_SIZE_WARNING_LIMIT_KB = 1_200;
 
 const config: StorybookConfig = {
   addons: ["@storybook/addon-docs"],
@@ -25,6 +26,10 @@ const config: StorybookConfig = {
 
     return {
       ...viteConfig,
+      build: {
+        ...viteConfig.build,
+        chunkSizeWarningLimit: STORYBOOK_CHUNK_SIZE_WARNING_LIMIT_KB,
+      },
       resolve: {
         ...viteConfig.resolve,
         alias: [
