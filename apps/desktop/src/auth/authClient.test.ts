@@ -81,7 +81,6 @@ describe("desktop auth client helpers", () => {
       {
         auth: {
           exchangeCodeForSession,
-          setSession: vi.fn(),
         },
       },
     );
@@ -98,7 +97,6 @@ describe("desktop auth client helpers", () => {
           exchangeCodeForSession: vi.fn(async () => {
             throw new Error("missing code verifier");
           }),
-          setSession: vi.fn(),
         },
       },
     );
@@ -106,40 +104,17 @@ describe("desktop auth client helpers", () => {
     expect(result).toBe("error");
   });
 
-  it("sets a session from hash-based desktop OAuth callbacks", async () => {
-    const setSession = vi.fn(async () => ({ error: null }));
-
+  it("ignores hash-based callbacks because desktop OAuth uses PKCE", async () => {
     const result = await completeAuthFromCallbackUrl(
       "nado://auth/callback#access_token=access&refresh_token=refresh",
       {
         auth: {
           exchangeCodeForSession: vi.fn(),
-          setSession,
         },
       },
     );
 
-    expect(result).toBe("handled");
-    expect(setSession).toHaveBeenCalledWith({
-      access_token: "access",
-      refresh_token: "refresh",
-    });
-  });
-
-  it("reports thrown session restore errors", async () => {
-    const result = await completeAuthFromCallbackUrl(
-      "nado://auth/callback#access_token=access&refresh_token=refresh",
-      {
-        auth: {
-          exchangeCodeForSession: vi.fn(),
-          setSession: vi.fn(async () => {
-            throw new Error("storage unavailable");
-          }),
-        },
-      },
-    );
-
-    expect(result).toBe("error");
+    expect(result).toBe("ignored");
   });
 
   it("reports OAuth callback errors instead of ignoring them", async () => {
@@ -148,7 +123,6 @@ describe("desktop auth client helpers", () => {
       {
         auth: {
           exchangeCodeForSession: vi.fn(),
-          setSession: vi.fn(),
         },
       },
     );

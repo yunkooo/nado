@@ -41,19 +41,6 @@ fn handle_oauth_loopback_request(mut stream: std::net::TcpStream, app_handle: &t
     let request = read_http_request(&mut stream);
     let (method, path) = request_line_parts(&request);
 
-    if method == "POST" && path == "/desktop-auth-callback" {
-        let payload = request_body(&request);
-
-        emit_desktop_oauth_callback(app_handle, &payload);
-
-        write_http_response(
-            &mut stream,
-            r#"{"ok":true}"#,
-            "application/json; charset=utf-8",
-        );
-        return;
-    }
-
     if method == "GET" {
         if let Some(payload) = callback_payload_from_request_target(&path) {
             emit_desktop_oauth_callback(app_handle, &payload);
@@ -91,39 +78,8 @@ fn handle_oauth_loopback_request(mut stream: std::net::TcpStream, app_handle: &t
     </style>
   </head>
   <body>
-    <h1>nado app login is finishing.</h1>
-    <p id="status">Sending login result to the desktop app.</p>
-    <a id="return-to-app" href="nado://auth/callback">Return to nado app</a>
-    <script>
-      const callbackUrl = "nado://auth/callback" + window.location.search + window.location.hash;
-      const link = document.getElementById("return-to-app");
-      const status = document.getElementById("status");
-      link.href = callbackUrl;
-
-      async function finishLogin() {
-        try {
-          const payload = window.location.search + window.location.hash;
-
-          if (payload) {
-            await fetch("/desktop-auth-callback", {
-              body: payload,
-              cache: "no-store",
-              headers: { "Content-Type": "text/plain;charset=utf-8" },
-              method: "POST"
-            });
-            status.textContent = "Login completed. You can close this tab.";
-            window.setTimeout(() => window.close(), 300);
-            return;
-          }
-        } catch {
-          status.textContent = "The app did not receive the login result automatically.";
-        }
-
-        window.location.href = callbackUrl;
-      }
-
-      finishLogin();
-    </script>
+    <h1>nado login callback is unavailable.</h1>
+    <p>Return to nado and start Google login again.</p>
   </body>
 </html>"#;
     write_http_response(&mut stream, body, "text/html; charset=utf-8");
@@ -212,23 +168,26 @@ fn request_line_parts(request: &[u8]) -> (String, String) {
     )
 }
 
-fn request_body(request: &[u8]) -> String {
-    let Some(header_end) = find_header_end(request) else {
-        return String::new();
-    };
+fn callback_payload_from_request_target(target: &str) -> Option<String> {
+    let (path, query) = target.split_once('?')?;
 
-    String::from_utf8_lossy(&request[header_end + 4..]).to_string()
+    if path != "/" || query.is_empty() || !contains_oauth_callback_parameter(query) {
+        return None;
+    }
+
+    Some(format!("?{query}"))
 }
 
-fn callback_payload_from_request_target(target: &str) -> Option<String> {
-    let payload_start = target.find('?')?;
-    let payload = &target[payload_start..];
-
-    if payload.len() > 1 {
-        Some(payload.to_string())
-    } else {
-        None
-    }
+fn contains_oauth_callback_parameter(query: &str) -> bool {
+    query.split('&').any(|parameter| {
+        matches!(
+            parameter
+                .split_once('=')
+                .map(|(key, _)| key)
+                .unwrap_or(parameter),
+            "code" | "error" | "error_code"
+        )
+    })
 }
 
 fn find_header_end(request: &[u8]) -> Option<usize> {
@@ -270,4 +229,26 @@ fn write_http_response(stream: &mut std::net::TcpStream, body: &str, content_typ
 
     let _ = stream.write_all(response.as_bytes());
     let _ = stream.flush();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::callback_payload_from_request_target;
+
+    #[test]
+    fn accepts_only_pkce_codes_or_oauth_errors_on_the_loopback_root_path() {
+        assert_eq!(
+            callback_payload_from_request_target("/?code=authorization-code&state=state"),
+            Some("?code=authorization-code&state=state".to_string())
+        );
+        assert_eq!(
+            callback_payload_from_request_target("/?error=access_denied"),
+            Some("?error=access_denied".to_string())
+        );
+        assert_eq!(callback_payload_from_request_target("/?term=word"), None);
+        assert_eq!(
+            callback_payload_from_request_target("/desktop-auth-callback?code=authorization-code"),
+            None
+        );
+    }
 }

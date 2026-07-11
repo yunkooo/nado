@@ -18,10 +18,6 @@ type OAuthRedirectOptions = {
 type AuthCallbackClient = {
   auth: {
     exchangeCodeForSession(authCode: string): Promise<{ error: unknown }>;
-    setSession(session: {
-      access_token: string;
-      refresh_token: string;
-    }): Promise<{ error: unknown }>;
   };
 };
 
@@ -141,24 +137,7 @@ export async function completeAuthFromCallbackUrl(
     }
   }
 
-  const hashParams = new URLSearchParams(parsed.hash.replace(/^#/, ""));
-  const accessToken = hashParams.get("access_token");
-  const refreshToken = hashParams.get("refresh_token");
-
-  if (!accessToken || !refreshToken) {
-    return "ignored";
-  }
-
-  try {
-    const { error } = await client.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-
-    return error ? "error" : "handled";
-  } catch {
-    return "error";
-  }
+  return "ignored";
 }
 
 export function isTauriRuntime() {
