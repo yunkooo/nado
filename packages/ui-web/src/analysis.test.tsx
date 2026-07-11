@@ -7,6 +7,7 @@ import {
   InputComposer,
   InputSample,
   ReadingChunkLine,
+  isAnalysisResultData,
   type AnalysisResultData,
 } from "./index";
 import { getClampedWordPopoverPosition } from "./VocabularyWordToken";
@@ -83,6 +84,16 @@ const analysisFixture: AnalysisResultData = {
 const firstSentence = analysisFixture.sentences[0];
 
 describe("analysis design system components", () => {
+  it("accepts complete analysis result data and rejects malformed persisted data", () => {
+    expect(isAnalysisResultData(analysisFixture)).toBe(true);
+    expect(
+      isAnalysisResultData({
+        ...analysisFixture,
+        translation: "번역 문자열",
+      }),
+    ).toBe(false);
+  });
+
   it("renders disabled composer submit state for empty input", () => {
     const markup = renderToStaticMarkup(
       <InputComposer

@@ -25,6 +25,7 @@ import {
   analysisModelIdSchema,
   createVocabularyMeaningRenderKey,
   getDistinctVocabularyNote,
+  isCurrentUserScopedRequest,
   type AnalysisModelId,
 } from "@nado/shared";
 import { Badge, Button, Card, Chip } from "@nado/ui/native";
@@ -98,19 +99,34 @@ export default function App() {
   const [analysisState, setAnalysisState] = useState<AnalysisState>({
     status: "idle",
   });
+  const [analysisOwnerUserId, setAnalysisOwnerUserId] = useState<string | null>(
+    null,
+  );
   const [activeTab, setActiveTab] = useState<MobileTabKey>("analysis");
   const [authActionMessage, setAuthActionMessage] = useState<string | null>(
     null,
   );
   const authState = useMobileAuthState();
+  const currentAnalysisUserId = authState.session?.user.id ?? null;
+  const analysisRequestIdRef = useRef(0);
+  const latestAnalysisUserIdRef = useRef(authState.session?.user.id ?? null);
+  const previousAnalysisUserIdRef = useRef(authState.session?.user.id ?? null);
+  latestAnalysisUserIdRef.current = currentAnalysisUserId;
   const isStudyTabActive = activeTab === "vocabulary" || activeTab === "review";
   const [vocabularyState, vocabularyActions] = useMobileVocabulary(
     authState,
     isStudyTabActive,
     activeTab,
   );
-  const composerState = getAnalysisComposerState(text);
-  const isAnalysisLoading = analysisState.status === "loading";
+  const isAnalysisScopeCurrent =
+    authState.status !== "loading" &&
+    analysisOwnerUserId === currentAnalysisUserId;
+  const visibleAnalysisState = isAnalysisScopeCurrent
+    ? analysisState
+    : { status: "idle" as const };
+  const visibleText = isAnalysisScopeCurrent ? text : INITIAL_ANALYSIS_TEXT;
+  const composerState = getAnalysisComposerState(visibleText);
+  const isAnalysisLoading = visibleAnalysisState.status === "loading";
   const isAnalyzeDisabled = composerState.isSubmitDisabled || isAnalysisLoading;
   const isAnalyzeVisuallyDisabled = composerState.isSubmitDisabled;
   const selectedAnalysisModelLabel =
@@ -145,6 +161,23 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (authState.status === "loading") {
+      return;
+    }
+
+    const currentUserId = currentAnalysisUserId;
+
+    if (previousAnalysisUserIdRef.current !== currentUserId) {
+      analysisRequestIdRef.current += 1;
+      setAnalysisOwnerUserId(currentUserId);
+      setAnalysisState({ status: "idle" });
+      setText(INITIAL_ANALYSIS_TEXT);
+    }
+
+    previousAnalysisUserIdRef.current = currentUserId;
+  }, [authState.status, currentAnalysisUserId]);
+
+  useEffect(() => {
     if (!vocabularyActions.saveMessage) {
       return;
     }
@@ -168,6 +201,11 @@ export default function App() {
   };
 
   const handleTextChange = (nextText: string) => {
+    if (!isAnalysisScopeCurrent) {
+      setAnalysisOwnerUserId(currentAnalysisUserId);
+      setAnalysisState({ status: "idle" });
+    }
+
     setText(nextText);
 
     if (!isAnalysisLoading) {
@@ -182,13 +220,17 @@ export default function App() {
   };
 
   const handleAnalyzePress = async () => {
-    const trimmedText = text.trim();
+    const trimmedText = visibleText.trim();
 
     if (trimmedText.length === 0 || isAnalysisLoading) {
       return;
     }
 
     setAnalysisState({ status: "loading" });
+    const requestId = analysisRequestIdRef.current + 1;
+    const requestUserId = currentAnalysisUserId;
+    analysisRequestIdRef.current = requestId;
+    setAnalysisOwnerUserId(requestUserId);
 
     const nextAnalysisState = await analyzeText(trimmedText, {
       accessToken: authState.accessToken,
@@ -197,6 +239,18 @@ export default function App() {
       model: selectedAnalysisModel,
     });
 
+    if (
+      !isCurrentUserScopedRequest(
+        requestUserId,
+        latestAnalysisUserIdRef.current,
+        requestId,
+        analysisRequestIdRef.current,
+      )
+    ) {
+      return;
+    }
+
+    setAnalysisOwnerUserId(requestUserId);
     setAnalysisState(nextAnalysisState);
 
     if (nextAnalysisState.status === "success") {
@@ -256,7 +310,7 @@ export default function App() {
           ) : null}
           {activeTab === "analysis" ? (
             <AnalysisResultPanel
-              analysisState={analysisState}
+              analysisState={visibleAnalysisState}
               getSuggestionState={vocabularyActions.getSuggestionState}
               onSaveSuggestion={vocabularyActions.saveSuggestion}
             />
@@ -278,7 +332,7 @@ export default function App() {
                   placeholderTextColor={mobileColors.inkMuted}
                   style={[styles.input, styles.inputFocusReset]}
                   textAlignVertical="top"
-                  value={text}
+                  value={visibleText}
                 />
                 <View style={styles.composerFooter}>
                   <View style={styles.composerMeta}>

@@ -22,6 +22,7 @@ describe("createAnalysisStateStore", () => {
 
     expect(store.getSnapshot()).toEqual({
       analysisState: { status: "idle" },
+      ownerUserId: null,
       selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
       text: "",
       vocabularySaveMessage: null,
@@ -73,12 +74,98 @@ describe("createAnalysisStateStore", () => {
   it("restores a persisted snapshot when subscribed", () => {
     const storage = createMemoryStorage();
     const firstStore = createAnalysisStateStore({ getStorage: () => storage });
+    firstStore.syncUserScope("user-a");
     firstStore.setText("Could you take a look?");
 
     const secondStore = createAnalysisStateStore({ getStorage: () => storage });
     secondStore.subscribe(() => undefined);
+    secondStore.syncUserScope("user-a");
 
     expect(secondStore.getSnapshot().text).toBe("Could you take a look?");
+  });
+
+  it("drops persisted analysis data when a different user scope starts", () => {
+    const storage = createMemoryStorage();
+    const firstStore = createAnalysisStateStore({ getStorage: () => storage });
+    firstStore.syncUserScope("user-a");
+    firstStore.setText("Could you take a look?");
+
+    const secondStore = createAnalysisStateStore({ getStorage: () => storage });
+    secondStore.subscribe(() => undefined);
+    secondStore.syncUserScope("user-b");
+
+    expect(secondStore.getSnapshot()).toMatchObject({
+      analysisState: { status: "idle" },
+      ownerUserId: "user-b",
+      text: "",
+    });
+    expect(storage.removeItem).toHaveBeenCalledWith("nado.desktop.analysis.v1");
+  });
+
+  it("persists only recoverable analysis state", () => {
+    const storage = createMemoryStorage();
+    const store = createAnalysisStateStore({ getStorage: () => storage });
+
+    store.setText("Could you take a look?");
+    store.setAnalysisState({ status: "loading" });
+    store.setVocabularySaveMessage({
+      text: "단어장에 저장하고 있어요.",
+      tone: "success",
+    });
+    store.setVocabularySaveStates({ "phrase:take a look:살펴보다": "saving" });
+
+    const persisted = JSON.parse(
+      storage.getItem("nado.desktop.analysis.v1") ?? "null",
+    ) as { snapshot: ReturnType<typeof store.getSnapshot> };
+
+    expect(store.getSnapshot()).toMatchObject({
+      analysisState: { status: "loading" },
+      vocabularySaveMessage: { text: "단어장에 저장하고 있어요." },
+      vocabularySaveStates: { "phrase:take a look:살펴보다": "saving" },
+    });
+    expect(persisted.snapshot).toMatchObject({
+      analysisState: { status: "idle" },
+      text: "Could you take a look?",
+      vocabularySaveMessage: null,
+      vocabularySaveStates: {},
+    });
+  });
+
+  it("drops malformed persisted analysis results", () => {
+    const storage = createMemoryStorage();
+    storage.setItem(
+      "nado.desktop.analysis.v1",
+      JSON.stringify({
+        snapshot: {
+          analysisState: {
+            data: {
+              sourceText: "Could you take a look?",
+              translation: "잘못됨",
+            },
+            status: "success",
+          },
+          ownerUserId: "user-a",
+          selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
+          text: "Could you take a look?",
+          vocabularySaveMessage: null,
+          vocabularySaveStates: {},
+        },
+        version: 2,
+      }),
+    );
+    const store = createAnalysisStateStore({ getStorage: () => storage });
+
+    store.subscribe(() => undefined);
+
+    expect(store.getSnapshot()).toEqual({
+      analysisState: { status: "idle" },
+      ownerUserId: null,
+      selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
+      text: "",
+      vocabularySaveMessage: null,
+      vocabularySaveStates: {},
+    });
+    expect(storage.removeItem).toHaveBeenCalledWith("nado.desktop.analysis.v1");
   });
 
   it("resets state and removes persisted data", () => {
@@ -90,6 +177,7 @@ describe("createAnalysisStateStore", () => {
 
     expect(store.getSnapshot()).toEqual({
       analysisState: { status: "idle" },
+      ownerUserId: null,
       selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
       text: "",
       vocabularySaveMessage: null,

@@ -4,7 +4,9 @@ import {
   MAX_ANALYSIS_TEXT_LENGTH,
   countAnalysisTextCharacters,
   hasUnsupportedAnalysisTextCharacters,
+  isCurrentUserScopedRequest,
   normalizeAnalysisText,
+  shouldApplyUserScopedMutation,
   type AnalysisModelId,
 } from "@nado/shared";
 import {
@@ -12,6 +14,7 @@ import {
   InputComposer,
   InputSample,
   type VocabularySuggestion,
+  type VocabularySuggestionSaveState,
 } from "@nado/ui";
 import { apiBaseUrl } from "../../api/apiConfig";
 import { analyzeText } from "../../api/analysisApi";
@@ -30,24 +33,36 @@ const VOCABULARY_SAVE_NOTICE_DISMISS_MS = 2500;
 
 export function AnalysisFlow() {
   const authState = useAuthState();
-  const currentAccessTokenRef = useRef(authState.accessToken);
+  const analysisRequestIdRef = useRef(0);
+  const currentUserIdRef = useRef(authState.session?.user.id ?? null);
   const vocabularyState = useVocabularyState();
-  const {
-    snapshot: {
-      analysisState,
-      selectedAnalysisModel,
-      text,
-      vocabularySaveMessage,
-      vocabularySaveStates,
-    },
-    store: analysisStore,
-  } = useAnalysisPageState();
+  const { snapshot, store: analysisStore } = useAnalysisPageState();
 
-  currentAccessTokenRef.current = authState.accessToken;
+  currentUserIdRef.current = authState.session?.user.id ?? null;
+  const isAnalysisScopeCurrent =
+    authState.status !== "loading" &&
+    snapshot.ownerUserId === currentUserIdRef.current;
+  const analysisState = isAnalysisScopeCurrent
+    ? snapshot.analysisState
+    : { status: "idle" as const };
+  const selectedAnalysisModel = snapshot.selectedAnalysisModel;
+  const text = isAnalysisScopeCurrent ? snapshot.text : "";
+  const vocabularySaveMessage = isAnalysisScopeCurrent
+    ? snapshot.vocabularySaveMessage
+    : null;
+  const vocabularySaveStates = isAnalysisScopeCurrent
+    ? snapshot.vocabularySaveStates
+    : {};
 
   useEffect(() => {
-    currentAccessTokenRef.current = authState.accessToken;
-  }, [authState.accessToken]);
+    if (authState.status === "loading") {
+      return;
+    }
+
+    analysisStore.syncUserScope(authState.session?.user.id ?? null);
+    analysisStore.setVocabularySaveMessage(null);
+    analysisStore.setVocabularySaveStates({});
+  }, [analysisStore, authState.session?.user.id, authState.status]);
 
   useEffect(() => {
     return () => {
@@ -94,12 +109,24 @@ export function AnalysisFlow() {
     analysisStore.setAnalysisState({ status: "loading" });
     analysisStore.setVocabularySaveMessage(null);
     analysisStore.setVocabularySaveStates({});
+    const requestId = analysisRequestIdRef.current + 1;
+    const requestUserId = authState.session?.user.id ?? null;
+    analysisRequestIdRef.current = requestId;
+    const accessToken = await getCurrentAccessToken();
+
+    if (!isCurrentAnalysisRequest(requestId, requestUserId)) {
+      return;
+    }
 
     const nextAnalysisState = await analyzeText(nextText, {
-      accessToken: await getCurrentAccessToken(),
+      accessToken,
       apiBaseUrl,
       model: selectedAnalysisModel,
     });
+
+    if (!isCurrentAnalysisRequest(requestId, requestUserId)) {
+      return;
+    }
 
     if (nextAnalysisState.status === "success") {
       analysisStore.setText("");
@@ -114,6 +141,13 @@ export function AnalysisFlow() {
     }
 
     analysisStore.setSelectedAnalysisModel(value as AnalysisModelId);
+  };
+  const handleTextChange = (nextText: string) => {
+    if (!isAnalysisScopeCurrent) {
+      analysisStore.syncUserScope(currentUserIdRef.current);
+    }
+
+    analysisStore.setText(nextText);
   };
 
   const handleSaveVocabularySuggestion = (suggestion: VocabularySuggestion) => {
@@ -131,7 +165,23 @@ export function AnalysisFlow() {
     key: string,
     suggestion: VocabularySuggestion,
   ) => {
+    const requestUserId = authState.session?.user.id;
+
+    if (!requestUserId) {
+      analysisStore.setVocabularySaveMessage({
+        text: "로그인이 필요해요. Google 로그인 후 단어장에 저장할 수 있어요.",
+        tone: "error",
+      });
+      return;
+    }
+
     const accessToken = await getCurrentAccessToken();
+
+    if (
+      !shouldApplyUserScopedMutation(requestUserId, currentUserIdRef.current)
+    ) {
+      return;
+    }
 
     if (!accessToken) {
       analysisStore.setVocabularySaveMessage({
@@ -142,9 +192,9 @@ export function AnalysisFlow() {
     }
 
     analysisStore.setVocabularySaveMessage(null);
-    analysisStore.setVocabularySaveStates({
-      [key]: "saving",
-    });
+    analysisStore.setVocabularySaveStates((currentStates) =>
+      markVocabularySuggestionSaving(currentStates, key),
+    );
 
     const result = await saveVocabularyItem(
       {
@@ -157,10 +207,7 @@ export function AnalysisFlow() {
     );
 
     if (
-      !shouldApplyAnalysisVocabularyMutation(
-        accessToken,
-        currentAccessTokenRef.current,
-      )
+      !shouldApplyUserScopedMutation(requestUserId, currentUserIdRef.current)
     ) {
       return;
     }
@@ -204,6 +251,19 @@ export function AnalysisFlow() {
 
     return "idle";
   };
+
+  function isCurrentAnalysisRequest(
+    requestId: number,
+    requestUserId: string | null,
+  ) {
+    return isCurrentUserScopedRequest(
+      requestUserId,
+      currentUserIdRef.current,
+      requestId,
+      analysisRequestIdRef.current,
+    );
+  }
+
   const hasAnalysisResult = analysisState.status === "success";
 
   return (
@@ -273,7 +333,7 @@ export function AnalysisFlow() {
           modelValue={selectedAnalysisModel}
           onSubmit={handleSubmitAnalysis}
           onModelChange={handleModelChange}
-          onValueChange={analysisStore.setText}
+          onValueChange={handleTextChange}
           placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
           submitAriaLabel="분석 요청"
           value={text}
@@ -283,11 +343,14 @@ export function AnalysisFlow() {
   );
 }
 
-export function shouldApplyAnalysisVocabularyMutation(
-  requestAccessToken: string,
-  currentAccessToken: string | null,
+export function markVocabularySuggestionSaving(
+  currentStates: Record<string, VocabularySuggestionSaveState>,
+  key: string,
 ) {
-  return requestAccessToken === currentAccessToken;
+  return {
+    ...currentStates,
+    [key]: "saving" as const,
+  };
 }
 
 function createVocabularySuggestionKey(suggestion: VocabularySuggestion) {

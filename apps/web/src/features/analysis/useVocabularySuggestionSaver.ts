@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+import { shouldApplyUserScopedMutation } from "@nado/shared";
 import type {
   VocabularySuggestion,
   VocabularySuggestionSaveState,
@@ -20,15 +22,20 @@ import { createVocabularySuggestionKey } from "./vocabularySuggestionKey";
 
 type UseVocabularySuggestionSaverOptions = {
   store: AnalysisStateStore;
+  userId: string | null;
   vocabularySaveStates: Record<string, VocabularySuggestionSaveState>;
   vocabularyState: VocabularyStateSnapshot;
 };
 
 export function useVocabularySuggestionSaver({
   store,
+  userId,
   vocabularySaveStates,
   vocabularyState,
 }: UseVocabularySuggestionSaverOptions) {
+  const latestUserIdRef = useRef(userId);
+  latestUserIdRef.current = userId;
+
   const getSuggestionState = (suggestion: VocabularySuggestion) => {
     const pendingState =
       vocabularySaveStates[createVocabularySuggestionKey(suggestion)];
@@ -51,7 +58,20 @@ export function useVocabularySuggestionSaver({
       return;
     }
 
+    const requestUserId = userId;
+
+    if (!requestUserId) {
+      store.setVocabularySaveMessage(createVocabularyLoginRequiredNotice());
+      return;
+    }
+
     const accessToken = await getCurrentAccessToken();
+
+    if (
+      !shouldApplyUserScopedMutation(requestUserId, latestUserIdRef.current)
+    ) {
+      return;
+    }
 
     if (!accessToken) {
       store.setVocabularySaveMessage(createVocabularyLoginRequiredNotice());
@@ -73,6 +93,12 @@ export function useVocabularySuggestionSaver({
       },
       accessToken,
     );
+
+    if (
+      !shouldApplyUserScopedMutation(requestUserId, latestUserIdRef.current)
+    ) {
+      return;
+    }
 
     store.setVocabularySaveStates((currentStates) => {
       const nextStates = { ...currentStates };

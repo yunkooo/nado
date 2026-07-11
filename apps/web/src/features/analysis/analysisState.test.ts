@@ -32,6 +32,7 @@ function createSuccessSnapshot(): AnalysisPageSnapshot {
       },
       status: "success",
     },
+    ownerUserId: "user-a",
     text: "I leave home.",
     selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
     vocabularySaveMessage: null,
@@ -64,7 +65,7 @@ describe("analysis state store", () => {
   it("restores a persisted same-tab analysis snapshot", () => {
     const persisted = {
       snapshot: createSuccessSnapshot(),
-      version: 1,
+      version: 2,
     };
     const storage = createStorage({
       "nado.analysis-state.v1": JSON.stringify(persisted),
@@ -73,6 +74,7 @@ describe("analysis state store", () => {
       getStorage: () => storage,
     });
     const unsubscribe = store.subscribe(() => {});
+    store.syncUserScope("user-a");
 
     expect(store.getSnapshot()).toMatchObject({
       analysisState: {
@@ -157,7 +159,7 @@ describe("analysis state store", () => {
             "after::~한 후에": "saved",
           },
         },
-        version: 1,
+        version: 2,
       }),
     });
     const store = createAnalysisStateStore({
@@ -170,6 +172,7 @@ describe("analysis state store", () => {
       analysisState: {
         status: "idle",
       },
+      ownerUserId: null,
       selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
       text: "",
       vocabularySaveMessage: null,
@@ -183,7 +186,7 @@ describe("analysis state store", () => {
   it("starts from the server-safe initial snapshot before restoring persisted state", () => {
     const persisted = {
       snapshot: createSuccessSnapshot(),
-      version: 1,
+      version: 2,
     };
     const storage = createStorage({
       "nado.analysis-state.v1": JSON.stringify(persisted),
@@ -196,6 +199,7 @@ describe("analysis state store", () => {
       analysisState: {
         status: "idle",
       },
+      ownerUserId: null,
       selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
       text: "",
       vocabularySaveMessage: null,
@@ -216,10 +220,33 @@ describe("analysis state store", () => {
       analysisState: {
         status: "idle",
       },
+      ownerUserId: null,
       selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
       text: "",
       vocabularySaveMessage: null,
       vocabularySaveStates: {},
+    });
+    expect(storage.removeItem).toHaveBeenCalledWith("nado.analysis-state.v1");
+  });
+
+  it("drops persisted analysis data when a different user scope starts", () => {
+    const storage = createStorage({
+      "nado.analysis-state.v1": JSON.stringify({
+        snapshot: createSuccessSnapshot(),
+        version: 2,
+      }),
+    });
+    const store = createAnalysisStateStore({
+      getStorage: () => storage,
+    });
+
+    store.subscribe(() => undefined);
+    store.syncUserScope("user-b");
+
+    expect(store.getSnapshot()).toMatchObject({
+      analysisState: { status: "idle" },
+      ownerUserId: "user-b",
+      text: "",
     });
     expect(storage.removeItem).toHaveBeenCalledWith("nado.analysis-state.v1");
   });

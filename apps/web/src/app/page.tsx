@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   ANALYSIS_MODELS,
   MAX_ANALYSIS_TEXT_LENGTH,
@@ -13,33 +14,53 @@ import { useAnalysisSubmission } from "../features/analysis/useAnalysisSubmissio
 import { useVocabularySaveNoticeDismiss } from "../features/analysis/useVocabularySaveNoticeDismiss";
 import { useVocabularySuggestionSaver } from "../features/analysis/useVocabularySuggestionSaver";
 import { VocabularySaveStatus } from "../features/analysis/VocabularySaveStatus";
+import { useAuthState } from "../features/auth/authState";
 import { useVocabularyState } from "../features/vocabulary/vocabularyState";
 
 const inputDisclosure = "입력문은 분석에만 사용되며 저장되지 않습니다.";
 
 export default function HomePage() {
-  const {
-    snapshot: {
-      analysisState,
-      selectedAnalysisModel,
-      text,
-      vocabularySaveMessage,
-      vocabularySaveStates,
-    },
-    store: analysisStore,
-  } = useAnalysisPageState();
+  const authState = useAuthState();
+  const { snapshot, store: analysisStore } = useAnalysisPageState();
   const vocabularyState = useVocabularyState();
+  const userId = authState.session?.user.id ?? null;
+  const isAnalysisScopeCurrent =
+    authState.status !== "loading" && snapshot.ownerUserId === userId;
+  const analysisState = isAnalysisScopeCurrent
+    ? snapshot.analysisState
+    : { status: "idle" as const };
+  const selectedAnalysisModel = snapshot.selectedAnalysisModel;
+  const text = isAnalysisScopeCurrent ? snapshot.text : "";
+  const vocabularySaveMessage = isAnalysisScopeCurrent
+    ? snapshot.vocabularySaveMessage
+    : null;
+  const vocabularySaveStates = isAnalysisScopeCurrent
+    ? snapshot.vocabularySaveStates
+    : {};
+
+  useEffect(() => {
+    if (authState.status === "loading") {
+      return;
+    }
+
+    analysisStore.syncUserScope(userId);
+    analysisStore.setVocabularySaveMessage(null);
+    analysisStore.setVocabularySaveStates({});
+  }, [analysisStore, authState.status, userId]);
+
   const handleSubmitAnalysis = useAnalysisSubmission({
     analysisState,
     selectedAnalysisModel,
     store: analysisStore,
     text,
+    userId,
   });
   const {
     getSuggestionState: getVocabularySuggestionState,
     saveSuggestion: handleSaveVocabularySuggestion,
   } = useVocabularySuggestionSaver({
     store: analysisStore,
+    userId,
     vocabularySaveStates,
     vocabularyState,
   });
@@ -52,6 +73,13 @@ export default function HomePage() {
     }
 
     analysisStore.setSelectedAnalysisModel(value as AnalysisModelId);
+  };
+  const handleTextChange = (nextText: string) => {
+    if (!isAnalysisScopeCurrent) {
+      analysisStore.syncUserScope(userId);
+    }
+
+    analysisStore.setText(nextText);
   };
 
   return (
@@ -104,7 +132,7 @@ export default function HomePage() {
           modelValue={selectedAnalysisModel}
           onSubmit={handleSubmitAnalysis}
           onModelChange={handleModelChange}
-          onValueChange={analysisStore.setText}
+          onValueChange={handleTextChange}
           placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
           submitAriaLabel="분석 요청"
           value={text}

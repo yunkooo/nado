@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { VocabularyItem } from "@nado/shared";
 import {
+  addMobileVocabularySavingKey,
   applyDeleteVocabularyError,
   createMobileVocabularySuggestionKey,
   isMobileVocabularySuggestionSaved,
+  removeMobileVocabularySavingKey,
   upsertMobileVocabularyItem,
 } from "./mobileVocabularyState";
 
@@ -96,6 +98,24 @@ describe("upsertMobileVocabularyItem", () => {
 });
 
 describe("mobile vocabulary suggestion helpers", () => {
+  it("keeps every in-flight vocabulary save key", () => {
+    const savingKeys = addMobileVocabularySavingKey(
+      new Set(["word:wondering:궁금해하다"]),
+      "phrase:take a look:살펴보다",
+    );
+
+    expect([...savingKeys]).toEqual([
+      "word:wondering:궁금해하다",
+      "phrase:take a look:살펴보다",
+    ]);
+    expect([
+      ...removeMobileVocabularySavingKey(
+        savingKeys,
+        "word:wondering:궁금해하다",
+      ),
+    ]).toEqual(["phrase:take a look:살펴보다"]);
+  });
+
   it("uses a stable key for pending save state", () => {
     expect(
       createMobileVocabularySuggestionKey({

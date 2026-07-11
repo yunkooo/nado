@@ -67,6 +67,22 @@ export function createMobileVocabularySuggestionKey(
   return `${suggestion.type}:${suggestion.term}:${suggestion.meaning}`;
 }
 
+export function addMobileVocabularySavingKey(
+  savingKeys: ReadonlySet<string>,
+  key: string,
+) {
+  return new Set([...savingKeys, key]);
+}
+
+export function removeMobileVocabularySavingKey(
+  savingKeys: ReadonlySet<string>,
+  key: string,
+) {
+  const nextKeys = new Set(savingKeys);
+  nextKeys.delete(key);
+  return nextKeys;
+}
+
 export function isMobileVocabularySuggestionSaved(
   items: VocabularyItem[],
   suggestion: MobileVocabularySuggestion,

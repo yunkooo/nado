@@ -1,9 +1,11 @@
 "use client";
 
+import { useRef } from "react";
 import {
   MAX_ANALYSIS_TEXT_LENGTH,
   countAnalysisTextCharacters,
   hasUnsupportedAnalysisTextCharacters,
+  isCurrentUserScopedRequest,
   normalizeAnalysisText,
   type AnalysisModelId,
 } from "@nado/shared";
@@ -16,6 +18,7 @@ type UseAnalysisSubmissionOptions = {
   selectedAnalysisModel: AnalysisModelId;
   store: AnalysisStateStore;
   text: string;
+  userId: string | null;
 };
 
 export function useAnalysisSubmission({
@@ -23,7 +26,12 @@ export function useAnalysisSubmission({
   selectedAnalysisModel,
   store,
   text,
+  userId,
 }: UseAnalysisSubmissionOptions) {
+  const latestRequestIdRef = useRef(0);
+  const latestUserIdRef = useRef(userId);
+  latestUserIdRef.current = userId;
+
   return async function submitAnalysis() {
     const nextText = normalizeAnalysisText(text);
     const nextTextLength = countAnalysisTextCharacters(nextText);
@@ -40,10 +48,37 @@ export function useAnalysisSubmission({
     store.setAnalysisState({ status: "loading" });
     store.setVocabularySaveMessage(null);
     store.setVocabularySaveStates({});
+    const requestId = latestRequestIdRef.current + 1;
+    const requestUserId = userId;
+    latestRequestIdRef.current = requestId;
+    const accessToken = await getCurrentAccessToken();
+
+    if (
+      !isCurrentUserScopedRequest(
+        requestUserId,
+        latestUserIdRef.current,
+        requestId,
+        latestRequestIdRef.current,
+      )
+    ) {
+      return;
+    }
+
     const nextAnalysisState = await analyzeText(nextText, {
-      accessToken: await getCurrentAccessToken(),
+      accessToken,
       model: selectedAnalysisModel,
     });
+
+    if (
+      !isCurrentUserScopedRequest(
+        requestUserId,
+        latestUserIdRef.current,
+        requestId,
+        latestRequestIdRef.current,
+      )
+    ) {
+      return;
+    }
 
     if (nextAnalysisState.status === "success") {
       store.setText("");

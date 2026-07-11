@@ -1,5 +1,6 @@
 import {
   createVocabularyRealtimeRefreshScheduler,
+  shouldApplyUserScopedMutation,
   shouldStartVocabularyManualRefresh,
   shouldRefreshVocabularyFromLifecycle,
   VOCABULARY_MANUAL_REFRESH_THROTTLE_MS,
@@ -11,10 +12,12 @@ import { readMobileApiBaseUrl } from "../../api/apiConfig";
 import { getMobileSupabaseClient } from "../../auth/authClient";
 import type { MobileAuthStateSnapshot } from "../../auth/authState";
 import {
+  addMobileVocabularySavingKey,
   applyDeleteVocabularyError,
   applyLoadVocabularyError,
   createMobileVocabularySuggestionKey,
   isMobileVocabularySuggestionSaved,
+  removeMobileVocabularySavingKey,
   upsertMobileVocabularyItem,
   type MobileVocabularyState,
 } from "./mobileVocabularyState";
@@ -61,8 +64,8 @@ export function useMobileVocabulary(
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [savingSuggestionKey, setSavingSuggestionKey] = useState<string | null>(
-    null,
+  const [savingSuggestionKeys, setSavingSuggestionKeys] = useState<Set<string>>(
+    () => new Set(),
   );
   const [vocabularyState, setVocabularyState] = useState<MobileVocabularyState>(
     initialVocabularyState,
@@ -73,6 +76,7 @@ export function useMobileVocabulary(
   const latestAuthStateRef = useRef(authState);
   const requestSequenceRef = useRef(0);
   const isRefreshingRef = useRef(false);
+  const savingSuggestionKeysRef = useRef<Set<string>>(new Set());
   const realtimeRefreshSchedulerRef =
     useRef<VocabularyRealtimeRefreshScheduler | null>(null);
   const statusRef = useRef<MobileVocabularyState["status"]>(
@@ -224,6 +228,13 @@ export function useMobileVocabulary(
   }, [refreshVocabularyInBackground]);
 
   useEffect(() => {
+    savingSuggestionKeysRef.current = new Set();
+    setSavingSuggestionKeys(new Set());
+    setDeletingItemId(null);
+    setSaveMessage(null);
+  }, [authState.session?.user.id]);
+
+  useEffect(() => {
     if (authState.status === "loading") {
       return;
     }
@@ -336,7 +347,13 @@ export function useMobileVocabulary(
   ]);
 
   const deleteItem = async (itemId: string) => {
-    if (authState.status !== "authenticated" || !authState.accessToken) {
+    const requestUserId = authState.session?.user.id;
+
+    if (
+      authState.status !== "authenticated" ||
+      !authState.accessToken ||
+      !requestUserId
+    ) {
       return;
     }
 
@@ -345,6 +362,16 @@ export function useMobileVocabulary(
       apiBaseUrl: configuredMobileApiBaseUrl,
       apiPlatform: configuredMobileApiPlatform,
     });
+
+    if (
+      !shouldApplyUserScopedMutation(
+        requestUserId,
+        latestAuthStateRef.current.session?.user.id,
+      )
+    ) {
+      return;
+    }
+
     setDeletingItemId(null);
 
     if (result.status !== "success") {
@@ -363,8 +390,11 @@ export function useMobileVocabulary(
   };
 
   const getSuggestionState = (suggestion: MobileVocabularySuggestion) => {
+    const suggestionKey = createMobileVocabularySuggestionKey(suggestion);
+
     if (
-      savingSuggestionKey === createMobileVocabularySuggestionKey(suggestion)
+      savingSuggestionKeys.has(suggestionKey) ||
+      savingSuggestionKeysRef.current.has(suggestionKey)
     ) {
       return "saving" as const;
     }
@@ -381,7 +411,13 @@ export function useMobileVocabulary(
       return;
     }
 
-    if (authState.status !== "authenticated" || !authState.accessToken) {
+    const requestUserId = authState.session?.user.id;
+
+    if (
+      authState.status !== "authenticated" ||
+      !authState.accessToken ||
+      !requestUserId
+    ) {
       setSaveMessage(
         "로그인이 필요해요. Google 로그인 후 단어장에 저장할 수 있어요.",
       );
@@ -389,8 +425,12 @@ export function useMobileVocabulary(
     }
 
     const suggestionKey = createMobileVocabularySuggestionKey(suggestion);
+
+    if (!markMobileVocabularySuggestionSaving(suggestionKey)) {
+      return;
+    }
+
     setSaveMessage(null);
-    setSavingSuggestionKey(suggestionKey);
 
     const result = await saveVocabularyItem(
       {
@@ -406,7 +446,16 @@ export function useMobileVocabulary(
       },
     );
 
-    setSavingSuggestionKey(null);
+    if (
+      !shouldApplyUserScopedMutation(
+        requestUserId,
+        latestAuthStateRef.current.session?.user.id,
+      )
+    ) {
+      return;
+    }
+
+    clearMobileVocabularySuggestionSaving(suggestionKey);
 
     if (result.status === "success") {
       setTrackedVocabularyState((currentState) =>
@@ -418,6 +467,33 @@ export function useMobileVocabulary(
 
     setSaveMessage(result.message);
   };
+
+  function markMobileVocabularySuggestionSaving(key: string): boolean {
+    if (savingSuggestionKeysRef.current.has(key)) {
+      return false;
+    }
+
+    const nextKeys = addMobileVocabularySavingKey(
+      savingSuggestionKeysRef.current,
+      key,
+    );
+    savingSuggestionKeysRef.current = nextKeys;
+    setSavingSuggestionKeys(nextKeys);
+    return true;
+  }
+
+  function clearMobileVocabularySuggestionSaving(key: string) {
+    if (!savingSuggestionKeysRef.current.has(key)) {
+      return;
+    }
+
+    const nextKeys = removeMobileVocabularySavingKey(
+      savingSuggestionKeysRef.current,
+      key,
+    );
+    savingSuggestionKeysRef.current = nextKeys;
+    setSavingSuggestionKeys(nextKeys);
+  }
 
   return [
     vocabularyState,

@@ -6,9 +6,9 @@ import {
   analysisModelIdSchema,
   type AnalysisModelId,
 } from "@nado/shared";
-import type {
-  AnalysisResultData,
-  VocabularySuggestionSaveState,
+import {
+  isAnalysisResultData,
+  type VocabularySuggestionSaveState,
 } from "@nado/ui";
 import type { AnalyzeTextResult } from "./analysisApi";
 import type { VocabularySaveNotice } from "./vocabularySaveNotice";
@@ -17,6 +17,7 @@ export type AnalysisState = AnalyzeTextResult | { status: "idle" | "loading" };
 
 export type AnalysisPageSnapshot = {
   analysisState: AnalysisState;
+  ownerUserId: string | null;
   selectedAnalysisModel: AnalysisModelId;
   text: string;
   vocabularySaveMessage: VocabularySaveNotice | null;
@@ -37,12 +38,13 @@ export type AnalysisStateStore = ReturnType<typeof createAnalysisStateStore>;
 
 const STORAGE_KEY = "nado.analysis-state.v1";
 const MODEL_STORAGE_KEY = "nado.analysis-model.v1";
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 
 const initialSnapshot: AnalysisPageSnapshot = {
   analysisState: {
     status: "idle",
   },
+  ownerUserId: null,
   selectedAnalysisModel: DEFAULT_ANALYSIS_MODEL_ID,
   text: "",
   vocabularySaveMessage: null,
@@ -57,6 +59,8 @@ export function createAnalysisStateStore(
   const listeners = new Set<() => void>();
   let snapshot = initialSnapshot;
   let hasRestoredPersistedSnapshot = false;
+  let persistedModel: AnalysisModelId | null = null;
+  let pendingPersistedSnapshot: AnalysisPageSnapshot | null = null;
 
   const notify = () => {
     for (const listener of listeners) {
@@ -98,26 +102,17 @@ export function createAnalysisStateStore(
     hasRestoredPersistedSnapshot = true;
 
     const persistedSnapshot = readPersistedSnapshot(getStorage);
-    const persistedModel = readPersistedAnalysisModel(getModelStorage);
+    persistedModel = readPersistedAnalysisModel(getModelStorage);
 
-    if (!persistedSnapshot) {
-      if (persistedModel) {
-        snapshot = {
-          ...snapshot,
-          selectedAnalysisModel: persistedModel,
-        };
-        notify();
-      }
+    pendingPersistedSnapshot = persistedSnapshot;
 
-      return;
+    if (persistedModel) {
+      snapshot = {
+        ...snapshot,
+        selectedAnalysisModel: persistedModel,
+      };
+      notify();
     }
-
-    snapshot = {
-      ...persistedSnapshot,
-      selectedAnalysisModel:
-        persistedModel ?? persistedSnapshot.selectedAnalysisModel,
-    };
-    notify();
   };
 
   return {
@@ -130,9 +125,45 @@ export function createAnalysisStateStore(
     },
 
     reset() {
-      snapshot = initialSnapshot;
+      pendingPersistedSnapshot = null;
+      snapshot = {
+        ...initialSnapshot,
+        ownerUserId: snapshot.ownerUserId,
+        selectedAnalysisModel: snapshot.selectedAnalysisModel,
+      };
       getStorage()?.removeItem(STORAGE_KEY);
       notify();
+    },
+
+    syncUserScope(userId: string | null) {
+      restorePersistedSnapshot();
+
+      const persistedSnapshot = pendingPersistedSnapshot;
+      pendingPersistedSnapshot = null;
+
+      if (persistedSnapshot) {
+        if (persistedSnapshot.ownerUserId === userId) {
+          snapshot = {
+            ...persistedSnapshot,
+            selectedAnalysisModel:
+              persistedModel ?? persistedSnapshot.selectedAnalysisModel,
+          };
+          notify();
+          return;
+        }
+
+        getStorage()?.removeItem(STORAGE_KEY);
+      }
+
+      if (snapshot.ownerUserId === userId) {
+        return;
+      }
+
+      setSnapshot({
+        ...initialSnapshot,
+        ownerUserId: userId,
+        selectedAnalysisModel: snapshot.selectedAnalysisModel,
+      });
     },
 
     setAnalysisState(analysisState: AnalysisState) {
@@ -325,6 +356,7 @@ function isAnalysisPageSnapshot(value: unknown): value is AnalysisPageSnapshot {
   return (
     isRecord(value) &&
     typeof value.text === "string" &&
+    (value.ownerUserId === null || typeof value.ownerUserId === "string") &&
     isAnalysisState(value.analysisState) &&
     (value.selectedAnalysisModel === undefined ||
       isAnalysisModelId(value.selectedAnalysisModel)) &&
@@ -342,117 +374,6 @@ function isAnalysisState(value: unknown): value is AnalysisState {
       value.status === "error" ||
       value.status === "not_analyzable" ||
       (value.status === "success" && isAnalysisResultData(value.data)))
-  );
-}
-
-function isAnalysisResultData(value: unknown): value is AnalysisResultData {
-  return (
-    isRecord(value) &&
-    typeof value.sourceText === "string" &&
-    isStringArray(value.translation) &&
-    isTranslationNotes(value.translationNotes) &&
-    isSentenceAnalysisItems(value.sentences) &&
-    isVocabularyItems(value.vocabularyItems) &&
-    isVocabularySuggestions(value.vocabularySuggestions)
-  );
-}
-
-function isTranslationNotes(value: unknown) {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (note) =>
-        isRecord(note) &&
-        typeof note.term === "string" &&
-        typeof note.note === "string",
-    )
-  );
-}
-
-function isSentenceAnalysisItems(value: unknown) {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (sentence) =>
-        isRecord(sentence) &&
-        typeof sentence.indexLabel === "string" &&
-        typeof sentence.naturalTranslation === "string" &&
-        isReadingChunks(sentence.chunks) &&
-        isGrammarPoints(sentence.grammarPoints) &&
-        isSentenceTokens(sentence.tokens),
-    )
-  );
-}
-
-function isReadingChunks(value: unknown) {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (chunk) =>
-        isRecord(chunk) &&
-        typeof chunk.english === "string" &&
-        typeof chunk.korean === "string",
-    )
-  );
-}
-
-function isGrammarPoints(value: unknown) {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (point) =>
-        isRecord(point) &&
-        typeof point.target === "string" &&
-        typeof point.type === "string" &&
-        typeof point.explanation === "string",
-    )
-  );
-}
-
-function isSentenceTokens(value: unknown) {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (token) =>
-        isRecord(token) &&
-        typeof token.text === "string" &&
-        (token.vocabularyKey === null ||
-          typeof token.vocabularyKey === "string"),
-    )
-  );
-}
-
-function isVocabularyItems(value: unknown) {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item) =>
-        isVocabularySuggestion(item) &&
-        typeof item.baseForm === "string" &&
-        typeof item.contextMeaning === "string" &&
-        typeof item.key === "string" &&
-        (item.partOfSpeech === null || typeof item.partOfSpeech === "string"),
-    )
-  );
-}
-
-function isVocabularySuggestions(value: unknown) {
-  return Array.isArray(value) && value.every(isVocabularySuggestion);
-}
-
-function isVocabularySuggestion(value: unknown) {
-  return (
-    isRecord(value) &&
-    typeof value.term === "string" &&
-    typeof value.meaning === "string" &&
-    (value.type === "phrase" || value.type === "word") &&
-    (value.note === undefined || typeof value.note === "string")
-  );
-}
-
-function isStringArray(value: unknown) {
-  return (
-    Array.isArray(value) && value.every((item) => typeof item === "string")
   );
 }
 
