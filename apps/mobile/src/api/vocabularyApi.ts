@@ -1,7 +1,10 @@
 import {
+  fetchWithTimeout,
   readApiErrorMessage,
+  readJson,
   saveVocabularyResponseSchema,
   vocabularyListResponseSchema,
+  type ApiRequestOptions,
   type SaveVocabularyRequest,
   type VocabularyItem,
 } from "@nado/shared";
@@ -12,12 +15,9 @@ import {
   type MobileApiPlatform,
 } from "./apiConfig";
 
-type Fetcher = typeof fetch;
-
-export type VocabularyApiOptions = {
+export type VocabularyApiOptions = ApiRequestOptions & {
   apiBaseUrl?: string;
   apiPlatform?: MobileApiPlatform | string;
-  fetcher?: Fetcher;
 };
 
 export type VocabularyListResult =
@@ -36,6 +36,10 @@ const VOCABULARY_ERROR_MESSAGE =
   "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
 const SAVE_VOCABULARY_ERROR_MESSAGE =
   "단어장에 저장하지 못했어요. 잠시 후 다시 시도해 주세요.";
+const VOCABULARY_TIMEOUT_MESSAGE =
+  "단어장 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.";
+const SAVE_VOCABULARY_TIMEOUT_MESSAGE =
+  "단어장 저장 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.";
 
 export async function listVocabulary(
   accessToken: string,
@@ -43,10 +47,10 @@ export async function listVocabulary(
 ): Promise<VocabularyListResult> {
   const fetcher = options.fetcher ?? globalThis.fetch;
 
-  let response: Response;
+  let fetchResult;
 
   try {
-    response = await fetcher(
+    fetchResult = await fetchWithTimeout(
       resolveMobileApiUrl("/api/vocabulary", options.apiBaseUrl, {
         platform: options.apiPlatform,
       }),
@@ -55,6 +59,12 @@ export async function listVocabulary(
           Authorization: `Bearer ${accessToken}`,
         },
         method: "GET",
+      },
+      {
+        fallbackMessage: VOCABULARY_ERROR_MESSAGE,
+        fetcher,
+        timeoutMessage: VOCABULARY_TIMEOUT_MESSAGE,
+        timeoutMs: options.timeoutMs,
       },
     );
   } catch (error) {
@@ -67,6 +77,11 @@ export async function listVocabulary(
     };
   }
 
+  if (fetchResult.status === "error") {
+    return fetchResult;
+  }
+
+  const { response } = fetchResult;
   const payload = await readJson(response);
 
   if (!response.ok) {
@@ -98,10 +113,10 @@ export async function deleteVocabularyItem(
 ): Promise<DeleteVocabularyResult> {
   const fetcher = options.fetcher ?? globalThis.fetch;
 
-  let response: Response;
+  let fetchResult;
 
   try {
-    response = await fetcher(
+    fetchResult = await fetchWithTimeout(
       resolveMobileApiUrl(
         `/api/vocabulary/${encodeURIComponent(itemId)}`,
         options.apiBaseUrl,
@@ -112,6 +127,12 @@ export async function deleteVocabularyItem(
           Authorization: `Bearer ${accessToken}`,
         },
         method: "DELETE",
+      },
+      {
+        fallbackMessage: VOCABULARY_ERROR_MESSAGE,
+        fetcher,
+        timeoutMessage: VOCABULARY_TIMEOUT_MESSAGE,
+        timeoutMs: options.timeoutMs,
       },
     );
   } catch (error) {
@@ -124,6 +145,11 @@ export async function deleteVocabularyItem(
     };
   }
 
+  if (fetchResult.status === "error") {
+    return fetchResult;
+  }
+
+  const { response } = fetchResult;
   if (!response.ok) {
     return {
       message: readApiErrorMessage(
@@ -144,10 +170,10 @@ export async function saveVocabularyItem(
 ): Promise<SaveVocabularyResult> {
   const fetcher = options.fetcher ?? globalThis.fetch;
 
-  let response: Response;
+  let fetchResult;
 
   try {
-    response = await fetcher(
+    fetchResult = await fetchWithTimeout(
       resolveMobileApiUrl("/api/vocabulary", options.apiBaseUrl, {
         platform: options.apiPlatform,
       }),
@@ -158,6 +184,12 @@ export async function saveVocabularyItem(
           "Content-Type": "application/json",
         },
         method: "POST",
+      },
+      {
+        fallbackMessage: SAVE_VOCABULARY_ERROR_MESSAGE,
+        fetcher,
+        timeoutMessage: SAVE_VOCABULARY_TIMEOUT_MESSAGE,
+        timeoutMs: options.timeoutMs,
       },
     );
   } catch (error) {
@@ -170,6 +202,11 @@ export async function saveVocabularyItem(
     };
   }
 
+  if (fetchResult.status === "error") {
+    return fetchResult;
+  }
+
+  const { response } = fetchResult;
   const payload = await readJson(response);
 
   if (!response.ok) {
@@ -192,12 +229,4 @@ export async function saveVocabularyItem(
     data: parsed.data.item,
     status: "success",
   };
-}
-
-async function readJson(response: Response): Promise<unknown> {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
 }

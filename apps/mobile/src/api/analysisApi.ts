@@ -2,8 +2,12 @@ import {
   ANALYSIS_ERROR_MESSAGES,
   DEFAULT_ANALYSIS_MODEL_ID,
   analyzeResponseSchema,
+  fetchWithTimeout,
+  isOpenRouterAnalysisModelId,
   normalizeAnalysisText,
+  readJson,
   readApiErrorDetail,
+  type ApiRequestOptions,
   type AnalysisModelId,
   type AnalysisResult as ApiAnalysisResult,
 } from "@nado/shared";
@@ -13,8 +17,6 @@ import {
   resolveMobileApiUrl,
   type MobileApiPlatform,
 } from "./apiConfig";
-
-type Fetcher = typeof fetch;
 
 type AnalyzeTextError = {
   code?: string;
@@ -84,17 +86,19 @@ export type AnalyzeTextResult =
   | AnalyzeTextError
   | { message: string; status: "not_analyzable" };
 
-export type AnalyzeTextOptions = {
+export type AnalyzeTextOptions = ApiRequestOptions & {
   accessToken?: string | null;
   apiBaseUrl?: string;
   apiPlatform?: MobileApiPlatform | string;
-  fetcher?: Fetcher;
   model?: AnalysisModelId;
 };
 
 const ANALYZE_ERROR_MESSAGE = ANALYSIS_ERROR_MESSAGES.analysis_failed;
 const MOBILE_CONNECTION_ERROR_MESSAGE =
   "분석 서버에 연결할 수 없어요. API 서버 설정을 확인해 주세요.";
+const ANALYZE_TIMEOUT_MESSAGE = ANALYSIS_ERROR_MESSAGES.analysis_timeout;
+const ANALYZE_REQUEST_TIMEOUT_MS = 35_000;
+const ANALYZE_OPENROUTER_REQUEST_TIMEOUT_MS = 155_000;
 
 export async function analyzeText(
   text: string,
@@ -103,18 +107,25 @@ export async function analyzeText(
   const trimmedText = normalizeAnalysisText(text);
   const fetcher = options.fetcher ?? globalThis.fetch;
 
-  let response: Response;
+  let fetchResult;
 
   try {
-    response = await fetcher(
+    const model = options.model ?? DEFAULT_ANALYSIS_MODEL_ID;
+    fetchResult = await fetchWithTimeout(
       resolveAnalyzeApiUrl(options.apiBaseUrl, options.apiPlatform),
       {
         body: JSON.stringify({
-          model: options.model ?? DEFAULT_ANALYSIS_MODEL_ID,
+          model,
           text: trimmedText,
         }),
         headers: createAnalyzeHeaders(options.accessToken),
         method: "POST",
+      },
+      {
+        fallbackMessage: MOBILE_CONNECTION_ERROR_MESSAGE,
+        fetcher,
+        timeoutMessage: ANALYZE_TIMEOUT_MESSAGE,
+        timeoutMs: options.timeoutMs ?? resolveAnalyzeRequestTimeoutMs(model),
       },
     );
   } catch (error) {
@@ -127,6 +138,11 @@ export async function analyzeText(
     };
   }
 
+  if (fetchResult.status === "error") {
+    return fetchResult;
+  }
+
+  const { response } = fetchResult;
   const payload = await readJson(response);
 
   if (!response.ok) {
@@ -164,6 +180,12 @@ export function resolveAnalyzeApiUrl(
   return resolveMobileApiUrl("/api/analyze", apiBaseUrl, {
     platform: apiPlatform,
   });
+}
+
+function resolveAnalyzeRequestTimeoutMs(model: AnalysisModelId): number {
+  return isOpenRouterAnalysisModelId(model)
+    ? ANALYZE_OPENROUTER_REQUEST_TIMEOUT_MS
+    : ANALYZE_REQUEST_TIMEOUT_MS;
 }
 
 function mapAnalysisResult(
@@ -240,14 +262,6 @@ function readVocabularySuggestions(
     term: item.term,
     type: item.type,
   }));
-}
-
-async function readJson(response: Response): Promise<unknown> {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
 }
 
 function createAnalyzeErrorResult(

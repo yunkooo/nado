@@ -1,16 +1,17 @@
 import {
+  fetchWithTimeout,
   readApiErrorMessage,
+  readJson,
   saveVocabularyResponseSchema,
   vocabularyListResponseSchema,
+  type ApiRequestOptions,
   type SaveVocabularyRequest,
   type VocabularyItem,
 } from "@nado/shared";
-import { apiFetch, type ApiFetcher } from "./apiFetch";
+import { apiFetch } from "./apiFetch";
 import { resolveApiUrl } from "./apiConfig";
 
-export type VocabularyApiOptions = {
-  fetcher?: ApiFetcher;
-};
+export type VocabularyApiOptions = ApiRequestOptions;
 
 export type VocabularyListResult =
   | { data: VocabularyItem[]; status: "success" }
@@ -29,6 +30,10 @@ export const VOCABULARY_ERROR_MESSAGE =
   "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
 export const DELETE_VOCABULARY_ERROR_MESSAGE =
   "단어장 항목을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.";
+const VOCABULARY_TIMEOUT_MESSAGE =
+  "단어장 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.";
+const DELETE_VOCABULARY_TIMEOUT_MESSAGE =
+  "단어장 삭제 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.";
 
 export async function listVocabulary(
   accessToken: string,
@@ -36,13 +41,22 @@ export async function listVocabulary(
 ): Promise<VocabularyListResult> {
   const fetcher = options.fetcher ?? apiFetch;
 
-  let response: Response;
+  let fetchResult;
 
   try {
-    response = await fetcher(resolveApiUrl("/api/vocabulary"), {
-      headers: createAuthHeaders(accessToken),
-      method: "GET",
-    });
+    fetchResult = await fetchWithTimeout(
+      resolveApiUrl("/api/vocabulary"),
+      {
+        headers: createAuthHeaders(accessToken),
+        method: "GET",
+      },
+      {
+        fallbackMessage: VOCABULARY_ERROR_MESSAGE,
+        fetcher,
+        timeoutMessage: VOCABULARY_TIMEOUT_MESSAGE,
+        timeoutMs: options.timeoutMs,
+      },
+    );
   } catch {
     return {
       message: VOCABULARY_ERROR_MESSAGE,
@@ -50,6 +64,11 @@ export async function listVocabulary(
     };
   }
 
+  if (fetchResult.status === "error") {
+    return fetchResult;
+  }
+
+  const { response } = fetchResult;
   const payload = await readJson(response);
 
   if (!response.ok) {
@@ -81,14 +100,20 @@ export async function deleteVocabularyItem(
 ): Promise<DeleteVocabularyResult> {
   const fetcher = options.fetcher ?? apiFetch;
 
-  let response: Response;
+  let fetchResult;
 
   try {
-    response = await fetcher(
+    fetchResult = await fetchWithTimeout(
       resolveApiUrl(`/api/vocabulary/${encodeURIComponent(itemId)}`),
       {
         headers: createAuthHeaders(accessToken),
         method: "DELETE",
+      },
+      {
+        fallbackMessage: DELETE_VOCABULARY_ERROR_MESSAGE,
+        fetcher,
+        timeoutMessage: DELETE_VOCABULARY_TIMEOUT_MESSAGE,
+        timeoutMs: options.timeoutMs,
       },
     );
   } catch {
@@ -97,6 +122,12 @@ export async function deleteVocabularyItem(
       status: "error",
     };
   }
+
+  if (fetchResult.status === "error") {
+    return fetchResult;
+  }
+
+  const { response } = fetchResult;
 
   if (response.status === 404) {
     return {
@@ -128,17 +159,26 @@ export async function saveVocabularyItem(
 ): Promise<SaveVocabularyResult> {
   const fetcher = options.fetcher ?? apiFetch;
 
-  let response: Response;
+  let fetchResult;
 
   try {
-    response = await fetcher(resolveApiUrl("/api/vocabulary"), {
-      body: JSON.stringify(request),
-      headers: {
-        ...createAuthHeaders(accessToken),
-        "Content-Type": "application/json",
+    fetchResult = await fetchWithTimeout(
+      resolveApiUrl("/api/vocabulary"),
+      {
+        body: JSON.stringify(request),
+        headers: {
+          ...createAuthHeaders(accessToken),
+          "Content-Type": "application/json",
+        },
+        method: "POST",
       },
-      method: "POST",
-    });
+      {
+        fallbackMessage: VOCABULARY_ERROR_MESSAGE,
+        fetcher,
+        timeoutMessage: VOCABULARY_TIMEOUT_MESSAGE,
+        timeoutMs: options.timeoutMs,
+      },
+    );
   } catch {
     return {
       message: VOCABULARY_ERROR_MESSAGE,
@@ -146,6 +186,11 @@ export async function saveVocabularyItem(
     };
   }
 
+  if (fetchResult.status === "error") {
+    return fetchResult;
+  }
+
+  const { response } = fetchResult;
   const payload = await readJson(response);
 
   if (!response.ok) {
@@ -174,12 +219,4 @@ function createAuthHeaders(accessToken: string) {
   return {
     Authorization: `Bearer ${accessToken}`,
   };
-}
-
-async function readJson(response: Response): Promise<unknown> {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
 }

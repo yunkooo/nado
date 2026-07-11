@@ -97,14 +97,18 @@ describe("analyzeText", () => {
       },
     );
 
-    expect(fetcher).toHaveBeenCalledWith("http://127.0.0.1:8787/api/analyze", {
-      body: JSON.stringify({
-        model: DEFAULT_ANALYSIS_MODEL_ID,
-        text: "I was wondering if you could help me.",
+    expect(fetcher).toHaveBeenCalledWith(
+      "http://127.0.0.1:8787/api/analyze",
+      expect.objectContaining({
+        body: JSON.stringify({
+          model: DEFAULT_ANALYSIS_MODEL_ID,
+          text: "I was wondering if you could help me.",
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+        signal: expect.any(AbortSignal),
       }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    });
+    );
     expect(result).toEqual({
       data: {
         sentences: [
@@ -236,17 +240,21 @@ describe("analyzeText", () => {
       model: "z-ai/glm-5.2",
     });
 
-    expect(fetcher).toHaveBeenCalledWith("http://127.0.0.1:8787/api/analyze", {
-      body: JSON.stringify({
-        model: "z-ai/glm-5.2",
-        text: "I was wondering if you could help me.",
+    expect(fetcher).toHaveBeenCalledWith(
+      "http://127.0.0.1:8787/api/analyze",
+      expect.objectContaining({
+        body: JSON.stringify({
+          model: "z-ai/glm-5.2",
+          text: "I was wondering if you could help me.",
+        }),
+        headers: {
+          Authorization: "Bearer session-token",
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        signal: expect.any(AbortSignal),
       }),
-      headers: {
-        Authorization: "Bearer session-token",
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-    });
+    );
   });
 
   it("returns an error when an analyzable response has malformed nested data", async () => {

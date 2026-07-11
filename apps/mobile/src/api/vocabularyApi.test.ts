@@ -50,12 +50,13 @@ describe("listVocabulary", () => {
     });
     expect(fetcher).toHaveBeenCalledWith(
       "https://nadoapi-production.up.railway.app/api/vocabulary",
-      {
+      expect.objectContaining({
         headers: {
           Authorization: "Bearer access-token",
         },
         method: "GET",
-      },
+        signal: expect.any(AbortSignal),
+      }),
     );
   });
 });
@@ -114,7 +115,7 @@ describe("saveVocabularyItem", () => {
     });
     expect(fetcher).toHaveBeenCalledWith(
       "https://nadoapi-production.up.railway.app/api/vocabulary",
-      {
+      expect.objectContaining({
         body: JSON.stringify({
           meaning: "피해야 할 것",
           note: "분석 결과에서 추천된 표현",
@@ -126,7 +127,8 @@ describe("saveVocabularyItem", () => {
           "Content-Type": "application/json",
         },
         method: "POST",
-      },
+        signal: expect.any(AbortSignal),
+      }),
     );
   });
 });

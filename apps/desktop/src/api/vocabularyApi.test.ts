@@ -5,6 +5,7 @@ import {
   listVocabulary,
   saveVocabularyItem,
 } from "./vocabularyApi";
+import { resolveApiUrl } from "./apiConfig";
 
 const vocabularyItem: VocabularyItem = {
   createdAt: "2026-06-09T00:00:00.000Z",
@@ -35,10 +36,14 @@ describe("desktop vocabularyApi", () => {
         status: "success",
       },
     );
-    expect(fetcher).toHaveBeenCalledWith("/api/vocabulary", {
-      headers: { Authorization: "Bearer session-token" },
-      method: "GET",
-    });
+    expect(fetcher).toHaveBeenCalledWith(
+      resolveApiUrl("/api/vocabulary"),
+      expect.objectContaining({
+        headers: { Authorization: "Bearer session-token" },
+        method: "GET",
+        signal: expect.any(AbortSignal),
+      }),
+    );
   });
 
   it("saves a vocabulary item with an authenticated bearer token", async () => {
@@ -63,19 +68,23 @@ describe("desktop vocabularyApi", () => {
       data: vocabularyItem,
       status: "success",
     });
-    expect(fetcher).toHaveBeenCalledWith("/api/vocabulary", {
-      body: JSON.stringify({
-        meaning: "검토하다",
-        note: "일정이나 계획을 확인할 때 자주 씁니다.",
-        term: "go over",
-        type: "phrase",
+    expect(fetcher).toHaveBeenCalledWith(
+      resolveApiUrl("/api/vocabulary"),
+      expect.objectContaining({
+        body: JSON.stringify({
+          meaning: "검토하다",
+          note: "일정이나 계획을 확인할 때 자주 씁니다.",
+          term: "go over",
+          type: "phrase",
+        }),
+        headers: {
+          Authorization: "Bearer session-token",
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        signal: expect.any(AbortSignal),
       }),
-      headers: {
-        Authorization: "Bearer session-token",
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-    });
+    );
   });
 
   it("deletes a vocabulary item with an authenticated bearer token", async () => {
@@ -86,10 +95,14 @@ describe("desktop vocabularyApi", () => {
     ).resolves.toEqual({
       status: "success",
     });
-    expect(fetcher).toHaveBeenCalledWith("/api/vocabulary/row_1", {
-      headers: { Authorization: "Bearer session-token" },
-      method: "DELETE",
-    });
+    expect(fetcher).toHaveBeenCalledWith(
+      resolveApiUrl("/api/vocabulary/row_1"),
+      expect.objectContaining({
+        headers: { Authorization: "Bearer session-token" },
+        method: "DELETE",
+        signal: expect.any(AbortSignal),
+      }),
+    );
   });
 
   it("marks a missing vocabulary item delete as already removed", async () => {
