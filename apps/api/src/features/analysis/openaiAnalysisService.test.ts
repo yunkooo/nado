@@ -690,6 +690,65 @@ describe("createOpenAIAnalysisService", () => {
     expect(calls).toBe(2);
   });
 
+  it("shares one timeout budget across structured output retries", async () => {
+    vi.useFakeTimers();
+    let calls = 0;
+    let secondAttemptAborted = false;
+    const service = createOpenAIAnalysisService({
+      apiKey: "test-api-key",
+      fetch: async (_input, init) => {
+        calls += 1;
+
+        if (calls === 1) {
+          return await new Promise<Response>((resolve) => {
+            globalThis.setTimeout(() => {
+              resolve(
+                new Response(
+                  JSON.stringify({
+                    output_text: JSON.stringify({
+                      result: {},
+                      status: "analyzable",
+                    }),
+                  }),
+                  { status: 200 },
+                ),
+              );
+            }, 8);
+          });
+        }
+
+        return await new Promise<Response>((_resolve, reject) => {
+          const signal = init?.signal;
+
+          if (signal instanceof AbortSignal) {
+            signal.addEventListener("abort", () => {
+              secondAttemptAborted = true;
+              reject(new DOMException("Request aborted", "AbortError"));
+            });
+          }
+        });
+      },
+      timeoutMs: 10,
+    });
+
+    const resultPromise = service.analyze({
+      text: "Hello.",
+      model: "gpt-5.4-mini",
+    });
+    const assertion = expect(resultPromise).rejects.toMatchObject({
+      code: "analysis_timeout",
+      status: 504,
+    });
+
+    await vi.advanceTimersByTimeAsync(9);
+    expect(calls).toBe(2);
+
+    await vi.advanceTimersByTimeAsync(2);
+
+    expect(secondAttemptAborted).toBe(true);
+    await assertion;
+  });
+
   it("rejects malformed structured output", async () => {
     const service = createOpenAIAnalysisService({
       apiKey: "test-api-key",

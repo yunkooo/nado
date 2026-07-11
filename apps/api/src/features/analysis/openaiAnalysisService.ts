@@ -89,11 +89,19 @@ export function createOpenAIAnalysisService(
         throw new Error("OPENAI_API_KEY is required.");
       }
 
+      const deadline = createAnalysisRequestDeadline(openAITimeoutMs);
+
       for (let attempt = 0; attempt < 2; attempt += 1) {
+        const remainingTimeoutMs = deadline.readRemainingTimeoutMs();
+
+        if (remainingTimeoutMs <= 0) {
+          throw createAnalysisTimeoutError();
+        }
+
         const abortController = new AbortController();
         const timeoutId = globalThis.setTimeout(() => {
           abortController.abort();
-        }, openAITimeoutMs);
+        }, remainingTimeoutMs);
 
         try {
           const response = await fetchImplementation(endpoint, {
@@ -138,10 +146,7 @@ export function createOpenAIAnalysisService(
           }
         } catch (error) {
           if (isAbortError(error)) {
-            throw new UpstreamTimeoutError(
-              "analysis_timeout",
-              ANALYSIS_ERROR_MESSAGES.analysis_timeout,
-            );
+            throw createAnalysisTimeoutError();
           }
 
           throw error;
@@ -174,11 +179,19 @@ async function analyzeWithOpenRouter({
     throw new Error("OPENROUTER_API_KEY is required.");
   }
 
+  const deadline = createAnalysisRequestDeadline(timeoutMs);
+
   for (let attempt = 0; attempt < 2; attempt += 1) {
+    const remainingTimeoutMs = deadline.readRemainingTimeoutMs();
+
+    if (remainingTimeoutMs <= 0) {
+      throw createAnalysisTimeoutError();
+    }
+
     const abortController = new AbortController();
     const timeoutId = globalThis.setTimeout(() => {
       abortController.abort();
-    }, timeoutMs);
+    }, remainingTimeoutMs);
 
     try {
       const response = await fetchImplementation(endpoint, {
@@ -233,10 +246,7 @@ async function analyzeWithOpenRouter({
       }
     } catch (error) {
       if (isAbortError(error)) {
-        throw new UpstreamTimeoutError(
-          "analysis_timeout",
-          ANALYSIS_ERROR_MESSAGES.analysis_timeout,
-        );
+        throw createAnalysisTimeoutError();
       }
 
       throw error;
@@ -672,6 +682,23 @@ function isOpenRouterAnalysisModel(
 }
 
 class StructuredOutputError extends Error {}
+
+function createAnalysisRequestDeadline(timeoutMs: number) {
+  const expiresAt = Date.now() + timeoutMs;
+
+  return {
+    readRemainingTimeoutMs() {
+      return Math.max(0, expiresAt - Date.now());
+    },
+  };
+}
+
+function createAnalysisTimeoutError() {
+  return new UpstreamTimeoutError(
+    "analysis_timeout",
+    ANALYSIS_ERROR_MESSAGES.analysis_timeout,
+  );
+}
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
