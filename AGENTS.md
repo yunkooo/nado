@@ -48,21 +48,18 @@
 - 현재 상태값은 그대로 사용한다: `TODO`, `IN-progrss`, `IN-review`, `DONE`.
 - 상태 흐름은 `TODO` -> `IN-progrss` -> `IN-review` -> `DONE`이다.
 - Notion 티켓을 만들 때는 `작업 유형`을 기능, 수정, 문서, 테스트, 리팩터, 설정, 보안, 운영 중 하나로 고르고, 배경, 작업 범위, 완료 조건, 제외 범위, 검증 계획을 본문에 적는다.
-- Codex 또는 작업자는 작업 시작 시 `IN-progrss`, PR 생성/업데이트 시 `IN-review`까지만 처리한다.
-- `DONE`, `Merged At`, `종료일` 처리는 GitHub Actions의 merge 이벤트 동기화만 담당한다.
+- Notion에 접근할 수 없으면 ticket URL과 data source 소속, 상태, 제목, 작업 유형, 필수 본문, 기존 `GitHub PR`·`GitHub Branch`, 연결할 GitHub Issue와 유형을 모두 사용자에게 확인받는다. 확인이 끝나기 전에는 코드, branch, PR을 변경하지 않는다.
+- branch를 만들기 전에 연결할 GitHub Issue의 유형을 확정하고 PR base가 저장소 default branch인지 확인한다. tracking parent에는 직접 branch나 PR을 만들지 않는다.
+- Codex 또는 작업자는 상태 흐름에서 실제 작업 시작 시 `IN-progrss`와 `시작일`까지만 기록한다. `IN-review`와 PR metadata는 GitHub Actions가 기록한다.
+- 최초 PR 결속은 `GitHub PR`이 비어 있고 상태가 `IN-progrss`인 티켓에만 허용한다. 기존 `GitHub Branch`가 있다면 PR head branch와 같아야 한다.
+- 이미 결속된 티켓은 같은 PR URL, 같은 branch, `IN-review` 상태에서만 계속 동기화한다. 유효한 `Ticket:` URL이 한 번 결속되면 다른 티켓으로 바꾸지 않는다. URL이 없거나 잘못된 PR에 첫 유효 URL을 추가하는 경우만 예외다.
 - PR 본문에는 `.github/pull_request_template.md`의 `Ticket:` 줄에 Notion ticket URL을 반드시 넣는다.
 - same-repository PR에서 `Ticket:` URL이 없으면 `Notion Ticket Sync` GitHub Actions check가 실패하는 것이 정상이다.
-- `Ticket:` URL의 Notion page는 `NOTION_TICKETS_DATA_SOURCE_ID`로 설정된 data source에 속해야 하며, 다른 data source의 page면 동기화하지 않는다.
+- `Ticket:` URL의 Notion page는 `NOTION_TICKETS_DATA_SOURCE_ID`로 설정된 data source에 속해야 한다. URL이 없거나 잘못되었거나 다른 data source의 page면 check를 실패시키고 Notion을 갱신하지 않는다.
 - 자동화에 필요한 GitHub Actions 값은 `NOTION_TOKEN`, `NOTION_TICKETS_DATA_SOURCE_ID`, 기본 `GITHUB_TOKEN`이다. 실제 token 값과 data source ID 값은 코드, 문서, 커밋에 남기지 않는다.
-- `NOTION_TOKEN`은 PR branch 또는 신뢰되지 않은 base branch에서 checkout한 코드에 주입하지 않는다. Notion 동기화는 `main` 대상 `pull_request_target` 이벤트와 trusted `workflow_run`에서만 실행하며, default branch 코드를 checkout한다. review signal과 CI-result sync도 PR base가 default branch가 아니면 Notion 갱신 전에 skip한다. trusted checkout에 sync script가 아직 없으면 skip한다.
-- PR 이벤트는 Notion 업데이트 전 현재 PR 상태를 조회한다. 현재 PR이 이미 closed이면 오래된 이벤트로 보고 `IN-review`나 metadata를 다시 쓰지 않는다. 닫힘 이벤트도 현재 PR이 다시 열려 있으면 stale 이벤트로 보고 `Blocker`를 쓰지 않는다.
-- PR branch push는 `pull_request synchronize` 이벤트를 통해 Notion의 `Last Push At`, `Last Head SHA`, `Last Push Summary`에 기록한다. 기록 전 현재 PR head SHA를 조회하고, webhook payload가 최신 head가 아니면 stale 이벤트로 보고 skip한다.
-- PR 생성, 업데이트, branch push 이벤트는 기존 `CI Status`와 `Last CI Check`를 덮어쓰지 않는다. CI 상태 기록은 `workflow_run` 기반 `ci-result` sync가 담당한다. 같은 head SHA의 CI run이 여러 개 있으면 Actions run 목록에서 최신 run/attempt를 확인하고, 더 오래된 run은 stale 이벤트로 보고 skip한다.
-- fork PR의 CI `workflow_run`은 `workflow_run.pull_requests`가 비어 있어도 `workflow_run.head_repository`가 현재 저장소와 다르면 Notion sync를 skip한다.
-- PR 본문 수정은 `Ticket:` URL과 PR metadata만 확인하고 기존 CI/review 상태를 덮어쓰지 않는다.
-- PR 생성, 업데이트, branch push 이벤트는 기존 `Review Status`와 `Last Review Check`를 덮어쓰지 않는다.
-- PR review 제출은 토큰 없는 `.github/workflows/notion-ticket-review-dispatch.yml`의 read-only `pull_request_review` job이 signal만 남기고, secret-bearing `.github/workflows/notion-ticket-sync.yml`이 `workflow_run`으로 그 완료를 받아 trusted default branch 코드에서 현재 PR과 reviews API를 다시 조회한다. review signal workflow에는 `actions: write`를 주지 않는다. 승인 이벤트는 pagination까지 확인한 현재 review 목록에 활성 change request가 없을 때만 `Passed`로 기록하고, comment-only review는 이전 change request를 해제하지 않는다. 현재 decisive review가 dismissed-only이면 오래된 이벤트 fallback을 쓰지 않고 `Unknown`으로 기록한다.
-- fork PR은 Notion token을 사용하는 동기화 대상에서 제외한다. GitHub API 응답에서 `head.repo`가 없거나 `null`인 PR도 출처를 신뢰할 수 없으므로 fork PR처럼 skip한다.
+- PR event sync는 `IN-review`, PR·branch·push metadata를, CI sync는 CI 필드를, review sync는 review 필드를, merge sync는 `DONE`, `Merged At`, `종료일`을 각각 소유한다. merge는 CI 성공이나 review 통과를 추측하거나 덮어쓰지 않는다.
+- 정보 부족, 접근 권한, 외부 의존처럼 실제 진행을 멈추는 원인은 작업자가 해제 조건과 함께 수동 `Blocker`로 기록할 수 있으며 자동화는 이를 보존한다. 자동화는 정확한 `PR closed without merge` 값만 쓰고, reopen 또는 merge 때도 공백을 포함한 원문이 정확히 그 값인 경우에만 지운다. CI와 review 상태를 `Blocker`에 중복 기록하지 않는다.
+- `NOTION_TOKEN`은 신뢰되지 않은 코드를 checkout한 job에 주입하지 않는다. trusted checkout, default-branch base, stale event, fork, CI·review 집계의 세부 규칙은 `docs/workflow/notion-ticket-db-schema.md`를 따른다.
 
 ## 커밋 규칙
 

@@ -4,8 +4,7 @@ on:
   pull_request_review:
     types: [submitted, dismissed]
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   review-dispatch:

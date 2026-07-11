@@ -1,7 +1,9 @@
 ## Notion Ticket
 
+<!-- 프로젝트 데이터 소스의 IN-progrss 티켓 URL을 넣어주세요. 최초 결속 후 다른 티켓 URL로 바꾸지 마세요. -->
+
 - Ticket:
-- Status before PR: `TODO` / `IN-progrss`
+- Status before PR: `IN-progrss`
 
 ## 요약
 
