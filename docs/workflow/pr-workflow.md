@@ -58,6 +58,8 @@ tracking parent를 직접 닫는 PR은 만들지 않는다.
 
 ### Storybook 검증 기준
 
+Storybook 전용 build는 아직 별도 필수 check로 분리하지 않았으므로 Storybook 또는 공통 UI를 변경한 PR에서 아래 검증을 직접 실행하고 결과를 남긴다.
+
 | 변경 범위            | 추가 확인                                                                                         |
 | -------------------- | ------------------------------------------------------------------------------------------------- |
 | Storybook story·설정 | Storybook source test, typecheck, lint, build                                                     |
