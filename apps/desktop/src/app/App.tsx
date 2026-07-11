@@ -1,16 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { AnalysisFlow } from "../features/analysis/AnalysisFlow";
 import { AuthControls } from "../auth/AuthControls";
-import { ReviewFlow } from "../features/review/ReviewFlow";
-import { VocabularyFlow } from "../features/vocabulary/VocabularyFlow";
-import { VocabularyRefreshButton } from "../features/vocabulary/VocabularyRefreshButton";
-import { useVocabularyManualRefresh } from "../features/vocabulary/useVocabularyManualRefresh";
-import {
-  useRefreshVocabularyForActiveStudySurface,
-  useSyncVocabularyForAuth,
-  useSyncVocabularyRealtimeForAuth,
-} from "../features/vocabulary/vocabularyState";
-import { useAuthState } from "../auth/authState";
 
 type NavigationItem = {
   key: "analysis" | "review" | "vocabulary";
@@ -23,6 +13,17 @@ const navigationItems: NavigationItem[] = [
   { key: "review", label: "복습" },
 ];
 
+const StudyWorkspace = lazy(() =>
+  import("./StudyWorkspace").then(({ StudyWorkspace }) => ({
+    default: StudyWorkspace,
+  })),
+);
+const studyFlowFallback = (
+  <div className="desktop-analysis-status" role="status">
+    화면을 불러오는 중이에요.
+  </div>
+);
+
 export function App() {
   const [activeItem, setActiveItem] =
     useState<NavigationItem["key"]>("analysis");
@@ -34,19 +35,6 @@ export function App() {
     shouldRestoreMenuFocusRef.current = true;
     setIsSidebarOpen(false);
   };
-  const authState = useAuthState();
-  const isStudySurfaceActive =
-    activeItem === "vocabulary" || activeItem === "review";
-  const vocabularyRefresh = useVocabularyManualRefresh(authState);
-
-  useSyncVocabularyForAuth(authState);
-  useSyncVocabularyRealtimeForAuth(authState);
-  useRefreshVocabularyForActiveStudySurface(
-    authState,
-    isStudySurfaceActive,
-    activeItem,
-  );
-
   useEffect(() => {
     if (!isSidebarOpen) {
       if (shouldRestoreMenuFocusRef.current) {
@@ -157,44 +145,10 @@ export function App() {
       <section className="desktop-workspace" aria-label="분석 화면">
         {activeItem === "analysis" ? <AnalysisFlow /> : null}
 
-        {activeItem === "vocabulary" ? (
-          <section className="desktop-content-workspace">
-            <div className="desktop-page">
-              <header className="desktop-page-header">
-                <div>
-                  <p className="nado-eyebrow">Vocabulary</p>
-                  <h1 className="desktop-page-title">단어장</h1>
-                </div>
-                <VocabularyRefreshButton
-                  isDisabled={vocabularyRefresh.isDisabled}
-                  isRefreshing={vocabularyRefresh.isRefreshing}
-                  message={vocabularyRefresh.message}
-                  onRefresh={vocabularyRefresh.refreshVocabulary}
-                />
-              </header>
-              <VocabularyFlow />
-            </div>
-          </section>
-        ) : null}
-
-        {activeItem === "review" ? (
-          <section className="desktop-content-workspace">
-            <div className="desktop-page">
-              <header className="desktop-page-header">
-                <div>
-                  <p className="nado-eyebrow">Review</p>
-                  <h1 className="desktop-page-title">복습</h1>
-                </div>
-                <VocabularyRefreshButton
-                  isDisabled={vocabularyRefresh.isDisabled}
-                  isRefreshing={vocabularyRefresh.isRefreshing}
-                  message={vocabularyRefresh.message}
-                  onRefresh={vocabularyRefresh.refreshVocabulary}
-                />
-              </header>
-              <ReviewFlow />
-            </div>
-          </section>
+        {activeItem === "vocabulary" || activeItem === "review" ? (
+          <Suspense fallback={studyFlowFallback}>
+            <StudyWorkspace activeItem={activeItem} />
+          </Suspense>
         ) : null}
       </section>
     </main>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button } from "@nado/ui";
+import { Button } from "@nado/ui-web/Button";
 import { signOutFromSupabase, startGoogleOAuthSignIn } from "./authActions";
 import { getSupabaseBrowserClient } from "./authClient";
 import { useDesktopAuthDeepLink } from "./desktopAuthDeepLink";

@@ -4,7 +4,7 @@ import {
   getDistinctVocabularyNote,
   type VocabularyItem,
 } from "@nado/shared";
-import { Button } from "@nado/ui";
+import { Button } from "@nado/ui-web/Button";
 import { getVocabularyPage } from "./vocabularyPagination";
 
 type VocabularyListProps = {

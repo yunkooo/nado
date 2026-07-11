@@ -9,6 +9,31 @@
       "development": "./src/index.ts",
       "import": "./dist/index.js"
     },
+    "./AnalysisResult": {
+      "types": "./src/AnalysisResult.tsx",
+      "development": "./src/AnalysisResult.tsx",
+      "import": "./dist/AnalysisResult.js"
+    },
+    "./Button": {
+      "types": "./src/Button.tsx",
+      "development": "./src/Button.tsx",
+      "import": "./dist/Button.js"
+    },
+    "./InputComposer": {
+      "types": "./src/InputComposer.tsx",
+      "development": "./src/InputComposer.tsx",
+      "import": "./dist/InputComposer.js"
+    },
+    "./analysisPrimitives": {
+      "types": "./src/analysisPrimitives.tsx",
+      "development": "./src/analysisPrimitives.tsx",
+      "import": "./dist/analysisPrimitives.js"
+    },
+    "./analysisTypes": {
+      "types": "./src/analysisTypes.ts",
+      "development": "./src/analysisTypes.ts",
+      "import": "./dist/analysisTypes.js"
+    },
     "./styles.css": {
       "development": "./src/styles.css",
       "import": "./dist/styles.css"

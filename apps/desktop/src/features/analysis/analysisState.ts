@@ -7,7 +7,7 @@ import {
 import {
   isAnalysisResultData,
   type VocabularySuggestionSaveState,
-} from "@nado/ui";
+} from "@nado/ui-web/analysisTypes";
 import type { AnalyzeTextResult } from "../../api/analysisApi";
 
 export type AnalysisState = AnalyzeTextResult | { status: "idle" | "loading" };

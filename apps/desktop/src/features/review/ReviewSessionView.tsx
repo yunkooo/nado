@@ -1,4 +1,4 @@
-import { Button } from "@nado/ui";
+import { Button } from "@nado/ui-web/Button";
 import type {
   ReviewCard as ReviewCardData,
   ReviewDirection,

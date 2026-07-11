@@ -6,6 +6,10 @@ const analysisFlowSource = readFileSync(
   new URL("../features/analysis/AnalysisFlow.tsx", import.meta.url),
   "utf8",
 );
+const studyWorkspaceSource = readFileSync(
+  new URL("./StudyWorkspace.tsx", import.meta.url),
+  "utf8",
+);
 const apiConfigSource = readFileSync(
   new URL("../api/apiConfig.ts", import.meta.url),
   "utf8",
@@ -69,19 +73,35 @@ describe("Desktop App source", () => {
   });
 
   it("switches between analysis, vocabulary, and review views", () => {
-    expect(appSource).toContain("VocabularyFlow");
-    expect(appSource).toContain("ReviewFlow");
+    expect(appSource).toContain("StudyWorkspace");
+    expect(studyWorkspaceSource).toContain("VocabularyFlow");
+    expect(studyWorkspaceSource).toContain("ReviewFlow");
     expect(appSource).toContain('activeItem === "analysis"');
     expect(appSource).toContain('activeItem === "vocabulary"');
     expect(appSource).toContain('activeItem === "review"');
   });
 
+  it("loads study flows only after their navigation item is selected", () => {
+    expect(appSource).toContain("lazy(() =>");
+    expect(appSource).toContain('import("./StudyWorkspace")');
+    expect(studyWorkspaceSource).toContain("lazy(() =>");
+    expect(studyWorkspaceSource).toContain(
+      "../features/vocabulary/VocabularyFlow",
+    );
+    expect(studyWorkspaceSource).toContain("../features/review/ReviewFlow");
+    expect(studyWorkspaceSource).toContain(
+      "<Suspense fallback={studyFlowFallback}>",
+    );
+  });
+
   it("refreshes vocabulary data when entering study views or returning focus", () => {
-    expect(appSource).toContain("useRefreshVocabularyForActiveStudySurface");
+    expect(studyWorkspaceSource).toContain(
+      "useRefreshVocabularyForActiveStudySurface",
+    );
     expect(appSource).toContain('activeItem === "vocabulary"');
     expect(appSource).toContain('activeItem === "review"');
-    expect(appSource).toMatch(
-      /useRefreshVocabularyForActiveStudySurface\(\s*authState,\s*isStudySurfaceActive,\s*activeItem,?\s*\)/,
+    expect(studyWorkspaceSource).toMatch(
+      /useRefreshVocabularyForActiveStudySurface\(\s*authState,\s*true,\s*activeItem,?\s*\)/,
     );
     expect(vocabularyStateSource).toContain('window.addEventListener("focus"');
     expect(vocabularyStateSource).toContain(
@@ -90,8 +110,8 @@ describe("Desktop App source", () => {
   });
 
   it("subscribes to desktop vocabulary realtime updates after authentication", () => {
-    expect(appSource).toContain("useSyncVocabularyRealtimeForAuth");
-    expect(appSource).toMatch(
+    expect(studyWorkspaceSource).toContain("useSyncVocabularyRealtimeForAuth");
+    expect(studyWorkspaceSource).toMatch(
       /useSyncVocabularyRealtimeForAuth\(\s*authState,?\s*\)/,
     );
     expect(vocabularyStateSource).toContain("createVocabularyRealtimeSync");
@@ -103,10 +123,12 @@ describe("Desktop App source", () => {
   });
 
   it("renders a manual vocabulary refresh button on study views", () => {
-    expect(appSource).toContain("useVocabularyManualRefresh");
-    expect(appSource).toContain("VocabularyRefreshButton");
-    expect(appSource).toContain("vocabularyRefresh.refreshVocabulary");
-    expect(appSource).toContain("vocabularyRefresh.isRefreshing");
+    expect(studyWorkspaceSource).toContain("useVocabularyManualRefresh");
+    expect(studyWorkspaceSource).toContain("VocabularyRefreshButton");
+    expect(studyWorkspaceSource).toContain(
+      "vocabularyRefresh.refreshVocabulary",
+    );
+    expect(studyWorkspaceSource).toContain("vocabularyRefresh.isRefreshing");
     expect(styles).toContain(".nado-vocabulary-refresh");
   });
 
@@ -148,6 +170,15 @@ describe("Desktop App source", () => {
   it("clears vocabulary save notices when leaving the analysis view", () => {
     expect(analysisFlowSource).toMatch(
       /useEffect\(\(\) => \{\s*return \(\) => \{\s*analysisStore\.setVocabularySaveMessage\(null\);/s,
+    );
+  });
+
+  it("loads result-only analysis UI after the analysis succeeds", () => {
+    expect(analysisFlowSource).toContain(
+      'lazy(() => import("./AnalysisResultPanel"))',
+    );
+    expect(analysisFlowSource).toContain(
+      "<Suspense fallback={analysisResultFallback}>",
     );
   });
 

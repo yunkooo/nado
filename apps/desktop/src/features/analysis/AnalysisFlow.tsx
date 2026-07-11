@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { Suspense, lazy, useEffect, useRef } from "react";
 import {
   ANALYSIS_MODELS,
   MAX_ANALYSIS_TEXT_LENGTH,
@@ -9,13 +9,12 @@ import {
   shouldApplyUserScopedMutation,
   type AnalysisModelId,
 } from "@nado/shared";
-import {
-  AnalysisResult,
-  InputComposer,
-  InputSample,
-  type VocabularySuggestion,
-  type VocabularySuggestionSaveState,
-} from "@nado/ui";
+import { InputComposer } from "@nado/ui-web/InputComposer";
+import { InputSample } from "@nado/ui-web/analysisPrimitives";
+import type {
+  VocabularySuggestion,
+  VocabularySuggestionSaveState,
+} from "@nado/ui-web/analysisTypes";
 import { apiBaseUrl } from "../../api/apiConfig";
 import { analyzeText } from "../../api/analysisApi";
 import { useAnalysisPageState } from "./analysisState";
@@ -30,6 +29,12 @@ import {
 
 const inputDisclosure = "입력문은 분석에만 사용되며 저장되지 않습니다.";
 const VOCABULARY_SAVE_NOTICE_DISMISS_MS = 2500;
+const AnalysisResult = lazy(() => import("./AnalysisResultPanel"));
+const analysisResultFallback = (
+  <section className="desktop-analysis-status" role="status">
+    분석 결과를 불러오는 중이에요.
+  </section>
+);
 
 export function AnalysisFlow() {
   const authState = useAuthState();
@@ -303,11 +308,13 @@ export function AnalysisFlow() {
                   {vocabularySaveMessage.text}
                 </section>
               ) : null}
-              <AnalysisResult
-                getVocabularySuggestionState={getVocabularySuggestionState}
-                onSaveVocabularySuggestion={handleSaveVocabularySuggestion}
-                result={analysisState.data}
-              />
+              <Suspense fallback={analysisResultFallback}>
+                <AnalysisResult
+                  getVocabularySuggestionState={getVocabularySuggestionState}
+                  onSaveVocabularySuggestion={handleSaveVocabularySuggestion}
+                  result={analysisState.data}
+                />
+              </Suspense>
             </>
           ) : null}
 

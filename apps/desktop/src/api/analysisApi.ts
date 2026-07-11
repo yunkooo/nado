@@ -10,7 +10,7 @@ import {
   type AnalysisModelId,
   type AnalysisResult as ApiAnalysisResult,
 } from "@nado/shared";
-import type { AnalysisResultData } from "@nado/ui";
+import type { AnalysisResultData } from "@nado/ui-web/analysisTypes";
 import { apiFetch } from "./apiFetch";
 
 type AnalyzeTextError = {
