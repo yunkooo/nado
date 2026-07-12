@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
+import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared/analysis-input";
 import {
   ANALYSIS_INPUT_PLACEHOLDER_TEXT,
   ANALYSIS_INPUT_ACCESSIBILITY_LABEL,
@@ -9,6 +9,7 @@ import {
   getAnalysisSourceSampleState,
   getMobileTabs,
   mobileTabs,
+  resolveAnalysisInputAfterSuccess,
 } from "./analysisScreen";
 
 describe("mobile analysis screen state", () => {
@@ -79,6 +80,18 @@ describe("mobile analysis screen state", () => {
       countLabel: `35 / ${MAX_ANALYSIS_TEXT_LENGTH}`,
       text: "What to avoid when organizing state",
     });
+  });
+
+  it("clears only the exact input that produced a successful result", () => {
+    expect(
+      resolveAnalysisInputAfterSuccess("I need help.", "I need help."),
+    ).toBe("");
+    expect(
+      resolveAnalysisInputAfterSuccess(
+        "This is my next draft.",
+        "I need help.",
+      ),
+    ).toBe("This is my next draft.");
   });
 
   it("does not expose mock vocabulary or review data", async () => {

@@ -1,16 +1,31 @@
 import {
   ANALYSIS_ERROR_MESSAGES,
-  DEFAULT_ANALYSIS_MODEL_ID,
   analyzeResponseSchema,
-  fetchWithTimeout,
+} from "@nado/shared/analysis";
+import {
+  DEFAULT_ANALYSIS_MODEL_ID,
   isOpenRouterAnalysisModelId,
   normalizeAnalysisText,
-  readJson,
-  readApiErrorDetail,
-  type ApiRequestOptions,
   type AnalysisModelId,
-  type AnalysisResult as ApiAnalysisResult,
-} from "@nado/shared";
+} from "@nado/shared/analysis-input";
+import {
+  mapAnalysisResultToPresentation,
+  type AnalysisPresentationResult,
+  type AnalysisPresentationVocabularyItem,
+  type GrammarPoint,
+  type ReadingChunk,
+  type SentenceAnalysisItem,
+  type SentenceToken,
+  type TranslationNote,
+  type VocabularySuggestion,
+} from "@nado/shared/analysis-presentation";
+import type { AnalysisClientError } from "@nado/shared/analysis-state";
+import { readApiErrorDetail } from "@nado/shared/api-errors";
+import {
+  fetchWithTimeout,
+  readJson,
+  type ApiRequestOptions,
+} from "@nado/shared/http";
 import {
   MOBILE_API_CONFIGURATION_ERROR_MESSAGE,
   MobileApiConfigurationError,
@@ -18,72 +33,26 @@ import {
   type MobileApiPlatform,
 } from "./apiConfig";
 
-type AnalyzeTextError = {
-  code?: string;
-  message: string;
-  requestId?: string;
-  retryable?: boolean;
-  status: "error";
-  statusCode?: number;
-};
-
-export type MobileAnalysisSummary = {
-  sentences: MobileSentenceAnalysis[];
+export type MobileAnalysisSummary = Omit<
+  AnalysisPresentationResult,
+  "translation"
+> & {
   sentenceCountLabel: string;
-  sourceText: string;
   translation: string;
-  translationNotes: MobileTranslationNote[];
   vocabularyCountLabel: string;
-  vocabularyItems: MobileVocabularyItem[];
-  vocabularySuggestions: MobileVocabularySuggestion[];
 };
 
-export type MobileReadingChunk = {
-  english: string;
-  korean: string;
-};
-
-export type MobileTranslationNote = {
-  note: string;
-  term: string;
-};
-
-export type MobileGrammarPoint = {
-  explanation: string;
-  target: string;
-  type: string;
-};
-
-export type MobileSentenceAnalysis = {
-  chunks: MobileReadingChunk[];
-  grammarPoints: MobileGrammarPoint[];
-  indexLabel: string;
-  naturalTranslation: string;
-  tokens: MobileSentenceToken[];
-};
-
-export type MobileSentenceToken = {
-  text: string;
-  vocabularyKey: string | null;
-};
-
-export type MobileVocabularySuggestion = {
-  meaning: string;
-  note?: string;
-  term: string;
-  type: "phrase" | "word";
-};
-
-export type MobileVocabularyItem = MobileVocabularySuggestion & {
-  baseForm: string;
-  contextMeaning: string;
-  key: string;
-  partOfSpeech: string | null;
-};
+export type MobileReadingChunk = ReadingChunk;
+export type MobileTranslationNote = TranslationNote;
+export type MobileGrammarPoint = GrammarPoint;
+export type MobileSentenceAnalysis = SentenceAnalysisItem;
+export type MobileSentenceToken = SentenceToken;
+export type MobileVocabularySuggestion = VocabularySuggestion;
+export type MobileVocabularyItem = AnalysisPresentationVocabularyItem;
 
 export type AnalyzeTextResult =
   | { data: MobileAnalysisSummary; status: "success" }
-  | AnalyzeTextError
+  | AnalysisClientError
   | { message: string; status: "not_analyzable" };
 
 export type AnalyzeTextOptions = ApiRequestOptions & {
@@ -168,7 +137,10 @@ export async function analyzeText(
   }
 
   return {
-    data: mapAnalysisResult(trimmedText, parsed.data.result),
+    data: mapAnalysisResultToMobilePresentation(
+      trimmedText,
+      parsed.data.result,
+    ),
     status: "success",
   };
 }
@@ -188,86 +160,24 @@ function resolveAnalyzeRequestTimeoutMs(model: AnalysisModelId): number {
     : ANALYZE_REQUEST_TIMEOUT_MS;
 }
 
-function mapAnalysisResult(
+function mapAnalysisResultToMobilePresentation(
   sourceText: string,
-  result: ApiAnalysisResult,
+  result: Parameters<typeof mapAnalysisResultToPresentation>[1],
 ): MobileAnalysisSummary {
+  const presentation = mapAnalysisResultToPresentation(sourceText, result);
+
   return {
-    sentences: result.sentences.map((sentence, index) => ({
-      chunks: sentence.chunks.map((chunk) => ({
-        english: chunk.english,
-        korean: chunk.literalTranslation,
-      })),
-      grammarPoints: sentence.grammarPoints.map((point) => ({
-        explanation: point.explanation,
-        target: point.title,
-        type: point.grammarType ?? "문법 포인트",
-      })),
-      indexLabel: `문장 ${index + 1}`,
-      naturalTranslation: sentence.translation,
-      tokens: sentence.tokens.map((token) => ({
-        text: token.text,
-        vocabularyKey: token.vocabularyKey,
-      })),
-    })),
-    sentenceCountLabel: `문장 ${result.sentences.length}개`,
-    sourceText,
-    translation: result.translation,
-    translationNotes: [
-      {
-        note: result.translationExplanation,
-        term: "번역 포인트",
-      },
-      ...result.structure.map((item) => ({
-        note: `${item.korean} · ${item.note}`,
-        term: item.english,
-      })),
-    ],
-    vocabularyCountLabel: `저장 후보 ${readVocabularyCount(result)}개`,
-    vocabularyItems: result.vocabularyItems.map((item) => ({
-      baseForm: item.baseForm,
-      contextMeaning: item.contextMeaning,
-      key: item.key,
-      meaning: item.meaning,
-      note: item.contextMeaning,
-      partOfSpeech: item.partOfSpeech,
-      term: item.term,
-      type: item.type,
-    })),
-    vocabularySuggestions: readVocabularySuggestions(result),
+    ...presentation,
+    sentenceCountLabel: `문장 ${presentation.sentences.length}개`,
+    translation: presentation.translation[0] ?? "",
+    vocabularyCountLabel: `저장 후보 ${presentation.vocabularySuggestions.length}개`,
   };
-}
-
-function readVocabularyCount(result: ApiAnalysisResult) {
-  return result.vocabularySuggestions.length > 0
-    ? result.vocabularySuggestions.length
-    : result.vocabularyItems.length;
-}
-
-function readVocabularySuggestions(
-  result: ApiAnalysisResult,
-): MobileVocabularySuggestion[] {
-  if (result.vocabularySuggestions.length > 0) {
-    return result.vocabularySuggestions.map((item) => ({
-      meaning: item.meaning,
-      note: item.note,
-      term: item.term,
-      type: item.type,
-    }));
-  }
-
-  return result.vocabularyItems.map((item) => ({
-    meaning: item.meaning,
-    note: item.contextMeaning,
-    term: item.term,
-    type: item.type,
-  }));
 }
 
 function createAnalyzeErrorResult(
   payload: unknown,
   statusCode: number,
-): AnalyzeTextError {
+): AnalysisClientError {
   const error = readApiErrorDetail(payload, ANALYZE_ERROR_MESSAGE);
 
   return {

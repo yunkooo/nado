@@ -1,334 +1,172 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("react-native", () => ({
+  StyleSheet: {
+    create: <T>(styleSheet: T) => styleSheet,
+  },
+}));
+
+import { nativeTokens } from "@nado/tokens/react-native";
+import { analysisStyles } from "./analysisStyles";
+import { appStyles } from "./appStyles";
+import { designStyles } from "./designStyles";
+import {
+  mobileButtonTokens,
+  mobileColors,
+  mobileRadius,
+  mobileReviewCardTokens,
+  mobileSpacing,
+  mobileTypography,
+  styles,
+} from "./mobileStyles";
+import { studyStyles } from "./studyStyles";
 
 const packageJson = JSON.parse(
   readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
 );
-const mobileStylesSource = readFileSync(
-  new URL("./mobileStyles.ts", import.meta.url),
-  "utf8",
-);
 
-describe("mobile shared style tokens", () => {
-  it("declares the shared token package dependency", () => {
+describe("mobile shared styles", () => {
+  it("uses shared native tokens and keeps every style in one surface group", () => {
     expect(packageJson.dependencies["@nado/tokens"]).toBe("workspace:*");
+    expect(mobileColors).toBe(nativeTokens.color);
+    expect(mobileRadius).toBe(nativeTokens.radius);
+    expect(mobileSpacing).toBe(nativeTokens.spacing);
+    expect(mobileTypography).toBe(nativeTokens.typography.text);
+    expect(mobileButtonTokens).toBe(nativeTokens.component.button);
+    expect(mobileReviewCardTokens).toBe(nativeTokens.component.reviewCard);
+
+    const groupedStyleKeys = [
+      ...Object.keys(appStyles),
+      ...Object.keys(analysisStyles),
+      ...Object.keys(studyStyles),
+      ...Object.keys(designStyles),
+    ];
+
+    expect(new Set(groupedStyleKeys).size).toBe(groupedStyleKeys.length);
+    expect(Object.keys(styles).sort()).toEqual(groupedStyleKeys.sort());
   });
 
-  it("uses the React Native token adapter as the mobile style source", () => {
-    expect(mobileStylesSource).toContain(
-      'import { nativeTokens } from "@nado/tokens/react-native";',
-    );
-    expect(mobileStylesSource).toContain(
-      "export const mobileRadius = nativeTokens.radius;",
-    );
-    expect(mobileStylesSource).toContain(
-      "export const mobileSpacing = nativeTokens.spacing;",
-    );
-    expect(mobileStylesSource).toContain(
-      "export const mobileButtonTokens = nativeTokens.component.button;",
-    );
-    expect(mobileStylesSource).toContain(
-      "export const mobileReviewCardTokens = nativeTokens.component.reviewCard;",
-    );
+  it("keeps the analysis composer inside bottom-aligned scroll content", () => {
+    expect(styles.content).toMatchObject({ flexGrow: 1 });
+    expect(styles.composerWrap).toMatchObject({ marginTop: "auto" });
   });
 
-  it("keeps core mobile color aliases backed by shared color tokens", () => {
-    for (const colorName of [
-      "canvas",
-      "surface",
-      "surfaceMuted",
-      "sidebar",
-      "sidebarActive",
-      "ink",
-      "inkMuted",
-      "border",
-      "primary",
-      "primaryInk",
-    ]) {
-      expect(mobileStylesSource).toContain(
-        `${colorName}: nativeTokens.color.${colorName}`,
-      );
-    }
+  it("backs analysis actions with shared button tokens", () => {
+    expect(styles.analyzeButton).toMatchObject({
+      backgroundColor: mobileButtonTokens.send.background,
+      borderRadius: mobileButtonTokens.size.icon.radius,
+      height: mobileButtonTokens.size.icon.height,
+      minHeight: mobileButtonTokens.size.icon.height,
+      minWidth: mobileButtonTokens.size.icon.width,
+      width: mobileButtonTokens.size.icon.width,
+    });
+    expect(styles.analyzeButtonText).toMatchObject({
+      color: mobileButtonTokens.send.foreground,
+    });
+    expect(styles.primaryButton).toMatchObject({
+      backgroundColor: mobileButtonTokens.primary.background,
+      borderRadius: mobileButtonTokens.radius,
+      minHeight: mobileButtonTokens.size.md.height,
+      paddingHorizontal: mobileButtonTokens.size.md.paddingX,
+    });
   });
 
-  it("uses native radius and spacing helpers for repeated layout primitives", () => {
-    expect(mobileStylesSource).toContain("borderRadius: mobileRadius.md");
-    expect(mobileStylesSource).toContain("borderRadius: mobileRadius.composer");
-    expect(mobileStylesSource).toContain("borderRadius: mobileRadius.pill");
-    expect(mobileStylesSource).toContain("gap: mobileSpacing.sm");
-    expect(mobileStylesSource).toContain("paddingHorizontal: mobileSpacing.md");
+  it("backs the design demo surface with shared tokens", () => {
+    expect(styles.designDemoSurface).toMatchObject({
+      backgroundColor: mobileColors.surface,
+      borderRadius: mobileRadius.md,
+      gap: mobileSpacing.md,
+    });
+    expect(styles.designDemoPrimarySwatch).toMatchObject({
+      backgroundColor: mobileColors.primary,
+      borderRadius: mobileRadius.md,
+    });
+    expect(styles.designDemoTokenSource).toMatchObject({
+      backgroundColor: mobileColors.surfaceMuted,
+      borderRadius: mobileRadius.sm,
+      maxWidth: "100%",
+    });
   });
 
-  it("lets the analysis composer settle at the bottom of scroll content", () => {
-    const contentStyle = mobileStylesSource.match(
-      /content:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-    const composerWrapStyle = mobileStylesSource.match(
-      /composerWrap:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-
-    expect(contentStyle).toContain("flexGrow: 1");
-    expect(composerWrapStyle).toContain('marginTop: "auto"');
+  it("keeps ui-native card styles limited to inner layout", () => {
+    expect(styles.meaningCard).toEqual({ gap: mobileSpacing.xs });
+    expect(styles.vocabularyItem).toEqual({ gap: 14, minHeight: 220 });
+    expect(styles.reviewCard).toEqual({
+      alignItems: "center",
+      gap: 10,
+      justifyContent: "center",
+      minHeight: 220,
+    });
+    expect(styles.wordDefinitionCard).toEqual({
+      alignSelf: "stretch",
+      gap: 10,
+    });
   });
 
-  it("keeps the analyze icon button backed by send icon component tokens", () => {
-    const analyzeButtonStyle = mobileStylesSource.match(
-      /analyzeButton:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-    const analyzeButtonTextStyle = mobileStylesSource.match(
-      /analyzeButtonText:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-
-    expect(analyzeButtonStyle).toContain(
-      "backgroundColor: mobileButtonTokens.send.background",
-    );
-    expect(analyzeButtonStyle).toContain(
-      "borderRadius: mobileButtonTokens.size.icon.radius",
-    );
-    expect(analyzeButtonStyle).toContain(
-      "height: mobileButtonTokens.size.icon.height",
-    );
-    expect(analyzeButtonStyle).toContain(
-      "minHeight: mobileButtonTokens.size.icon.height",
-    );
-    expect(analyzeButtonStyle).toContain(
-      "minWidth: mobileButtonTokens.size.icon.width",
-    );
-    expect(analyzeButtonStyle).toContain(
-      "width: mobileButtonTokens.size.icon.width",
-    );
-    expect(analyzeButtonTextStyle).toContain(
-      "color: mobileButtonTokens.send.foreground",
-    );
+  it("positions word definitions as anchored overlays", () => {
+    expect(styles.wordDefinitionPopoverCard).toMatchObject({
+      position: "absolute",
+      zIndex: 40,
+    });
+    expect(styles.sentenceCardActive).toEqual({ zIndex: 20 });
+    expect(styles.chunkUnitActive).toEqual({ zIndex: 30 });
   });
 
-  it("keeps the primary action button backed by primary md component tokens", () => {
-    const primaryButtonStyle = mobileStylesSource.match(
-      /primaryButton:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-    const primaryButtonTextStyle = mobileStylesSource.match(
-      /primaryButtonText:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-
-    expect(primaryButtonStyle).toContain(
-      "backgroundColor: mobileButtonTokens.primary.background",
-    );
-    expect(primaryButtonStyle).toContain(
-      "borderRadius: mobileButtonTokens.radius",
-    );
-    expect(primaryButtonStyle).toContain(
-      "minHeight: mobileButtonTokens.size.md.height",
-    );
-    expect(primaryButtonStyle).toContain(
-      "paddingHorizontal: mobileButtonTokens.size.md.paddingX",
-    );
-    expect(primaryButtonTextStyle).toContain(
-      "color: mobileButtonTokens.primary.foreground",
-    );
+  it("keeps reading chunks and suggestion states responsive", () => {
+    expect(styles.chunkLine).toMatchObject({
+      flexDirection: "row",
+      flexWrap: "wrap",
+    });
+    expect(styles.chunkUnit).toMatchObject({ flexShrink: 1 });
+    expect(styles.suggestionChipSaved).toMatchObject({ opacity: 1 });
+    expect(styles.suggestionChipSaving).toEqual({ opacity: 0.64 });
+    expect(styles).not.toHaveProperty("suggestionChip");
+    expect(styles.chunkSlash).toMatchObject({
+      color: mobileColors.accent,
+      lineHeight: 31,
+    });
   });
 
-  it("backs the mobile token parity demo surface with shared native tokens", () => {
-    const demoSurfaceStyle = mobileStylesSource.match(
-      /designDemoSurface:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-    const demoPrimarySwatchStyle = mobileStylesSource.match(
-      /designDemoPrimarySwatch:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-    const demoPrimitiveHeaderStyle = mobileStylesSource.match(
-      /designDemoPrimitiveHeader:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-    const demoTokenSourceStyle = mobileStylesSource.match(
-      /designDemoTokenSource:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-    const demoTokenSourceTextStyle = mobileStylesSource.match(
-      /designDemoTokenSourceText:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-
-    expect(demoSurfaceStyle ?? "").toContain(
-      "backgroundColor: mobileColors.surface",
-    );
-    expect(demoSurfaceStyle ?? "").toContain("borderRadius: mobileRadius.md");
-    expect(demoSurfaceStyle ?? "").toContain("gap: mobileSpacing.md");
-    expect(demoPrimarySwatchStyle ?? "").toContain(
-      "backgroundColor: mobileColors.primary",
-    );
-    expect(demoPrimarySwatchStyle ?? "").toContain(
-      "borderRadius: mobileRadius.md",
-    );
-    expect(mobileStylesSource).not.toContain("designDemoPrimaryButton");
-    expect(mobileStylesSource).not.toContain("designDemoSecondaryButton");
-    expect(mobileStylesSource).not.toContain("designDemoSendIconButton");
-    expect(demoPrimitiveHeaderStyle ?? "").toContain('flexDirection: "row"');
-    expect(demoPrimitiveHeaderStyle ?? "").toContain('flexWrap: "wrap"');
-    expect(demoPrimitiveHeaderStyle ?? "").toContain("gap: mobileSpacing.xs");
-    expect(demoTokenSourceStyle ?? "").toContain(
-      "backgroundColor: mobileColors.surfaceMuted",
-    );
-    expect(demoTokenSourceStyle ?? "").toContain(
-      "borderRadius: mobileRadius.sm",
-    );
-    expect(demoTokenSourceStyle ?? "").toContain('maxWidth: "100%"');
-    expect(demoTokenSourceTextStyle ?? "").toContain("flexShrink: 1");
-    expect(demoTokenSourceTextStyle ?? "").toContain("minWidth: 0");
+  it("uses shared typography values for matching product styles", () => {
+    expect(styles.inputDisclosure).toMatchObject({
+      fontSize: mobileTypography.size.xs,
+    });
+    expect(styles.reviewAnswer).toMatchObject({
+      fontSize: mobileTypography.size.sm,
+    });
+    expect(styles.emptyPanelTitle).toMatchObject({
+      fontSize: mobileTypography.size.md,
+    });
+    expect(styles.statusTitle).toMatchObject({
+      fontSize: mobileTypography.size.lg,
+    });
   });
 
-  it("keeps mobile vocabulary meaning card styles limited to inner layout", () => {
-    const meaningCardStyle = mobileStylesSource.match(
-      /meaningCard:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-
-    expect(mobileStylesSource).toContain("meaningCard");
-    expect(meaningCardStyle).toContain("gap: mobileSpacing.xs");
-    expect(meaningCardStyle).not.toContain("backgroundColor:");
-    expect(meaningCardStyle).not.toContain("borderColor:");
-    expect(meaningCardStyle).not.toContain("borderRadius:");
-    expect(meaningCardStyle).not.toContain("borderWidth:");
-    expect(meaningCardStyle).not.toContain("paddingHorizontal:");
-    expect(meaningCardStyle).not.toContain("paddingVertical:");
+  it("shows the model selector affordance", () => {
+    expect(styles.modelSelectButton).toMatchObject({
+      flexDirection: "row",
+      gap: 8,
+    });
+    expect(styles.modelSelectChevron).toMatchObject({
+      borderRightColor: mobileColors.inkMuted,
+      transform: [{ rotate: "45deg" }],
+    });
   });
 
-  it("keeps mobile vocabulary item styles limited to card layout after moving the surface to ui-native Card", () => {
-    const vocabularyItemStyle = mobileStylesSource.match(
-      /vocabularyItem:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-
-    expect(mobileStylesSource).toContain("vocabularyItem");
-    expect(vocabularyItemStyle).toContain("gap: 14");
-    expect(vocabularyItemStyle).toContain("minHeight: 220");
-    expect(vocabularyItemStyle).not.toContain("backgroundColor:");
-    expect(vocabularyItemStyle).not.toContain("borderColor:");
-    expect(vocabularyItemStyle).not.toContain("borderRadius:");
-    expect(vocabularyItemStyle).not.toContain("borderWidth:");
-    expect(vocabularyItemStyle).not.toContain("padding:");
-    expect(vocabularyItemStyle).not.toContain("shadowColor:");
-    expect(vocabularyItemStyle).not.toContain("shadowOffset:");
-    expect(vocabularyItemStyle).not.toContain("shadowOpacity:");
-    expect(vocabularyItemStyle).not.toContain("shadowRadius:");
-  });
-
-  it("keeps mobile review card styles limited to card layout after moving the surface to ui-native Card", () => {
-    const reviewCardStyle = mobileStylesSource.match(
-      /reviewCard:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-
-    expect(mobileStylesSource).toContain("reviewCard");
-    expect(reviewCardStyle).toContain('alignItems: "center"');
-    expect(reviewCardStyle).toContain("gap: 10");
-    expect(reviewCardStyle).toContain('justifyContent: "center"');
-    expect(reviewCardStyle).toContain("minHeight: 220");
-    expect(reviewCardStyle).not.toContain("backgroundColor:");
-    expect(reviewCardStyle).not.toContain("borderColor:");
-    expect(reviewCardStyle).not.toContain("borderRadius:");
-    expect(reviewCardStyle).not.toContain("borderWidth:");
-    expect(reviewCardStyle).not.toContain("paddingHorizontal:");
-    expect(reviewCardStyle).not.toContain("paddingVertical:");
-    expect(reviewCardStyle).not.toContain("shadowColor:");
-    expect(reviewCardStyle).not.toContain("shadowOffset:");
-    expect(reviewCardStyle).not.toContain("shadowOpacity:");
-    expect(reviewCardStyle).not.toContain("shadowRadius:");
-  });
-
-  it("renders the mobile word definition card as an anchored overlay", () => {
-    const wordDefinitionCardStyle = mobileStylesSource.match(
-      /wordDefinitionCard:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-    const wordDefinitionPopoverCardStyle = mobileStylesSource.match(
-      /wordDefinitionPopoverCard:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-
-    expect(mobileStylesSource).toContain("wordDefinitionCard");
-    expect(wordDefinitionCardStyle).toContain('alignSelf: "stretch"');
-    expect(wordDefinitionCardStyle).toContain("gap: 10");
-    expect(wordDefinitionCardStyle).not.toContain("backgroundColor:");
-    expect(wordDefinitionCardStyle).not.toContain("borderColor:");
-    expect(wordDefinitionCardStyle).not.toContain("borderRadius:");
-    expect(wordDefinitionCardStyle).not.toContain("borderWidth:");
-    expect(wordDefinitionCardStyle).not.toContain("elevation:");
-    expect(wordDefinitionCardStyle).not.toContain("paddingHorizontal:");
-    expect(wordDefinitionCardStyle).not.toContain("paddingVertical:");
-    expect(wordDefinitionCardStyle).not.toContain("shadowColor:");
-    expect(wordDefinitionCardStyle).not.toContain("shadowOffset:");
-    expect(wordDefinitionCardStyle).not.toContain("shadowOpacity:");
-    expect(wordDefinitionCardStyle).not.toContain("shadowRadius:");
-    expect(mobileStylesSource).toContain("wordPopoverOverlay");
-    expect(wordDefinitionPopoverCardStyle).toContain('position: "absolute"');
-    expect(wordDefinitionPopoverCardStyle).toContain("zIndex: 40");
-    expect(mobileStylesSource).toContain("chunkUnitActive");
-    expect(mobileStylesSource).toContain("sentenceCardActive");
-  });
-
-  it("keeps mobile reading chunks in a wrapping row flow", () => {
-    expect(mobileStylesSource).toContain("chunkLine");
-    expect(mobileStylesSource).toContain('flexDirection: "row"');
-    expect(mobileStylesSource).toContain('flexWrap: "wrap"');
-    expect(mobileStylesSource).toContain("chunkSlash");
-    expect(mobileStylesSource).toContain("flexShrink: 1");
-  });
-
-  it("keeps only suggestion chip state overrides after moving base layout to ui-native Chip", () => {
-    const suggestionChipSavedStyle = mobileStylesSource.match(
-      /suggestionChipSaved:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-    const suggestionChipSavingStyle = mobileStylesSource.match(
-      /suggestionChipSaving:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-
-    expect(mobileStylesSource).not.toContain("suggestionChip: {");
-    expect(mobileStylesSource).not.toContain("suggestionPrefix: {");
-    expect(mobileStylesSource).not.toContain("suggestionText: {");
-    expect(mobileStylesSource).toContain("suggestionChipSaved");
-    expect(mobileStylesSource).toContain("suggestionChipSaving");
-    expect(suggestionChipSavedStyle).toContain("opacity: 1");
-    expect(suggestionChipSavingStyle).toContain("opacity: 0.64");
-  });
-
-  it("shows a chevron affordance in the mobile model selector trigger", () => {
-    const modelSelectButtonStyle = mobileStylesSource.match(
-      /modelSelectButton:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-    const modelSelectChevronStyle = mobileStylesSource.match(
-      /modelSelectChevron:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-
-    expect(modelSelectButtonStyle).toContain('flexDirection: "row"');
-    expect(modelSelectButtonStyle).toContain("gap: 8");
-    expect(modelSelectChevronStyle).toContain(
-      "borderRightColor: mobileColors.inkMuted",
-    );
-    expect(modelSelectChevronStyle).toContain(
-      'transform: [{ rotate: "45deg" }]',
-    );
-  });
-
-  it("matches the web and desktop review answer colors", () => {
-    const reviewAnswerStyle = mobileStylesSource.match(
-      /reviewAnswer:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-    const reviewAnswerRevealedStyle = mobileStylesSource.match(
-      /reviewAnswerRevealed:\s*{(?<body>[\s\S]*?)\n  },/,
-    )?.groups?.body;
-
-    expect(mobileStylesSource).not.toContain("reviewAnswerHiddenBox");
-    expect(mobileStylesSource).not.toContain("reviewAnswerHidden");
-    expect(reviewAnswerStyle).toContain(
-      "backgroundColor: mobileReviewCardTokens.answer.background",
-    );
-    expect(reviewAnswerStyle).toContain(
-      "borderColor: mobileReviewCardTokens.answer.border",
-    );
-    expect(reviewAnswerStyle).toContain(
-      "borderRadius: mobileReviewCardTokens.answer.radius",
-    );
-    expect(reviewAnswerStyle).toContain(
-      "color: mobileReviewCardTokens.answer.foreground",
-    );
-    expect(reviewAnswerStyle).toContain(
-      "padding: mobileReviewCardTokens.answer.padding",
-    );
-    expect(reviewAnswerStyle).toContain('filter: "blur(5px)"');
-    expect(reviewAnswerStyle).toContain('userSelect: "none"');
-    expect(reviewAnswerRevealedStyle).toContain('filter: "none"');
-    expect(reviewAnswerRevealedStyle).toContain('userSelect: "auto"');
-    expect(mobileStylesSource).not.toContain("textShadowRadius: 6");
+  it("matches shared review-answer tokens in hidden and revealed states", () => {
+    expect(styles.reviewAnswer).toMatchObject({
+      backgroundColor: mobileReviewCardTokens.answer.background,
+      borderColor: mobileReviewCardTokens.answer.border,
+      borderRadius: mobileReviewCardTokens.answer.radius,
+      color: mobileReviewCardTokens.answer.foreground,
+      filter: "blur(5px)",
+      padding: mobileReviewCardTokens.answer.padding,
+      userSelect: "none",
+    });
+    expect(styles.reviewAnswerRevealed).toEqual({
+      filter: "none",
+      userSelect: "auto",
+    });
   });
 });

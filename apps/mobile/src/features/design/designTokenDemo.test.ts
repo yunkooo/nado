@@ -1,34 +1,14 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   getMobileTokenParityDemoSections,
-  isMobileDesignDemoFlagEnabled,
+  MOBILE_DESIGN_DEMO_BUNDLE_MARKER,
 } from "./designTokenDemo";
 
-const designTokenDemoSource = readFileSync(
-  new URL("./designTokenDemo.ts", import.meta.url),
-  "utf8",
-);
-const mobileTokenParityDemoScreenSource = readFileSync(
-  new URL("./MobileTokenParityDemoScreen.tsx", import.meta.url),
-  "utf8",
-);
-
-describe("mobile design token demo flag", () => {
-  it("reads the Expo public flag with static dot notation for bundling", () => {
-    expect(designTokenDemoSource).toContain(
-      "process.env.EXPO_PUBLIC_NADO_MOBILE_DESIGN_DEMO",
+describe("mobile design token demo contract", () => {
+  it("exposes a stable marker for the real bundle graph verification", () => {
+    expect(MOBILE_DESIGN_DEMO_BUNDLE_MARKER).toBe(
+      "NADO_MOBILE_DESIGN_DEMO_BUNDLE_MARKER",
     );
-    expect(designTokenDemoSource).not.toContain("env[MOBILE_DESIGN_DEMO_FLAG]");
-    expect(designTokenDemoSource).not.toContain(
-      "process.env[MOBILE_DESIGN_DEMO_FLAG]",
-    );
-  });
-
-  it("only enables the demo for the explicit Expo public flag value", () => {
-    expect(isMobileDesignDemoFlagEnabled(undefined)).toBe(false);
-    expect(isMobileDesignDemoFlagEnabled("true")).toBe(false);
-    expect(isMobileDesignDemoFlagEnabled("1")).toBe(true);
   });
 
   it("documents the mobile token parity demo verification flow", () => {
@@ -71,42 +51,5 @@ describe("mobile design token demo flag", () => {
         title: "Card, Badge, Chip contract",
       },
     ]);
-  });
-
-  it("renders the demo screen from the shared verification flow", () => {
-    expect(mobileTokenParityDemoScreenSource).toContain(
-      "getMobileTokenParityDemoSections",
-    );
-    expect(mobileTokenParityDemoScreenSource).toContain(
-      "tokenSources.map((tokenSource)",
-    );
-  });
-
-  it("applies the native facade package on the low-risk demo surface", () => {
-    expect(mobileTokenParityDemoScreenSource).toContain(
-      'import { Badge, Button, Card, Chip, Stack, Text } from "@nado/ui/native";',
-    );
-    expect(mobileTokenParityDemoScreenSource).toContain("<Stack");
-    expect(mobileTokenParityDemoScreenSource).toContain(
-      '<Button variant="primary"',
-    );
-    expect(mobileTokenParityDemoScreenSource).toContain(
-      'accessibilityLabel="Send icon token sample"',
-    );
-    expect(mobileTokenParityDemoScreenSource).toContain('size="icon"');
-    expect(mobileTokenParityDemoScreenSource).toContain('variant="send"');
-    expect(mobileTokenParityDemoScreenSource).toContain("<Card");
-    expect(mobileTokenParityDemoScreenSource).toContain(
-      'accessibilityLabel="Card Badge Chip token sample"',
-    );
-    expect(mobileTokenParityDemoScreenSource).toContain(
-      '<Badge tone="neutral">',
-    );
-    expect(mobileTokenParityDemoScreenSource).toContain(
-      '<Badge tone="warning">',
-    );
-    expect(mobileTokenParityDemoScreenSource).toContain("<Chip");
-    expect(mobileTokenParityDemoScreenSource).toContain('label="setup · 준비"');
-    expect(mobileTokenParityDemoScreenSource).toContain('prefix="+ 저장"');
   });
 });

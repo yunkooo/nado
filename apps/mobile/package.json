@@ -4,32 +4,45 @@
   "private": true,
   "main": "index.ts",
   "scripts": {
-    "dev": "node scripts/start-expo-with-root-env.mjs",
-    "dev:client": "node scripts/start-expo-with-root-env.mjs --dev-client",
-    "ios": "node scripts/run-ios-with-root-env.mjs",
+    "dev": "node scripts/run-expo-with-root-env.mjs start",
+    "dev:design": "NADO_MOBILE_APP_VARIANT=design-demo node scripts/run-expo-with-root-env.mjs start",
+    "dev:client": "node scripts/run-expo-with-root-env.mjs start --dev-client",
+    "ios": "node scripts/run-expo-with-root-env.mjs run:ios",
+    "android": "node scripts/run-expo-with-root-env.mjs run:android",
     "build": "tsc --noEmit -p tsconfig.json && node -e \"const fs=require('fs'); fs.mkdirSync('dist',{recursive:true}); fs.writeFileSync('dist/.buildkeep','');\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests --config ../../vitest.config.ts",
-    "lint": "prettier --check App.tsx app.json index.ts tsconfig.json package.json \"scripts/**/*.mjs\" \"src/**/*.{ts,tsx}\""
+    "test:design-bundle": "node scripts/verify-design-demo-bundle.mjs",
+    "verify:ios-pods": "node scripts/verify-ios-pod-lock.mjs",
+    "format:check": "prettier --check App.tsx App.design-demo.tsx app.json eslint.config.mjs index.ts metro.config.js tsconfig.json package.json \"scripts/**/*.mjs\" \"src/**/*.{ts,tsx}\"",
+    "lint": "eslint App.tsx App.design-demo.tsx index.ts metro.config.js eslint.config.mjs \"scripts/**/*.mjs\" \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@expo/dom-webview": "56.0.6",
     "@nado/shared": "workspace:*",
     "@nado/tokens": "workspace:*",
     "@nado/ui": "workspace:*",
     "@nado/ui-native": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@supabase/supabase-js": "^2.107.0",
-    "expo": "^56.0.9",
-    "expo-dev-client": "~56.0.19",
+    "expo": "^56.0.15",
+    "expo-dev-client": "~56.0.22",
     "react": "^19.2.3",
     "react-dom": "19.2.3",
     "react-native": "^0.85.3",
+    "react-native-safe-area-context": "5.7.0",
     "react-native-url-polyfill": "^3.0.0",
     "react-native-web": "^0.21.2"
   },
   "devDependencies": {
+    "@eslint/js": "9.39.4",
     "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "9.39.4",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "16.4.0",
     "typescript": "^6.0.3",
+    "typescript-eslint": "8.63.0",
     "vitest": "^4.1.8"
   }
 }

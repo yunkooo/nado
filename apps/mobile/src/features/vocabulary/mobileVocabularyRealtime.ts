@@ -1,71 +1,49 @@
-import { createVocabularyRealtimeTopic } from "@nado/shared";
+import {
+  createVocabularyRealtimeController,
+  type VocabularyRealtimeClient as SharedVocabularyRealtimeClient,
+  type VocabularyRealtimeRefreshSchedulerFactory,
+  type VocabularyRealtimeRetryTimers,
+} from "@nado/shared/vocabulary-realtime";
+import type { MobileAuthStateSnapshot } from "../../auth/authState";
 
-const vocabularyRealtimeEvents = ["INSERT", "UPDATE", "DELETE"] as const;
+export type MobileVocabularyRealtimeClient = SharedVocabularyRealtimeClient;
 
-type VocabularyRealtimeChannel = {
-  on(
-    eventType: "broadcast",
-    filter: { event: (typeof vocabularyRealtimeEvents)[number] },
-    callback: () => void,
-  ): VocabularyRealtimeChannel;
-  subscribe(): VocabularyRealtimeChannel;
+type CreateMobileVocabularyRealtimeSyncOptions = {
+  createRefreshScheduler?: VocabularyRealtimeRefreshSchedulerFactory;
+  getClient: () => MobileVocabularyRealtimeClient | null;
+  refresh: (authState: MobileAuthStateSnapshot) => Promise<unknown> | unknown;
+  retryMs?: number;
+  retryTimers?: VocabularyRealtimeRetryTimers<ReturnType<typeof setTimeout>>;
 };
 
-type VocabularyRealtimeClient = {
-  channel(
-    topic: string,
-    options: { config: { private: true } },
-  ): VocabularyRealtimeChannel;
-  realtime: {
-    setAuth(accessToken: string): void;
-  };
-  removeChannel(channel: VocabularyRealtimeChannel): unknown;
-};
+export function createMobileVocabularyRealtimeSync({
+  createRefreshScheduler,
+  getClient,
+  refresh,
+  retryMs,
+  retryTimers,
+}: CreateMobileVocabularyRealtimeSyncOptions) {
+  return createVocabularyRealtimeController<MobileAuthStateSnapshot>({
+    createRefreshScheduler,
+    getClient,
+    getConnection: (authState) => {
+      const userId = authState.session?.user.id;
 
-export function updateMobileVocabularyRealtimeAuth({
-  accessToken,
-  client,
-}: {
-  accessToken: string | null | undefined;
-  client: VocabularyRealtimeClient;
-}) {
-  if (!accessToken) {
-    return;
-  }
+      if (
+        authState.status !== "authenticated" ||
+        !authState.accessToken ||
+        !userId
+      ) {
+        return null;
+      }
 
-  client.realtime.setAuth(accessToken);
-}
-
-export function subscribeMobileVocabularyRealtime({
-  accessToken,
-  client,
-  onChange,
-  userId,
-}: {
-  accessToken: string | null | undefined;
-  client: VocabularyRealtimeClient;
-  onChange: () => void;
-  userId: string | null | undefined;
-}) {
-  const topic = createVocabularyRealtimeTopic(userId);
-
-  if (!accessToken || !topic) {
-    return () => undefined;
-  }
-
-  updateMobileVocabularyRealtimeAuth({ accessToken, client });
-
-  const channel = client.channel(topic, {
-    config: { private: true },
+      return {
+        accessToken: authState.accessToken,
+        userId,
+      };
+    },
+    refresh,
+    retryMs,
+    retryTimers,
   });
-
-  for (const event of vocabularyRealtimeEvents) {
-    channel.on("broadcast", { event }, onChange);
-  }
-
-  channel.subscribe();
-
-  return () => {
-    void client.removeChannel(channel);
-  };
 }

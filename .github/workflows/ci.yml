@@ -146,6 +146,20 @@ jobs:
           NADO_API_BASE_URL: http://127.0.0.1:4000
         run: pnpm build
 
+      - name: Validate Mobile native generation
+        env:
+          EXPO_NO_GIT_STATUS: "1"
+        run: |
+          pnpm --filter @nado/mobile exec expo prebuild --no-install --platform ios
+          pnpm --filter @nado/mobile verify:ios-pods
+          git diff --exit-code -- apps/mobile/package.json apps/mobile/ios
+
+      - name: Export Mobile platform bundles
+        run: pnpm --filter @nado/mobile exec expo export --platform all --output-dir dist/ci-export
+
+      - name: Validate Mobile design system bundles
+        run: pnpm --filter @nado/mobile test:design-bundle
+
       - name: Install Tauri Linux dependencies
         run: |
           sudo apt-get update

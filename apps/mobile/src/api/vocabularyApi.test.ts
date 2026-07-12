@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { listVocabulary, saveVocabularyItem } from "./vocabularyApi";
+import {
+  deleteVocabularyItem,
+  listVocabulary,
+  saveVocabularyItem,
+} from "./vocabularyApi";
 
 describe("listVocabulary", () => {
   it("loads authenticated vocabulary items from the mobile API", async () => {
@@ -57,6 +61,27 @@ describe("listVocabulary", () => {
         method: "GET",
         signal: expect.any(AbortSignal),
       }),
+    );
+  });
+
+  it("loads subsequent mobile vocabulary cursor pages", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({ items: [], nextCursor: "next/cursor" }),
+      )
+      .mockResolvedValueOnce(Response.json({ items: [], nextCursor: null }));
+
+    await expect(
+      listVocabulary("access-token", {
+        apiBaseUrl: "https://nadoapi-production.up.railway.app",
+        fetcher,
+      }),
+    ).resolves.toEqual({ data: [], status: "success" });
+    expect(fetcher).toHaveBeenNthCalledWith(
+      2,
+      "https://nadoapi-production.up.railway.app/api/vocabulary?cursor=next%2Fcursor",
+      expect.objectContaining({ method: "GET" }),
     );
   });
 });
@@ -130,5 +155,28 @@ describe("saveVocabularyItem", () => {
         signal: expect.any(AbortSignal),
       }),
     );
+  });
+});
+
+describe("deleteVocabularyItem", () => {
+  it("treats an already deleted item as an idempotent not-found result", async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json(
+        {
+          error: { message: "단어장 항목을 찾을 수 없습니다." },
+        },
+        { status: 404 },
+      ),
+    );
+
+    await expect(
+      deleteVocabularyItem("item-1", "access-token", {
+        apiBaseUrl: "https://nadoapi-production.up.railway.app",
+        fetcher,
+      }),
+    ).resolves.toEqual({
+      message: "단어장 항목을 찾을 수 없습니다.",
+      status: "not-found",
+    });
   });
 });

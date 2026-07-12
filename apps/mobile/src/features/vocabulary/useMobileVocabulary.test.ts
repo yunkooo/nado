@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { VocabularyItem } from "@nado/shared";
+import {
+  createVocabularySuggestionKey,
+  isVocabularySuggestionSaved,
+  type VocabularyItem,
+} from "@nado/shared/vocabulary";
 import {
   addMobileVocabularySavingKey,
+  addMobileVocabularyDeletingId,
   applyDeleteVocabularyError,
-  createMobileVocabularySuggestionKey,
-  isMobileVocabularySuggestionSaved,
+  removeMobileVocabularyDeletingId,
   removeMobileVocabularySavingKey,
+  shouldRemoveMobileVocabularyItemAfterDelete,
   upsertMobileVocabularyItem,
 } from "./mobileVocabularyState";
 
@@ -118,21 +123,85 @@ describe("mobile vocabulary suggestion helpers", () => {
 
   it("uses a stable key for pending save state", () => {
     expect(
-      createMobileVocabularySuggestionKey({
+      createVocabularySuggestionKey({
         meaning: "피해야 할 것",
         term: "what to avoid",
         type: "phrase",
       }),
-    ).toBe("phrase:what to avoid:피해야 할 것");
+    ).toBe('["phrase","what to avoid","피해야 할 것",""]');
   });
 
-  it("detects already saved suggestions by term and type", () => {
+  it("detects an already saved suggestion by term, type, meaning, and note", () => {
     expect(
-      isMobileVocabularySuggestionSaved([savedItem], {
-        meaning: "다른 뜻",
+      isVocabularySuggestionSaved([savedItem], {
+        meaning: "궁금해하다",
+        note: "정중한 표현",
         term: "Wondering",
         type: "word",
       }),
     ).toBe(true);
+  });
+
+  it("uses the shared term normalization for repeated whitespace", () => {
+    expect(
+      isVocabularySuggestionSaved(
+        [
+          {
+            ...savedItem,
+            term: "take a look",
+            type: "phrase",
+          },
+        ],
+        {
+          meaning: "궁금해하다",
+          note: "정중한 표현",
+          term: "  TAKE   A   LOOK  ",
+          type: "phrase",
+        },
+      ),
+    ).toBe(true);
+  });
+
+  it("allows another meaning or note pair for an existing term", () => {
+    expect(
+      isVocabularySuggestionSaved([savedItem], {
+        meaning: "다른 뜻",
+        term: "Wondering",
+        type: "word",
+      }),
+    ).toBe(false);
+    expect(
+      isVocabularySuggestionSaved([savedItem], {
+        meaning: "궁금해하다",
+        term: "Wondering",
+        type: "word",
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("mobile vocabulary deletion helpers", () => {
+  it("tracks concurrent deletions independently", () => {
+    const deletingIds = addMobileVocabularyDeletingId(
+      new Set(["item-1"]),
+      "item-2",
+    );
+
+    expect([...deletingIds]).toEqual(["item-1", "item-2"]);
+    expect([
+      ...removeMobileVocabularyDeletingId(deletingIds, "item-1"),
+    ]).toEqual(["item-2"]);
+  });
+
+  it("removes stale local items when the API reports not-found", () => {
+    expect(
+      shouldRemoveMobileVocabularyItemAfterDelete({ status: "success" }),
+    ).toBe(true);
+    expect(
+      shouldRemoveMobileVocabularyItemAfterDelete({ status: "not-found" }),
+    ).toBe(true);
+    expect(
+      shouldRemoveMobileVocabularyItemAfterDelete({ status: "error" }),
+    ).toBe(false);
   });
 });
