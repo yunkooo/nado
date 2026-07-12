@@ -69,11 +69,13 @@ commit은 파일 수가 아니라 변경 목적을 기준으로 나눈다.
 | [Notion Ticket Sync](../../.github/workflows/notion-ticket-sync.yml)       | PR, CI, 리뷰, merge 상태를 Notion에 반영 |
 | [Review signal](../../.github/workflows/notion-ticket-review-dispatch.yml) | secret 없이 review event 신호만 전달     |
 | [Slack PR 알림](../../.github/workflows/slack-pr-notify.yml)               | ready PR의 리뷰 요청 알림                |
-| [Dependabot](../../.github/dependabot.yml)                                 | dependency와 Action 주간 묶음 업데이트   |
+| [Dependabot](../../.github/dependabot.yml)                                 | 보안 업데이트 지원, 일반 업데이트 수동화 |
 
 same-repository PR은 PR 본문의 `Ticket:`에 Notion `프로젝트` 데이터 소스의 `IN-progrss` 티켓 URL을 넣어야 한다. 최초 결속 후 URL을 비우거나 다른 티켓으로 바꿀 수 없으며, 같은 Notion page ID의 URL 표기 변경만 허용한다. URL이 없거나 잘못되었거나 다른 데이터 소스의 페이지이거나 결속 조건이 맞지 않으면 Notion sync check가 실패하고 Notion을 갱신하지 않는다.
 
-Dependabot PR도 same-repository PR이므로 merge 전에 `IN-progrss` Notion 티켓을 만들고 PR 본문의 `Ticket:`에 연결한다. ecosystem별 dependency는 주간 묶음 PR로 제한해 티켓과 리뷰 단위가 불필요하게 늘어나지 않도록 한다.
+Dependabot Alerts와 security update는 유지하고, 일반 version update PR 자동 생성은 비활성화한다. 일반 dependency update는 월 1회 대표 유지보수 티켓에서 outdated 목록과 release note를 검토하며, 독립적으로 검증·merge할 변경만 별도 티켓과 PR로 분리한다.
+
+Security update PR도 same-repository PR이므로 merge 전에 `IN-progrss` Notion 티켓을 만들고 PR 본문의 `Ticket:`에 연결한다.
 
 작업자는 구현 시작 시 `IN-progrss`와 `시작일`까지만 기록한다. `IN-review`, PR·branch·push metadata, CI, review, merge 결과는 각 GitHub Actions sync가 기록한다. merge sync는 CI 성공이나 review 통과를 추측하지 않는다. 필드별 소유권은 [Notion 자동화 계약](notion-ticket-db-schema.md)을 따른다.
 
