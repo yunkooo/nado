@@ -21,10 +21,75 @@ updates:
       time: "09:00"
       timezone: Asia/Seoul
     open-pull-requests-limit: 5
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-patch
     groups:
-      workspace-dependencies:
+      web-runtime:
+        applies-to: version-updates
         patterns:
-          - "*"
+          - next
+          - react
+          - react-dom
+        update-types:
+          - minor
+          - patch
+      web-build:
+        applies-to: version-updates
+        patterns:
+          - vite
+          - "@vitejs/plugin-react"
+        update-types:
+          - minor
+          - patch
+      mobile-runtime:
+        applies-to: version-updates
+        patterns:
+          - expo
+          - "expo-*"
+          - react-native
+          - "@react-native/*"
+        update-types:
+          - minor
+          - patch
+      storybook:
+        applies-to: version-updates
+        patterns:
+          - storybook
+          - "@storybook/*"
+        update-types:
+          - minor
+          - patch
+      supabase:
+        applies-to: version-updates
+        patterns:
+          - supabase
+          - "@supabase/*"
+        update-types:
+          - minor
+          - patch
+      tauri-js:
+        applies-to: version-updates
+        patterns:
+          - "@tauri-apps/*"
+        update-types:
+          - minor
+          - patch
+      workspace-tooling:
+        applies-to: version-updates
+        patterns:
+          - "@playwright/test"
+          - "@types/node"
+          - prettier
+          - tsx
+          - turbo
+          - typescript
+          - vitest
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: cargo
     directory: /apps/desktop/src-tauri

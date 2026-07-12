@@ -153,6 +153,39 @@ describe("Notion workflow repository contracts", () => {
     expect(issueTemplateConfigSource).toContain("blank_issues_enabled: false");
   });
 
+  it("keeps Dependabot npm updates reviewable by platform", () => {
+    const npmConfig = dependabotConfigSource
+      .split("  - package-ecosystem: npm")[1]
+      .split("  - package-ecosystem: cargo")[0];
+
+    expect(npmConfig).not.toContain("workspace-dependencies:");
+    expect(npmConfig).not.toContain('patterns:\n          - "*"');
+
+    for (const groupName of [
+      "web-runtime",
+      "web-build",
+      "mobile-runtime",
+      "storybook",
+      "supabase",
+      "tauri-js",
+      "workspace-tooling",
+    ]) {
+      expect(npmConfig).toContain(`${groupName}:`);
+      expect(npmConfig).toMatch(
+        new RegExp(`${groupName}:\\n\\s+applies-to: version-updates`),
+      );
+    }
+
+    expect(npmConfig).toContain(
+      'allow:\n      - dependency-name: "*"\n        update-types:\n          - version-update:semver-minor\n          - version-update:semver-patch',
+    );
+    expect(npmConfig).not.toContain("ignore:");
+    expect(npmConfig).not.toContain("version-update:semver-major");
+    expect(npmConfig).toMatch(
+      /mobile-runtime:[\s\S]*?update-types:\n\s+- minor\n\s+- patch/,
+    );
+  });
+
   it("escapes Slack mrkdwn metadata and uses actual newline escapes", () => {
     expect(slackFailureActionSource).toContain("import html");
     expect(slackFailureActionSource).toContain(
