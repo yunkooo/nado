@@ -230,8 +230,12 @@ function trustProxyIssues(value: string | undefined): string[] {
     return ["NADO_TRUST_PROXY is required in production"];
   }
 
+  if (configuredHops === "0" || configuredHops.toLowerCase() === "false") {
+    return [];
+  }
+
   if (!/^[1-9]\d*$/.test(configuredHops)) {
-    return ["NADO_TRUST_PROXY must be a positive proxy hop count"];
+    return ["NADO_TRUST_PROXY must be 0, false, or a positive proxy hop count"];
   }
 
   const proxyHops = Number(configuredHops);

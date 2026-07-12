@@ -95,7 +95,7 @@ describe("API runtime configuration", () => {
     );
   });
 
-  it.each(["0", "01", "true", "all", "11", "-1"])(
+  it.each(["01", "true", "all", "11", "-1"])(
     "rejects unsafe production trust proxy value %s",
     (trustProxy) => {
       expect(() =>
@@ -104,6 +104,18 @@ describe("API runtime configuration", () => {
           NADO_TRUST_PROXY: trustProxy,
         }),
       ).toThrow(ApiRuntimeConfigurationError);
+    },
+  );
+
+  it.each(["0", "false", " FALSE "])(
+    "accepts disabled production proxy trust value %s",
+    (trustProxy) => {
+      expect(() =>
+        validateApiRuntimeConfig({
+          ...validProductionEnvironment,
+          NADO_TRUST_PROXY: trustProxy,
+        }),
+      ).not.toThrow();
     },
   );
 
