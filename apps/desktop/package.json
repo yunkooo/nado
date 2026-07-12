@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5174",
-    "build": "vite build",
+    "build": "vite build && node ./scripts/verify-bundle-budget.mjs",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests --config ../../vitest.config.ts",
-    "lint": "prettier --check index.html src vite.config.ts tsconfig.json package.json src-tauri/tauri.conf.json src-tauri/capabilities/default.json"
+    "lint": "pnpm lint:code && pnpm lint:format",
+    "lint:code": "eslint src vite.config.ts",
+    "lint:format": "prettier --check index.html scripts src vite.config.ts eslint.config.mjs tsconfig.json package.json src-tauri/tauri.conf.json src-tauri/capabilities/default.json"
   },
   "dependencies": {
     "@nado/shared": "workspace:*",
@@ -25,11 +27,17 @@
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@tauri-apps/cli": "^2.11.2",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.63.0",
     "vite": "^8.0.16",
     "vitest": "^4.1.8"
   }

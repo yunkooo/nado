@@ -21,6 +21,12 @@ describe("desktop Vite config", () => {
 
   it("resolves workspace packages from source during desktop bundling", () => {
     expect(viteConfigSource).toContain("../../packages/shared/src/index.ts");
+    expect(viteConfigSource).toContain(
+      "../../packages/shared/src/analysisState.ts",
+    );
+    expect(viteConfigSource).toContain(
+      "../../packages/shared/src/vocabularyRealtime.ts",
+    );
     expect(viteConfigSource).toContain("../../packages/tokens/src/index.ts");
     expect(viteConfigSource).toContain(
       "../../packages/tokens/src/reactNative.ts",
@@ -30,6 +36,27 @@ describe("desktop Vite config", () => {
     expect(viteConfigSource).toContain("../../packages/ui/src/styles.css");
     expect(viteConfigSource).toContain("@nado\\/ui-web");
     expect(viteConfigSource).toContain("../../packages/ui-web/src/index.ts");
+    expect(viteConfigSource).toContain(
+      "../../packages/ui-web/src/ReviewSessionView.tsx",
+    );
+    expect(viteConfigSource).toContain(
+      "../../packages/ui-web/src/VocabularyItemCard.tsx",
+    );
     expect(viteConfigSource).toContain("../../packages/ui-web/src/styles.css");
+  });
+
+  it("splits large vendor groups and enforces the desktop bundle budget", () => {
+    expect(viteConfigSource).toContain("resolveDesktopVendorChunk");
+    expect(viteConfigSource).toContain('return "vendor-supabase"');
+    expect(viteConfigSource).toContain('return "vendor-react"');
+    expect(viteConfigSource).toContain('return "vendor-tauri"');
+    expect(viteConfigSource).toContain("chunkSizeWarningLimit: 500");
+
+    const packageJson = JSON.parse(
+      readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+    );
+    expect(packageJson.scripts.build).toContain(
+      "scripts/verify-bundle-budget.mjs",
+    );
   });
 });

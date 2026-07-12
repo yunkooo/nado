@@ -118,6 +118,17 @@ jobs:
           corepack enable
           corepack prepare pnpm@11.5.2 --activate
 
+      - name: Cache Rust dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            apps/desktop/src-tauri/target
+          key: ${{ runner.os }}-rust-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -134,6 +145,23 @@ jobs:
         env:
           NADO_API_BASE_URL: http://127.0.0.1:4000
         run: pnpm build
+
+      - name: Install Tauri Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            build-essential \
+            curl \
+            file \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            libxdo-dev \
+            wget
+
+      - name: Build Desktop native shell
+        run: pnpm --filter @nado/desktop tauri:build --no-bundle --ci
 
       - name: Notify Slack on failure
         if: failure() && steps.checkout.outcome == 'success'
