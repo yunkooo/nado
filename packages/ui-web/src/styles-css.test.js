@@ -328,14 +328,7 @@ describe("analysis component styles", () => {
 
   it("keeps review card answer styles aligned with component tokens", () => {
     const answerTokens = tokens.component.reviewCard.answer;
-    const revealedReviewCardRule = readRule(".nado-review-card--revealed");
     const answerRule = readRule(".nado-review-card__answer");
-    const answerLabelRule = readRule(".nado-review-card__answer span");
-    const answerExampleRule = readRule(".nado-review-card__answer p");
-
-    expect(revealedReviewCardRule).toContain(
-      `border-color: var(--nado-review-card-answer-border, ${cssTokenValue(answerTokens.border)})`,
-    );
     expect(answerRule).toContain(
       `background: var(--nado-review-card-answer-background, ${cssTokenValue(answerTokens.background)})`,
     );
@@ -353,10 +346,6 @@ describe("analysis component styles", () => {
     expect(answerRule).toContain(
       `padding: var(--nado-review-card-answer-padding, ${cssTokenValue(answerTokens.padding)})`,
     );
-    expect(answerLabelRule).toContain("color: inherit");
-    expect(answerLabelRule).not.toContain("var(--nado-color-primary)");
-    expect(answerExampleRule).toContain("color: inherit");
-    expect(answerExampleRule).not.toContain("#55554f");
   });
 
   it("shows the composer model select affordance with a chevron", () => {

@@ -24,6 +24,26 @@
       "development": "./src/InputComposer.tsx",
       "import": "./dist/InputComposer.js"
     },
+    "./ReviewSessionView": {
+      "types": "./src/ReviewSessionView.tsx",
+      "development": "./src/ReviewSessionView.tsx",
+      "import": "./dist/ReviewSessionView.js"
+    },
+    "./VocabularyItemCard": {
+      "types": "./src/VocabularyItemCard.tsx",
+      "development": "./src/VocabularyItemCard.tsx",
+      "import": "./dist/VocabularyItemCard.js"
+    },
+    "./VocabularyRefreshButton": {
+      "types": "./src/VocabularyRefreshButton.tsx",
+      "development": "./src/VocabularyRefreshButton.tsx",
+      "import": "./dist/VocabularyRefreshButton.js"
+    },
+    "./vocabulary-pagination": {
+      "types": "./src/vocabularyPagination.ts",
+      "development": "./src/vocabularyPagination.ts",
+      "import": "./dist/vocabularyPagination.js"
+    },
     "./analysisPrimitives": {
       "types": "./src/analysisPrimitives.tsx",
       "development": "./src/analysisPrimitives.tsx",
@@ -50,13 +70,14 @@
     "react-dom": "^19.2.3 || ^19.2.7"
   },
   "dependencies": {
+    "@nado/shared": "workspace:*",
     "@nado/tokens": "workspace:*"
   },
   "devDependencies": {
-    "@nado/shared": "workspace:*",
     "@storybook/react-vite": "^10.4.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "storybook": "10.4.2",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
   }

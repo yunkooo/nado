@@ -9,11 +9,12 @@ import {
   InputComposer,
   InputSample,
   ReadingChunkLine,
-  ReviewCard,
+  ReviewSessionView,
   SentenceAnalysis,
   Stack,
   Text,
-  VocabularyListItem,
+  VocabularyItemCard,
+  VocabularyRefreshButton,
   VocabularySuggestionList,
   VocabularyWordToken,
   tokens,
@@ -34,8 +35,9 @@ describe("@nado/ui/web exports", () => {
     expect(SentenceAnalysis).toBeTypeOf("function");
     expect(VocabularySuggestionList).toBeTypeOf("function");
     expect(VocabularyWordToken).toBeTypeOf("function");
-    expect(ReviewCard).toBeTypeOf("function");
-    expect(VocabularyListItem).toBeTypeOf("function");
+    expect(ReviewSessionView).toBeTypeOf("function");
+    expect(VocabularyItemCard).toBeTypeOf("function");
+    expect(VocabularyRefreshButton).toBeTypeOf("function");
     expect(tokens.color.primary).toBeTypeOf("string");
     expect(rootExports.Badge).toBe(Badge);
   });

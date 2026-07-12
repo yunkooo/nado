@@ -1,10 +1,11 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, fn, userEvent, within } from "storybook/test";
 import {
   ANALYSIS_MODELS,
   DEFAULT_ANALYSIS_MODEL_ID,
   MAX_ANALYSIS_TEXT_LENGTH,
-} from "@nado/shared";
+} from "@nado/shared/analysis-input";
 import { InputComposer, type InputComposerProps } from "@nado/ui-web";
 
 const meta = {
@@ -17,7 +18,7 @@ type Story = StoryObj<typeof meta>;
 
 interface ComposerPreviewProps extends Omit<
   InputComposerProps,
-  "onSubmit" | "onValueChange" | "value"
+  "onValueChange" | "value"
 > {
   initialValue: string;
 }
@@ -27,12 +28,7 @@ function ComposerPreview({ initialValue, ...props }: ComposerPreviewProps) {
 
   return (
     <div className="storybook-surface">
-      <InputComposer
-        {...props}
-        onSubmit={() => undefined}
-        onValueChange={setValue}
-        value={value}
-      />
+      <InputComposer {...props} onValueChange={setValue} value={value} />
     </div>
   );
 }
@@ -60,21 +56,30 @@ export const Empty: Story = {
 export const Basic: Story = {
   args: {
     maxLength: MAX_ANALYSIS_TEXT_LENGTH,
-    onSubmit: () => undefined,
+    onSubmit: fn(),
     onValueChange: () => undefined,
     value: "",
   },
-  render: () => (
+  render: (args) => (
     <ComposerPreview
       initialValue="I was wondering if you could help me keep this habit."
       maxLength={MAX_ANALYSIS_TEXT_LENGTH}
       modelOptions={ANALYSIS_MODELS}
       modelValue={DEFAULT_ANALYSIS_MODEL_ID}
       onModelChange={() => undefined}
+      onSubmit={args.onSubmit ?? (() => undefined)}
       placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
       submitAriaLabel="분석 요청"
     />
   ),
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const submitButton = canvas.getByRole("button", { name: "분석 요청" });
+
+    await expect(submitButton).toBeEnabled();
+    await userEvent.click(submitButton);
+    await expect(args.onSubmit).toHaveBeenCalledTimes(1);
+  },
 };
 
 export const TextAction: Story = {
@@ -92,6 +97,7 @@ export const TextAction: Story = {
       modelOptions={ANALYSIS_MODELS}
       modelValue={DEFAULT_ANALYSIS_MODEL_ID}
       onModelChange={() => undefined}
+      onSubmit={() => undefined}
       placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
       submitAriaLabel="분석 요청"
     />
@@ -115,6 +121,7 @@ export const NearLimit: Story = {
       modelOptions={ANALYSIS_MODELS}
       modelValue={DEFAULT_ANALYSIS_MODEL_ID}
       onModelChange={() => undefined}
+      onSubmit={() => undefined}
       placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
       submitAriaLabel="분석 요청"
     />
@@ -137,8 +144,16 @@ export const LongInput: Story = {
       modelOptions={ANALYSIS_MODELS}
       modelValue={DEFAULT_ANALYSIS_MODEL_ID}
       onModelChange={() => undefined}
+      onSubmit={() => undefined}
       placeholder="영어 문장이나 짧은 문단을 붙여넣으세요"
       submitAriaLabel="분석 요청"
     />
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const submitButton = canvas.getByRole("button", { name: "분석 요청" });
+
+    await expect(canvas.getByText(/\/ 200$/)).toBeVisible();
+    await expect(submitButton).toBeDisabled();
+  },
 };

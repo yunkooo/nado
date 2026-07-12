@@ -25,9 +25,10 @@ export type { ButtonSize, ButtonVariant } from "./styles";
 
 export interface ButtonProps extends Omit<
   PressableProps,
-  "children" | "style"
+  "children" | "disabled" | "style"
 > {
   children: ReactNode;
+  disabled?: boolean;
   isLoading?: boolean;
   size?: ButtonSize;
   style?: StyleProp<ViewStyle>;

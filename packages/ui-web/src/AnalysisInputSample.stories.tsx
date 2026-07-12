@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared";
+import { MAX_ANALYSIS_TEXT_LENGTH } from "@nado/shared/analysis-input";
 import { InputSample } from "@nado/ui-web";
 
 const longInputSampleText =

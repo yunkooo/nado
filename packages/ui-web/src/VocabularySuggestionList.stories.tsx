@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, within } from "storybook/test";
 import { VocabularySuggestionList } from "@nado/ui-web";
 import { analysisMock } from "./analysisStoryFixtures";
 
@@ -47,4 +48,13 @@ export const SavedDisabled: Story = {
       <VocabularySuggestionList {...args} />
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const savedButtons = canvas.getAllByRole("button");
+
+    await expect(savedButtons).toHaveLength(3);
+    for (const button of savedButtons) {
+      await expect(button).toBeDisabled();
+    }
+  },
 };

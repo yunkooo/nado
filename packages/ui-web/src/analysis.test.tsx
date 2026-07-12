@@ -1,6 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { ANALYSIS_MODELS, DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared";
+import {
+  ANALYSIS_MODELS,
+  DEFAULT_ANALYSIS_MODEL_ID,
+} from "@nado/shared/analysis-input";
 import {
   AnalysisResult,
   Chip,
