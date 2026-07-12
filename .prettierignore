@@ -19,7 +19,6 @@ apps/mobile/dist/
 apps/mobile/ios/Pods/
 apps/mobile/ios/build/
 apps/mobile/ios/**/Images.xcassets/
-docs/superpowers/
 supabase/.branches/
 supabase/.temp/
 AGENTS.md
