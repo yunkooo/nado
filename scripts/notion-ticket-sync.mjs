@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import {
+  INITIAL_TICKET_BINDING_PENDING,
   validatePersistentTicketBinding,
   validateTicketBinding,
 } from "./notion-ticket-sync/binding-validation.mjs";
@@ -106,6 +107,17 @@ export async function runSync({
   });
 
   if (!ticketBindingValidation.ok) {
+    if (
+      ticketBindingValidation.code === INITIAL_TICKET_BINDING_PENDING &&
+      ["ci-result", "review-event"].includes(syncInput.syncMode)
+    ) {
+      return {
+        ok: true,
+        reason: `Skipping ${syncInput.syncMode} Notion sync until the pull request event creates the initial ticket binding`,
+        skipped: true,
+      };
+    }
+
     return ticketBindingValidation;
   }
 

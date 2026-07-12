@@ -160,6 +160,7 @@ Notion `프로젝트` data source와 연결할 티켓 page를 `NOTION_TOKEN`에 
 #### 오래된 이벤트 무시
 
 - PR event sync job은 전역 concurrency group과 `queue: max`로 직렬화해 서로 다른 PR의 최초 결속도 동시에 쓰지 않는다.
+- 정상적인 `IN-progrss` 티켓에서 CI 또는 review 결과가 최초 PR 결속보다 먼저 도착하면 해당 결과 sync는 성공적으로 건너뛴다. PR event sync가 결속을 만든 뒤 이후 결과 event가 전용 필드를 갱신하며, 필수 속성 누락이나 잘못된 상태·PR·branch는 계속 실패한다.
 - `pull_request_target` 이벤트는 Notion 업데이트 전에 현재 PR 상태를 다시 조회한다.
 - 이미 닫힌 PR의 오래된 opened·synchronize event는 상태를 되돌리지 않는다.
 - PR이 다시 열려 있으면 오래된 close event로 `PR closed without merge` blocker를 쓰지 않는다.

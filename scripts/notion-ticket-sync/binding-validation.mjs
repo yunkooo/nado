@@ -1,6 +1,8 @@
 import { readRichTextProperty } from "./notion-properties.mjs";
 import { normalizeNotionId } from "./ticket-url.mjs";
 
+export const INITIAL_TICKET_BINDING_PENDING = "initial-ticket-binding-pending";
+
 export function validateTicketBinding({
   action,
   allowInitialBinding = false,
@@ -61,6 +63,9 @@ export function validateTicketBinding({
   if (!linkedPullRequestUrl) {
     if (!allowInitialBinding) {
       return {
+        ...(statusName === "IN-progrss"
+          ? { code: INITIAL_TICKET_BINDING_PENDING }
+          : {}),
         ok: false,
         reason:
           "Only an initial pull request event may bind an unlinked Notion ticket",

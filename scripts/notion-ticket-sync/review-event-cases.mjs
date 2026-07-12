@@ -82,6 +82,74 @@ describe("Notion pull request review sync", () => {
     expect(updatedProperties.Blocker).toBeUndefined();
   });
 
+  it("skips review results that arrive before the initial PR binding", async () => {
+    const requests = [];
+
+    const result = await runSync({
+      env: {
+        GITHUB_EVENT_PATH: "pull-request-review-event.json",
+        GITHUB_REPOSITORY: "yunkooo/nado",
+        GITHUB_TOKEN: "github-token",
+        NOTION_TICKETS_DATA_SOURCE_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        NOTION_TOKEN: "notion-token",
+      },
+      fetchImpl: async (url, options = {}) => {
+        requests.push({ options, url });
+
+        if (
+          url ===
+          "https://api.github.com/repos/yunkooo/nado/pulls/42/reviews?per_page=100"
+        ) {
+          return Response.json([
+            {
+              id: 1,
+              state: "APPROVED",
+              submitted_at: "2026-06-24T11:59:00.000Z",
+              user: {
+                login: "reviewer-a",
+              },
+            },
+          ]);
+        }
+
+        if (options.method === "GET") {
+          return Response.json(
+            createNotionTicketPage({
+              gitHubBranch: "",
+              gitHubPr: null,
+              status: "IN-progrss",
+            }),
+          );
+        }
+
+        return Response.json({}, { status: 200 });
+      },
+      readFile: () =>
+        JSON.stringify({
+          action: "submitted",
+          pull_request: {
+            ...pullRequest,
+            number: 42,
+            url: "https://api.github.com/repos/yunkooo/nado/pulls/42",
+          },
+          review: {
+            state: "approved",
+          },
+        }),
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      reason:
+        "Skipping review-event Notion sync until the pull request event creates the initial ticket binding",
+      skipped: true,
+    });
+    expect(requests).toHaveLength(2);
+    expect(requests.every(({ options }) => options.method !== "PATCH")).toBe(
+      true,
+    );
+  });
+
   it("skips trusted review signal syncs for pull requests that do not target main", async () => {
     const requests = [];
     const pullRequestUrl = "https://api.github.com/repos/yunkooo/nado/pulls/42";
