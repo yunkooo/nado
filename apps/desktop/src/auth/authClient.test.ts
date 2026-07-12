@@ -4,8 +4,8 @@ import {
   createSupabaseAuthOptions,
   createGoogleOAuthRedirectTo,
   getAuthCallbackUrlKind,
+  getCurrentAccessToken,
   isTauriRuntime,
-  NADO_DESKTOP_AUTH_CALLBACK_URL,
   NADO_DESKTOP_OAUTH_REDIRECT_URL,
 } from "./authClient";
 
@@ -128,5 +128,28 @@ describe("desktop auth client helpers", () => {
     );
 
     expect(result).toBe("error");
+  });
+
+  it("returns null when reading the current session fails", async () => {
+    await expect(
+      getCurrentAccessToken({
+        auth: {
+          getSession: vi.fn(async () => {
+            throw new Error("session storage unavailable");
+          }),
+        },
+      }),
+    ).resolves.toBeNull();
+
+    await expect(
+      getCurrentAccessToken({
+        auth: {
+          getSession: vi.fn(async () => ({
+            data: { session: null },
+            error: new Error("invalid session"),
+          })),
+        },
+      }),
+    ).resolves.toBeNull();
   });
 });

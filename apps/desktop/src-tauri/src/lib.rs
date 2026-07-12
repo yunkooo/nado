@@ -1,10 +1,36 @@
+use std::sync::Mutex;
+
+#[derive(Default)]
+struct OAuthLoopbackState {
+    error: Mutex<Option<String>>,
+}
+
+impl OAuthLoopbackState {
+    fn error(&self) -> Option<String> {
+        self.error.lock().ok().and_then(|error| error.clone())
+    }
+
+    fn set_error(&self, message: String) {
+        if let Ok(mut error) = self.error.lock() {
+            *error = Some(message);
+        }
+    }
+}
+
+#[tauri::command]
+fn get_oauth_loopback_error(state: tauri::State<'_, OAuthLoopbackState>) -> Option<String> {
+    state.error()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(OAuthLoopbackState::default())
         .setup(|app| {
             start_oauth_loopback_redirect_server(app.handle().clone());
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![get_oauth_loopback_error])
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
@@ -29,8 +55,12 @@ fn start_oauth_loopback_redirect_server(app_handle: tauri::AppHandle) {
 }
 
 fn emit_desktop_oauth_loopback_error(app_handle: &tauri::AppHandle, message: &str) {
-    use tauri::Emitter;
+    use tauri::{Emitter, Manager};
 
+    let message = message.to_string();
+    app_handle
+        .state::<OAuthLoopbackState>()
+        .set_error(message.clone());
     let _ = app_handle.emit("desktop-oauth-loopback-error", message);
 }
 
@@ -233,7 +263,7 @@ fn write_http_response(stream: &mut std::net::TcpStream, body: &str, content_typ
 
 #[cfg(test)]
 mod tests {
-    use super::callback_payload_from_request_target;
+    use super::{callback_payload_from_request_target, OAuthLoopbackState};
 
     #[test]
     fn accepts_only_pkce_codes_or_oauth_errors_on_the_loopback_root_path() {
@@ -250,5 +280,14 @@ mod tests {
             callback_payload_from_request_target("/desktop-auth-callback?code=authorization-code"),
             None
         );
+    }
+
+    #[test]
+    fn keeps_loopback_start_errors_available_for_the_frontend() {
+        let state = OAuthLoopbackState::default();
+
+        state.set_error("address already in use".to_string());
+
+        assert_eq!(state.error().as_deref(), Some("address already in use"));
     }
 }

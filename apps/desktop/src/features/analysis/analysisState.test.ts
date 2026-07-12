@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared";
+import { DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared/analysis-input";
 import { createAnalysisStateStore } from "./analysisState";
 
 function createMemoryStorage() {
@@ -100,6 +100,32 @@ describe("createAnalysisStateStore", () => {
       text: "",
     });
     expect(storage.removeItem).toHaveBeenCalledWith("nado.desktop.analysis.v1");
+  });
+
+  it("invalidates in-flight analysis requests when the user scope changes", () => {
+    const store = createAnalysisStateStore({ getStorage: () => null });
+
+    store.syncUserScope("user-a");
+    const request = store.beginAnalysisRequest("user-a");
+
+    expect(request).not.toBeNull();
+    expect(store.isAnalysisRequestCurrent(request!)).toBe(true);
+
+    store.syncUserScope("user-b");
+    store.syncUserScope("user-a");
+
+    expect(store.isAnalysisRequestCurrent(request!)).toBe(false);
+  });
+
+  it("checks vocabulary mutations against the current store owner", () => {
+    const store = createAnalysisStateStore({ getStorage: () => null });
+
+    store.syncUserScope("user-a");
+    expect(store.isUserScopeCurrent("user-a")).toBe(true);
+
+    store.syncUserScope("user-b");
+    expect(store.isUserScopeCurrent("user-a")).toBe(false);
+    expect(store.isUserScopeCurrent("user-b")).toBe(true);
   });
 
   it("persists only recoverable analysis state", () => {
@@ -212,6 +238,36 @@ describe("createAnalysisStateStore", () => {
       getModelStorage: () => modelStorage,
     });
 
+    expect(() => store.setSelectedAnalysisModel("z-ai/glm-5.2")).not.toThrow();
+    expect(store.getSnapshot().selectedAnalysisModel).toBe("z-ai/glm-5.2");
+  });
+
+  it("keeps in-memory analysis usable when the storage getter throws", () => {
+    const store = createAnalysisStateStore({
+      getStorage: () => {
+        throw new Error("session storage unavailable");
+      },
+    });
+
+    expect(() => store.subscribe(() => undefined)).not.toThrow();
+    expect(() => store.syncUserScope("user-a")).not.toThrow();
+    expect(() => store.setText("Could you take a look?")).not.toThrow();
+    expect(() => store.reset()).not.toThrow();
+    expect(store.getSnapshot()).toMatchObject({
+      ownerUserId: "user-a",
+      text: "",
+    });
+  });
+
+  it("keeps model selection usable when the model storage getter throws", () => {
+    const store = createAnalysisStateStore({
+      getModelStorage: () => {
+        throw new Error("local storage unavailable");
+      },
+      getStorage: () => null,
+    });
+
+    expect(() => store.subscribe(() => undefined)).not.toThrow();
     expect(() => store.setSelectedAnalysisModel("z-ai/glm-5.2")).not.toThrow();
     expect(store.getSnapshot().selectedAnalysisModel).toBe("z-ai/glm-5.2");
   });

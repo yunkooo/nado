@@ -67,7 +67,7 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
   let snapshot = loadingSnapshot;
   let subscription: { unsubscribe(): void } | null = null;
   let hasStarted = false;
-  let isResolvingInitialSession = false;
+  let startupSequence = 0;
 
   const notify = () => {
     for (const listener of listeners) {
@@ -86,6 +86,9 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
     }
 
     hasStarted = true;
+    startupSequence += 1;
+    const startupId = startupSequence;
+    let isResolvingInitialSession = true;
 
     const client = getClient();
 
@@ -94,13 +97,16 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
       return;
     }
 
-    isResolvingInitialSession = true;
-
     const { data } = client.auth.onAuthStateChange((event, nextSession) => {
+      if (startupId !== startupSequence) {
+        return;
+      }
+
       if (isResolvingInitialSession && event === "INITIAL_SESSION") {
         return;
       }
 
+      isResolvingInitialSession = false;
       setSnapshot(toAuthStateSnapshot(nextSession));
     });
 
@@ -108,10 +114,18 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
 
     resolveStartupSession(client, now)
       .then((session) => {
+        if (startupId !== startupSequence || !isResolvingInitialSession) {
+          return;
+        }
+
         isResolvingInitialSession = false;
         setSnapshot(toAuthStateSnapshot(session));
       })
       .catch(() => {
+        if (startupId !== startupSequence || !isResolvingInitialSession) {
+          return;
+        }
+
         isResolvingInitialSession = false;
         setSnapshot(errorSnapshot);
       });
@@ -125,7 +139,7 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
     subscription?.unsubscribe();
     subscription = null;
     hasStarted = false;
-    isResolvingInitialSession = false;
+    startupSequence += 1;
   };
 
   return {
@@ -146,6 +160,10 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
 }
 
 const authStateStore = createAuthStateStore();
+
+export function getAuthStateSnapshot(): AuthStateSnapshot {
+  return authStateStore.getSnapshot();
+}
 
 export function useAuthState(): AuthStateSnapshot {
   return useSyncExternalStore(

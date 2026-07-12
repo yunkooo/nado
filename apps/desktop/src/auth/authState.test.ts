@@ -155,6 +155,88 @@ describe("desktop auth state store", () => {
       status: "anonymous",
     });
   });
+
+  it("keeps a newer auth event when the startup session resolves later", async () => {
+    const startupSession = createDeferred<{
+      data: { session: Session | null };
+    }>();
+    let handleAuthStateChange:
+      | ((event: string, session: Session | null) => void)
+      | undefined;
+    const store = createAuthStateStore({
+      getClient: () => ({
+        auth: {
+          getSession: () => startupSession.promise,
+          refreshSession: vi.fn(),
+          onAuthStateChange: (handler) => {
+            handleAuthStateChange = handler;
+            return {
+              data: {
+                subscription: {
+                  unsubscribe: vi.fn(),
+                },
+              },
+            };
+          },
+        },
+      }),
+      now: () => 1_000_000,
+    });
+
+    store.subscribe(() => undefined);
+    handleAuthStateChange?.("SIGNED_IN", refreshedSession);
+    startupSession.resolve({ data: { session: activeSession } });
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "fresh-token",
+      status: "authenticated",
+    });
+  });
+
+  it("ignores an earlier startup request after the store resubscribes", async () => {
+    const firstStartupSession = createDeferred<{
+      data: { session: Session | null };
+    }>();
+    const getSession = vi
+      .fn()
+      .mockReturnValueOnce(firstStartupSession.promise)
+      .mockResolvedValueOnce({ data: { session: refreshedSession } });
+    const store = createAuthStateStore({
+      getClient: () => ({
+        auth: {
+          getSession,
+          refreshSession: vi.fn(),
+          onAuthStateChange: () => ({
+            data: {
+              subscription: {
+                unsubscribe: vi.fn(),
+              },
+            },
+          }),
+        },
+      }),
+      now: () => 1_000_000,
+    });
+
+    const stopFirstSubscription = store.subscribe(() => undefined);
+    stopFirstSubscription();
+    store.subscribe(() => undefined);
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "fresh-token",
+      status: "authenticated",
+    });
+
+    firstStartupSession.resolve({ data: { session: activeSession } });
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "fresh-token",
+      status: "authenticated",
+    });
+  });
 });
 
 async function flushPromises() {
@@ -162,4 +244,13 @@ async function flushPromises() {
   await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
+}
+
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve;
+  });
+
+  return { promise, resolve };
 }

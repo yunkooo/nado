@@ -21,6 +21,17 @@ type AuthCallbackClient = {
   };
 };
 
+type SessionReaderClient = {
+  auth: {
+    getSession(): Promise<{
+      data: {
+        session: { access_token: string } | null;
+      };
+      error?: unknown;
+    }>;
+  };
+};
+
 export type AuthCallbackResult = "handled" | "ignored" | "error";
 
 export function getSupabaseAuthConfig(): SupabaseAuthConfig {
@@ -81,16 +92,24 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
   return browserClient;
 }
 
-export async function getCurrentAccessToken(): Promise<string | null> {
-  const supabase = getSupabaseBrowserClient();
-
-  if (!supabase) {
+export async function getCurrentAccessToken(
+  client: SessionReaderClient | null = getSupabaseBrowserClient(),
+): Promise<string | null> {
+  if (!client) {
     return null;
   }
 
-  const { data } = await supabase.auth.getSession();
+  try {
+    const { data, error } = await client.auth.getSession();
 
-  return data.session?.access_token ?? null;
+    if (error) {
+      return null;
+    }
+
+    return data.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function getAuthCallbackUrlKind(url: string) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { shouldApplyUserScopedMutation } from "@nado/shared";
-import { markVocabularySuggestionSaving } from "./AnalysisFlow";
+import { shouldApplyUserScopedMutation } from "@nado/shared/user-scope";
+import { markVocabularySuggestionSaving } from "./useVocabularySuggestionSaver";
 
 describe("desktop analysis flow", () => {
   it("keeps other vocabulary suggestions pending when another save starts", () => {
