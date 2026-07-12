@@ -8,6 +8,66 @@
       "types": "./src/index.ts",
       "development": "./src/index.ts",
       "import": "./dist/index.js"
+    },
+    "./analysis": {
+      "types": "./src/analysisContracts.ts",
+      "development": "./src/analysisContracts.ts",
+      "import": "./dist/analysisContracts.js"
+    },
+    "./analysis-input": {
+      "types": "./src/analysisInput.ts",
+      "development": "./src/analysisInput.ts",
+      "import": "./dist/analysisInput.js"
+    },
+    "./analysis-presentation": {
+      "types": "./src/analysisPresentation.ts",
+      "development": "./src/analysisPresentation.ts",
+      "import": "./dist/analysisPresentation.js"
+    },
+    "./analysis-state": {
+      "types": "./src/analysisState.ts",
+      "development": "./src/analysisState.ts",
+      "import": "./dist/analysisState.js"
+    },
+    "./api-errors": {
+      "types": "./src/apiErrors.ts",
+      "development": "./src/apiErrors.ts",
+      "import": "./dist/apiErrors.js"
+    },
+    "./http": {
+      "types": "./src/http.ts",
+      "development": "./src/http.ts",
+      "import": "./dist/http.js"
+    },
+    "./review": {
+      "types": "./src/reviewSession.ts",
+      "development": "./src/reviewSession.ts",
+      "import": "./dist/reviewSession.js"
+    },
+    "./user-scope": {
+      "types": "./src/userScope.ts",
+      "development": "./src/userScope.ts",
+      "import": "./dist/userScope.js"
+    },
+    "./vocabulary": {
+      "types": "./src/vocabularyContracts.ts",
+      "development": "./src/vocabularyContracts.ts",
+      "import": "./dist/vocabularyContracts.js"
+    },
+    "./vocabulary-pagination": {
+      "types": "./src/vocabularyPagination.ts",
+      "development": "./src/vocabularyPagination.ts",
+      "import": "./dist/vocabularyPagination.js"
+    },
+    "./vocabulary-realtime": {
+      "types": "./src/vocabularyRealtime.ts",
+      "development": "./src/vocabularyRealtime.ts",
+      "import": "./dist/vocabularyRealtime.js"
+    },
+    "./vocabulary-state": {
+      "types": "./src/vocabularyState.ts",
+      "development": "./src/vocabularyState.ts",
+      "import": "./dist/vocabularyState.js"
     }
   },
   "scripts": {
