@@ -1,4 +1,4 @@
-import type { VocabularyItem } from "@nado/shared";
+import type { VocabularyItem } from "@nado/shared/vocabulary";
 import { describe, expect, it, vi } from "vitest";
 import {
   deleteVocabularyItem,
@@ -43,6 +43,27 @@ describe("desktop vocabularyApi", () => {
         method: "GET",
         signal: expect.any(AbortSignal),
       }),
+    );
+  });
+
+  it("loads subsequent desktop vocabulary cursor pages", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({ items: [], nextCursor: "next/cursor" }),
+      )
+      .mockResolvedValueOnce(Response.json({ items: [], nextCursor: null }));
+
+    await expect(listVocabulary("session-token", { fetcher })).resolves.toEqual(
+      {
+        data: [],
+        status: "success",
+      },
+    );
+    expect(fetcher).toHaveBeenNthCalledWith(
+      2,
+      resolveApiUrl("/api/vocabulary?cursor=next%2Fcursor"),
+      expect.objectContaining({ method: "GET" }),
     );
   });
 

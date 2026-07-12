@@ -19,6 +19,7 @@ const defaultCapability = JSON.parse(
     "utf8",
   ),
 ) as {
+  $schema?: string;
   permissions?: Array<
     | string
     | {
@@ -31,8 +32,18 @@ const tauriLibSource = readFileSync(
   new URL("../../src-tauri/src/lib.rs", import.meta.url),
   "utf8",
 );
+const desktopAuthDeepLinkSource = readFileSync(
+  new URL("../auth/desktopAuthDeepLink.ts", import.meta.url),
+  "utf8",
+);
 
 describe("desktop Tauri config", () => {
+  it("connects the tracked Tauri capability schema", () => {
+    expect(defaultCapability.$schema).toBe(
+      "../gen/schemas/desktop-schema.json",
+    );
+  });
+
   it("uses an explicit content security policy for the desktop shell", () => {
     const csp = tauriConfig.app?.security?.csp;
 
@@ -69,5 +80,10 @@ describe("desktop Tauri config", () => {
   it("emits a visible event when the OAuth loopback callback server cannot start", () => {
     expect(tauriLibSource).toContain("desktop-oauth-loopback-error");
     expect(tauriLibSource).toContain("TcpListener::bind");
+    expect(tauriLibSource).toContain("OAuthLoopbackState");
+    expect(tauriLibSource).toContain("get_oauth_loopback_error");
+    expect(desktopAuthDeepLinkSource).toContain(
+      'invoke<string | null>(\n              "get_oauth_loopback_error"',
+    );
   });
 });

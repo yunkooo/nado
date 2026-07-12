@@ -1,12 +1,7 @@
 import { Suspense, lazy } from "react";
+import { VocabularyRefreshButton } from "@nado/ui-web/VocabularyRefreshButton";
 import { useAuthState } from "../auth/authState";
-import { VocabularyRefreshButton } from "../features/vocabulary/VocabularyRefreshButton";
 import { useVocabularyManualRefresh } from "../features/vocabulary/useVocabularyManualRefresh";
-import {
-  useRefreshVocabularyForActiveStudySurface,
-  useSyncVocabularyForAuth,
-  useSyncVocabularyRealtimeForAuth,
-} from "../features/vocabulary/vocabularyState";
 
 type StudyWorkspaceProps = {
   activeItem: "review" | "vocabulary";
@@ -33,10 +28,6 @@ const studyFlowFallback = (
 export function StudyWorkspace({ activeItem }: StudyWorkspaceProps) {
   const authState = useAuthState();
   const vocabularyRefresh = useVocabularyManualRefresh(authState);
-
-  useSyncVocabularyForAuth(authState);
-  useSyncVocabularyRealtimeForAuth(authState);
-  useRefreshVocabularyForActiveStudySurface(authState, true, activeItem);
 
   const isVocabulary = activeItem === "vocabulary";
   const title = isVocabulary ? "단어장" : "복습";

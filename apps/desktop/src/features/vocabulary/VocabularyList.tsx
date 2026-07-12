@@ -1,15 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  createVocabularyMeaningRenderKey,
-  getDistinctVocabularyNote,
-  type VocabularyItem,
-} from "@nado/shared";
+import { paginateVocabularyItems } from "@nado/shared/vocabulary-pagination";
+import type { VocabularyItem } from "@nado/shared/vocabulary";
 import { Button } from "@nado/ui-web/Button";
-import { getVocabularyPage } from "./vocabularyPagination";
+import { VocabularyItemCard } from "@nado/ui-web/VocabularyItemCard";
 
 type VocabularyListProps = {
   deleteMessage: string | null;
-  deletingItemId: string | null;
+  deletingItemIds: ReadonlySet<string>;
   isLoading: boolean;
   items: VocabularyItem[];
   onDeleteItem: (itemId: string) => void;
@@ -17,14 +14,14 @@ type VocabularyListProps = {
 
 export function VocabularyList({
   deleteMessage,
-  deletingItemId,
+  deletingItemIds,
   isLoading,
   items,
   onDeleteItem,
 }: VocabularyListProps) {
   const [requestedPage, setRequestedPage] = useState(1);
   const listTopRef = useRef<HTMLElement>(null);
-  const pagination = getVocabularyPage(items, requestedPage);
+  const pagination = paginateVocabularyItems(items, requestedPage);
   const currentPage = pagination.currentPage;
 
   useEffect(() => {
@@ -66,8 +63,8 @@ export function VocabularyList({
 
       <div className="nado-vocabulary-list">
         {pagination.items.map((item) => (
-          <VocabularyListItem
-            isDeleting={deletingItemId === item.id}
+          <VocabularyItemCard
+            isDeleting={deletingItemIds.has(item.id)}
             item={item}
             key={item.id}
             onDelete={() => onDeleteItem(item.id)}
@@ -101,78 +98,4 @@ export function VocabularyList({
       ) : null}
     </section>
   );
-}
-
-type VocabularyListItemProps = {
-  isDeleting: boolean;
-  item: VocabularyItem;
-  onDelete: () => void;
-};
-
-function VocabularyListItem({
-  isDeleting,
-  item,
-  onDelete,
-}: VocabularyListItemProps) {
-  return (
-    <article className="nado-vocabulary-item">
-      <header>
-        <div>
-          <h2>{item.term}</h2>
-          <span className="nado-vocabulary-type">{item.type}</span>
-        </div>
-      </header>
-      <div
-        className="nado-vocabulary-meaning-list"
-        aria-label={`${item.term} 뜻`}
-      >
-        {item.meanings.map((meaning, meaningIndex) => {
-          const note = getDistinctVocabularyNote(meaning.note, [
-            meaning.meaning,
-          ]);
-
-          return (
-            <span
-              className="nado-vocabulary-meaning"
-              key={createVocabularyMeaningRenderKey(
-                item.id,
-                meaning,
-                meaningIndex,
-              )}
-            >
-              <strong>{meaning.meaning}</strong>
-              {note ? <small>{note}</small> : null}
-            </span>
-          );
-        })}
-      </div>
-      <footer className="nado-vocabulary-item__footer">
-        <time className="nado-vocabulary-item__date" dateTime={item.updatedAt}>
-          {formatVocabularyDate(item.updatedAt)}
-        </time>
-        <Button
-          disabled={isDeleting}
-          onClick={onDelete}
-          size="sm"
-          variant="secondary"
-        >
-          {isDeleting ? "삭제 중" : "삭제"}
-        </Button>
-      </footer>
-    </article>
-  );
-}
-
-function formatVocabularyDate(value: string) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}.${month}.${day}`;
 }

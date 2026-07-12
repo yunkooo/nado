@@ -1,31 +1,26 @@
 import {
   ANALYSIS_ERROR_MESSAGES,
-  DEFAULT_ANALYSIS_MODEL_ID,
   analyzeResponseSchema,
-  fetchWithTimeout,
+} from "@nado/shared/analysis";
+import {
+  DEFAULT_ANALYSIS_MODEL_ID,
   isOpenRouterAnalysisModelId,
-  readJson,
-  readApiErrorDetail,
-  type ApiRequestOptions,
   type AnalysisModelId,
-  type AnalysisResult as ApiAnalysisResult,
-} from "@nado/shared";
-import type { AnalysisResultData } from "@nado/ui-web/analysisTypes";
+} from "@nado/shared/analysis-input";
+import { mapAnalysisResultToPresentation } from "@nado/shared/analysis-presentation";
+import type {
+  AnalysisClientError,
+  AnalysisClientResult,
+} from "@nado/shared/analysis-state";
+import { readApiErrorDetail } from "@nado/shared/api-errors";
+import {
+  fetchWithTimeout,
+  readJson,
+  type ApiRequestOptions,
+} from "@nado/shared/http";
 import { apiFetch } from "./apiFetch";
 
-type AnalyzeTextError = {
-  code?: string;
-  message: string;
-  requestId?: string;
-  retryable?: boolean;
-  status: "error";
-  statusCode?: number;
-};
-
-export type AnalyzeTextResult =
-  | { data: AnalysisResultData; status: "success" }
-  | AnalyzeTextError
-  | { message: string; status: "not_analyzable" };
+export type AnalyzeTextResult = AnalysisClientResult;
 
 export type AnalyzeTextOptions = ApiRequestOptions & {
   accessToken?: string | null;
@@ -105,7 +100,7 @@ export async function analyzeText(
   }
 
   return {
-    data: mapAnalysisResult(trimmedText, parsed.data.result),
+    data: mapAnalysisResultToPresentation(trimmedText, parsed.data.result),
     status: "success",
   };
 }
@@ -126,76 +121,10 @@ function resolveAnalyzeRequestTimeoutMs(model: AnalysisModelId): number {
     : ANALYZE_REQUEST_TIMEOUT_MS;
 }
 
-function mapAnalysisResult(
-  sourceText: string,
-  result: ApiAnalysisResult,
-): AnalysisResultData {
-  return {
-    sentences: result.sentences.map((sentence, index) => ({
-      chunks: sentence.chunks.map((chunk) => ({
-        english: chunk.english,
-        korean: chunk.literalTranslation,
-      })),
-      grammarPoints: sentence.grammarPoints.map((point) => ({
-        explanation: point.explanation,
-        target: point.title,
-        type: point.grammarType ?? "문법 포인트",
-      })),
-      indexLabel: `문장 ${index + 1}`,
-      naturalTranslation: sentence.translation,
-      tokens: sentence.tokens.map((token) => ({
-        text: token.text,
-        vocabularyKey: token.vocabularyKey,
-      })),
-    })),
-    sourceText,
-    translation: [result.translation],
-    translationNotes: [
-      {
-        note: result.translationExplanation,
-        term: "번역 포인트",
-      },
-      ...result.structure.map((item) => ({
-        note: `${item.korean} · ${item.note}`,
-        term: item.english,
-      })),
-    ],
-    vocabularyItems: result.vocabularyItems.map((item) => ({
-      baseForm: item.baseForm,
-      contextMeaning: item.contextMeaning,
-      key: item.key,
-      meaning: item.meaning,
-      note: item.contextMeaning,
-      partOfSpeech: item.partOfSpeech,
-      term: item.term,
-      type: item.type,
-    })),
-    vocabularySuggestions: readVocabularySuggestions(result),
-  };
-}
-
-function readVocabularySuggestions(result: ApiAnalysisResult) {
-  if (result.vocabularySuggestions.length > 0) {
-    return result.vocabularySuggestions.map((item) => ({
-      meaning: item.meaning,
-      note: item.note,
-      term: item.term,
-      type: item.type,
-    }));
-  }
-
-  return result.vocabularyItems.map((item) => ({
-    meaning: item.meaning,
-    note: item.contextMeaning,
-    term: item.term,
-    type: item.type,
-  }));
-}
-
 function createAnalyzeErrorResult(
   payload: unknown,
   statusCode: number,
-): AnalyzeTextError {
+): AnalysisClientError {
   const error = readApiErrorDetail(payload, ANALYZE_ERROR_MESSAGE);
 
   return {
