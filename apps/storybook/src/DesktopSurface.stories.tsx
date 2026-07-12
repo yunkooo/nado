@@ -99,7 +99,7 @@ function DesktopVocabularySurface() {
             </div>
             <div className="nado-vocabulary-list">
               <VocabularyItemCard
-                isDeleting={false}
+                deletingMeaningKeys={new Set()}
                 item={{
                   createdAt: "2026-07-10T00:00:00.000Z",
                   id: "storybook-shipping",
@@ -113,10 +113,10 @@ function DesktopVocabularySurface() {
                   type: "word",
                   updatedAt: "2026-07-11T00:00:00.000Z",
                 }}
-                onDelete={() => undefined}
+                onDeleteMeaning={() => undefined}
               />
               <VocabularyItemCard
-                isDeleting={false}
+                deletingMeaningKeys={new Set()}
                 item={{
                   createdAt: "2026-07-09T00:00:00.000Z",
                   id: "storybook-framework",
@@ -130,7 +130,7 @@ function DesktopVocabularySurface() {
                   type: "word",
                   updatedAt: "2026-07-10T00:00:00.000Z",
                 }}
-                onDelete={() => undefined}
+                onDeleteMeaning={() => undefined}
               />
             </div>
             <nav

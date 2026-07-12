@@ -1,4 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { createVocabularyMeaningMutationKey } from "@nado/shared/vocabulary";
 import { describe, expect, it } from "vitest";
 import { formatVocabularyDate, VocabularyItemCard } from "./VocabularyItemCard";
 
@@ -18,25 +19,36 @@ describe("VocabularyItemCard", () => {
   it("renders meanings and hides a duplicate note", () => {
     const markup = renderToStaticMarkup(
       <VocabularyItemCard
-        isDeleting={false}
+        deletingMeaningKeys={new Set()}
         item={item}
-        onDelete={() => undefined}
+        onDeleteMeaning={() => undefined}
       />,
     );
 
     expect(markup).toContain("shipping");
     expect(markup).toContain("제품을 사용자에게 전달함");
-    expect(markup.match(/출시/g)).toHaveLength(1);
-    expect(markup).toContain(">삭제</button>");
+    expect(markup).not.toContain("<small>출시</small>");
+    expect(markup).toContain('aria-label="shipping의 출시 뜻 삭제"');
+    expect(markup).toContain(">×</span>");
+    expect(markup).not.toContain(">삭제</button>");
   });
 
   it("disables the delete action while deletion is running", () => {
     const markup = renderToStaticMarkup(
-      <VocabularyItemCard isDeleting item={item} onDelete={() => undefined} />,
+      <VocabularyItemCard
+        deletingMeaningKeys={
+          new Set([
+            createVocabularyMeaningMutationKey(item.id, item.meanings[0]!),
+          ])
+        }
+        item={item}
+        onDeleteMeaning={() => undefined}
+      />,
     );
 
-    expect(markup).toContain('disabled=""');
-    expect(markup).toContain("삭제 중");
+    expect(markup.match(/disabled=""/g)).toHaveLength(2);
+    expect(markup).toContain('aria-busy="true"');
+    expect(markup).toContain(">…</span>");
   });
 
   it("keeps invalid date text and formats valid dates", () => {

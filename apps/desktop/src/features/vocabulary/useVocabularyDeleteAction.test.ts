@@ -1,22 +1,34 @@
 /** @vitest-environment jsdom */
 
 import { act, renderHook } from "@testing-library/react";
+import {
+  createVocabularyMeaningMutationKey,
+  type VocabularyItem,
+} from "@nado/shared/vocabulary";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthStateSnapshot } from "../../auth/authState";
 import {
   isCurrentVocabularyDeleteRequest,
   shouldApplyVocabularyMutation,
-  shouldRemoveVocabularyItemAfterDelete,
   useVocabularyDeleteAction,
 } from "./useVocabularyDeleteAction";
 
 const mocks = vi.hoisted(() => ({
-  deleteVocabularyItem: vi.fn(),
+  deleteVocabularyMeaning: vi.fn(),
+  removeItem: vi.fn(),
+  upsertItem: vi.fn(),
 }));
 
 vi.mock("../../api/vocabularyApi", async (importOriginal) => ({
   ...(await importOriginal()),
-  deleteVocabularyItem: mocks.deleteVocabularyItem,
+  deleteVocabularyMeaning: mocks.deleteVocabularyMeaning,
+}));
+
+vi.mock("./vocabularyState", () => ({
+  vocabularyStateStore: {
+    removeItem: mocks.removeItem,
+    upsertItem: mocks.upsertItem,
+  },
 }));
 
 const authState = {
@@ -25,9 +37,25 @@ const authState = {
   status: "authenticated",
 } as AuthStateSnapshot;
 
+const meaning = {
+  createdAt: "2026-07-12T00:00:00.000Z",
+  meaning: "상태",
+};
+
+const updatedItem: VocabularyItem = {
+  createdAt: "2026-07-12T00:00:00.000Z",
+  id: "item-2",
+  meanings: [{ meaning: "지역 주" }],
+  term: "state",
+  type: "word",
+  updatedAt: "2026-07-12T00:01:00.000Z",
+};
+
 describe("desktop vocabulary delete action", () => {
   beforeEach(() => {
-    mocks.deleteVocabularyItem.mockReset();
+    mocks.deleteVocabularyMeaning.mockReset();
+    mocks.removeItem.mockReset();
+    mocks.upsertItem.mockReset();
   });
 
   it("applies a mutation only while the triggering access token is still current", () => {
@@ -36,28 +64,16 @@ describe("desktop vocabulary delete action", () => {
     expect(shouldApplyVocabularyMutation("token-a", null)).toBe(false);
   });
 
-  it("removes local stale items when the server says they are already gone", () => {
-    expect(shouldRemoveVocabularyItemAfterDelete({ status: "success" })).toBe(
-      true,
-    );
-    expect(
-      shouldRemoveVocabularyItemAfterDelete({
-        message: "단어장 항목을 찾을 수 없습니다.",
-        status: "not-found",
-      }),
-    ).toBe(true);
-    expect(
-      shouldRemoveVocabularyItemAfterDelete({
-        message: "단어장 항목을 삭제하지 못했어요.",
-        status: "error",
-      }),
-    ).toBe(false);
-  });
-
   it("tracks concurrent item deletions without an earlier response releasing a later one", async () => {
-    const firstDelete = createDeferred<{ status: "success" }>();
-    const secondDelete = createDeferred<{ status: "success" }>();
-    mocks.deleteVocabularyItem.mockImplementation((itemId: string) =>
+    const firstDelete = createDeferred<{
+      data: { item: null; itemDeleted: true };
+      status: "success";
+    }>();
+    const secondDelete = createDeferred<{
+      data: { item: VocabularyItem; itemDeleted: false };
+      status: "success";
+    }>();
+    mocks.deleteVocabularyMeaning.mockImplementation((itemId: string) =>
       itemId === "item-1" ? firstDelete.promise : secondDelete.promise,
     );
     const { result } = renderHook(() => useVocabularyDeleteAction(authState));
@@ -65,34 +81,50 @@ describe("desktop vocabulary delete action", () => {
     let secondRequest!: Promise<void>;
 
     act(() => {
-      firstRequest = result.current.deleteItem("item-1");
-      secondRequest = result.current.deleteItem("item-2");
+      firstRequest = result.current.deleteMeaning("item-1", meaning);
+      secondRequest = result.current.deleteMeaning("item-2", meaning);
     });
 
-    expect(result.current.deletingItemIds).toEqual(
-      new Set(["item-1", "item-2"]),
+    expect(result.current.deletingMeaningKeys).toEqual(
+      new Set([
+        createVocabularyMeaningMutationKey("item-1", meaning),
+        createVocabularyMeaningMutationKey("item-2", meaning),
+      ]),
     );
 
     await act(async () => {
-      firstDelete.resolve({ status: "success" });
+      firstDelete.resolve({
+        data: { item: null, itemDeleted: true },
+        status: "success",
+      });
       await firstRequest;
     });
 
-    expect(result.current.deletingItemIds).toEqual(new Set(["item-2"]));
+    expect(result.current.deletingMeaningKeys).toEqual(
+      new Set([createVocabularyMeaningMutationKey("item-2", meaning)]),
+    );
 
     await act(async () => {
-      secondDelete.resolve({ status: "success" });
+      secondDelete.resolve({
+        data: { item: updatedItem, itemDeleted: false },
+        status: "success",
+      });
       await secondRequest;
     });
 
-    expect(result.current.deletingItemIds).toEqual(new Set());
+    expect(result.current.deletingMeaningKeys).toEqual(new Set());
+    expect(mocks.removeItem).toHaveBeenCalledWith("item-1");
+    expect(mocks.upsertItem).toHaveBeenCalledWith(updatedItem);
   });
 
   it("does not restore stale delete state after leaving and returning to the same token", async () => {
-    const pendingDelete = createDeferred<{ status: "success" }>();
-    mocks.deleteVocabularyItem
+    const pendingDelete = createDeferred<{
+      data: { item: null; itemDeleted: true };
+      status: "success";
+    }>();
+    mocks.deleteVocabularyMeaning
       .mockResolvedValueOnce({
-        message: "단어장 항목을 삭제하지 못했어요.",
+        message: "단어장 뜻을 삭제하지 못했어요.",
         status: "error",
       })
       .mockReturnValueOnce(pendingDelete.promise);
@@ -108,37 +140,41 @@ describe("desktop vocabulary delete action", () => {
     );
 
     await act(async () => {
-      await result.current.deleteItem("failed-item");
+      await result.current.deleteMeaning("failed-item", meaning);
     });
-    expect(result.current.deleteMessage).toBe(
-      "단어장 항목을 삭제하지 못했어요.",
-    );
+    expect(result.current.deleteMessage).toBe("단어장 뜻을 삭제하지 못했어요.");
 
     let pendingRequest!: Promise<void>;
     act(() => {
-      pendingRequest = result.current.deleteItem("pending-item");
+      pendingRequest = result.current.deleteMeaning("pending-item", meaning);
     });
-    expect(result.current.deletingItemIds).toEqual(new Set(["pending-item"]));
+    expect(result.current.deletingMeaningKeys).toEqual(
+      new Set([createVocabularyMeaningMutationKey("pending-item", meaning)]),
+    );
 
     rerender({ state: anonymousState });
     rerender({ state: authState });
 
     expect(result.current.deleteMessage).toBeNull();
-    expect(result.current.deletingItemIds).toEqual(new Set());
+    expect(result.current.deletingMeaningKeys).toEqual(new Set());
 
     await act(async () => {
-      pendingDelete.resolve({ status: "success" });
+      pendingDelete.resolve({
+        data: { item: null, itemDeleted: true },
+        status: "success",
+      });
       await pendingRequest;
     });
 
     expect(result.current.deleteMessage).toBeNull();
-    expect(result.current.deletingItemIds).toEqual(new Set());
+    expect(result.current.deletingMeaningKeys).toEqual(new Set());
   });
 
   it("compares the full item request identity before applying a response", () => {
     const request = {
       accessToken: "token-a",
       itemId: "item-1",
+      meaningKey: "meaning-1",
       requestId: 1,
     };
 

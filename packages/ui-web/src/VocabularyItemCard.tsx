@@ -1,21 +1,28 @@
 import {
+  createVocabularyMeaningMutationKey,
   createVocabularyMeaningRenderKey,
   getDistinctVocabularyNote,
   type VocabularyItem,
+  type VocabularyMeaning,
 } from "@nado/shared/vocabulary";
-import { Button } from "./Button";
 
 export type VocabularyItemCardProps = {
-  isDeleting: boolean;
+  deletingMeaningKeys: ReadonlySet<string>;
   item: VocabularyItem;
-  onDelete: () => void;
+  onDeleteMeaning: (meaning: VocabularyMeaning) => void;
 };
 
 export function VocabularyItemCard({
-  isDeleting,
+  deletingMeaningKeys,
   item,
-  onDelete,
+  onDeleteMeaning,
 }: VocabularyItemCardProps) {
+  const isItemDeleting = item.meanings.some((meaning) =>
+    deletingMeaningKeys.has(
+      createVocabularyMeaningMutationKey(item.id, meaning),
+    ),
+  );
+
   return (
     <article className="nado-vocabulary-item">
       <header>
@@ -29,12 +36,17 @@ export function VocabularyItemCard({
         aria-label={`${item.term} 뜻`}
       >
         {item.meanings.map((meaning, meaningIndex) => {
+          const meaningKey = createVocabularyMeaningMutationKey(
+            item.id,
+            meaning,
+          );
+          const isDeleting = deletingMeaningKeys.has(meaningKey);
           const note = getDistinctVocabularyNote(meaning.note, [
             meaning.meaning,
           ]);
 
           return (
-            <span
+            <div
               className="nado-vocabulary-meaning"
               key={createVocabularyMeaningRenderKey(
                 item.id,
@@ -42,9 +54,21 @@ export function VocabularyItemCard({
                 meaningIndex,
               )}
             >
-              <strong>{meaning.meaning}</strong>
-              {note ? <small>{note}</small> : null}
-            </span>
+              <div className="nado-vocabulary-meaning__content">
+                <strong>{meaning.meaning}</strong>
+                {note ? <small>{note}</small> : null}
+              </div>
+              <button
+                aria-busy={isDeleting || undefined}
+                aria-label={`${item.term}의 ${meaning.meaning} 뜻 삭제`}
+                className="nado-vocabulary-meaning__delete"
+                disabled={isItemDeleting}
+                onClick={() => onDeleteMeaning(meaning)}
+                type="button"
+              >
+                <span aria-hidden="true">{isDeleting ? "…" : "×"}</span>
+              </button>
+            </div>
           );
         })}
       </div>
@@ -52,14 +76,6 @@ export function VocabularyItemCard({
         <time className="nado-vocabulary-item__date" dateTime={item.updatedAt}>
           {formatVocabularyDate(item.updatedAt)}
         </time>
-        <Button
-          disabled={isDeleting}
-          onClick={onDelete}
-          size="sm"
-          variant="secondary"
-        >
-          {isDeleting ? "삭제 중" : "삭제"}
-        </Button>
       </footer>
     </article>
   );

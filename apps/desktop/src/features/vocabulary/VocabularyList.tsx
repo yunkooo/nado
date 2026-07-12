@@ -1,23 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import { paginateVocabularyItems } from "@nado/shared/vocabulary-pagination";
-import type { VocabularyItem } from "@nado/shared/vocabulary";
+import type {
+  VocabularyItem,
+  VocabularyMeaning,
+} from "@nado/shared/vocabulary";
 import { Button } from "@nado/ui-web/Button";
 import { VocabularyItemCard } from "@nado/ui-web/VocabularyItemCard";
 
 type VocabularyListProps = {
   deleteMessage: string | null;
-  deletingItemIds: ReadonlySet<string>;
+  deletingMeaningKeys: ReadonlySet<string>;
   isLoading: boolean;
   items: VocabularyItem[];
-  onDeleteItem: (itemId: string) => void;
+  onDeleteMeaning: (itemId: string, meaning: VocabularyMeaning) => void;
 };
 
 export function VocabularyList({
   deleteMessage,
-  deletingItemIds,
+  deletingMeaningKeys,
   isLoading,
   items,
-  onDeleteItem,
+  onDeleteMeaning,
 }: VocabularyListProps) {
   const [requestedPage, setRequestedPage] = useState(1);
   const listTopRef = useRef<HTMLElement>(null);
@@ -64,10 +67,10 @@ export function VocabularyList({
       <div className="nado-vocabulary-list">
         {pagination.items.map((item) => (
           <VocabularyItemCard
-            isDeleting={deletingItemIds.has(item.id)}
+            deletingMeaningKeys={deletingMeaningKeys}
             item={item}
             key={item.id}
-            onDelete={() => onDeleteItem(item.id)}
+            onDeleteMeaning={(meaning) => onDeleteMeaning(item.id, meaning)}
           />
         ))}
       </div>

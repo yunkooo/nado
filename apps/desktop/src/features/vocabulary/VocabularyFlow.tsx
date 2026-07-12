@@ -8,7 +8,7 @@ import { getVocabularyPanelState } from "./vocabularyViewState";
 export function VocabularyFlow() {
   const authState = useAuthState();
   const vocabularyState = useVocabularyStateForAuth(authState);
-  const { deleteItem, deleteMessage, deletingItemIds } =
+  const { deleteMeaning, deleteMessage, deletingMeaningKeys } =
     useVocabularyDeleteAction(authState);
   const items = vocabularyState.items;
   const loadMessage = vocabularyState.message;
@@ -36,10 +36,10 @@ export function VocabularyFlow() {
         {panelState === "list" ? (
           <VocabularyList
             deleteMessage={deleteMessage}
-            deletingItemIds={deletingItemIds}
+            deletingMeaningKeys={deletingMeaningKeys}
             isLoading={isVocabularyLoading}
             items={items}
-            onDeleteItem={deleteItem}
+            onDeleteMeaning={deleteMeaning}
           />
         ) : null}
       </section>
