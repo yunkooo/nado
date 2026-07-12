@@ -14,6 +14,7 @@ describe("createApp error boundary", () => {
       },
       vocabularyServiceFactory: () => ({
         delete: async () => false,
+        deleteMeaning: async () => null,
         list: async () => {
           throw new Error("database unavailable");
         },

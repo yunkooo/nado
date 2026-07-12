@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  deleteVocabularyMeaningRequestSchema,
   MAX_VOCABULARY_CURSOR_LENGTH,
   saveVocabularyRequestSchema,
 } from "@nado/shared/vocabulary";
@@ -55,6 +56,47 @@ export function createVocabularyRoutes({
       const item = await vocabularyService.save(auth.user.id, parsed.data);
 
       return response.json({ item });
+    }),
+  );
+
+  router.delete(
+    "/vocabulary/:id/meanings",
+    authenticatedRoute(authService, async (request, response, auth) => {
+      const parsed = deleteVocabularyMeaningRequestSchema.safeParse(
+        request.body as unknown,
+      );
+
+      if (!parsed.success) {
+        return response.status(400).json({
+          error: {
+            code: "invalid_input",
+            issues: parsed.error.issues.map((issue) => issue.message),
+            message: "삭제할 단어장 뜻이 올바르지 않습니다.",
+            requestId: readRequestId(response),
+            retryable: false,
+          },
+        });
+      }
+
+      const vocabularyService = vocabularyServiceFactory(auth.accessToken);
+      const result = await vocabularyService.deleteMeaning(
+        auth.user.id,
+        readRouteParam(request.params.id),
+        parsed.data,
+      );
+
+      if (!result) {
+        return response.status(404).json({
+          error: {
+            code: "not_found",
+            message: "단어장 뜻을 찾을 수 없습니다.",
+            requestId: readRequestId(response),
+            retryable: false,
+          },
+        });
+      }
+
+      return response.json(result);
     }),
   );
 

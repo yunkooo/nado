@@ -3,8 +3,11 @@ import {
   MAX_VOCABULARY_MEANING_LENGTH,
   MAX_VOCABULARY_NOTE_LENGTH,
   MAX_VOCABULARY_TERM_LENGTH,
+  createVocabularyMeaningMutationKey,
   createVocabularyMeaningRenderKey,
   createVocabularySuggestionKey,
+  deleteVocabularyMeaningRequestSchema,
+  deleteVocabularyMeaningResponseSchema,
   getDistinctVocabularyNote,
   isVocabularySuggestionSaved,
   normalizeVocabularyTerm,
@@ -32,6 +35,47 @@ describe("createVocabularyMeaningRenderKey", () => {
       "row_1-2026-06-10T00:00:00.000Z-상태-0",
       "row_1-2026-06-10T00:00:00.000Z-상태-1",
     ]);
+  });
+});
+
+describe("vocabulary meaning deletion contracts", () => {
+  it("keeps the complete stored meaning identity in mutation keys", () => {
+    expect(
+      createVocabularyMeaningMutationKey("row_1", {
+        createdAt: "2026-07-12T00:00:00.000Z",
+        meaning: "상태",
+        note: "지역이나 주",
+      }),
+    ).toBe('["row_1","상태","지역이나 주","2026-07-12T00:00:00.000Z"]');
+  });
+
+  it("trims a stored meaning deletion request", () => {
+    expect(
+      deleteVocabularyMeaningRequestSchema.parse({
+        createdAt: "2026-07-12T00:00:00.000Z",
+        meaning: "  상태  ",
+        note: "  지역이나 주  ",
+      }),
+    ).toEqual({
+      createdAt: "2026-07-12T00:00:00.000Z",
+      meaning: "상태",
+      note: "지역이나 주",
+    });
+  });
+
+  it("requires delete responses to agree with the card deletion flag", () => {
+    expect(
+      deleteVocabularyMeaningResponseSchema.safeParse({
+        item: null,
+        itemDeleted: true,
+      }).success,
+    ).toBe(true);
+    expect(
+      deleteVocabularyMeaningResponseSchema.safeParse({
+        item: null,
+        itemDeleted: false,
+      }).success,
+    ).toBe(false);
   });
 });
 

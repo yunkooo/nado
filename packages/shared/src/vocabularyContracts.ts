@@ -70,6 +70,22 @@ export const saveVocabularyResponseSchema = z.object({
   item: vocabularyItemSchema,
 });
 
+export const deleteVocabularyMeaningRequestSchema = vocabularyMeaningSchema;
+
+export const deleteVocabularyMeaningResponseSchema = z.discriminatedUnion(
+  "itemDeleted",
+  [
+    z.object({
+      item: vocabularyItemSchema,
+      itemDeleted: z.literal(false),
+    }),
+    z.object({
+      item: z.null(),
+      itemDeleted: z.literal(true),
+    }),
+  ],
+);
+
 export type VocabularyType = z.infer<typeof vocabularyTypeSchema>;
 export type VocabularyMeaning = z.infer<typeof vocabularyMeaningSchema>;
 export type VocabularyItem = z.infer<typeof vocabularyItemSchema>;
@@ -79,6 +95,12 @@ export type VocabularyListResponse = z.infer<
 >;
 export type SaveVocabularyResponse = z.infer<
   typeof saveVocabularyResponseSchema
+>;
+export type DeleteVocabularyMeaningRequest = z.infer<
+  typeof deleteVocabularyMeaningRequestSchema
+>;
+export type DeleteVocabularyMeaningResponse = z.infer<
+  typeof deleteVocabularyMeaningResponseSchema
 >;
 
 export type VocabularySuggestionMatch = {
@@ -117,6 +139,18 @@ export function createVocabularyMeaningRenderKey(
   index: number,
 ): string {
   return `${itemId}-${meaning.createdAt ?? "pending"}-${meaning.meaning}-${index}`;
+}
+
+export function createVocabularyMeaningMutationKey(
+  itemId: string,
+  meaning: VocabularyMeaning,
+): string {
+  return JSON.stringify([
+    itemId,
+    meaning.meaning,
+    meaning.note ?? "",
+    meaning.createdAt ?? "",
+  ]);
 }
 
 export function isVocabularySuggestionSaved(

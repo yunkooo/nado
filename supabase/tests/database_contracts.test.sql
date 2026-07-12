@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(38);
+select plan(48);
 
 select ok(
   public.is_valid_vocabulary_meanings(
@@ -120,6 +120,24 @@ select ok(
 select ok(
   not has_function_privilege(
     'anon',
+    'public.delete_vocabulary_meaning(uuid,uuid,jsonb)',
+    'execute'
+  ),
+  'anonymous users cannot run the vocabulary meaning delete RPC'
+);
+
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'public.delete_vocabulary_meaning(uuid,uuid,jsonb)',
+    'execute'
+  ),
+  'authenticated users can run the vocabulary meaning delete RPC'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
     'public.is_valid_vocabulary_meanings(jsonb)',
     'execute'
   ),
@@ -182,6 +200,23 @@ values
     '[{"meaning":"다른 사용자 항목"}]'::jsonb
   );
 
+insert into public.vocabulary_items (id, user_id, term, type, meanings)
+values
+  (
+    '10000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    'rls-meaning-delete',
+    'word',
+    '[{"meaning":"상태","createdAt":"2026-07-12T00:00:00.000Z"},{"meaning":"지역 주","createdAt":"2026-07-12T00:01:00.000Z"}]'::jsonb
+  ),
+  (
+    '10000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000002',
+    'rls-other-meaning-delete',
+    'word',
+    '[{"meaning":"다른 사용자 뜻"}]'::jsonb
+  );
+
 set local role authenticated;
 select set_config(
   'request.jwt.claim.sub',
@@ -191,8 +226,103 @@ select set_config(
 
 select results_eq(
   $$ select term from public.vocabulary_items order by term $$,
-  $$ values ('rls-own'::text) $$,
+  $$ values ('rls-meaning-delete'::text), ('rls-own'::text) $$,
   'authenticated vocabulary reads are restricted to the JWT user'
+);
+
+select results_eq(
+  $$
+    select item_deleted, item -> 'meanings'
+    from public.delete_vocabulary_meaning(
+      '00000000-0000-0000-0000-000000000001',
+      '10000000-0000-0000-0000-000000000001',
+      '{"meaning":"상태","createdAt":"2026-07-12T00:00:00.000Z"}'::jsonb
+    )
+  $$,
+  $$
+    values (
+      false,
+      '[{"meaning":"지역 주","createdAt":"2026-07-12T00:01:00.000Z"}]'::jsonb
+    )
+  $$,
+  'meaning deletion keeps the remaining meaning in the returned item'
+);
+
+select results_eq(
+  $$
+    select meanings
+    from public.vocabulary_items
+    where id = '10000000-0000-0000-0000-000000000001'
+  $$,
+  $$
+    values (
+      '[{"meaning":"지역 주","createdAt":"2026-07-12T00:01:00.000Z"}]'::jsonb
+    )
+  $$,
+  'meaning deletion updates only the selected vocabulary row'
+);
+
+select results_eq(
+  $$
+    select item_deleted
+    from public.delete_vocabulary_meaning(
+      '00000000-0000-0000-0000-000000000001',
+      '10000000-0000-0000-0000-000000000001',
+      '{"meaning":"없는 뜻"}'::jsonb
+    )
+  $$,
+  $$ select null::boolean where false $$,
+  'deleting a missing meaning returns no result'
+);
+
+select results_eq(
+  $$
+    select meanings
+    from public.vocabulary_items
+    where id = '10000000-0000-0000-0000-000000000001'
+  $$,
+  $$
+    values (
+      '[{"meaning":"지역 주","createdAt":"2026-07-12T00:01:00.000Z"}]'::jsonb
+    )
+  $$,
+  'a missing meaning deletion leaves the vocabulary row unchanged'
+);
+
+select results_eq(
+  $$
+    select item_deleted
+    from public.delete_vocabulary_meaning(
+      '00000000-0000-0000-0000-000000000002',
+      '10000000-0000-0000-0000-000000000002',
+      '{"meaning":"다른 사용자 뜻"}'::jsonb
+    )
+  $$,
+  $$ select null::boolean where false $$,
+  'authenticated users cannot delete another user vocabulary meaning'
+);
+
+select results_eq(
+  $$
+    select item_deleted, item
+    from public.delete_vocabulary_meaning(
+      '00000000-0000-0000-0000-000000000001',
+      '10000000-0000-0000-0000-000000000001',
+      '{"meaning":"지역 주","createdAt":"2026-07-12T00:01:00.000Z"}'::jsonb
+    )
+  $$,
+  $$ values (true, null::jsonb) $$,
+  'deleting the last meaning reports that the vocabulary item was deleted'
+);
+
+select results_eq(
+  $$
+    select id
+    from public.vocabulary_items
+    where id = '10000000-0000-0000-0000-000000000001'
+  $$,
+  $$ select null::uuid where false $$,
+  'deleting the last meaning removes the vocabulary row'
 );
 
 select lives_ok(
@@ -299,6 +429,16 @@ select results_eq(
 );
 
 reset role;
+
+select results_eq(
+  $$
+    select meanings
+    from public.vocabulary_items
+    where id = '10000000-0000-0000-0000-000000000002'
+  $$,
+  $$ values ('[{"meaning":"다른 사용자 뜻"}]'::jsonb) $$,
+  'another user vocabulary meaning remains unchanged'
+);
 
 select ok(
   not has_table_privilege('anon', 'public.analysis_usage_limits', 'select'),
