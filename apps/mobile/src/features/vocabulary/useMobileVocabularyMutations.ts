@@ -6,23 +6,27 @@ import {
   useState,
 } from "react";
 import {
+  createVocabularyMeaningMutationKey,
   createVocabularySuggestionKey,
   isVocabularySuggestionSaved,
+  type VocabularyMeaning,
 } from "@nado/shared/vocabulary";
 import { shouldApplyUserScopedMutation } from "@nado/shared/user-scope";
 import { Platform } from "react-native";
 import type { MobileVocabularySuggestion } from "../../api/analysisApi";
 import { readMobileApiBaseUrl } from "../../api/apiConfig";
 import {
-  deleteVocabularyItem,
+  deleteVocabularyMeaning,
   saveVocabularyItem,
 } from "../../api/vocabularyApi";
 import type { MobileAuthStateSnapshot } from "../../auth/authState";
 import {
   addMobileVocabularyDeletingId,
+  addMobileVocabularyDeletingKey,
   addMobileVocabularySavingKey,
   applyDeleteVocabularyError,
   removeMobileVocabularyDeletingId,
+  removeMobileVocabularyDeletingKey,
   removeMobileVocabularySavingKey,
   upsertMobileVocabularyItem,
   type MobileVocabularyState,
@@ -41,7 +45,7 @@ export function useMobileVocabularyMutations({
   updateVocabularyState: MobileVocabularyStateUpdater;
   vocabularyState: MobileVocabularyState;
 }) {
-  const [deletingItemIds, setDeletingItemIds] = useState<Set<string>>(
+  const [deletingMeaningKeys, setDeletingMeaningKeys] = useState<Set<string>>(
     () => new Set(),
   );
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -49,6 +53,7 @@ export function useMobileVocabularyMutations({
     () => new Set(),
   );
   const deletingItemIdsRef = useRef<Set<string>>(new Set());
+  const deletingMeaningKeysRef = useRef<Set<string>>(new Set());
   const latestAuthStateRef = useRef(authState);
   const savingSuggestionKeysRef = useRef<Set<string>>(new Set());
 
@@ -59,8 +64,9 @@ export function useMobileVocabularyMutations({
   useEffect(() => {
     savingSuggestionKeysRef.current = new Set();
     deletingItemIdsRef.current = new Set();
+    deletingMeaningKeysRef.current = new Set();
     setSavingSuggestionKeys(new Set());
-    setDeletingItemIds(new Set());
+    setDeletingMeaningKeys(new Set());
     setSaveMessage(null);
   }, [authState.session?.user.id]);
 
@@ -68,7 +74,7 @@ export function useMobileVocabularyMutations({
     setSaveMessage(null);
   }, []);
 
-  const deleteItem = async (itemId: string) => {
+  const deleteMeaning = async (itemId: string, meaning: VocabularyMeaning) => {
     const requestUserId = authState.session?.user.id;
 
     if (
@@ -84,12 +90,23 @@ export function useMobileVocabularyMutations({
       deletingItemIdsRef.current,
       itemId,
     );
+    const meaningKey = createVocabularyMeaningMutationKey(itemId, meaning);
+    const nextDeletingKeys = addMobileVocabularyDeletingKey(
+      deletingMeaningKeysRef.current,
+      meaningKey,
+    );
     deletingItemIdsRef.current = nextDeletingIds;
-    setDeletingItemIds(nextDeletingIds);
-    const result = await deleteVocabularyItem(itemId, authState.accessToken, {
-      apiBaseUrl: configuredMobileApiBaseUrl,
-      apiPlatform: configuredMobileApiPlatform,
-    });
+    deletingMeaningKeysRef.current = nextDeletingKeys;
+    setDeletingMeaningKeys(nextDeletingKeys);
+    const result = await deleteVocabularyMeaning(
+      itemId,
+      meaning,
+      authState.accessToken,
+      {
+        apiBaseUrl: configuredMobileApiBaseUrl,
+        apiPlatform: configuredMobileApiPlatform,
+      },
+    );
 
     if (
       !shouldApplyUserScopedMutation(
@@ -105,21 +122,34 @@ export function useMobileVocabularyMutations({
       itemId,
     );
     deletingItemIdsRef.current = remainingDeletingIds;
-    setDeletingItemIds(remainingDeletingIds);
+    const remainingDeletingKeys = removeMobileVocabularyDeletingKey(
+      deletingMeaningKeysRef.current,
+      meaningKey,
+    );
+    deletingMeaningKeysRef.current = remainingDeletingKeys;
+    setDeletingMeaningKeys(remainingDeletingKeys);
 
-    if (result.status === "error") {
+    if (result.status !== "success") {
       updateVocabularyState((currentState) =>
         applyDeleteVocabularyError(currentState, result.message),
       );
       return;
     }
 
-    updateVocabularyState((currentState) => ({
-      ...currentState,
-      items: currentState.items.filter((item) => item.id !== itemId),
-      message: null,
-      status: "ready",
-    }));
+    if (result.data.itemDeleted) {
+      updateVocabularyState((currentState) => ({
+        ...currentState,
+        items: currentState.items.filter((item) => item.id !== itemId),
+        message: null,
+        status: "ready",
+      }));
+      return;
+    }
+
+    const updatedItem = result.data.item;
+    updateVocabularyState((currentState) =>
+      upsertMobileVocabularyItem(currentState, updatedItem),
+    );
   };
 
   const getSuggestionState = (suggestion: MobileVocabularySuggestion) => {
@@ -230,8 +260,8 @@ export function useMobileVocabularyMutations({
 
   return {
     clearSaveMessage,
-    deleteItem,
-    deletingItemIds,
+    deleteMeaning,
+    deletingMeaningKeys,
     getSuggestionState,
     saveMessage,
     saveSuggestion,

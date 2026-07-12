@@ -5,9 +5,12 @@ import {
 } from "@nado/shared/http";
 import { readApiErrorMessage } from "@nado/shared/api-errors";
 import {
+  deleteVocabularyMeaningResponseSchema,
   saveVocabularyResponseSchema,
   VOCABULARY_MAX_API_PAGES,
   vocabularyListResponseSchema,
+  type DeleteVocabularyMeaningRequest,
+  type DeleteVocabularyMeaningResponse,
   type SaveVocabularyRequest,
   type VocabularyItem,
 } from "@nado/shared/vocabulary";
@@ -28,7 +31,7 @@ export type VocabularyListResult =
   | { message: string; status: "error" };
 
 export type DeleteVocabularyResult =
-  | { status: "success" }
+  | { data: DeleteVocabularyMeaningResponse; status: "success" }
   | { message: string; status: "not-found" }
   | { message: string; status: "error" };
 
@@ -40,10 +43,14 @@ const VOCABULARY_ERROR_MESSAGE =
   "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
 const SAVE_VOCABULARY_ERROR_MESSAGE =
   "단어장에 저장하지 못했어요. 잠시 후 다시 시도해 주세요.";
+const DELETE_VOCABULARY_ERROR_MESSAGE =
+  "단어장 뜻을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.";
 const VOCABULARY_TIMEOUT_MESSAGE =
   "단어장 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.";
 const SAVE_VOCABULARY_TIMEOUT_MESSAGE =
   "단어장 저장 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.";
+const DELETE_VOCABULARY_TIMEOUT_MESSAGE =
+  "단어장 삭제 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.";
 
 export async function listVocabulary(
   accessToken: string,
@@ -133,8 +140,9 @@ function createVocabularyListPath(cursor: string | null): string {
     : "/api/vocabulary";
 }
 
-export async function deleteVocabularyItem(
+export async function deleteVocabularyMeaning(
   itemId: string,
+  meaning: DeleteVocabularyMeaningRequest,
   accessToken: string,
   options: VocabularyApiOptions = {},
 ): Promise<DeleteVocabularyResult> {
@@ -145,20 +153,22 @@ export async function deleteVocabularyItem(
   try {
     fetchResult = await fetchWithTimeout(
       resolveMobileApiUrl(
-        `/api/vocabulary/${encodeURIComponent(itemId)}`,
+        `/api/vocabulary/${encodeURIComponent(itemId)}/meanings`,
         options.apiBaseUrl,
         { platform: options.apiPlatform },
       ),
       {
+        body: JSON.stringify(meaning),
         headers: {
           Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
         },
         method: "DELETE",
       },
       {
-        fallbackMessage: VOCABULARY_ERROR_MESSAGE,
+        fallbackMessage: DELETE_VOCABULARY_ERROR_MESSAGE,
         fetcher,
-        timeoutMessage: VOCABULARY_TIMEOUT_MESSAGE,
+        timeoutMessage: DELETE_VOCABULARY_TIMEOUT_MESSAGE,
         timeoutMs: options.timeoutMs,
       },
     );
@@ -167,7 +177,7 @@ export async function deleteVocabularyItem(
       message:
         error instanceof MobileApiConfigurationError
           ? MOBILE_API_CONFIGURATION_ERROR_MESSAGE
-          : VOCABULARY_ERROR_MESSAGE,
+          : DELETE_VOCABULARY_ERROR_MESSAGE,
       status: "error",
     };
   }
@@ -177,28 +187,32 @@ export async function deleteVocabularyItem(
   }
 
   const { response } = fetchResult;
+  const payload = await readJson(response);
 
   if (response.status === 404) {
     return {
-      message: readApiErrorMessage(
-        await readJson(response),
-        VOCABULARY_ERROR_MESSAGE,
-      ),
+      message: readApiErrorMessage(payload, DELETE_VOCABULARY_ERROR_MESSAGE),
       status: "not-found",
     };
   }
 
   if (!response.ok) {
     return {
-      message: readApiErrorMessage(
-        await readJson(response),
-        VOCABULARY_ERROR_MESSAGE,
-      ),
+      message: readApiErrorMessage(payload, DELETE_VOCABULARY_ERROR_MESSAGE),
       status: "error",
     };
   }
 
-  return { status: "success" };
+  const parsed = deleteVocabularyMeaningResponseSchema.safeParse(payload);
+
+  if (!parsed.success) {
+    return {
+      message: DELETE_VOCABULARY_ERROR_MESSAGE,
+      status: "error",
+    };
+  }
+
+  return { data: parsed.data, status: "success" };
 }
 
 export async function saveVocabularyItem(

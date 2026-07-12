@@ -7,10 +7,11 @@ import {
 import {
   addMobileVocabularySavingKey,
   addMobileVocabularyDeletingId,
+  addMobileVocabularyDeletingKey,
   applyDeleteVocabularyError,
   removeMobileVocabularyDeletingId,
+  removeMobileVocabularyDeletingKey,
   removeMobileVocabularySavingKey,
-  shouldRemoveMobileVocabularyItemAfterDelete,
   upsertMobileVocabularyItem,
 } from "./mobileVocabularyState";
 
@@ -193,15 +194,15 @@ describe("mobile vocabulary deletion helpers", () => {
     ]).toEqual(["item-2"]);
   });
 
-  it("removes stale local items when the API reports not-found", () => {
-    expect(
-      shouldRemoveMobileVocabularyItemAfterDelete({ status: "success" }),
-    ).toBe(true);
-    expect(
-      shouldRemoveMobileVocabularyItemAfterDelete({ status: "not-found" }),
-    ).toBe(true);
-    expect(
-      shouldRemoveMobileVocabularyItemAfterDelete({ status: "error" }),
-    ).toBe(false);
+  it("tracks the exact meaning deletion shown in the UI", () => {
+    const deletingKeys = addMobileVocabularyDeletingKey(
+      new Set(["item-1:상태"]),
+      "item-2:지역 주",
+    );
+
+    expect([...deletingKeys]).toEqual(["item-1:상태", "item-2:지역 주"]);
+    expect([
+      ...removeMobileVocabularyDeletingKey(deletingKeys, "item-1:상태"),
+    ]).toEqual(["item-2:지역 주"]);
   });
 });

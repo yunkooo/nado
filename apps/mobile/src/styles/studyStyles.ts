@@ -51,7 +51,7 @@ export const studyStyles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 10,
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     marginTop: "auto",
   },
   itemMeta: {
@@ -62,6 +62,27 @@ export const studyStyles = StyleSheet.create({
   },
   meaningCard: {
     gap: mobileSpacing.xs,
+  },
+  meaningContent: {
+    flex: 1,
+    gap: mobileSpacing.xs,
+    minWidth: 0,
+  },
+  meaningDeleteButton: {
+    alignItems: "center",
+    height: 32,
+    justifyContent: "center",
+    width: 32,
+  },
+  meaningDeleteButtonDisabled: {
+    opacity: 0.45,
+  },
+  meaningDeleteButtonText: {
+    color: mobileColors.inkMuted,
+    fontSize: 24,
+    fontWeight: "400",
+    lineHeight: 28,
+    textAlign: "center",
   },
   meaningNote: {
     color: mobileColors.inkMuted,
@@ -75,6 +96,11 @@ export const studyStyles = StyleSheet.create({
     lineHeight: 20,
   },
   meaningList: {
+    gap: mobileSpacing.sm,
+  },
+  meaningRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
     gap: mobileSpacing.sm,
   },
   pageLayout: {

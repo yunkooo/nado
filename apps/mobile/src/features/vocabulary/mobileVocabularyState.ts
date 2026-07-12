@@ -17,12 +17,6 @@ export function applyDeleteVocabularyError(
   };
 }
 
-export function shouldRemoveMobileVocabularyItemAfterDelete(result: {
-  status: "error" | "not-found" | "success";
-}) {
-  return result.status === "success" || result.status === "not-found";
-}
-
 export function applyLoadVocabularyError(
   currentState: MobileVocabularyState,
   {
@@ -80,6 +74,13 @@ export function addMobileVocabularyDeletingId(
   return new Set([...deletingIds, itemId]);
 }
 
+export function addMobileVocabularyDeletingKey(
+  deletingKeys: ReadonlySet<string>,
+  key: string,
+) {
+  return new Set([...deletingKeys, key]);
+}
+
 export function removeMobileVocabularyDeletingId(
   deletingIds: ReadonlySet<string>,
   itemId: string,
@@ -87,6 +88,15 @@ export function removeMobileVocabularyDeletingId(
   const nextIds = new Set(deletingIds);
   nextIds.delete(itemId);
   return nextIds;
+}
+
+export function removeMobileVocabularyDeletingKey(
+  deletingKeys: ReadonlySet<string>,
+  key: string,
+) {
+  const nextKeys = new Set(deletingKeys);
+  nextKeys.delete(key);
+  return nextKeys;
 }
 
 export function removeMobileVocabularySavingKey(
