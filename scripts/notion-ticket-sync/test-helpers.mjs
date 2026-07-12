@@ -52,6 +52,13 @@ export const prWorkflowSource = readFileSync(
   new URL("../../docs/workflow/pr-workflow.md", import.meta.url),
   "utf8",
 );
+export const prettierIgnoreSource = readFileSync(
+  new URL("../../.prettierignore", import.meta.url),
+  "utf8",
+);
+export const rootPackageJson = JSON.parse(
+  readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+);
 export const workflowReadmeSource = readFileSync(
   new URL("../../docs/workflow/README.md", import.meta.url),
   "utf8",

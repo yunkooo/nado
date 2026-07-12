@@ -11,6 +11,8 @@ import {
   notionTicketSyncWorkflowSource,
   prTemplateSource,
   prWorkflowSource,
+  prettierIgnoreSource,
+  rootPackageJson,
   slackFailureActionSource,
   slackPrNotificationWorkflowSource,
   workflowReadmeSource,
@@ -126,10 +128,38 @@ describe("Notion workflow repository contracts", () => {
     expect(ciResultJob).toContain("actions: read");
   });
 
-  it("keeps repository workflow hardening configured", () => {
+  it("keeps repository workflow hardening and release gates configured", () => {
     expect(ciWorkflowSource).toContain("concurrency:");
     expect(ciWorkflowSource).toContain("cancel-in-progress: true");
     expect(ciWorkflowSource).not.toContain("pull-requests: read");
+    expect(ciWorkflowSource).toContain(
+      "expo prebuild --no-install --platform ios",
+    );
+    expect(ciWorkflowSource).toContain(
+      "git diff --exit-code -- apps/mobile/package.json apps/mobile/ios",
+    );
+    expect(ciWorkflowSource).toContain(
+      "pnpm --filter @nado/mobile verify:ios-pods",
+    );
+    expect(ciWorkflowSource).toContain("expo export --platform all");
+    expect(ciWorkflowSource).toContain("tauri:build --no-bundle --ci");
+    expect(ciWorkflowSource).toContain("pnpm test:db:upgrade");
+    expect(ciWorkflowSource).toContain("pnpm supabase:advisors");
+    expect(rootPackageJson.scripts["test:db:upgrade"]).toBe(
+      "node scripts/verify-supabase-upgrade.mjs",
+    );
+    expect(rootPackageJson.scripts["supabase:advisors"]).toBe(
+      "supabase db advisors --local --type all --level warn --fail-on warn",
+    );
+    expect(rootPackageJson.scripts["test:db"]).toBe(
+      "supabase test db supabase/tests/database_contracts.test.sql --local",
+    );
+    expect(prettierIgnoreSource).not.toContain(".agents/skills/\n");
+    expect(prettierIgnoreSource).toContain(".agents/skills/supabase/\n");
+    expect(prettierIgnoreSource).toContain(
+      ".agents/skills/supabase-postgres-best-practices/\n",
+    );
+    expect(prettierIgnoreSource).not.toContain("docs/superpowers/\n");
 
     for (const workflowSource of [
       ciWorkflowSource,
