@@ -30,7 +30,7 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "prettier": "^3.8.3",
-    "supabase": "^2.105.0",
+    "supabase": "^2.109.1",
     "turbo": "^2.9.16",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
