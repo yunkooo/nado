@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, fn, userEvent, within } from "storybook/test";
 import { AnalysisResult } from "@nado/ui-web";
 import { analysisMock } from "./analysisStoryFixtures";
 
@@ -31,14 +32,26 @@ export const WordPopoverOpen: Story = {
   args: {
     activeVocabularyKey: "framework",
     getVocabularySuggestionState: () => "idle",
-    onSaveVocabularySuggestion: () => undefined,
+    onSaveVocabularySuggestion: fn(),
     result: analysisMock,
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement.ownerDocument.body);
+    const popover = canvas.getByRole("group", {
+      name: "framework 뜻과 저장 액션",
+    });
+    const saveButton = within(popover).getByRole("button", {
+      name: "framework 저장",
+    });
+
+    await expect(saveButton).toBeEnabled();
+    await userEvent.click(saveButton);
+    await expect(args.onSaveVocabularySuggestion).toHaveBeenCalledTimes(1);
   },
 };
 
 export const NarrowTapOpen: Story = {
   args: {
-    activeVocabularyKey: "setup",
     getVocabularySuggestionState: () => "idle",
     onSaveVocabularySuggestion: () => undefined,
     result: analysisMock,
@@ -48,4 +61,19 @@ export const NarrowTapOpen: Story = {
       <AnalysisResult {...args} />
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const setupToken = canvas.getByRole("button", {
+      name: "setup 뜻과 저장 액션 보기",
+    });
+
+    await userEvent.pointer({ keys: "[TouchA]", target: setupToken });
+
+    const documentCanvas = within(canvasElement.ownerDocument.body);
+    await expect(
+      documentCanvas.getByRole("group", {
+        name: "setup 뜻과 저장 액션",
+      }),
+    ).toBeVisible();
+  },
 };

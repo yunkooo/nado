@@ -1,8 +1,10 @@
 import type { AnalysisResultData } from "./analysisTypes";
 
+const firstSourceSentence =
+  "Many developers choose a framework because it promises faster shipping, but the real test appears after the product grows.";
+
 export const analysisMock: AnalysisResultData = {
-  sourceText:
-    "Many developers choose a framework because it promises faster shipping, but the real test appears after the product grows. A simple setup can help a small team move quickly, while unclear rules can make every change harder to review. Before adding tools, the team should understand which problems are frequent, which costs are acceptable, and when a lighter process is enough. This habit keeps the codebase easier to maintain without slowing the product team down as the company changes.",
+  sourceText: `${firstSourceSentence} A simple setup can help a small team move quickly, while unclear rules can make every change harder to review. Before adding tools, the team should understand which problems are frequent, which costs are acceptable, and when a lighter process is enough. This habit keeps the codebase easier to maintain without slowing the product team down as the company changes.`,
   translation: [
     "개발자들은 프레임워크가 더 빠른 출시를 가능하게 해줄 거라고 기대하며 선택하지만, 실제 검증은 제품이 커진 뒤에 시작됩니다.",
     "단순한 구성은 작은 팀이 빠르게 움직이게 도와주지만, 규칙이 흐릿하면 모든 변경을 검토하는 일이 더 어려워질 수 있습니다.",
@@ -331,4 +333,14 @@ export const analysisMock: AnalysisResultData = {
       type: "word",
     },
   ],
+};
+
+export const analysisSurfaceMock: AnalysisResultData = {
+  ...analysisMock,
+  sourceText: firstSourceSentence,
+  sentences: analysisMock.sentences.slice(0, 1),
+  translation: analysisMock.translation.slice(0, 1),
+  translationNotes: analysisMock.translationNotes.slice(0, 2),
+  vocabularyItems: analysisMock.vocabularyItems.slice(0, 2),
+  vocabularySuggestions: analysisMock.vocabularySuggestions.slice(0, 2),
 };

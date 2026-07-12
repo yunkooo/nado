@@ -13,7 +13,11 @@ import {
   createChipStyle,
 } from "./styles";
 
-export interface ChipProps extends Omit<PressableProps, "children" | "style"> {
+export interface ChipProps extends Omit<
+  PressableProps,
+  "children" | "disabled" | "style"
+> {
+  disabled?: boolean;
   label: string;
   labelStyle?: StyleProp<TextStyle>;
   prefix?: string;

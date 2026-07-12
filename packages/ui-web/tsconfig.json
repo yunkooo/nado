@@ -11,5 +11,10 @@
     "types": ["react", "react-dom"]
   },
   "include": ["src"],
-  "exclude": ["src/**/*.stories.tsx", "src/**/*StoryFixtures.ts"]
+  "exclude": [
+    "src/**/*.stories.tsx",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*StoryFixtures.ts"
+  ]
 }

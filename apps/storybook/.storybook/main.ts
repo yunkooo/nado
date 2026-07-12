@@ -1,10 +1,17 @@
 import type { StorybookConfig } from "@storybook/react-vite";
+import react from "@vitejs/plugin-react";
 
 const toPathname = (path: string) => new URL(path, import.meta.url).pathname;
-const STORYBOOK_CHUNK_SIZE_WARNING_LIMIT_KB = 1_200;
+// Storybook의 preview runtime, docs, a11y 도구는 제품 코드와 다른 번들이다.
+// 실제 예산은 scripts/verify-bundle-budget.mjs에서 framework/story로 나눠 검증한다.
+const STORYBOOK_FRAMEWORK_CHUNK_WARNING_LIMIT_KB = 1_200;
 
 const config: StorybookConfig = {
-  addons: ["@storybook/addon-docs"],
+  addons: [
+    "@storybook/addon-docs",
+    "@storybook/addon-a11y",
+    "@storybook/addon-vitest",
+  ],
   framework: {
     name: "@storybook/react-vite",
     options: {},
@@ -28,8 +35,10 @@ const config: StorybookConfig = {
       ...viteConfig,
       build: {
         ...viteConfig.build,
-        chunkSizeWarningLimit: STORYBOOK_CHUNK_SIZE_WARNING_LIMIT_KB,
+        chunkSizeWarningLimit: STORYBOOK_FRAMEWORK_CHUNK_WARNING_LIMIT_KB,
+        manifest: true,
       },
+      plugins: [...(viteConfig.plugins ?? []), react()],
       resolve: {
         ...viteConfig.resolve,
         alias: [
@@ -62,6 +71,30 @@ const config: StorybookConfig = {
             find: /^@nado\/tokens\/react-native$/,
             replacement: toPathname(
               "../../../packages/tokens/src/reactNative.ts",
+            ),
+          },
+          {
+            find: /^@nado\/shared\/analysis-input$/,
+            replacement: toPathname(
+              "../../../packages/shared/src/analysisInput.ts",
+            ),
+          },
+          {
+            find: /^@nado\/shared\/analysis-presentation$/,
+            replacement: toPathname(
+              "../../../packages/shared/src/analysisPresentation.ts",
+            ),
+          },
+          {
+            find: /^@nado\/shared\/review$/,
+            replacement: toPathname(
+              "../../../packages/shared/src/reviewSession.ts",
+            ),
+          },
+          {
+            find: /^@nado\/shared\/vocabulary$/,
+            replacement: toPathname(
+              "../../../packages/shared/src/vocabularyContracts.ts",
             ),
           },
           {

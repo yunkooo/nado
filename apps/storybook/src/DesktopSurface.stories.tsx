@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { ReactNode } from "react";
-import { Button, VocabularyListItem } from "@nado/ui";
+import { useState, type ReactNode } from "react";
+import { expect, userEvent, within } from "storybook/test";
+import { Button, VocabularyItemCard } from "@nado/ui";
 import "../../desktop/src/styles/styles.css";
 
 type DesktopSurfaceKey = "analysis" | "review" | "vocabulary";
@@ -33,9 +34,11 @@ function DesktopAuthMock() {
 function DesktopShellMock({
   activeItem,
   children,
-  isSidebarOpen = false,
+  isSidebarOpen: initialSidebarOpen = false,
   workspaceLabel,
 }: DesktopShellMockProps) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(initialSidebarOpen);
+
   return (
     <main className="desktop-shell">
       {!isSidebarOpen ? (
@@ -44,6 +47,7 @@ function DesktopShellMock({
           aria-expanded="false"
           aria-label="사이드바 열기"
           className="desktop-mobile-menu-button"
+          onClick={() => setIsSidebarOpen(true)}
           type="button"
         >
           <span className="desktop-mobile-menu-button__bar" />
@@ -55,6 +59,7 @@ function DesktopShellMock({
         <button
           aria-label="사이드바 배경 닫기"
           className="desktop-sidebar-scrim"
+          onClick={() => setIsSidebarOpen(false)}
           type="button"
         />
       ) : null}
@@ -77,6 +82,7 @@ function DesktopShellMock({
             <button
               aria-label="사이드바 닫기"
               className="desktop-sidebar-close"
+              onClick={() => setIsSidebarOpen(false)}
               type="button"
             >
               <span className="desktop-sidebar-close__bar" />
@@ -97,6 +103,7 @@ function DesktopShellMock({
                     .filter(Boolean)
                     .join(" ")}
                   key={item.key}
+                  onClick={() => setIsSidebarOpen(false)}
                   type="button"
                 >
                   {item.label}
@@ -168,17 +175,39 @@ function DesktopVocabularySurface() {
               </div>
             </div>
             <div className="nado-vocabulary-list">
-              <VocabularyListItem
-                context="제품을 사용자에게 배포하거나 출시하는 일을 말합니다."
-                meaning="출시/배포"
-                meta="명사"
-                term="shipping"
+              <VocabularyItemCard
+                isDeleting={false}
+                item={{
+                  createdAt: "2026-07-10T00:00:00.000Z",
+                  id: "storybook-shipping",
+                  meanings: [
+                    {
+                      meaning: "출시/배포",
+                      note: "제품을 사용자에게 배포하거나 출시하는 일을 말합니다.",
+                    },
+                  ],
+                  term: "shipping",
+                  type: "word",
+                  updatedAt: "2026-07-11T00:00:00.000Z",
+                }}
+                onDelete={() => undefined}
               />
-              <VocabularyListItem
-                context="앱을 만들 때 기반이 되는 개발 도구나 구조를 뜻합니다."
-                meaning="프레임워크"
-                meta="명사"
-                term="framework"
+              <VocabularyItemCard
+                isDeleting={false}
+                item={{
+                  createdAt: "2026-07-09T00:00:00.000Z",
+                  id: "storybook-framework",
+                  meanings: [
+                    {
+                      meaning: "프레임워크",
+                      note: "앱을 만들 때 기반이 되는 개발 도구나 구조를 뜻합니다.",
+                    },
+                  ],
+                  term: "framework",
+                  type: "word",
+                  updatedAt: "2026-07-10T00:00:00.000Z",
+                }}
+                onDelete={() => undefined}
               />
             </div>
             <nav
@@ -286,6 +315,18 @@ export const SidebarOpen: Story = {
     },
   },
   render: () => <DesktopReviewSurface isSidebarOpen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const closeButton = canvas.getByRole("button", {
+      name: "사이드바 닫기",
+    });
+
+    await expect(closeButton).toBeVisible();
+    await userEvent.click(closeButton);
+    await expect(
+      canvas.getByRole("button", { name: "사이드바 열기" }),
+    ).toBeVisible();
+  },
 };
 
 export const VocabularySurface: Story = {

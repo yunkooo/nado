@@ -1,13 +1,19 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import {
-  VocabularyEmptyState,
-  VocabularyErrorState,
-  VocabularyListItem,
-} from "@nado/ui-web";
-import { analysisMock } from "./analysisStoryFixtures";
+import { VocabularyItemCard } from "@nado/ui-web";
 
-const firstItem =
-  analysisMock.vocabularyItems[2] ?? analysisMock.vocabularyItems[0];
+const item = {
+  createdAt: "2026-07-10T00:00:00.000Z",
+  id: "storybook-vocabulary-1",
+  meanings: [
+    {
+      meaning: "출시/배포",
+      note: "제품을 사용자에게 전달하거나 공개하는 일을 말합니다.",
+    },
+  ],
+  term: "shipping",
+  type: "word" as const,
+  updatedAt: "2026-07-11T00:00:00.000Z",
+};
 
 const meta = {
   title: "Vocabulary/List",
@@ -19,36 +25,19 @@ type Story = StoryObj<typeof meta>;
 export const Item: Story = {
   render: () => (
     <div className="storybook-vocabulary-surface">
-      <VocabularyListItem
-        context={
-          firstItem?.contextMeaning ?? "문장 안에서 쓰인 뜻을 보여줍니다."
-        }
-        meaning={firstItem?.meaning ?? "뜻"}
-        meta={firstItem?.partOfSpeech ?? "표현"}
-        term={firstItem?.term ?? "term"}
+      <VocabularyItemCard
+        isDeleting={false}
+        item={item}
+        onDelete={() => undefined}
       />
     </div>
   ),
 };
 
-export const Empty: Story = {
+export const Deleting: Story = {
   render: () => (
     <div className="storybook-vocabulary-surface">
-      <VocabularyEmptyState
-        description="분석 결과에서 저장한 단어와 표현이 여기에 쌓입니다."
-        title="저장한 단어가 없습니다"
-      />
-    </div>
-  ),
-};
-
-export const Error: Story = {
-  render: () => (
-    <div className="storybook-vocabulary-surface">
-      <VocabularyErrorState
-        description="네트워크 상태를 확인한 뒤 다시 시도하세요."
-        title="단어장을 불러오지 못했습니다"
-      />
+      <VocabularyItemCard isDeleting item={item} onDelete={() => undefined} />
     </div>
   ),
 };

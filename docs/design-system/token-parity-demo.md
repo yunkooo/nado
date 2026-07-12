@@ -49,6 +49,8 @@ EXPO_PUBLIC_NADO_MOBILE_DESIGN_DEMO=1 pnpm --filter @nado/mobile dev
 
 token parity 관련 변경은 최소한 아래 명령을 확인한다.
 
+Storybook의 source, browser, typecheck, build 명령은 [Storybook 운영 기준](../../apps/storybook/README.md#검증-명령)을 단일 원본으로 따른다.
+
 ```bash
 pnpm --filter @nado/tokens test
 pnpm --filter @nado/ui test

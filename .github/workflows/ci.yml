@@ -251,6 +251,9 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm e2e:install
 
+      - name: Run Storybook browser tests
+        run: pnpm --filter @nado/storybook test:stories
+
       - name: Run e2e smoke tests
         run: pnpm e2e
 
