@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthState } from "../auth/authState";
-import { useVocabularyState } from "./vocabularyState";
+import { useVocabularyStateForAuth } from "./vocabularyState";
 import { VocabularyList } from "./VocabularyList";
 import { VocabularyPanel, VocabularySummary } from "./VocabularyPanels";
 import { useVocabularyDeleteAction } from "./useVocabularyDeleteAction";
@@ -11,8 +11,8 @@ type VocabularyStatus = "loading" | "ready";
 
 export function VocabularyFlow() {
   const authState = useAuthState();
-  const vocabularyState = useVocabularyState();
-  const { deleteItem, deleteMessage, deletingItemId } =
+  const vocabularyState = useVocabularyStateForAuth(authState);
+  const { deleteItem, deleteMessage, deletingItemIds } =
     useVocabularyDeleteAction(authState);
   const items = vocabularyState.items;
   const status: VocabularyStatus =
@@ -47,7 +47,7 @@ export function VocabularyFlow() {
         {panelState === "list" ? (
           <VocabularyList
             deleteMessage={deleteMessage}
-            deletingItemId={deletingItemId}
+            deletingItemIds={deletingItemIds}
             isLoading={isLoading}
             items={items}
             onDeleteItem={deleteItem}

@@ -8,30 +8,23 @@ import {
   countAnalysisTextCharacters,
 } from "@nado/shared/analysis-input";
 import { AnalysisResult, InputComposer, InputSample } from "@nado/ui";
+import {
+  AppShellView,
+  type AppShellLinkProps,
+  type AppShellNavigationKey,
+} from "../../web/src/components/AppShellView";
 import { analysisSurfaceMock } from "../../../packages/ui-web/src/analysisStoryFixtures";
 import "../../web/src/app/styles/base.css";
 import "../../web/src/app/styles/shell.css";
 import "../../web/src/app/styles/analysis.css";
 import "../../web/src/app/styles/study.css";
 
-type WebSurfaceKey = "analysis" | "review" | "vocabulary";
-
-interface WebShellMockProps {
-  activeItem: WebSurfaceKey;
+interface WebShellStoryProps {
+  activeItem: AppShellNavigationKey;
   children: ReactNode;
-  isSidebarOpen?: boolean;
+  initialSidebarOpen?: boolean;
   workspaceLabel: string;
 }
-
-const webNavigationItems: {
-  href: string;
-  key: WebSurfaceKey;
-  label: string;
-}[] = [
-  { href: "/", key: "analysis", label: "분석" },
-  { href: "/vocabulary", key: "vocabulary", label: "단어장" },
-  { href: "/review", key: "review", label: "복습" },
-];
 
 function WebAuthMock() {
   return (
@@ -42,98 +35,38 @@ function WebAuthMock() {
   );
 }
 
-function WebShellMock({
+function StorybookLink({ onClick, ...props }: AppShellLinkProps) {
+  return (
+    <a
+      {...props}
+      onClick={(event) => {
+        event.preventDefault();
+        onClick();
+      }}
+    />
+  );
+}
+
+function WebShellStory({
   activeItem,
   children,
-  isSidebarOpen: initialSidebarOpen = false,
+  initialSidebarOpen = false,
   workspaceLabel,
-}: WebShellMockProps) {
+}: WebShellStoryProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(initialSidebarOpen);
 
   return (
-    <main className="nado-app-shell">
-      {!isSidebarOpen ? (
-        <button
-          aria-controls="nado-sidebar"
-          aria-expanded="false"
-          aria-label="사이드바 열기"
-          className="nado-mobile-menu-button"
-          onClick={() => setIsSidebarOpen(true)}
-          type="button"
-        >
-          <span className="nado-mobile-menu-button__bar" />
-          <span className="nado-mobile-menu-button__bar" />
-          <span className="nado-mobile-menu-button__bar" />
-        </button>
-      ) : null}
-      {isSidebarOpen ? (
-        <button
-          aria-label="사이드바 배경 닫기"
-          className="nado-sidebar-scrim"
-          onClick={() => setIsSidebarOpen(false)}
-          type="button"
-        />
-      ) : null}
-      <aside
-        aria-label="주요 화면"
-        className={["nado-sidebar", isSidebarOpen ? "nado-sidebar--open" : null]
-          .filter(Boolean)
-          .join(" ")}
-        id="nado-sidebar"
-      >
-        <div className="nado-sidebar__main">
-          <header className="nado-sidebar__header">
-            <div className="nado-brand">
-              <span className="nado-brand__mark" aria-hidden="true">
-                n
-              </span>
-              <strong className="nado-brand__name">nado</strong>
-            </div>
-            <button
-              aria-label="사이드바 닫기"
-              className="nado-sidebar-close"
-              onClick={() => setIsSidebarOpen(false)}
-              type="button"
-            >
-              <span className="nado-sidebar-close__bar" />
-              <span className="nado-sidebar-close__bar" />
-            </button>
-          </header>
-          <nav className="nado-nav" aria-label="주요 메뉴">
-            {webNavigationItems.map((item) => {
-              const isActive = item.key === activeItem;
-
-              return (
-                <a
-                  aria-current={isActive ? "page" : undefined}
-                  className={[
-                    "nado-nav__item",
-                    isActive ? "nado-nav__item--active" : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  href={item.href}
-                  key={item.key}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    setIsSidebarOpen(false);
-                  }}
-                >
-                  {item.label}
-                </a>
-              );
-            })}
-          </nav>
-        </div>
-        <footer className="nado-sidebar__footer">
-          <WebAuthMock />
-        </footer>
-      </aside>
-
-      <section className="nado-workspace" aria-label={workspaceLabel}>
-        {children}
-      </section>
-    </main>
+    <AppShellView
+      activeItem={activeItem}
+      authControls={<WebAuthMock />}
+      isSidebarOpen={isSidebarOpen}
+      linkComponent={StorybookLink}
+      onCloseSidebar={() => setIsSidebarOpen(false)}
+      onOpenSidebar={() => setIsSidebarOpen(true)}
+      workspaceLabel={workspaceLabel}
+    >
+      {children}
+    </AppShellView>
   );
 }
 
@@ -143,9 +76,9 @@ function WebAnalysisSurface({
   isSidebarOpen?: boolean;
 }) {
   return (
-    <WebShellMock
+    <WebShellStory
       activeItem="analysis"
-      isSidebarOpen={isSidebarOpen}
+      initialSidebarOpen={isSidebarOpen}
       workspaceLabel="분석 화면"
     >
       <section className="nado-analysis-workspace nado-analysis-workspace--has-result">
@@ -179,13 +112,13 @@ function WebAnalysisSurface({
           value=""
         />
       </footer>
-    </WebShellMock>
+    </WebShellStory>
   );
 }
 
 function WebVocabularyShell() {
   return (
-    <WebShellMock activeItem="vocabulary" workspaceLabel="단어장 화면">
+    <WebShellStory activeItem="vocabulary" workspaceLabel="단어장 화면">
       <section className="nado-content-workspace">
         <div className="nado-page">
           <header className="nado-page-header">
@@ -200,7 +133,7 @@ function WebVocabularyShell() {
           </section>
         </div>
       </section>
-    </WebShellMock>
+    </WebShellStory>
   );
 }
 

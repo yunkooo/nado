@@ -1,4 +1,4 @@
-import type { VocabularyItem } from "@nado/shared";
+import type { VocabularyItem } from "@nado/shared/vocabulary";
 
 export const mockVocabularyItems: VocabularyItem[] = [
   {

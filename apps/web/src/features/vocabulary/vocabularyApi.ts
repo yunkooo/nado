@@ -1,10 +1,11 @@
 import {
-  readApiErrorMessage,
   saveVocabularyResponseSchema,
+  VOCABULARY_MAX_API_PAGES,
   vocabularyListResponseSchema,
   type SaveVocabularyRequest,
   type VocabularyItem,
-} from "@nado/shared";
+} from "@nado/shared/vocabulary";
+import { readApiErrorMessage } from "@nado/shared/api-errors";
 import {
   fetchWithTimeout,
   readJson,
@@ -39,47 +40,63 @@ export async function listVocabulary(
   accessToken: string,
   options: VocabularyApiOptions = {},
 ): Promise<VocabularyListResult> {
-  const fetchResult = await fetchWithTimeout(
-    "/api/vocabulary",
-    {
-      headers: createAuthHeaders(accessToken),
-      method: "GET",
-    },
-    {
-      fallbackMessage: VOCABULARY_ERROR_MESSAGE,
-      fetcher: options.fetcher,
-      timeoutMessage: VOCABULARY_TIMEOUT_MESSAGE,
-      timeoutMs: options.timeoutMs,
-    },
-  );
+  const items: VocabularyItem[] = [];
+  const seenCursors = new Set<string>();
+  let cursor: string | null = null;
 
-  if (fetchResult.status === "error") {
-    return fetchResult;
+  for (let page = 0; page < VOCABULARY_MAX_API_PAGES; page += 1) {
+    const fetchResult = await fetchWithTimeout(
+      createVocabularyListPath(cursor),
+      {
+        headers: createAuthHeaders(accessToken),
+        method: "GET",
+      },
+      {
+        fallbackMessage: VOCABULARY_ERROR_MESSAGE,
+        fetcher: options.fetcher,
+        timeoutMessage: VOCABULARY_TIMEOUT_MESSAGE,
+        timeoutMs: options.timeoutMs,
+      },
+    );
+
+    if (fetchResult.status === "error") {
+      return fetchResult;
+    }
+
+    const { response } = fetchResult;
+    const payload = await readJson(response);
+
+    if (!response.ok) {
+      return {
+        message: readApiErrorMessage(payload, VOCABULARY_ERROR_MESSAGE),
+        status: "error",
+      };
+    }
+
+    const parsed = vocabularyListResponseSchema.safeParse(payload);
+
+    if (!parsed.success) {
+      return {
+        message: VOCABULARY_ERROR_MESSAGE,
+        status: "error",
+      };
+    }
+
+    items.push(...parsed.data.items);
+
+    if (!parsed.data.nextCursor) {
+      return { data: items, status: "success" };
+    }
+
+    if (seenCursors.has(parsed.data.nextCursor)) {
+      return { message: VOCABULARY_ERROR_MESSAGE, status: "error" };
+    }
+
+    seenCursors.add(parsed.data.nextCursor);
+    cursor = parsed.data.nextCursor;
   }
 
-  const { response } = fetchResult;
-  const payload = await readJson(response);
-
-  if (!response.ok) {
-    return {
-      message: readApiErrorMessage(payload, VOCABULARY_ERROR_MESSAGE),
-      status: "error",
-    };
-  }
-
-  const parsed = vocabularyListResponseSchema.safeParse(payload);
-
-  if (!parsed.success) {
-    return {
-      message: VOCABULARY_ERROR_MESSAGE,
-      status: "error",
-    };
-  }
-
-  return {
-    data: parsed.data.items,
-    status: "success",
-  };
+  return { message: VOCABULARY_ERROR_MESSAGE, status: "error" };
 }
 
 export async function deleteVocabularyItem(
@@ -186,4 +203,10 @@ function createAuthHeaders(accessToken: string) {
   return {
     Authorization: `Bearer ${accessToken}`,
   };
+}
+
+function createVocabularyListPath(cursor: string | null): string {
+  return cursor
+    ? `/api/vocabulary?cursor=${encodeURIComponent(cursor)}`
+    : "/api/vocabulary";
 }

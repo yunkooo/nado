@@ -1,7 +1,7 @@
 "use client";
 
+import { VocabularyRefreshButton } from "@nado/ui";
 import { useAuthState } from "../auth/authState";
-import { VocabularyRefreshButton } from "./VocabularyRefreshButton";
 import { useVocabularyManualRefresh } from "./useVocabularyManualRefresh";
 
 export function VocabularyRefreshControl() {

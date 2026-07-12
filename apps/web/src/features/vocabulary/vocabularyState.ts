@@ -1,170 +1,40 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import {
-  createVocabularyRealtimeRefreshScheduler,
-  createVocabularyRealtimeTopic,
-  getDistinctVocabularyNote,
-  normalizeVocabularyTerm,
   shouldRefreshVocabularyFromLifecycle,
   VOCABULARY_LIFECYCLE_REFRESH_STALE_MS,
-  type VocabularyRealtimeRefreshScheduler,
-  type VocabularyItem,
-} from "@nado/shared";
-import type { AuthStateSnapshot } from "../auth/authState";
+} from "@nado/shared/vocabulary-realtime";
 import {
-  getCurrentAccessToken,
-  getSupabaseBrowserClient,
-} from "../auth/authClient";
+  createVocabularyStateStore,
+  initialVocabularyStateSnapshot,
+  type VocabularyStateSnapshot,
+  type VocabularyStateStore,
+} from "@nado/shared/vocabulary-state";
+import type { AuthStateSnapshot } from "../auth/authState";
+import { getCurrentAccessToken } from "../auth/authClient";
 import {
   listVocabulary,
   VOCABULARY_ERROR_MESSAGE,
   type VocabularyListResult,
 } from "./vocabularyApi";
+import { createVocabularyRealtimeSync } from "./vocabularyRealtime";
 
-export type VocabularyStateStatus = "idle" | "loading" | "ready" | "error";
+export { createVocabularyRealtimeSync } from "./vocabularyRealtime";
+export type {
+  VocabularyRealtimeClient,
+  VocabularyRealtimeRefreshSchedulerFactory,
+} from "./vocabularyRealtime";
+export { createVocabularyStateStore };
+export type { VocabularyStateSnapshot };
+export type { VocabularyStateStatus } from "@nado/shared/vocabulary-state";
+
 export type VocabularyRefreshResult = "failed" | "ignored" | "refreshed";
-
-export type VocabularyStateSnapshot = {
-  accessToken: string | null;
-  items: VocabularyItem[];
-  message: string | null;
-  status: VocabularyStateStatus;
-};
-
-export type VocabularySuggestionMatch = {
-  meaning: string;
-  note?: string;
-  term: string;
-  type: VocabularyItem["type"];
-};
-
-type VocabularyStateStore = ReturnType<typeof createVocabularyStateStore>;
 type AccessTokenProvider = () => Promise<string | null>;
 type VocabularyListLoader = (
   accessToken: string,
 ) => Promise<VocabularyListResult>;
 type TimestampProvider = () => number;
-export type VocabularyRealtimeChannel = {
-  on(
-    type: "broadcast",
-    filter: { event: VocabularyRealtimeEvent },
-    callback: () => void,
-  ): VocabularyRealtimeChannel;
-  subscribe(): VocabularyRealtimeChannel;
-};
-export type VocabularyRealtimeClient = {
-  channel(
-    topic: string,
-    options: { config: { private: true } },
-  ): VocabularyRealtimeChannel;
-  realtime: {
-    setAuth(accessToken?: string | null): Promise<void>;
-  };
-  removeChannel(channel: VocabularyRealtimeChannel): Promise<unknown>;
-};
-export type VocabularyRealtimeRefreshSchedulerFactory = (
-  refresh: () => Promise<void> | void,
-) => VocabularyRealtimeRefreshScheduler;
-
-type VocabularyRealtimeEvent = "DELETE" | "INSERT" | "UPDATE";
-type VocabularyRealtimeClientProvider = () => VocabularyRealtimeClient | null;
-type VocabularyRealtimeRefresher = (
-  authState: AuthStateSnapshot,
-) => Promise<unknown> | unknown;
-
-const VOCABULARY_REALTIME_EVENTS: VocabularyRealtimeEvent[] = [
-  "INSERT",
-  "UPDATE",
-  "DELETE",
-];
-
-const initialSnapshot: VocabularyStateSnapshot = {
-  accessToken: null,
-  items: [],
-  message: null,
-  status: "idle",
-};
-
-export function createVocabularyStateStore() {
-  const listeners = new Set<() => void>();
-  let snapshot = initialSnapshot;
-
-  const notify = () => {
-    for (const listener of listeners) {
-      listener();
-    }
-  };
-
-  const setSnapshot = (nextSnapshot: VocabularyStateSnapshot) => {
-    snapshot = nextSnapshot;
-    notify();
-  };
-
-  return {
-    getSnapshot() {
-      return snapshot;
-    },
-
-    reset() {
-      setSnapshot(initialSnapshot);
-    },
-
-    removeItem(itemId: string) {
-      setSnapshot({
-        ...snapshot,
-        items: snapshot.items.filter((item) => item.id !== itemId),
-      });
-    },
-
-    setError(accessToken: string, message: string) {
-      setSnapshot({
-        accessToken,
-        items: [],
-        message,
-        status: "error",
-      });
-    },
-
-    setLoading(accessToken: string) {
-      setSnapshot({
-        accessToken,
-        items: snapshot.accessToken === accessToken ? snapshot.items : [],
-        message: null,
-        status: "loading",
-      });
-    },
-
-    setReady(accessToken: string, items: VocabularyItem[]) {
-      setSnapshot({
-        accessToken,
-        items,
-        message: null,
-        status: "ready",
-      });
-    },
-
-    subscribe(listener: () => void) {
-      listeners.add(listener);
-
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-
-    upsertItem(item: VocabularyItem) {
-      const nextItems = [
-        item,
-        ...snapshot.items.filter((currentItem) => currentItem.id !== item.id),
-      ];
-
-      setSnapshot({
-        ...snapshot,
-        items: nextItems,
-      });
-    },
-  };
-}
 
 export const vocabularyStateStore = createVocabularyStateStore();
 
@@ -174,6 +44,41 @@ export function useVocabularyState(): VocabularyStateSnapshot {
     vocabularyStateStore.getSnapshot,
     vocabularyStateStore.getSnapshot,
   );
+}
+
+export function getVocabularyStateForAuth(
+  vocabularyState: VocabularyStateSnapshot,
+  authState: AuthStateSnapshot,
+): VocabularyStateSnapshot {
+  if (authState.status === "loading") {
+    return {
+      accessToken: null,
+      items: [],
+      message: null,
+      status: "loading",
+    };
+  }
+
+  if (authState.status !== "authenticated" || !authState.accessToken) {
+    return initialVocabularyStateSnapshot;
+  }
+
+  if (vocabularyState.accessToken === authState.accessToken) {
+    return vocabularyState;
+  }
+
+  return {
+    accessToken: authState.accessToken,
+    items: [],
+    message: null,
+    status: "loading",
+  };
+}
+
+export function useVocabularyStateForAuth(
+  authState: AuthStateSnapshot,
+): VocabularyStateSnapshot {
+  return getVocabularyStateForAuth(useVocabularyState(), authState);
 }
 
 export function createVocabularyAuthSync({
@@ -191,6 +96,7 @@ export function createVocabularyAuthSync({
 } = {}) {
   let requestSequence = 0;
   let activeLoadPromise: Promise<VocabularyRefreshResult> | null = null;
+  let activeLoadAccessToken: string | null = null;
   let pendingForcedRefreshAccessToken: string | null = null;
   const loadedAtByAccessToken = new Map<string, number>();
 
@@ -269,10 +175,12 @@ export function createVocabularyAuthSync({
       loadVocabularyForSession(accessToken, options).finally(() => {
         if (activeLoadPromise === loadPromise) {
           activeLoadPromise = null;
+          activeLoadAccessToken = null;
         }
       });
 
     activeLoadPromise = loadPromise;
+    activeLoadAccessToken = accessToken;
     return loadPromise;
   }
 
@@ -309,15 +217,12 @@ export function createVocabularyAuthSync({
 
     const vocabularyState = store.getSnapshot();
 
-    if (
-      vocabularyState.accessToken === authState.accessToken &&
-      vocabularyState.status === "loading"
-    ) {
+    if (activeLoadPromise && activeLoadAccessToken === authState.accessToken) {
       if (force) {
         queuePendingForcedRefresh(authState.accessToken);
       }
 
-      return activeLoadPromise ?? undefined;
+      return activeLoadPromise;
     }
 
     if (
@@ -377,7 +282,9 @@ export function createVocabularyAuthSync({
 }
 
 const vocabularyAuthSync = createVocabularyAuthSync();
-const vocabularyRealtimeSync = createVocabularyRealtimeSync();
+const vocabularyRealtimeSync = createVocabularyRealtimeSync({
+  refresh: (authState) => vocabularyAuthSync.refreshNow(authState),
+});
 
 async function readCurrentAccessToken(
   getAccessToken: AccessTokenProvider,
@@ -393,7 +300,7 @@ async function readCurrentAccessToken(
 export function useSyncVocabularyForAuth(authState: AuthStateSnapshot) {
   useEffect(() => {
     vocabularyAuthSync.sync(authState);
-  }, [authState.accessToken, authState.status]);
+  }, [authState]);
 }
 
 export function useRefreshVocabularyForActiveStudySurface(
@@ -401,21 +308,13 @@ export function useRefreshVocabularyForActiveStudySurface(
   isStudySurfaceActive: boolean,
   refreshKey: unknown = isStudySurfaceActive,
 ) {
-  const latestAuthStateRef = useRef(authState);
-  latestAuthStateRef.current = authState;
-
   useEffect(() => {
     if (!isStudySurfaceActive) {
       return;
     }
 
     vocabularyAuthSync.refresh(authState);
-  }, [
-    authState.accessToken,
-    authState.status,
-    isStudySurfaceActive,
-    refreshKey,
-  ]);
+  }, [authState, isStudySurfaceActive, refreshKey]);
 
   useEffect(() => {
     if (!isStudySurfaceActive) {
@@ -423,7 +322,7 @@ export function useRefreshVocabularyForActiveStudySurface(
     }
 
     const refreshVocabulary = () => {
-      vocabularyAuthSync.refresh(latestAuthStateRef.current);
+      vocabularyAuthSync.refresh(authState);
     };
     const refreshVisibleVocabulary = () => {
       if (document.visibilityState === "visible") {
@@ -441,7 +340,7 @@ export function useRefreshVocabularyForActiveStudySurface(
         refreshVisibleVocabulary,
       );
     };
-  }, [isStudySurfaceActive]);
+  }, [authState, isStudySurfaceActive]);
 }
 
 export type VocabularyRefreshOptions = {
@@ -457,135 +356,6 @@ export function refreshVocabularyForAuth(
     : vocabularyAuthSync.refresh(authState);
 }
 
-export function createVocabularyRealtimeSync({
-  createRefreshScheduler = (refresh) =>
-    createVocabularyRealtimeRefreshScheduler({ refresh }),
-  getClient = () =>
-    getSupabaseBrowserClient() as VocabularyRealtimeClient | null,
-  refresh = (authState) => vocabularyAuthSync.refreshNow(authState),
-}: {
-  createRefreshScheduler?: VocabularyRealtimeRefreshSchedulerFactory;
-  getClient?: VocabularyRealtimeClientProvider;
-  refresh?: VocabularyRealtimeRefresher;
-} = {}) {
-  let activeAccessToken: string | null = null;
-  let activeChannel: VocabularyRealtimeChannel | null = null;
-  let activeClient: VocabularyRealtimeClient | null = null;
-  let activeScheduler: VocabularyRealtimeRefreshScheduler | null = null;
-  let activeTopic: string | null = null;
-  let channelRemovalPromise: Promise<unknown> = Promise.resolve();
-  let subscriptionSequence = 0;
-
-  const removeActiveChannel = () => {
-    activeScheduler?.cancel();
-
-    const channel = activeChannel;
-    const client = activeClient;
-
-    activeAccessToken = null;
-    activeChannel = null;
-    activeClient = null;
-    activeScheduler = null;
-    activeTopic = null;
-
-    if (channel && client) {
-      channelRemovalPromise = client
-        .removeChannel(channel)
-        .catch(() => undefined);
-    }
-
-    return channelRemovalPromise;
-  };
-
-  const cleanup = () => {
-    subscriptionSequence += 1;
-    return removeActiveChannel();
-  };
-
-  return {
-    cleanup,
-
-    sync(authState: AuthStateSnapshot) {
-      const topic = createVocabularyRealtimeTopic(authState.session?.user.id);
-
-      if (
-        authState.status !== "authenticated" ||
-        !authState.accessToken ||
-        !topic
-      ) {
-        cleanup();
-        return;
-      }
-
-      if (
-        activeTopic === topic &&
-        activeAccessToken === authState.accessToken &&
-        activeChannel
-      ) {
-        return;
-      }
-
-      const channelRemoval = cleanup();
-
-      const client = getClient();
-
-      if (!client) {
-        return;
-      }
-
-      subscriptionSequence += 1;
-      const requestId = subscriptionSequence;
-      const scheduler = createRefreshScheduler(() =>
-        Promise.resolve(refresh(authState)).then(() => undefined),
-      );
-
-      void channelRemoval
-        .then(async () => {
-          if (requestId !== subscriptionSequence) {
-            scheduler.cancel();
-            return;
-          }
-
-          await client.realtime.setAuth(authState.accessToken);
-
-          if (requestId !== subscriptionSequence) {
-            scheduler.cancel();
-            return;
-          }
-
-          const channel = client.channel(topic, {
-            config: { private: true },
-          });
-          const isCurrentSubscription = () =>
-            requestId === subscriptionSequence &&
-            activeAccessToken === authState.accessToken &&
-            activeChannel === channel &&
-            activeScheduler === scheduler &&
-            activeTopic === topic;
-
-          for (const event of VOCABULARY_REALTIME_EVENTS) {
-            channel.on("broadcast", { event }, () => {
-              if (isCurrentSubscription()) {
-                scheduler.schedule();
-              }
-            });
-          }
-
-          activeAccessToken = authState.accessToken;
-          activeChannel = channel;
-          activeClient = client;
-          activeScheduler = scheduler;
-          activeTopic = topic;
-
-          channel.subscribe();
-        })
-        .catch(() => {
-          scheduler.cancel();
-        });
-    },
-  };
-}
-
 export function useSyncVocabularyRealtimeForAuth(authState: AuthStateSnapshot) {
   useEffect(() => {
     vocabularyRealtimeSync.sync(authState);
@@ -593,7 +363,7 @@ export function useSyncVocabularyRealtimeForAuth(authState: AuthStateSnapshot) {
     return () => {
       void vocabularyRealtimeSync.cleanup();
     };
-  }, [authState.accessToken, authState.session?.user.id, authState.status]);
+  }, [authState]);
 }
 
 export function shouldLoadVocabularyForSession(
@@ -607,31 +377,4 @@ export function shouldLoadVocabularyForSession(
   return (
     vocabularyState.status !== "loading" && vocabularyState.status !== "ready"
   );
-}
-
-export function isVocabularySuggestionSaved(
-  items: VocabularyItem[],
-  suggestion: VocabularySuggestionMatch,
-) {
-  const suggestionTerm = normalizeVocabularyTerm(suggestion.term);
-  const suggestionMeaning = suggestion.meaning.trim();
-  const suggestionNote = getDistinctVocabularyNote(suggestion.note, [
-    suggestionMeaning,
-  ]);
-
-  return items.some((item) => {
-    if (
-      item.type !== suggestion.type ||
-      normalizeVocabularyTerm(item.term) !== suggestionTerm
-    ) {
-      return false;
-    }
-
-    return item.meanings.some(
-      (meaning) =>
-        meaning.meaning.trim() === suggestionMeaning &&
-        getDistinctVocabularyNote(meaning.note, [meaning.meaning]) ===
-          suggestionNote,
-    );
-  });
 }
