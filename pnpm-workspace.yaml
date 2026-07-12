@@ -6,4 +6,5 @@ allowBuilds:
   msgpackr-extract: true
   sharp: true
 overrides:
+  "@types/node": 22.20.1
   postcss: 8.5.15

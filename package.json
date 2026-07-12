@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": ">=22.12 <23",
+    "pnpm": ">=11"
+  },
   "scripts": {
     "dev": "turbo dev --parallel",
     "dev:api": "pnpm --filter @nado/api dev",
@@ -24,10 +28,9 @@
     "supabase:status": "pnpm exec supabase status"
   },
   "devDependencies": {
-    "@types/node": "^25.9.2",
+    "@types/node": "^22.0.0",
     "prettier": "^3.8.3",
     "supabase": "^2.105.0",
-    "tsx": "^4.22.4",
     "turbo": "^2.9.16",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
