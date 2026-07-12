@@ -35,4 +35,27 @@ test.describe("nado smoke", () => {
     await expect(page.getByText("201 / 200")).toBeVisible();
     await expect(submitButton).toBeDisabled();
   });
+
+  test("keeps keyboard focus inside the mobile navigation drawer", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ height: 844, width: 390 });
+    await page.goto("/");
+
+    const menuButton = page.getByRole("button", { name: "사이드바 열기" });
+    const closeButton = page.getByRole("button", { name: "사이드바 닫기" });
+    const loginButton = page.getByRole("button", { name: "Google 로그인" });
+
+    await menuButton.click();
+    await expect(closeButton).toBeFocused();
+
+    await page.keyboard.press("Shift+Tab");
+    await expect(loginButton).toBeFocused();
+
+    await page.keyboard.press("Tab");
+    await expect(closeButton).toBeFocused();
+
+    await page.keyboard.press("Escape");
+    await expect(menuButton).toBeFocused();
+  });
 });

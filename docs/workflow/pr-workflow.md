@@ -54,19 +54,17 @@ tracking parent를 직접 닫는 PR은 만들지 않는다.
 
 ## 검증 선택
 
-기본 명령과 최초 E2E 준비는 [로컬 개발 안내](../setup/local-development.md)를 따른다. 변경 범위에 따라 더 좁은 검증을 먼저 실행해도 되지만, 최종 PR에는 필요한 전체 검증 결과를 남긴다.
+기본 명령과 최초 E2E 준비는 [로컬 개발의 검증 단계](../setup/local-development.md#8-검증)를 따른다. 변경 범위에 따라 더 좁은 검증을 먼저 실행해도 되지만, 최종 PR에는 필요한 전체 검증 결과를 남긴다.
 
 ### Storybook 검증 기준
 
-Storybook 전용 build는 아직 별도 필수 check로 분리하지 않았으므로 Storybook 또는 공통 UI를 변경한 PR에서 아래 검증을 직접 실행하고 결과를 남긴다.
-
 | 변경 범위            | 추가 확인                                                                                                 |
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
-| Storybook story·설정 | Storybook source test, browser story test, typecheck, lint, build                                         |
+| Storybook story·설정 | Storybook source test, browser story test, typecheck, build                                               |
 | Web/Desktop 공통 UI  | `pnpm --filter @nado/ui-web test`, `pnpm --filter @nado/ui test`, 관련 Storybook browser test와 화면 확인 |
 | Mobile UI·token      | `pnpm --filter @nado/mobile test`와 Mobile demo 확인                                                      |
 
-Storybook/UI 변경 PR은 구조 계약, 실제 Chromium 렌더링·interaction·접근성, 타입, production build와 필요한 화면 확인 결과를 PR 본문에 남긴다. 구체적인 실행 기준은 [Storybook 운영 기준](../../apps/storybook/README.md#검증-명령)을 따른다.
+Storybook/UI 변경 PR은 구조 계약, 실제 Chromium 렌더링·interaction·접근성, 타입, production build를 모두 확인하고 결과를 PR 본문에 남긴다. 명령의 단일 원본은 [Storybook 운영 기준](../../apps/storybook/README.md#검증-명령)이며, `test:stories`는 CI의 E2E job에서도 실행한다.
 
 ## Codex review
 
