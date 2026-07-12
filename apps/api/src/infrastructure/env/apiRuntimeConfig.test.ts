@@ -84,11 +84,13 @@ describe("API runtime configuration", () => {
         ...validProductionEnvironment,
         NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT: "unlimited",
         OPENAI_TIMEOUT_MS: "0",
+        SUPABASE_TIMEOUT_MS: "10.5",
       }),
     ).toThrow(
       expect.objectContaining({
         issues: [
           "OPENAI_TIMEOUT_MS must be a positive integer",
+          "SUPABASE_TIMEOUT_MS must be a positive integer",
           `NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT must be a non-negative integer no greater than ${MAX_ANALYSIS_DAILY_LIMIT}`,
         ],
       }),

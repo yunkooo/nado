@@ -23,6 +23,11 @@
     "e2e:install": "pnpm --filter @nado/e2e exec playwright install --with-deps chromium",
     "format:check": "prettier --check .",
     "smoke:backend": "pnpm --filter @nado/api smoke:backend",
+    "supabase:reset": "supabase db reset --local --no-seed",
+    "supabase:lint": "supabase db lint --local --schema public --fail-on error",
+    "supabase:advisors": "supabase db advisors --local --type all --level warn --fail-on warn",
+    "test:db:upgrade": "node scripts/verify-supabase-upgrade.mjs",
+    "test:db": "supabase test db supabase/tests/database_contracts.test.sql --local",
     "supabase:start": "pnpm exec supabase start",
     "supabase:stop": "pnpm exec supabase stop",
     "supabase:status": "pnpm exec supabase status"

@@ -3,14 +3,6 @@ export type UsageIdentity = {
   userId: string | null;
 };
 
-export type AnalysisUsageRecord = {
-  id: string;
-  ipHash: string | null;
-  periodStart: string;
-  requestCount: number;
-  userId: string | null;
-};
-
 export type AnalysisUsageConsumeResult = {
   consumed: boolean;
   requestCount: number;
