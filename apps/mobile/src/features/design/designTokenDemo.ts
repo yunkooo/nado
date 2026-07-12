@@ -38,18 +38,11 @@ const mobileTokenParityDemoSections = [
   },
 ] as const;
 
+export const MOBILE_DESIGN_DEMO_BUNDLE_MARKER =
+  "NADO_MOBILE_DESIGN_DEMO_BUNDLE_MARKER";
+
 export type MobileTokenParityDemoSection =
   (typeof mobileTokenParityDemoSections)[number];
-
-export function isMobileDesignDemoFlagEnabled(value: string | undefined) {
-  return value === "1";
-}
-
-export function readMobileDesignDemoEnabled() {
-  return isMobileDesignDemoFlagEnabled(
-    process.env.EXPO_PUBLIC_NADO_MOBILE_DESIGN_DEMO,
-  );
-}
 
 export function getMobileTokenParityDemoSections() {
   return mobileTokenParityDemoSections;

@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { styles } from "../../styles/mobileStyles";
 import {
   getMobileTokenParityDemoSections,
+  MOBILE_DESIGN_DEMO_BUNDLE_MARKER,
   type MobileTokenParityDemoSection,
 } from "./designTokenDemo";
 
@@ -11,7 +12,7 @@ const handleDemoChipPress = () => undefined;
 
 export function MobileTokenParityDemoScreen() {
   return (
-    <Stack style={styles.pageStack}>
+    <Stack style={styles.pageStack} testID={MOBILE_DESIGN_DEMO_BUNDLE_MARKER}>
       <Stack gap="xs" style={styles.pageTitleGroup}>
         <Text style={styles.eyebrow}>Design tokens</Text>
         <Text style={styles.pageTitle}>모바일 디자인 데모</Text>
