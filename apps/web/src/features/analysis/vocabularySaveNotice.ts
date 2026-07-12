@@ -1,7 +1,6 @@
-export type VocabularySaveNotice = {
-  tone: "error" | "success";
-  text: string;
-};
+export type { VocabularySaveNotice } from "@nado/shared/analysis-state";
+
+import type { VocabularySaveNotice } from "@nado/shared/analysis-state";
 
 export function createVocabularyLoginRequiredNotice(): VocabularySaveNotice {
   return {

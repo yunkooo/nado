@@ -15,7 +15,7 @@ describe("auth state store", () => {
     let handleAuthStateChange: (
       event: string,
       session: Session | null,
-    ) => void = (_event: string, _session: Session | null) => undefined;
+    ) => void = () => undefined;
     const unsubscribe = vi.fn();
     const store = createAuthStateStore({
       getClient: () => ({
@@ -182,10 +182,135 @@ describe("auth state store", () => {
 
     expect(store.getSnapshot()).toMatchObject({
       accessToken: null,
+      errorCode: "configuration",
       session: null,
       status: "error",
     });
     expect(snapshots).toEqual(["error"]);
+  });
+
+  it("ignores an older startup session after the store restarts", async () => {
+    const startupRequests: Array<
+      (value: { data: { session: Session | null } }) => void
+    > = [];
+    const getSession = vi.fn(
+      () =>
+        new Promise<{ data: { session: Session | null } }>((resolve) => {
+          startupRequests.push(resolve);
+        }),
+    );
+    const unsubscribe = vi.fn();
+    const store = createAuthStateStore({
+      getClient: () => ({
+        auth: {
+          getSession,
+          refreshSession: vi.fn(),
+          setSession: vi.fn(),
+          onAuthStateChange: () => ({
+            data: {
+              subscription: { unsubscribe },
+            },
+          }),
+        },
+      }),
+    });
+
+    const stopFirstSubscription = store.subscribe(() => undefined);
+    await flushPromises();
+    stopFirstSubscription();
+
+    const stopSecondSubscription = store.subscribe(() => undefined);
+    await flushPromises();
+
+    expect(startupRequests).toHaveLength(2);
+
+    startupRequests[1]?.({ data: { session: authenticatedSession } });
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      status: "authenticated",
+    });
+
+    startupRequests[0]?.({ data: { session: null } });
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      status: "authenticated",
+    });
+
+    stopSecondSubscription();
+  });
+
+  it("keeps a newer auth event when the startup session resolves later", async () => {
+    const startupSession = createDeferred<{
+      data: { session: Session | null };
+    }>();
+    let handleAuthStateChange:
+      | ((event: string, session: Session | null) => void)
+      | undefined;
+    const newerSession = {
+      ...authenticatedSession,
+      access_token: "newer-token",
+    };
+    const getSession = vi.fn(() => startupSession.promise);
+    const store = createAuthStateStore({
+      getClient: () => ({
+        auth: {
+          getSession,
+          refreshSession: vi.fn(),
+          setSession: vi.fn(),
+          onAuthStateChange: (handler) => {
+            handleAuthStateChange = handler;
+            return {
+              data: {
+                subscription: { unsubscribe: vi.fn() },
+              },
+            };
+          },
+        },
+      }),
+    });
+
+    store.subscribe(() => undefined);
+    await flushPromises();
+    expect(getSession).toHaveBeenCalledOnce();
+    handleAuthStateChange?.("SIGNED_IN", newerSession);
+    startupSession.resolve({ data: { session: authenticatedSession } });
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "newer-token",
+      status: "authenticated",
+    });
+  });
+
+  it("distinguishes session restore failures from missing configuration", async () => {
+    const store = createAuthStateStore({
+      getClient: () => ({
+        auth: {
+          getSession: async () => {
+            throw new Error("session unavailable");
+          },
+          refreshSession: vi.fn(),
+          setSession: vi.fn(),
+          onAuthStateChange: () => ({
+            data: {
+              subscription: { unsubscribe: vi.fn() },
+            },
+          }),
+        },
+      }),
+    });
+
+    store.subscribe(() => undefined);
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      errorCode: "session",
+      status: "error",
+    });
   });
 });
 
@@ -194,4 +319,13 @@ async function flushPromises() {
   await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
+}
+
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve;
+  });
+
+  return { promise, resolve };
 }

@@ -10,6 +10,7 @@ const styles = [
   "../app/styles/shell.css",
   "../app/styles/analysis.css",
   "../app/styles/study.css",
+  "../../../../packages/ui-web/src/styles.css",
 ]
   .map((stylePath) => readFileSync(new URL(stylePath, import.meta.url), "utf8"))
   .join("\n");
@@ -27,6 +28,10 @@ const reviewPageSource = readFileSync(
 );
 const appShellSource = readFileSync(
   new URL("../components/AppShell.tsx", import.meta.url),
+  "utf8",
+);
+const appShellViewSource = readFileSync(
+  new URL("../components/AppShellView.tsx", import.meta.url),
   "utf8",
 );
 const useAnalysisSubmissionSource = readFileSync(
@@ -123,7 +128,21 @@ describe("HomePage", () => {
     expect(styles).toContain(".nado-sidebar--open");
     expect(styles).toContain("transform: translateX(-100%)");
     expect(styles).toContain("transform: translateX(0)");
+    expect(styles).toContain("visibility: hidden");
+    expect(styles).toContain("visibility: visible");
     expect(styles).toContain(".nado-sidebar-scrim");
+  });
+
+  it("keeps keyboard focus inside the open mobile drawer", () => {
+    expect(appShellSource).toContain('event.key !== "Tab"');
+    expect(appShellSource).toContain("focusableElementSelector");
+    expect(appShellSource).toContain('document.body.style.overflow = "hidden"');
+    expect(appShellViewSource).toContain(
+      "aria-modal={isSidebarOpen ? true : undefined}",
+    );
+    expect(appShellViewSource).toContain(
+      "inert={isSidebarOpen ? true : undefined}",
+    );
   });
 
   it("defines submitted analysis status styles", () => {
@@ -178,8 +197,9 @@ describe("HomePage", () => {
 
   it("uses Next links for internal app navigation", () => {
     expect(appShellSource).toContain('from "next/link"');
-    expect(appShellSource).toContain("<Link");
+    expect(appShellSource).toContain("linkComponent={Link}");
     expect(appShellSource).not.toContain("<a ");
+    expect(appShellViewSource).toContain("const NavigationLink");
   });
 
   it("refreshes vocabulary data when entering study pages or returning focus", () => {

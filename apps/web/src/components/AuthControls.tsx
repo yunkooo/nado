@@ -1,33 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@nado/ui";
 import {
   createGoogleOAuthRedirectTo,
   getSupabaseBrowserClient,
 } from "../features/auth/authClient";
-import { useAuthState } from "../features/auth/authState";
+import {
+  useAuthState,
+  type AuthStateErrorCode,
+} from "../features/auth/authState";
+
+const authErrorMessages: Record<AuthStateErrorCode, string> = {
+  configuration: "Supabase 공개 환경변수가 필요해요.",
+  oauth_callback: "Google 로그인 완료 처리에 실패했어요.",
+  session: "로그인 세션을 확인하지 못했어요. 잠시 후 다시 시도해 주세요.",
+};
+
+type AuthActionState = {
+  isSubmitting: boolean;
+  message: string | null;
+  scope: string;
+};
 
 export function AuthControls() {
   const authState = useAuthState();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    setIsSubmitting(false);
-    setMessage(null);
-  }, [authState.status]);
+  const authScope = `${authState.status}:${authState.accessToken ?? "none"}`;
+  const [actionState, setActionState] = useState<AuthActionState>({
+    isSubmitting: false,
+    message: null,
+    scope: "",
+  });
+  const isCurrentAction = actionState.scope === authScope;
+  const isSubmitting = isCurrentAction && actionState.isSubmitting;
+  const message = isCurrentAction ? actionState.message : null;
 
   const handleSignIn = async () => {
     const supabase = getSupabaseBrowserClient();
 
     if (!supabase) {
-      setMessage("Supabase 공개 환경변수가 필요해요.");
+      setActionState({
+        isSubmitting: false,
+        message: "Supabase 공개 환경변수가 필요해요.",
+        scope: authScope,
+      });
       return;
     }
 
-    setIsSubmitting(true);
-    setMessage(null);
+    setActionState({ isSubmitting: true, message: null, scope: authScope });
 
     const { error } = await supabase.auth.signInWithOAuth({
       options: {
@@ -37,8 +57,11 @@ export function AuthControls() {
     });
 
     if (error) {
-      setIsSubmitting(false);
-      setMessage("Google 로그인을 시작하지 못했어요.");
+      setActionState({
+        isSubmitting: false,
+        message: "Google 로그인을 시작하지 못했어요.",
+        scope: authScope,
+      });
     }
   };
 
@@ -49,20 +72,22 @@ export function AuthControls() {
       return;
     }
 
-    setIsSubmitting(true);
-    setMessage(null);
+    setActionState({ isSubmitting: true, message: null, scope: authScope });
 
     const { error } = await supabase.auth.signOut();
 
     if (error) {
-      setIsSubmitting(false);
-      setMessage("로그아웃하지 못했어요.");
+      setActionState({
+        isSubmitting: false,
+        message: "로그아웃하지 못했어요.",
+        scope: authScope,
+      });
     }
   };
 
   const visibleMessage =
     authState.status === "error"
-      ? "Supabase 공개 환경변수가 필요해요."
+      ? authErrorMessages[authState.errorCode ?? "session"]
       : message;
   const isBusy = authState.status === "loading" || isSubmitting;
 
