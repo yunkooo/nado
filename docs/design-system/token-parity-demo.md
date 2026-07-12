@@ -1,92 +1,72 @@
-# Token parity demo 검증 흐름
+# 디자인 값 일치 검증
 
-이 문서는 `@nado/tokens` 변경이 Web, Desktop, Mobile 검증 표면에 함께 드러나는지 확인하는 기준 흐름이다.
+목표는 Web CSS를 Mobile에 복사하는 것이 아니다. 두 플랫폼이 `@nado/tokens`에서 같은 의미의 값을 읽고 각 플랫폼 구현으로 올바르게 표현하는지 확인한다.
 
-목표는 웹 CSS 값을 모바일이 따라 쓰게 만드는 것이 아니다. 디자인 값의 원본을 `@nado/tokens`에 두고, Web/Desktop은 `@nado/ui`, Mobile은 `@nado/tokens/react-native`와 `@nado/ui/native`를 통해 같은 의미의 token과 primitive contract를 사용하게 만드는 것이다.
+## 확인 위치
 
-## 확인 표면
+| 플랫폼    | 화면                                 | 확인 내용                               |
+| --------- | ------------------------------------ | --------------------------------------- |
+| Storybook | `Foundations/Tokens`                 | color, spacing, radius, component token |
+| Storybook | `UI/Button`과 다른 component stories | Web component 상태                      |
+| Expo      | `Mobile Design Demo`                 | Native token과 React Native 기본 UI     |
 
-| 플랫폼                 | 확인 위치                      | 확인 내용                                                                                                                    |
-| ---------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| Web/Desktop foundation | Storybook `Foundations/Tokens` | color, radius, button component token, chip component token, reviewCard answer component token 값                            |
-| Web/Desktop component  | Storybook `UI/Button`          | `primary`, `secondary`, `send`, `md`, `icon` 버튼 상태                                                                       |
-| Web app surface        | Storybook `WebSurface`         | 실제 웹 mock surface에서 token이 끊기지 않는지                                                                               |
-| Desktop app surface    | Storybook `DesktopSurface`     | desktop shell mock surface에서 token이 끊기지 않는지                                                                         |
-| Mobile                 | Expo app `Mobile Design Demo`  | `nativeTokens`와 `@nado/ui/native`를 통과한 primary color, surface, radius, spacing, button token, Card/Badge/Chip primitive |
+## Storybook 실행
 
-## 변경 기준
+```bash
+pnpm dev:storybook
+```
 
-token 변경 요청이 들어오면 먼저 변경 종류를 나눈다.
-
-| 변경 종류           | 우선 수정 위치                                   | 확인 표면                                                                     |
-| ------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------- |
-| 색상 변경           | `packages/tokens/src/tokens.ts`의 `tokens.color` | `Foundations/Tokens`, `WebSurface`, `DesktopSurface`, `Mobile Design Demo`    |
-| radius 변경         | `tokens.radius`                                  | `Foundations/Tokens`, Mobile demo surface radius                              |
-| spacing 변경        | `tokens.spacing`                                 | Storybook surface 간격, Mobile demo spacing                                   |
-| button 상태 변경    | `tokens.component.button`                        | `Foundations/Tokens`, `UI/Button`, Mobile demo button contract                |
-| chip 기본 표면 변경 | `tokens.component.chip`                          | `Foundations/Tokens`, Web/Desktop Chip CSS, `@nado/ui-native` Chip style      |
-| review answer 변경  | `tokens.component.reviewCard.answer`             | `Foundations/Tokens`, Web/Desktop review card CSS, Mobile review answer style |
-
-특정 플랫폼의 interaction만 바뀌는 경우에는 token 변경으로 밀어붙이지 않는다. 예를 들어 hover, focus, touch, drawer gesture 같은 동작은 플랫폼별 구현으로 다룬다.
+1. `Foundations/Tokens`에서 token 이름과 값을 확인한다.
+2. `UI/Button`에서 variant와 size가 token을 따르는지 확인한다.
+3. Card, Badge, Chip story와 `Foundations/Tokens`의 복습 카드 값을 확인한다.
 
 ## Mobile demo 실행
 
-Mobile demo는 production 기본 탭에 노출하지 않는다. Expo public flag를 켠 경우에만 `디자인` 탭을 연다.
-
 ```bash
-EXPO_PUBLIC_NADO_MOBILE_DESIGN_DEMO=1 pnpm --filter @nado/mobile dev
+pnpm --filter @nado/mobile dev:design
 ```
 
-확인할 화면:
+`Mobile Design Demo`에서 다음을 Storybook과 비교한다.
 
-1. Expo app을 연다.
-2. 하단 tab에서 `디자인`을 선택한다.
-3. `Primary color` 영역에서 color swatch와 `nativeTokens.color.primary`, `nativeTokens.color.surfaceMuted` source label을 함께 확인한다.
-4. `Button contract` 영역에서 `@nado/ui/native` button sample과 `nativeTokens.component.button.primary`, `secondary`, `send`, `size.md`, `size.icon` source label을 함께 확인한다.
-5. `Card, Badge, Chip contract` 영역에서 `@nado/ui/native` Card, Badge, Chip sample과 `nativeTokens.color.surface`, `surfaceMuted`, `radius.pill`, `component.chip` source label을 함께 확인한다.
+- primary, surface, muted color
+- spacing과 radius
+- Button variant와 size
+- Card, Badge, Chip 기본 UI 컴포넌트
+- ReviewCard answer color
 
 ## 자동 검증
 
-token parity 관련 변경은 최소한 아래 명령을 확인한다.
-
-Storybook의 source, browser, typecheck, build 명령은 [Storybook 운영 기준](../../apps/storybook/README.md#검증-명령)을 단일 원본으로 따른다.
-
 ```bash
 pnpm --filter @nado/tokens test
+pnpm --filter @nado/ui-web test
 pnpm --filter @nado/ui test
-pnpm --filter @nado/storybook test
-pnpm --filter @nado/storybook typecheck
-pnpm --filter @nado/storybook lint
-pnpm --filter @nado/storybook build
+pnpm --filter @nado/ui-native test
 pnpm --filter @nado/mobile test
-git diff --check
+pnpm --filter @nado/mobile test:design-bundle
+
+pnpm --filter @nado/tokens typecheck
+pnpm --filter @nado/ui-web typecheck
+pnpm --filter @nado/ui typecheck
+pnpm --filter @nado/ui-native typecheck
+pnpm --filter @nado/mobile typecheck
 ```
 
-검증이 보는 계약:
+Storybook을 변경했으면 [Storybook 운영 기준의 네 검증 명령](../../apps/storybook/README.md#검증-명령)을 함께 실행한다. 명령과 bundle 경고 기준은 해당 문서를 단일 원본으로 사용한다.
 
-- `@nado/tokens` test는 CSS pixel token이 React Native number token으로 변환되는지 확인한다.
-- `@nado/tokens` test는 token에서 생성되는 CSS custom property 이름이 Web/Desktop variable naming과 맞는지도 확인한다.
-- `@nado/ui`와 `@nado/ui-web` test는 Web/Desktop CSS `:root`가 token 생성 output과 동기화되는지, Button과 Chip CSS가 component token 계약을 따르는지 확인한다.
-- Storybook 구조 테스트는 `Foundations/Tokens`가 button, chip, reviewCard answer component token을 보여주는지 확인한다.
-- Storybook build는 등록된 story가 production build에서 실제로 번들링되는지 확인한다.
-- Mobile test는 `mobileStyles`가 `@nado/tokens/react-native`를 쓰는지, Mobile demo가 확인할 token source 목록을 화면과 같은 데이터로 제공하는지, 낮은 위험 데모 표면이 `@nado/ui/native` facade의 Button, Stack, Text, Card, Badge, Chip을 실제로 import하는지, review answer style이 `nativeTokens.component.reviewCard.answer`를 따르는지 확인한다.
+테스트는 특히 아래 계약을 보호한다.
 
-## 관련 파일
+- `Mobile Design Demo`가 `@nado/ui/native`의 Button, Stack, Text, Card, Badge, Chip을 실제로 가져오는지
+- `Mobile Design Demo` component tree가 실제 React render를 통과하고 iOS·Android Metro bundle로 생성되는지
+- 복습 카드의 답변 스타일이 `nativeTokens.component.reviewCard.answer`를 따르는지
+- Storybook과 Mobile이 같은 component token 이름을 사용하는지
+- Storybook story가 실제 Chromium에서 렌더링되고 `play` interaction과 접근성 검사를 통과하는지
 
-| 역할                        | 파일                                                              |
-| --------------------------- | ----------------------------------------------------------------- |
-| token 원본                  | `packages/tokens/src/tokens.ts`                                   |
-| CSS variable generator      | `packages/tokens/src/cssCustomProperties.ts`                      |
-| RN token adapter            | `packages/tokens/src/reactNative.ts`                              |
-| Web/Desktop Button          | `packages/ui-web/src/Button.tsx`                                  |
-| Web/Desktop Button/Chip CSS | `packages/ui-web/src/styles.css`                                  |
-| Web/Desktop ReviewCard CSS  | `packages/ui-web/src/styles.css`                                  |
-| Mobile primitive package    | `packages/ui-native/src/`                                         |
-| Mobile facade package       | `packages/ui/src/native.ts`                                       |
-| Storybook foundation demo   | `apps/storybook/src/Foundations.stories.tsx`                      |
-| Mobile token demo           | `apps/mobile/src/features/design/MobileTokenParityDemoScreen.tsx` |
-| Mobile shared styles        | `apps/mobile/src/styles/mobileStyles.ts`                          |
+## Token 변경 순서
 
-## 제외 범위
+1. `packages/tokens/src`에서 의미 있는 token을 변경한다.
+2. Web과 React Native의 플랫폼 변환 코드를 함께 확인한다.
+3. Web/Desktop 컴포넌트와 Mobile 기본 UI 컴포넌트를 각각 갱신한다.
+4. Storybook과 Mobile demo를 눈으로 비교한다.
+5. 관련 test, typecheck, build를 실행한다.
 
-이 흐름은 현재 가능한 검증 표면을 연결하는 것이다. Storybook for React Native는 [도입 검토](react-native-storybook-adoption.md)에 따라 지금은 설치하지 않고, 재검토 조건이 충족될 때 별도 PR로 판단한다. Tamagui, NativeWind 같은 도구도 같은 방식으로 현재 token parity 검증 흐름과 분리한다.
+한 플랫폼만 필요한 layout 값은 앱 로컬에 둘 수 있다. 제품 전체에서 같은 의미를 갖는 값만 공통 token으로 올린다.
