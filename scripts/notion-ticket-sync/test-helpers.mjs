@@ -52,6 +52,10 @@ export const prWorkflowSource = readFileSync(
   new URL("../../docs/workflow/pr-workflow.md", import.meta.url),
   "utf8",
 );
+export const workflowReadmeSource = readFileSync(
+  new URL("../../docs/workflow/README.md", import.meta.url),
+  "utf8",
+);
 export const slackFailureActionSource = readFileSync(
   new URL(
     "../../.github/actions/notify-slack-failure/action.yml",

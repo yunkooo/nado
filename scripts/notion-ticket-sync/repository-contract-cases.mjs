@@ -13,6 +13,7 @@ import {
   prWorkflowSource,
   slackFailureActionSource,
   slackPrNotificationWorkflowSource,
+  workflowReadmeSource,
   workflowJobSource,
 } from "./test-helpers.mjs";
 
@@ -153,37 +154,26 @@ describe("Notion workflow repository contracts", () => {
     expect(issueTemplateConfigSource).toContain("blank_issues_enabled: false");
   });
 
-  it("keeps Dependabot npm updates reviewable by platform", () => {
-    const npmConfig = dependabotConfigSource
-      .split("  - package-ecosystem: npm")[1]
-      .split("  - package-ecosystem: cargo")[0];
+  it("keeps scheduled Dependabot version updates disabled", () => {
+    const ecosystemConfigs = dependabotConfigSource
+      .split("\n  - package-ecosystem: ")
+      .slice(1);
 
-    expect(npmConfig).not.toContain("workspace-dependencies:");
-    expect(npmConfig).not.toContain('patterns:\n          - "*"');
-
-    for (const groupName of [
-      "web-runtime",
-      "web-build",
-      "mobile-runtime",
-      "storybook",
-      "supabase",
-      "tauri-js",
-      "workspace-tooling",
-    ]) {
-      expect(npmConfig).toContain(`${groupName}:`);
-      expect(npmConfig).toMatch(
-        new RegExp(`${groupName}:\\n\\s+applies-to: version-updates`),
+    for (const ecosystem of ["github-actions", "npm", "cargo"]) {
+      const ecosystemConfig = ecosystemConfigs.find((config) =>
+        config.startsWith(ecosystem),
       );
+
+      expect(ecosystemConfig).toContain("open-pull-requests-limit: 0");
     }
 
-    expect(npmConfig).toContain(
-      'allow:\n      - dependency-name: "*"\n        update-types:\n          - version-update:semver-minor\n          - version-update:semver-patch',
+    expect(dependabotConfigSource).not.toContain("groups:");
+    expect(dependabotConfigSource).not.toContain("allow:");
+    expect(dependabotConfigSource).not.toContain("ignore:");
+    expect(workflowReadmeSource).toContain(
+      "Dependabot Alerts와 security update는 유지",
     );
-    expect(npmConfig).not.toContain("ignore:");
-    expect(npmConfig).not.toContain("version-update:semver-major");
-    expect(npmConfig).toMatch(
-      /mobile-runtime:[\s\S]*?update-types:\n\s+- minor\n\s+- patch/,
-    );
+    expect(workflowReadmeSource).toContain("월 1회 대표 유지보수 티켓");
   });
 
   it("escapes Slack mrkdwn metadata and uses actual newline escapes", () => {
