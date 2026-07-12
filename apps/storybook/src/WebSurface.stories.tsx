@@ -1,13 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { expect, userEvent, within } from "storybook/test";
 import {
   ANALYSIS_MODELS,
   DEFAULT_ANALYSIS_MODEL_ID,
   MAX_ANALYSIS_TEXT_LENGTH,
   countAnalysisTextCharacters,
-} from "@nado/shared";
+} from "@nado/shared/analysis-input";
 import { AnalysisResult, InputComposer, InputSample } from "@nado/ui";
-import { analysisMock } from "../../../packages/ui-web/src/analysisStoryFixtures";
+import { analysisSurfaceMock } from "../../../packages/ui-web/src/analysisStoryFixtures";
 import "../../web/src/app/styles/base.css";
 import "../../web/src/app/styles/shell.css";
 import "../../web/src/app/styles/analysis.css";
@@ -44,9 +45,11 @@ function WebAuthMock() {
 function WebShellMock({
   activeItem,
   children,
-  isSidebarOpen = false,
+  isSidebarOpen: initialSidebarOpen = false,
   workspaceLabel,
 }: WebShellMockProps) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(initialSidebarOpen);
+
   return (
     <main className="nado-app-shell">
       {!isSidebarOpen ? (
@@ -55,6 +58,7 @@ function WebShellMock({
           aria-expanded="false"
           aria-label="사이드바 열기"
           className="nado-mobile-menu-button"
+          onClick={() => setIsSidebarOpen(true)}
           type="button"
         >
           <span className="nado-mobile-menu-button__bar" />
@@ -66,6 +70,7 @@ function WebShellMock({
         <button
           aria-label="사이드바 배경 닫기"
           className="nado-sidebar-scrim"
+          onClick={() => setIsSidebarOpen(false)}
           type="button"
         />
       ) : null}
@@ -87,6 +92,7 @@ function WebShellMock({
             <button
               aria-label="사이드바 닫기"
               className="nado-sidebar-close"
+              onClick={() => setIsSidebarOpen(false)}
               type="button"
             >
               <span className="nado-sidebar-close__bar" />
@@ -108,7 +114,10 @@ function WebShellMock({
                     .join(" ")}
                   href={item.href}
                   key={item.key}
-                  onClick={(event) => event.preventDefault()}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setIsSidebarOpen(false);
+                  }}
                 >
                   {item.label}
                 </a>
@@ -142,15 +151,15 @@ function WebAnalysisSurface({
       <section className="nado-analysis-workspace nado-analysis-workspace--has-result">
         <div className="nado-analysis-page">
           <InputSample
-            count={countAnalysisTextCharacters(analysisMock.sourceText)}
+            count={countAnalysisTextCharacters(analysisSurfaceMock.sourceText)}
             maxLength={MAX_ANALYSIS_TEXT_LENGTH}
-            text={analysisMock.sourceText}
+            text={analysisSurfaceMock.sourceText}
           />
           <AnalysisResult
             activeVocabularyKey="framework"
             getVocabularySuggestionState={() => "idle"}
             onSaveVocabularySuggestion={() => undefined}
-            result={analysisMock}
+            result={analysisSurfaceMock}
           />
         </div>
       </section>
@@ -220,4 +229,16 @@ export const NarrowSidebarOpen: Story = {
     },
   },
   render: () => <WebAnalysisSurface isSidebarOpen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const closeButton = canvas.getByRole("button", {
+      name: "사이드바 닫기",
+    });
+
+    await expect(closeButton).toBeVisible();
+    await userEvent.click(closeButton);
+    await expect(
+      canvas.getByRole("button", { name: "사이드바 열기" }),
+    ).toBeVisible();
+  },
 };

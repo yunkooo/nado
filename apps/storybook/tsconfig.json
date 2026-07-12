@@ -10,6 +10,7 @@
   "include": [
     ".storybook",
     "src",
+    "vitest.storybook.config.ts",
     "../../packages/ui-web/src/**/*.stories.tsx",
     "../../packages/ui-web/src/**/*StoryFixtures.ts"
   ]

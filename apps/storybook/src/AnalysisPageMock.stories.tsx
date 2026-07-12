@@ -3,9 +3,10 @@ import {
   ANALYSIS_MODELS,
   DEFAULT_ANALYSIS_MODEL_ID,
   MAX_ANALYSIS_TEXT_LENGTH,
-} from "@nado/shared";
+  countAnalysisTextCharacters,
+} from "@nado/shared/analysis-input";
 import { AnalysisResult, InputComposer, InputSample } from "@nado/ui";
-import { analysisMock } from "../../../packages/ui-web/src/analysisStoryFixtures";
+import { analysisSurfaceMock } from "../../../packages/ui-web/src/analysisStoryFixtures";
 
 function AnalysisPageMockView() {
   return (
@@ -27,11 +28,13 @@ function AnalysisPageMockView() {
         <section className="storybook-analysis-workspace">
           <div className="storybook-analysis-page">
             <InputSample
-              count={487}
+              count={countAnalysisTextCharacters(
+                analysisSurfaceMock.sourceText,
+              )}
               maxLength={MAX_ANALYSIS_TEXT_LENGTH}
-              text={analysisMock.sourceText}
+              text={analysisSurfaceMock.sourceText}
             />
-            <AnalysisResult result={analysisMock} />
+            <AnalysisResult result={analysisSurfaceMock} />
           </div>
         </section>
         <footer className="storybook-analysis-composer">

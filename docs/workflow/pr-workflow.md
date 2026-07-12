@@ -60,13 +60,13 @@ tracking parent를 직접 닫는 PR은 만들지 않는다.
 
 Storybook 전용 build는 아직 별도 필수 check로 분리하지 않았으므로 Storybook 또는 공통 UI를 변경한 PR에서 아래 검증을 직접 실행하고 결과를 남긴다.
 
-| 변경 범위            | 추가 확인                                                                                         |
-| -------------------- | ------------------------------------------------------------------------------------------------- |
-| Storybook story·설정 | Storybook source test, typecheck, lint, build                                                     |
-| Web/Desktop 공통 UI  | `pnpm --filter @nado/ui-web test`, `pnpm --filter @nado/ui test`, 관련 Storybook test와 화면 확인 |
-| Mobile UI·token      | `pnpm --filter @nado/mobile test`와 Mobile demo 확인                                              |
+| 변경 범위            | 추가 확인                                                                                                 |
+| -------------------- | --------------------------------------------------------------------------------------------------------- |
+| Storybook story·설정 | Storybook source test, browser story test, typecheck, lint, build                                         |
+| Web/Desktop 공통 UI  | `pnpm --filter @nado/ui-web test`, `pnpm --filter @nado/ui test`, 관련 Storybook browser test와 화면 확인 |
+| Mobile UI·token      | `pnpm --filter @nado/mobile test`와 Mobile demo 확인                                                      |
 
-Storybook/UI 변경 PR은 구조 계약, 타입, production build와 필요한 화면 확인 결과를 PR 본문에 남긴다. 구체적인 실행 기준은 [Storybook 운영 기준](../../apps/storybook/README.md)을 따른다.
+Storybook/UI 변경 PR은 구조 계약, 실제 Chromium 렌더링·interaction·접근성, 타입, production build와 필요한 화면 확인 결과를 PR 본문에 남긴다. 구체적인 실행 기준은 [Storybook 운영 기준](../../apps/storybook/README.md#검증-명령)을 따른다.
 
 ## Codex review
 
