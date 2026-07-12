@@ -5,6 +5,7 @@ allowBuilds:
   esbuild: true
   msgpackr-extract: true
   sharp: true
+  unrs-resolver: true
 overrides:
   "@types/node": 22.20.1
   esbuild: 0.28.1
