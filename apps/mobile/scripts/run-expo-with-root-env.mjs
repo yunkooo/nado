@@ -7,7 +7,17 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const appRoot = resolve(scriptDir, "..");
 const repoRoot = resolve(appRoot, "..", "..");
 const rootEnvPath = resolve(repoRoot, ".env");
-const expoArgs = process.argv.slice(2).filter((arg, index) => {
+const supportedExpoCommands = new Set(["run:android", "run:ios", "start"]);
+const [expoCommand, ...rawExpoArgs] = process.argv.slice(2);
+
+if (!expoCommand || !supportedExpoCommands.has(expoCommand)) {
+  console.error(
+    `Expo command must be one of: ${[...supportedExpoCommands].join(", ")}.`,
+  );
+  process.exit(1);
+}
+
+const expoArgs = rawExpoArgs.filter((arg, index) => {
   return !(index === 0 && arg === "--");
 });
 const env = {
@@ -25,7 +35,7 @@ const mobileRuntimePackages = [
 
 buildMobileRuntimePackages();
 
-const child = spawn("pnpm", ["exec", "expo", "run:ios", ...expoArgs], {
+const child = spawn("pnpm", ["exec", "expo", expoCommand, ...expoArgs], {
   cwd: appRoot,
   env,
   stdio: "inherit",
