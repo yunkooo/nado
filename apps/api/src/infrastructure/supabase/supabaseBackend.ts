@@ -17,6 +17,7 @@ import {
   type VocabularyRow,
   type VocabularyStore,
 } from "../../features/vocabulary/vocabularyService.js";
+import type { ReadinessService } from "../../app/routes/healthRoutes.js";
 
 export type SupabaseBackendOptions = {
   anonKey?: string;
@@ -85,6 +86,24 @@ export function createSupabaseAnalysisUsageService(
       createServiceRoleSupabaseClient(options),
     ),
   });
+}
+
+export function createSupabaseReadinessService(
+  options: SupabaseBackendOptions = {},
+): ReadinessService {
+  return {
+    async check() {
+      const client = createServiceRoleSupabaseClient(options);
+      const { error } = await client
+        .from("analysis_usage_limits")
+        .select("id")
+        .limit(1);
+
+      if (error) {
+        throw new Error(`Supabase readiness check failed: ${error.message}`);
+      }
+    },
+  };
 }
 
 function createServerSupabaseClient(

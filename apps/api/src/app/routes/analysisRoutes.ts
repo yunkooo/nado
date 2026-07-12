@@ -1,10 +1,10 @@
-import { randomUUID } from "node:crypto";
 import { Router } from "express";
+import { ANALYSIS_ERROR_MESSAGES } from "@nado/shared/analysis";
+import { isLikelyEnglishLearningText } from "@nado/shared/analysis-input";
 import {
-  ANALYSIS_ERROR_MESSAGES,
-  analyzeResponseSchema,
-  isLikelyEnglishLearningText,
-} from "@nado/shared";
+  executeAnalysisRequest,
+  type AnalysisRequestStage,
+} from "../../features/analysis/executeAnalysisRequest.js";
 import { parseAnalyzeInput } from "../../features/analysis/analyzeInput.js";
 import type {
   AnalysisUsageService,
@@ -12,9 +12,14 @@ import type {
 } from "../../features/analysis/analysisTypes.js";
 import { resolveAnalyzeUsageIdentity } from "../../features/analysis/usageIdentity.js";
 import type { AuthService } from "../../features/auth/authService.js";
-import { isHttpError } from "../../shared/errors/httpErrors.js";
+import {
+  BadGatewayError,
+  ServiceUnavailableError,
+  isHttpError,
+} from "../../shared/errors/httpErrors.js";
 import { asyncRoute } from "../../shared/http/asyncRoute.js";
 import { readRequestIp } from "../../shared/http/requestIp.js";
+import { readRequestId } from "../../shared/http/requestContext.js";
 
 export type AnalysisRoutesDependencies = {
   analysisUsageService: AnalysisUsageService;
@@ -63,7 +68,7 @@ export function createAnalysisRoutes({
     "/analyze",
     asyncRoute(async (request, response) => {
       const routeTiming = createAnalysisRouteTiming();
-      const requestId = randomUUID();
+      const requestId = readRequestId(response);
       const input = parseAnalyzeInput(request.body as unknown);
 
       if (!input.ok) {
@@ -107,61 +112,76 @@ export function createAnalysisRoutes({
         });
       }
 
-      const usageIdentityStartedAt = routeTiming.now();
-      const usageIdentity = await resolveAnalyzeUsageIdentity({
-        authService,
-        authorization: request.header("Authorization"),
-        clientIp: readRequestIp(request),
-        usageIpHashSalt,
-      });
-      routeTiming.setTiming("usageIdentity", usageIdentityStartedAt);
-
-      const usageConsumeStartedAt = routeTiming.now();
-      const usageDecision = await analysisUsageService.consume(usageIdentity);
-      routeTiming.setTiming("usageConsume", usageConsumeStartedAt);
-      const usageIdentityKind = usageIdentity.userId
-        ? "authenticated"
-        : "anonymous";
-
-      if (!usageDecision.ok) {
-        logAnalysisTiming(analysisTimingLogger, {
-          ...routeTiming.snapshot(),
-          model: input.model,
-          outcome: "rate_limited",
-          requestId,
-          route: "POST /api/analyze",
-          statusCode: 429,
-          textLength: input.text.length,
-          usageIdentity: usageIdentityKind,
-        });
-
-        return response
-          .set("Retry-After", String(usageDecision.retryAfterSeconds))
-          .status(429)
-          .json({
-            error: {
-              code: "rate_limited",
-              message: "오늘 사용할 수 있는 분석 횟수를 모두 사용했어요.",
-              requestId,
-              retryable: false,
-            },
-          });
-      }
-
+      let usageIdentityStartedAt: number | null = null;
+      let usageConsumeStartedAt: number | null = null;
       let analyzeStartedAt: number | null = null;
       let validationStartedAt: number | null = null;
+      let usageIdentityKind: "anonymous" | "authenticated" | undefined;
+      const setStageStartedAt = (
+        stage: AnalysisRequestStage,
+        startedAt: number,
+      ) => {
+        if (stage === "usageIdentity") {
+          usageIdentityStartedAt = startedAt;
+        } else if (stage === "usageConsume") {
+          usageConsumeStartedAt = startedAt;
+        } else if (stage === "analyze") {
+          analyzeStartedAt = startedAt;
+        } else {
+          validationStartedAt = startedAt;
+        }
+      };
 
       try {
-        analyzeStartedAt = routeTiming.now();
-        const rawAnalysis = await analyzeService.analyze({
-          model: input.model,
-          text: input.text,
-        });
-        routeTiming.setTiming("analyze", analyzeStartedAt);
+        const analysisResult = await executeAnalysisRequest({
+          analysisUsageService,
+          analyzeService,
+          input,
+          onUsageIdentityResolved: (kind) => {
+            usageIdentityKind = kind;
+          },
+          resolveUsageIdentity: () =>
+            resolveAnalyzeUsageIdentity({
+              authService,
+              authorization: request.header("Authorization"),
+              clientIp: readRequestIp(request),
+              usageIpHashSalt,
+            }),
+          runStage: async (stage, operation) => {
+            const startedAt = routeTiming.now();
+            setStageStartedAt(stage, startedAt);
 
-        validationStartedAt = routeTiming.now();
-        const analysis = analyzeResponseSchema.parse(rawAnalysis);
-        routeTiming.setTiming("responseValidation", validationStartedAt);
+            const result = await operation();
+            routeTiming.setTiming(stage, startedAt);
+            return result;
+          },
+        });
+        usageIdentityKind = analysisResult.usageIdentityKind;
+
+        if (analysisResult.kind === "rate_limited") {
+          logAnalysisTiming(analysisTimingLogger, {
+            ...routeTiming.snapshot(),
+            model: input.model,
+            outcome: "rate_limited",
+            requestId,
+            route: "POST /api/analyze",
+            statusCode: 429,
+            textLength: input.text.length,
+            usageIdentity: usageIdentityKind,
+          });
+
+          return response
+            .set("Retry-After", String(analysisResult.retryAfterSeconds))
+            .status(429)
+            .json({
+              error: {
+                code: "rate_limited",
+                message: "오늘 사용할 수 있는 분석 횟수를 모두 사용했어요.",
+                requestId,
+                retryable: false,
+              },
+            });
+        }
 
         logAnalysisTiming(analysisTimingLogger, {
           ...routeTiming.snapshot(),
@@ -169,14 +189,22 @@ export function createAnalysisRoutes({
           outcome: "success",
           requestId,
           route: "POST /api/analyze",
-          status: analysis.status,
+          status: analysisResult.analysis.status,
           statusCode: 200,
           textLength: input.text.length,
           usageIdentity: usageIdentityKind,
         });
 
-        return response.json(analysis);
+        return response.json(analysisResult.analysis);
       } catch (error) {
+        if (usageIdentityStartedAt !== null) {
+          routeTiming.setTimingIfUnset("usageIdentity", usageIdentityStartedAt);
+        }
+
+        if (usageConsumeStartedAt !== null) {
+          routeTiming.setTimingIfUnset("usageConsume", usageConsumeStartedAt);
+        }
+
         if (analyzeStartedAt !== null) {
           routeTiming.setTimingIfUnset("analyze", analyzeStartedAt);
         }
@@ -188,54 +216,24 @@ export function createAnalysisRoutes({
           );
         }
 
-        if (isHttpError(error)) {
-          logAnalysisTiming(analysisTimingLogger, {
-            ...routeTiming.snapshot(),
-            errorCode: error.code,
-            model: input.model,
-            outcome: "error",
-            requestId,
-            route: "POST /api/analyze",
-            statusCode: error.status,
-            textLength: input.text.length,
-            usageIdentity: usageIdentityKind,
-          });
-
-          return response.status(error.status).json({
-            error: {
-              code: error.code,
-              message: error.publicMessage,
-              requestId,
-              retryable: error.status >= 500,
-            },
-          });
-        }
-
-        const fallbackErrorCode =
-          validationStartedAt === null
-            ? "analysis_failed"
-            : "invalid_analysis_response";
+        const httpError = toAnalysisHttpError(error, {
+          analyzeStarted: analyzeStartedAt !== null,
+          validationStarted: validationStartedAt !== null,
+        });
 
         logAnalysisTiming(analysisTimingLogger, {
           ...routeTiming.snapshot(),
-          errorCode: fallbackErrorCode,
+          errorCode: httpError.code,
           model: input.model,
           outcome: "error",
           requestId,
           route: "POST /api/analyze",
-          statusCode: 502,
+          statusCode: httpError.status,
           textLength: input.text.length,
           usageIdentity: usageIdentityKind,
         });
 
-        return response.status(502).json({
-          error: {
-            code: fallbackErrorCode,
-            message: ANALYSIS_ERROR_MESSAGES[fallbackErrorCode],
-            requestId,
-            retryable: true,
-          },
-        });
+        throw httpError;
       }
     }),
   );
@@ -243,11 +241,33 @@ export function createAnalysisRoutes({
   return router;
 }
 
-type AnalysisTimingKey =
-  | "analyze"
-  | "responseValidation"
-  | "usageConsume"
-  | "usageIdentity";
+function toAnalysisHttpError(
+  error: unknown,
+  stages: { analyzeStarted: boolean; validationStarted: boolean },
+) {
+  if (isHttpError(error)) {
+    return error;
+  }
+
+  if (!stages.analyzeStarted) {
+    return new ServiceUnavailableError(
+      "analysis_dependency_unavailable",
+      "분석 준비 서비스를 확인할 수 없어요. 잠시 후 다시 시도해 주세요.",
+      { cause: error, retryable: true },
+    );
+  }
+
+  const code = stages.validationStarted
+    ? "invalid_analysis_response"
+    : "analysis_failed";
+
+  return new BadGatewayError(code, ANALYSIS_ERROR_MESSAGES[code], {
+    cause: error,
+    retryable: true,
+  });
+}
+
+type AnalysisTimingKey = AnalysisRequestStage;
 
 function createAnalysisRouteTiming() {
   const startedAt = readNowMs();

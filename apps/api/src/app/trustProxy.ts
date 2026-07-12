@@ -1,19 +1,25 @@
 export function readTrustProxy(
   value: string | undefined,
 ): boolean | number | string {
-  if (!value || value === "0" || value.toLowerCase() === "false") {
+  const normalizedValue = value?.trim();
+
+  if (
+    !normalizedValue ||
+    normalizedValue === "0" ||
+    normalizedValue.toLowerCase() === "false"
+  ) {
     return false;
   }
 
-  if (value === "1" || value.toLowerCase() === "true") {
+  if (normalizedValue.toLowerCase() === "true") {
     return true;
   }
 
-  const parsed = Number.parseInt(value, 10);
+  const parsed = Number.parseInt(normalizedValue, 10);
 
-  if (Number.isFinite(parsed) && String(parsed) === value) {
+  if (Number.isFinite(parsed) && String(parsed) === normalizedValue) {
     return parsed;
   }
 
-  return value;
+  return normalizedValue;
 }
