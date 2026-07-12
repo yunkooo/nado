@@ -6,5 +6,20 @@ storybook-static/
 pnpm-lock.yaml
 
 .agent-skills/
+.agents/skills/supabase/
+.agents/skills/supabase-postgres-best-practices/
+.superpowers/
+apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/target/
+apps/e2e/playwright-report/
+apps/e2e/test-results/
+apps/mobile/.expo/
+apps/mobile/android/
+apps/mobile/dist/
+apps/mobile/ios/Pods/
+apps/mobile/ios/build/
+apps/mobile/ios/**/Images.xcassets/
 docs/superpowers/
+supabase/.branches/
+supabase/.temp/
 AGENTS.md
