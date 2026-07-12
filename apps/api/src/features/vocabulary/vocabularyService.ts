@@ -1,10 +1,15 @@
-import { vocabularyItemSchema } from "@nado/shared";
-import type {
-  SaveVocabularyRequest,
-  VocabularyItem,
-  VocabularyMeaning,
-  VocabularyType,
-} from "@nado/shared";
+import {
+  vocabularyItemSchema,
+  type SaveVocabularyRequest,
+  type VocabularyItem,
+  type VocabularyMeaning,
+  type VocabularyType,
+} from "@nado/shared/vocabulary";
+import {
+  decodeVocabularyCursor,
+  encodeVocabularyCursor,
+  type VocabularyCursor,
+} from "./vocabularyCursor.js";
 
 export type VocabularyRow = {
   created_at: string;
@@ -18,18 +23,29 @@ export type VocabularyRow = {
 };
 
 export type NewVocabularyRow = {
-  created_at: string;
   meanings: VocabularyMeaning[];
   term: string;
   type: VocabularyType;
-  updated_at: string;
   user_id: string;
 };
 
 export type VocabularyStore = {
   deleteByUserId(id: string, userId: string): Promise<boolean>;
-  listByUser(userId: string): Promise<VocabularyRow[]>;
+  listByUser(
+    userId: string,
+    cursor: VocabularyCursor | undefined,
+  ): Promise<VocabularyRowsPage>;
   save(row: NewVocabularyRow): Promise<VocabularyRow>;
+};
+
+export type VocabularyRowsPage = {
+  nextCursor: VocabularyCursor | null;
+  rows: VocabularyRow[];
+};
+
+export type VocabularyPage = {
+  items: VocabularyItem[];
+  nextCursor: string | null;
 };
 
 export type VocabularyServiceOptions = {
@@ -46,10 +62,18 @@ export function createVocabularyService(options: VocabularyServiceOptions) {
       return store.deleteByUserId(id, userId);
     },
 
-    async list(userId: string): Promise<VocabularyItem[]> {
-      const rows = await store.listByUser(userId);
+    async list(userId: string, cursor?: string): Promise<VocabularyPage> {
+      const page = await store.listByUser(
+        userId,
+        decodeVocabularyCursor(cursor),
+      );
 
-      return rows.map(toVocabularyItem);
+      return {
+        items: page.rows.map(toVocabularyItem),
+        nextCursor: page.nextCursor
+          ? encodeVocabularyCursor(page.nextCursor)
+          : null,
+      };
     },
 
     async save(
@@ -60,11 +84,9 @@ export function createVocabularyService(options: VocabularyServiceOptions) {
       const term = normalizeDisplayTerm(request.term);
       const meaning = createMeaning(request, timestamp);
       const saved = await store.save({
-        created_at: timestamp,
         meanings: [meaning],
         term,
         type: request.type,
-        updated_at: timestamp,
         user_id: userId,
       });
 

@@ -35,6 +35,7 @@ export function validateApiRuntimeConfig(
     ...positiveIntegerIssues(environment, [
       "OPENAI_TIMEOUT_MS",
       "OPENROUTER_TIMEOUT_MS",
+      "SUPABASE_TIMEOUT_MS",
     ]),
     ...requiredNonNegativeIntegerIssues(environment, [
       "NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT",

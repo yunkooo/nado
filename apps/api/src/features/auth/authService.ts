@@ -45,10 +45,11 @@ export async function getUserOrThrowUnavailable(
 ): Promise<AuthenticatedUser | null> {
   try {
     return await authService.getUser(accessToken);
-  } catch {
+  } catch (error) {
     throw new ServiceUnavailableError(
       "auth_unavailable",
       "로그인 세션을 확인할 수 없어요. 잠시 후 다시 시도해 주세요.",
+      { cause: error, retryable: true },
     );
   }
 }
@@ -69,11 +70,13 @@ export function parseBearerToken(
   return token;
 }
 
-export function notAuthenticatedError() {
+export function notAuthenticatedError(requestId: string) {
   return {
     error: {
       code: "not_authenticated",
       message: "Google 로그인이 필요합니다.",
+      requestId,
+      retryable: false,
     },
   };
 }

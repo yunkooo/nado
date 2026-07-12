@@ -1,13 +1,14 @@
 import { Router } from "express";
-import { saveVocabularyRequestSchema } from "@nado/shared";
 import {
-  authenticateAuthorizationHeader,
-  notAuthenticatedError,
-  type AuthService,
-} from "../../features/auth/authService.js";
+  MAX_VOCABULARY_CURSOR_LENGTH,
+  saveVocabularyRequestSchema,
+} from "@nado/shared/vocabulary";
+import type { AuthService } from "../../features/auth/authService.js";
 import type { VocabularyServiceFactory } from "../../features/vocabulary/vocabularyTypes.js";
-import { asyncRoute } from "../../shared/http/asyncRoute.js";
+import { BadRequestError } from "../../shared/errors/httpErrors.js";
+import { readRequestId } from "../../shared/http/requestContext.js";
 import { readRouteParam } from "../../shared/http/routeParams.js";
+import { authenticatedRoute } from "../middleware/authenticatedRoute.js";
 
 export type VocabularyRoutesDependencies = {
   authService: AuthService;
@@ -22,35 +23,18 @@ export function createVocabularyRoutes({
 
   router.get(
     "/vocabulary",
-    asyncRoute(async (request, response) => {
-      const auth = await authenticateAuthorizationHeader(
-        request.header("Authorization"),
-        authService,
-      );
-
-      if (!auth.ok) {
-        return response.status(401).json(notAuthenticatedError());
-      }
-
+    authenticatedRoute(authService, async (request, response, auth) => {
+      const cursor = readVocabularyCursor(request.query.cursor);
       const vocabularyService = vocabularyServiceFactory(auth.accessToken);
-      const items = await vocabularyService.list(auth.user.id);
+      const page = await vocabularyService.list(auth.user.id, cursor);
 
-      return response.json({ items });
+      return response.json(page);
     }),
   );
 
   router.post(
     "/vocabulary",
-    asyncRoute(async (request, response) => {
-      const auth = await authenticateAuthorizationHeader(
-        request.header("Authorization"),
-        authService,
-      );
-
-      if (!auth.ok) {
-        return response.status(401).json(notAuthenticatedError());
-      }
-
+    authenticatedRoute(authService, async (request, response, auth) => {
       const parsed = saveVocabularyRequestSchema.safeParse(
         request.body as unknown,
       );
@@ -60,7 +44,9 @@ export function createVocabularyRoutes({
           error: {
             code: "invalid_input",
             issues: parsed.error.issues.map((issue) => issue.message),
-            message: "Vocabulary term, type, and meaning are required.",
+            message: "단어장 저장 입력이 올바르지 않습니다.",
+            requestId: readRequestId(response),
+            retryable: false,
           },
         });
       }
@@ -74,16 +60,7 @@ export function createVocabularyRoutes({
 
   router.delete(
     "/vocabulary/:id",
-    asyncRoute(async (request, response) => {
-      const auth = await authenticateAuthorizationHeader(
-        request.header("Authorization"),
-        authService,
-      );
-
-      if (!auth.ok) {
-        return response.status(401).json(notAuthenticatedError());
-      }
-
+    authenticatedRoute(authService, async (request, response, auth) => {
       const vocabularyService = vocabularyServiceFactory(auth.accessToken);
       const deleted = await vocabularyService.delete(
         auth.user.id,
@@ -95,6 +72,8 @@ export function createVocabularyRoutes({
           error: {
             code: "not_found",
             message: "단어장 항목을 찾을 수 없습니다.",
+            requestId: readRequestId(response),
+            retryable: false,
           },
         });
       }
@@ -104,4 +83,23 @@ export function createVocabularyRoutes({
   );
 
   return router;
+}
+
+function readVocabularyCursor(value: unknown): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (
+    typeof value !== "string" ||
+    value.length === 0 ||
+    value.length > MAX_VOCABULARY_CURSOR_LENGTH
+  ) {
+    throw new BadRequestError(
+      "invalid_input",
+      "단어장 페이지 커서가 올바르지 않습니다.",
+    );
+  }
+
+  return value;
 }

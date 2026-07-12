@@ -2,13 +2,20 @@ import { describe, expect, it } from "vitest";
 import {
   createAnalysisUsageService,
   type AnalysisUsageConsumeResult,
-  type AnalysisUsageRecord,
   type AnalysisUsageStore,
   type UsageIdentity,
 } from "./analysisUsageService.js";
 
+type MemoryAnalysisUsageRecord = {
+  id: string;
+  ipHash: string | null;
+  periodStart: string;
+  requestCount: number;
+  userId: string | null;
+};
+
 class MemoryAnalysisUsageStore implements AnalysisUsageStore {
-  records: AnalysisUsageRecord[] = [];
+  records: MemoryAnalysisUsageRecord[] = [];
   consumptions: Array<{
     identity: UsageIdentity;
     limit: number;

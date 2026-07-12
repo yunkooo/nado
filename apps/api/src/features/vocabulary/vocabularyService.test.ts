@@ -3,6 +3,7 @@ import {
   createVocabularyService,
   type NewVocabularyRow,
   type VocabularyRow,
+  type VocabularyRowsPage,
   type VocabularyStore,
 } from "./vocabularyService.js";
 
@@ -13,23 +14,11 @@ class MemoryVocabularyStore implements VocabularyStore {
     this.rows = rows;
   }
 
-  async listByUser(userId: string): Promise<VocabularyRow[]> {
-    return this.rows.filter((row) => row.user_id === userId);
-  }
-
-  async findByUserTerm(
-    userId: string,
-    normalizedTerm: string,
-    type: "word" | "phrase",
-  ): Promise<VocabularyRow | null> {
-    return (
-      this.rows.find(
-        (row) =>
-          row.user_id === userId &&
-          row.normalized_term === normalizedTerm &&
-          row.type === type,
-      ) ?? null
-    );
+  async listByUser(userId: string): Promise<VocabularyRowsPage> {
+    return {
+      nextCursor: null,
+      rows: this.rows.filter((row) => row.user_id === userId),
+    };
   }
 
   async save(row: NewVocabularyRow): Promise<VocabularyRow> {
@@ -47,10 +36,13 @@ class MemoryVocabularyStore implements VocabularyStore {
     }
 
     if (!existing) {
+      const timestamp = meaning.createdAt ?? new Date().toISOString();
       const inserted = {
         ...row,
+        created_at: timestamp,
         id: `row_${this.rows.length + 1}`,
         normalized_term: normalizedTerm,
+        updated_at: timestamp,
       };
 
       this.rows.push(inserted);
@@ -60,42 +52,10 @@ class MemoryVocabularyStore implements VocabularyStore {
 
     if (!hasMeaning(existing.meanings, meaning)) {
       existing.meanings = [...existing.meanings, meaning];
-      existing.updated_at = row.updated_at;
+      existing.updated_at = meaning.createdAt ?? existing.updated_at;
     }
 
     return existing;
-  }
-
-  async insert(row: NewVocabularyRow): Promise<VocabularyRow> {
-    const inserted = {
-      ...row,
-      id: `row_${this.rows.length + 1}`,
-      normalized_term: row.term.trim().replace(/\s+/g, " ").toLowerCase(),
-    };
-
-    this.rows.push(inserted);
-
-    return inserted;
-  }
-
-  async updateMeanings(
-    id: string,
-    userId: string,
-    meanings: VocabularyRow["meanings"],
-    updatedAt: string,
-  ): Promise<VocabularyRow | null> {
-    const row = this.rows.find(
-      (candidate) => candidate.id === id && candidate.user_id === userId,
-    );
-
-    if (!row) {
-      return null;
-    }
-
-    row.meanings = meanings;
-    row.updated_at = updatedAt;
-
-    return row;
   }
 
   async deleteByUserId(id: string, userId: string): Promise<boolean> {
@@ -131,22 +91,25 @@ describe("createVocabularyService", () => {
       ]),
     });
 
-    await expect(service.list("user_1")).resolves.toEqual([
-      {
-        createdAt: "2026-06-09T00:00:00.000Z",
-        id: "row_1",
-        meanings: [
-          {
-            createdAt: "2026-06-09T00:00:00.000Z",
-            meaning: "~인지 궁금하다",
-            note: "정중한 질문에서 자주 쓰입니다.",
-          },
-        ],
-        term: "wonder if",
-        type: "phrase",
-        updatedAt: "2026-06-09T00:00:00.000Z",
-      },
-    ]);
+    await expect(service.list("user_1")).resolves.toEqual({
+      items: [
+        {
+          createdAt: "2026-06-09T00:00:00.000Z",
+          id: "row_1",
+          meanings: [
+            {
+              createdAt: "2026-06-09T00:00:00.000Z",
+              meaning: "~인지 궁금하다",
+              note: "정중한 질문에서 자주 쓰입니다.",
+            },
+          ],
+          term: "wonder if",
+          type: "phrase",
+          updatedAt: "2026-06-09T00:00:00.000Z",
+        },
+      ],
+      nextCursor: null,
+    });
   });
 
   it("normalizes Postgres timestamp offsets before returning vocabulary items", async () => {
@@ -170,21 +133,24 @@ describe("createVocabularyService", () => {
       ]),
     });
 
-    await expect(service.list("user_1")).resolves.toEqual([
-      {
-        createdAt: "2026-06-09T08:10:40.000Z",
-        id: "row_1",
-        meanings: [
-          {
-            createdAt: "2026-06-09T08:10:40.000Z",
-            meaning: "직접 저장",
-          },
-        ],
-        term: "nado-rest-save",
-        type: "word",
-        updatedAt: "2026-06-09T08:10:40.000Z",
-      },
-    ]);
+    await expect(service.list("user_1")).resolves.toEqual({
+      items: [
+        {
+          createdAt: "2026-06-09T08:10:40.000Z",
+          id: "row_1",
+          meanings: [
+            {
+              createdAt: "2026-06-09T08:10:40.000Z",
+              meaning: "직접 저장",
+            },
+          ],
+          term: "nado-rest-save",
+          type: "word",
+          updatedAt: "2026-06-09T08:10:40.000Z",
+        },
+      ],
+      nextCursor: null,
+    });
   });
 
   it("inserts a new vocabulary item for a new normalized term", async () => {
