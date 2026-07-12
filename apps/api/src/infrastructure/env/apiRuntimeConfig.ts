@@ -36,7 +36,7 @@ export function validateApiRuntimeConfig(
       "OPENAI_TIMEOUT_MS",
       "OPENROUTER_TIMEOUT_MS",
     ]),
-    ...requiredPositiveIntegerIssues(environment, [
+    ...requiredNonNegativeIntegerIssues(environment, [
       "NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT",
       "NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT",
     ]),
@@ -118,7 +118,7 @@ function positiveIntegerIssues(
   });
 }
 
-function requiredPositiveIntegerIssues(
+function requiredNonNegativeIntegerIssues(
   environment: ApiRuntimeEnvironment,
   names: string[],
 ): string[] {
@@ -133,11 +133,11 @@ function requiredPositiveIntegerIssues(
 
     return /^\d+$/.test(value) &&
       Number.isSafeInteger(parsedValue) &&
-      parsedValue > 0 &&
+      parsedValue >= 0 &&
       parsedValue <= MAX_ANALYSIS_DAILY_LIMIT
       ? []
       : [
-          `${name} must be a positive integer no greater than ${MAX_ANALYSIS_DAILY_LIMIT}`,
+          `${name} must be a non-negative integer no greater than ${MAX_ANALYSIS_DAILY_LIMIT}`,
         ];
   });
 }

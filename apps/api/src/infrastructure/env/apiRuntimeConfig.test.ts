@@ -89,7 +89,7 @@ describe("API runtime configuration", () => {
       expect.objectContaining({
         issues: [
           "OPENAI_TIMEOUT_MS must be a positive integer",
-          `NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT must be a positive integer no greater than ${MAX_ANALYSIS_DAILY_LIMIT}`,
+          `NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT must be a non-negative integer no greater than ${MAX_ANALYSIS_DAILY_LIMIT}`,
         ],
       }),
     );
@@ -120,7 +120,6 @@ describe("API runtime configuration", () => {
   );
 
   it.each([
-    "0",
     "",
     "-1",
     "10.5",
@@ -133,6 +132,18 @@ describe("API runtime configuration", () => {
         NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT: limit,
       }),
     ).toThrow(ApiRuntimeConfigurationError);
+  });
+
+  it.each([
+    "NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT",
+    "NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT",
+  ] as const)("accepts zero for production usage limit %s", (name) => {
+    expect(() =>
+      validateApiRuntimeConfig({
+        ...validProductionEnvironment,
+        [name]: "0",
+      }),
+    ).not.toThrow();
   });
 
   it.each([
