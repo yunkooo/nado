@@ -66,4 +66,27 @@ describe("getMobileWordPopoverPosition", () => {
     expect(position.width).toBe(320);
     expect(position.left + position.width).toBeLessThanOrEqual(378);
   });
+
+  it("recomputes the clamped position when the viewport rotates", () => {
+    const triggerRect = {
+      height: 28,
+      width: 72,
+      x: 326,
+      y: 360,
+    };
+    const portrait = getMobileWordPopoverPosition({
+      popoverSize,
+      triggerRect,
+      viewportSize: { height: 720, width: 390 },
+    });
+    const landscape = getMobileWordPopoverPosition({
+      popoverSize,
+      triggerRect,
+      viewportSize: { height: 390, width: 720 },
+    });
+
+    expect(portrait.left).not.toBe(landscape.left);
+    expect(landscape.top + landscape.height).toBeLessThanOrEqual(378);
+    expect(landscape.left + landscape.width).toBeLessThanOrEqual(708);
+  });
 });

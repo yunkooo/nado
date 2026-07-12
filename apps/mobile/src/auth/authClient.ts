@@ -7,7 +7,7 @@ import {
   type Session,
   type SupabaseClient,
 } from "@supabase/supabase-js";
-import { Linking, Platform } from "react-native";
+import { AppState, Linking, Platform, type AppStateStatus } from "react-native";
 
 type MobileAuthProcessEnv = {
   EXPO_PUBLIC_MOBILE_AUTH_REDIRECT_URL?: string;
@@ -42,6 +42,21 @@ export type MobileAuthCallbackResult = "handled" | "ignored" | "error";
 export type MobileAuthActionResult =
   | { status: "success" }
   | { message: string; status: "error" };
+
+type MobileAuthRefreshClient = {
+  auth: {
+    startAutoRefresh(): Promise<void> | void;
+    stopAutoRefresh(): Promise<void> | void;
+  };
+};
+
+type MobileAppState = {
+  addEventListener(
+    event: "change",
+    listener: (state: AppStateStatus) => void,
+  ): { remove(): void };
+  currentState: AppStateStatus;
+};
 
 const MOBILE_AUTH_CONFIGURATION_ERROR_MESSAGE =
   "로그인 설정이 완료되지 않았어요. Supabase 환경변수를 확인해 주세요.";
@@ -80,9 +95,41 @@ export function getMobileSupabaseClient(): SupabaseClient | null {
       anonKey,
       createMobileSupabaseAuthOptions(),
     );
+    void startMobileAuthAutoRefreshLifecycle(mobileSupabaseClient);
   }
 
   return mobileSupabaseClient;
+}
+
+export function startMobileAuthAutoRefreshLifecycle(
+  client: MobileAuthRefreshClient,
+  {
+    appState = AppState,
+    platformOS = Platform.OS,
+  }: {
+    appState?: MobileAppState;
+    platformOS?: MobilePlatformOS;
+  } = {},
+) {
+  if (platformOS === "web") {
+    return () => undefined;
+  }
+
+  const syncAutoRefresh = (state: AppStateStatus) => {
+    const refreshTask =
+      state === "active"
+        ? client.auth.startAutoRefresh()
+        : client.auth.stopAutoRefresh();
+    void Promise.resolve(refreshTask).catch(() => undefined);
+  };
+
+  syncAutoRefresh(appState.currentState);
+  const subscription = appState.addEventListener("change", syncAutoRefresh);
+
+  return () => {
+    subscription.remove();
+    void Promise.resolve(client.auth.stopAutoRefresh()).catch(() => undefined);
+  };
 }
 
 export function createMobileSupabaseAuthOptions({
@@ -111,34 +158,34 @@ export async function signInWithGoogle() {
     };
   }
 
-  const redirectTo = createMobileOAuthRedirectTo();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    options: {
-      redirectTo,
-      skipBrowserRedirect: Platform.OS !== "web",
-    },
-    provider: "google",
-  });
+  try {
+    const redirectTo = createMobileOAuthRedirectTo();
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      options: {
+        redirectTo,
+        skipBrowserRedirect: Platform.OS !== "web",
+      },
+      provider: "google",
+    });
 
-  if (error) {
-    return {
-      message: MOBILE_AUTH_ERROR_MESSAGE,
-      status: "error" as const,
-    };
-  }
-
-  if (Platform.OS !== "web" && data.url) {
-    try {
-      await Linking.openURL(data.url);
-    } catch {
+    if (error) {
       return {
         message: MOBILE_AUTH_ERROR_MESSAGE,
         status: "error" as const,
       };
     }
-  }
 
-  return { status: "success" as const };
+    if (Platform.OS !== "web" && data.url) {
+      await Linking.openURL(data.url);
+    }
+
+    return { status: "success" as const };
+  } catch {
+    return {
+      message: MOBILE_AUTH_ERROR_MESSAGE,
+      status: "error" as const,
+    };
+  }
 }
 
 export async function signOut() {
@@ -151,17 +198,25 @@ export async function signOut() {
     };
   }
 
-  const { error } = await supabase.auth.signOut();
+  try {
+    const { error } = await supabase.auth.signOut();
 
-  return error
-    ? { message: MOBILE_AUTH_ERROR_MESSAGE, status: "error" as const }
-    : { status: "success" as const };
+    return error
+      ? { message: MOBILE_AUTH_ERROR_MESSAGE, status: "error" as const }
+      : { status: "success" as const };
+  } catch {
+    return {
+      message: MOBILE_AUTH_ERROR_MESSAGE,
+      status: "error" as const,
+    };
+  }
 }
 
 export function toMobileAuthSnapshot(session: Session | null) {
   if (!session) {
     return {
       accessToken: null,
+      message: null,
       session,
       status: "anonymous" as const,
     };
@@ -169,6 +224,7 @@ export function toMobileAuthSnapshot(session: Session | null) {
 
   return {
     accessToken: session.access_token,
+    message: null,
     session,
     status: "authenticated" as const,
   };
@@ -210,6 +266,19 @@ export async function completeMobileAuthFromCallbackUrl(
   }
 
   const parsed = new URL(url);
+  const hashParams = new URLSearchParams(parsed.hash.replace(/^#/, ""));
+  const callbackError =
+    parsed.searchParams.get("error") ??
+    parsed.searchParams.get("error_code") ??
+    parsed.searchParams.get("error_description") ??
+    hashParams.get("error") ??
+    hashParams.get("error_code") ??
+    hashParams.get("error_description");
+
+  if (callbackError) {
+    return "error";
+  }
+
   const code = parsed.searchParams.get("code");
 
   if (code) {
@@ -217,7 +286,6 @@ export async function completeMobileAuthFromCallbackUrl(
     return error ? "error" : "handled";
   }
 
-  const hashParams = new URLSearchParams(parsed.hash.replace(/^#/, ""));
   const accessToken = hashParams.get("access_token");
   const refreshToken = hashParams.get("refresh_token");
 

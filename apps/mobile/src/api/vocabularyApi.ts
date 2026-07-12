@@ -1,13 +1,16 @@
 import {
   fetchWithTimeout,
-  readApiErrorMessage,
   readJson,
-  saveVocabularyResponseSchema,
-  vocabularyListResponseSchema,
   type ApiRequestOptions,
+} from "@nado/shared/http";
+import { readApiErrorMessage } from "@nado/shared/api-errors";
+import {
+  saveVocabularyResponseSchema,
+  VOCABULARY_MAX_API_PAGES,
+  vocabularyListResponseSchema,
   type SaveVocabularyRequest,
   type VocabularyItem,
-} from "@nado/shared";
+} from "@nado/shared/vocabulary";
 import {
   MOBILE_API_CONFIGURATION_ERROR_MESSAGE,
   MobileApiConfigurationError,
@@ -26,6 +29,7 @@ export type VocabularyListResult =
 
 export type DeleteVocabularyResult =
   | { status: "success" }
+  | { message: string; status: "not-found" }
   | { message: string; status: "error" };
 
 export type SaveVocabularyResult =
@@ -46,64 +50,87 @@ export async function listVocabulary(
   options: VocabularyApiOptions = {},
 ): Promise<VocabularyListResult> {
   const fetcher = options.fetcher ?? globalThis.fetch;
+  const items: VocabularyItem[] = [];
+  const seenCursors = new Set<string>();
+  let cursor: string | null = null;
 
-  let fetchResult;
+  for (let page = 0; page < VOCABULARY_MAX_API_PAGES; page += 1) {
+    let fetchResult;
 
-  try {
-    fetchResult = await fetchWithTimeout(
-      resolveMobileApiUrl("/api/vocabulary", options.apiBaseUrl, {
-        platform: options.apiPlatform,
-      }),
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
+    try {
+      fetchResult = await fetchWithTimeout(
+        resolveMobileApiUrl(
+          createVocabularyListPath(cursor),
+          options.apiBaseUrl,
+          { platform: options.apiPlatform },
+        ),
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          method: "GET",
         },
-        method: "GET",
-      },
-      {
-        fallbackMessage: VOCABULARY_ERROR_MESSAGE,
-        fetcher,
-        timeoutMessage: VOCABULARY_TIMEOUT_MESSAGE,
-        timeoutMs: options.timeoutMs,
-      },
-    );
-  } catch (error) {
-    return {
-      message:
-        error instanceof MobileApiConfigurationError
-          ? MOBILE_API_CONFIGURATION_ERROR_MESSAGE
-          : VOCABULARY_ERROR_MESSAGE,
-      status: "error",
-    };
+        {
+          fallbackMessage: VOCABULARY_ERROR_MESSAGE,
+          fetcher,
+          timeoutMessage: VOCABULARY_TIMEOUT_MESSAGE,
+          timeoutMs: options.timeoutMs,
+        },
+      );
+    } catch (error) {
+      return {
+        message:
+          error instanceof MobileApiConfigurationError
+            ? MOBILE_API_CONFIGURATION_ERROR_MESSAGE
+            : VOCABULARY_ERROR_MESSAGE,
+        status: "error",
+      };
+    }
+
+    if (fetchResult.status === "error") {
+      return fetchResult;
+    }
+
+    const { response } = fetchResult;
+    const payload = await readJson(response);
+
+    if (!response.ok) {
+      return {
+        message: readApiErrorMessage(payload, VOCABULARY_ERROR_MESSAGE),
+        status: "error",
+      };
+    }
+
+    const parsed = vocabularyListResponseSchema.safeParse(payload);
+
+    if (!parsed.success) {
+      return {
+        message: VOCABULARY_ERROR_MESSAGE,
+        status: "error",
+      };
+    }
+
+    items.push(...parsed.data.items);
+
+    if (!parsed.data.nextCursor) {
+      return { data: items, status: "success" };
+    }
+
+    if (seenCursors.has(parsed.data.nextCursor)) {
+      return { message: VOCABULARY_ERROR_MESSAGE, status: "error" };
+    }
+
+    seenCursors.add(parsed.data.nextCursor);
+    cursor = parsed.data.nextCursor;
   }
 
-  if (fetchResult.status === "error") {
-    return fetchResult;
-  }
+  return { message: VOCABULARY_ERROR_MESSAGE, status: "error" };
+}
 
-  const { response } = fetchResult;
-  const payload = await readJson(response);
-
-  if (!response.ok) {
-    return {
-      message: readApiErrorMessage(payload, VOCABULARY_ERROR_MESSAGE),
-      status: "error",
-    };
-  }
-
-  const parsed = vocabularyListResponseSchema.safeParse(payload);
-
-  if (!parsed.success) {
-    return {
-      message: VOCABULARY_ERROR_MESSAGE,
-      status: "error",
-    };
-  }
-
-  return {
-    data: parsed.data.items,
-    status: "success",
-  };
+function createVocabularyListPath(cursor: string | null): string {
+  return cursor
+    ? `/api/vocabulary?cursor=${encodeURIComponent(cursor)}`
+    : "/api/vocabulary";
 }
 
 export async function deleteVocabularyItem(
@@ -150,6 +177,17 @@ export async function deleteVocabularyItem(
   }
 
   const { response } = fetchResult;
+
+  if (response.status === 404) {
+    return {
+      message: readApiErrorMessage(
+        await readJson(response),
+        VOCABULARY_ERROR_MESSAGE,
+      ),
+      status: "not-found",
+    };
+  }
+
   if (!response.ok) {
     return {
       message: readApiErrorMessage(

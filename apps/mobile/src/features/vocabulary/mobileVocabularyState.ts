@@ -1,5 +1,4 @@
-import type { VocabularyItem } from "@nado/shared";
-import type { MobileVocabularySuggestion } from "../../api/analysisApi";
+import type { VocabularyItem } from "@nado/shared/vocabulary";
 
 export type MobileVocabularyState = {
   items: VocabularyItem[];
@@ -16,6 +15,12 @@ export function applyDeleteVocabularyError(
     message,
     status: currentState.items.length > 0 ? "ready" : "error",
   };
+}
+
+export function shouldRemoveMobileVocabularyItemAfterDelete(result: {
+  status: "error" | "not-found" | "success";
+}) {
+  return result.status === "success" || result.status === "not-found";
 }
 
 export function applyLoadVocabularyError(
@@ -61,17 +66,27 @@ export function upsertMobileVocabularyItem(
   };
 }
 
-export function createMobileVocabularySuggestionKey(
-  suggestion: MobileVocabularySuggestion,
-) {
-  return `${suggestion.type}:${suggestion.term}:${suggestion.meaning}`;
-}
-
 export function addMobileVocabularySavingKey(
   savingKeys: ReadonlySet<string>,
   key: string,
 ) {
   return new Set([...savingKeys, key]);
+}
+
+export function addMobileVocabularyDeletingId(
+  deletingIds: ReadonlySet<string>,
+  itemId: string,
+) {
+  return new Set([...deletingIds, itemId]);
+}
+
+export function removeMobileVocabularyDeletingId(
+  deletingIds: ReadonlySet<string>,
+  itemId: string,
+) {
+  const nextIds = new Set(deletingIds);
+  nextIds.delete(itemId);
+  return nextIds;
 }
 
 export function removeMobileVocabularySavingKey(
@@ -81,22 +96,4 @@ export function removeMobileVocabularySavingKey(
   const nextKeys = new Set(savingKeys);
   nextKeys.delete(key);
   return nextKeys;
-}
-
-export function isMobileVocabularySuggestionSaved(
-  items: VocabularyItem[],
-  suggestion: MobileVocabularySuggestion,
-) {
-  const normalizedSuggestionTerm = normalizeVocabularyTerm(suggestion.term);
-
-  return items.some((item) => {
-    return (
-      item.type === suggestion.type &&
-      normalizeVocabularyTerm(item.term) === normalizedSuggestionTerm
-    );
-  });
-}
-
-function normalizeVocabularyTerm(term: string) {
-  return term.trim().toLocaleLowerCase();
 }

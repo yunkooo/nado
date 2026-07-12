@@ -1,7 +1,7 @@
 import {
   MAX_ANALYSIS_TEXT_LENGTH,
   countAnalysisTextCharacters,
-} from "@nado/shared";
+} from "@nado/shared/analysis-input";
 
 export const INITIAL_ANALYSIS_TEXT = "";
 export const ANALYSIS_INPUT_ACCESSIBILITY_LABEL = "분석할 영어 문장";
@@ -48,4 +48,11 @@ export function getAnalysisSourceSampleState(text: string) {
     countLabel: `${countAnalysisTextCharacters(text)} / ${MAX_ANALYSIS_TEXT_LENGTH}`,
     text,
   };
+}
+
+export function resolveAnalysisInputAfterSuccess(
+  currentText: string,
+  submittedText: string,
+) {
+  return currentText === submittedText ? "" : currentText;
 }
