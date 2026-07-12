@@ -29,12 +29,20 @@ runs:
         fi
 
         python3 - <<'PY' > slack-payload.json
+        import html
         import json
         import os
 
+        def escape_mrkdwn(value):
+            return html.escape(value, quote=False)
+
+        actor = escape_mrkdwn(os.environ["GITHUB_ACTOR_NAME"])
+        branch = escape_mrkdwn(os.environ["GITHUB_BRANCH_NAME"])
+        job_name = escape_mrkdwn(os.environ["FAILED_JOB_NAME"])
         short_sha = os.environ["GITHUB_SHA_VALUE"][:7]
+        workflow = escape_mrkdwn(os.environ["GITHUB_WORKFLOW_NAME"])
         payload = {
-            "text": f"nado CI failed on {os.environ['GITHUB_BRANCH_NAME']}",
+            "text": f"nado CI failed on {branch}",
             "blocks": [
                 {
                     "type": "header",
@@ -48,19 +56,19 @@ runs:
                     "fields": [
                         {
                             "type": "mrkdwn",
-                            "text": f"*Workflow:*\n{os.environ['GITHUB_WORKFLOW_NAME']}",
+                            "text": f"*Workflow:*\n{workflow}",
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Job:*\n{os.environ['FAILED_JOB_NAME']}",
+                            "text": f"*Job:*\n{job_name}",
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Branch:*\n{os.environ['GITHUB_BRANCH_NAME']}",
+                            "text": f"*Branch:*\n{branch}",
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Actor:*\n{os.environ['GITHUB_ACTOR_NAME']}",
+                            "text": f"*Actor:*\n{actor}",
                         },
                         {
                             "type": "mrkdwn",

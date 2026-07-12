@@ -4,9 +4,7 @@ on:
   pull_request:
     types: [opened, reopened, ready_for_review]
 
-permissions:
-  contents: read
-  pull-requests: read
+permissions: {}
 
 jobs:
   notify:
@@ -31,8 +29,12 @@ jobs:
           fi
 
           python3 - <<'PY' > slack-payload.json
+          import html
           import json
           import os
+
+          def escape_mrkdwn(value):
+              return html.escape(value, quote=False)
 
           action_labels = {
               "opened": "새 PR",
@@ -40,6 +42,10 @@ jobs:
               "ready_for_review": "리뷰 준비 완료",
           }
           action_label = action_labels.get(os.environ["PR_ACTION"], os.environ["PR_ACTION"])
+          author = escape_mrkdwn(os.environ["PR_AUTHOR"])
+          base_ref = escape_mrkdwn(os.environ["PR_BASE_REF"])
+          head_ref = escape_mrkdwn(os.environ["PR_HEAD_REF"])
+          pr_title = escape_mrkdwn(os.environ["PR_TITLE"])
           payload = {
               "text": f"nado PR review request: #{os.environ['PR_NUMBER']}",
               "blocks": [
@@ -56,7 +62,7 @@ jobs:
                           "type": "mrkdwn",
                           "text": (
                               f"*{action_label}:* <{os.environ['PR_URL']}|"
-                              f"#{os.environ['PR_NUMBER']} {os.environ['PR_TITLE']}>"
+                              f"#{os.environ['PR_NUMBER']} {pr_title}>"
                           ),
                       },
                   },
@@ -65,11 +71,11 @@ jobs:
                       "fields": [
                           {
                               "type": "mrkdwn",
-                              "text": f"*Author:*\\n{os.environ['PR_AUTHOR']}",
+                              "text": f"*Author:*\n{author}",
                           },
                           {
                               "type": "mrkdwn",
-                              "text": f"*Branch:*\\n{os.environ['PR_HEAD_REF']} -> {os.environ['PR_BASE_REF']}",
+                              "text": f"*Branch:*\n{head_ref} -&gt; {base_ref}",
                           },
                       ],
                   },

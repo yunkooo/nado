@@ -1,187 +1,34 @@
-# Notion Ticket DB Schema
+# Notion 티켓 자동화 계약
 
-이 문서는 nado 프로젝트에서 Notion `프로젝트` 데이터 소스를 작업 원장으로 사용할 때 필요한 속성, 상태 규칙, GitHub Actions 자동화 규칙을 정의한다.
+Notion `프로젝트` 데이터 소스는 작업 원장이다. 이 문서는 사람이 입력할 값과 GitHub Actions가 자동으로 갱신할 값을 구분한다.
 
-## Data Source
+## 일반 작업자가 알아야 할 내용
 
-- Notion data source: `프로젝트`
-- Data source ID: GitHub Actions의 `NOTION_TICKETS_DATA_SOURCE_ID` 값으로 관리한다.
-- Ticket page는 이 data source에 속해야 한다. GitHub Actions는 page를 갱신하기 전에 page parent가 `NOTION_TICKETS_DATA_SOURCE_ID`와 일치하는지 확인한다.
-- Notion API는 data source parent를 안정적으로 확인하기 위해 `Notion-Version: 2025-09-03` 이상을 사용한다.
-- Dashboard는 v1에서 별도 React 앱을 만들지 않고 Notion database view로 운영한다.
+### Data source
 
-## Required Properties
+- Data source 이름: `프로젝트`
+- ID 관리: GitHub Actions의 `NOTION_TICKETS_DATA_SOURCE_ID`
+- API version: `Notion-Version: 2025-09-03` 이상
+- PR의 `Ticket:` page는 반드시 이 data source에 속해야 한다.
 
-| Property            | Type   | Purpose                                                  |
-| ------------------- | ------ | -------------------------------------------------------- |
-| `프로젝트 이름`     | Title  | 티켓 제목이다. 작업 범위를 한눈에 이해할 수 있어야 한다. |
-| `상태`              | Status | 티켓의 현재 진행 상태다. 아래 상태값만 사용한다.         |
-| `우선순위`          | Select | 기존 우선순위 값을 유지한다.                             |
-| `담당자`            | Person | 작업 담당자를 표시한다.                                  |
-| `작업 유형`         | Select | 티켓의 성격을 기능, 수정, 문서 등으로 분류한다.          |
-| `시작일`            | Date   | 작업이 실제로 시작된 날짜다.                             |
-| `종료일`            | Date   | PR merge 후 완료된 날짜다.                               |
-| `GitHub PR`         | URL    | 연결된 GitHub Pull Request URL이다.                      |
-| `GitHub Branch`     | Text   | 작업 브랜치 이름이다.                                    |
-| `Last Push At`      | Date   | PR branch push를 마지막으로 반영한 시각이다.             |
-| `Last Head SHA`     | Text   | 마지막으로 반영한 PR head commit SHA다.                  |
-| `Last Push Summary` | Text   | 마지막 push가 어떤 PR/branch/SHA를 반영했는지 요약한다.  |
-| `CI Status`         | Select | 연결된 PR의 CI/check 상태다.                             |
-| `Review Status`     | Select | Codex 리뷰 또는 사람 리뷰의 현재 상태다.                 |
-| `Blocker`           | Text   | 작업을 막는 원인이나 해제 조건이다.                      |
-| `PR Created At`     | Date   | PR이 생성된 시각이다.                                    |
-| `Merged At`         | Date   | PR이 merge된 시각이다.                                   |
-| `Last CI Check`     | Date   | CI 상태를 마지막으로 확인한 시각이다.                    |
-| `Last Review Check` | Date   | 리뷰 상태를 마지막으로 확인한 시각이다.                  |
+### 직접 작성하는 값
 
-## Work Type Values
+| Property        | Notion type | 용도                                               |
+| --------------- | ----------- | -------------------------------------------------- |
+| `프로젝트 이름` | Title       | 작업 제목                                          |
+| `상태`          | Status      | 작업자는 `TODO`에서 `IN-progrss`까지만 변경        |
+| `우선순위`      | Select      | 기존 Notion 값 사용                                |
+| `담당자`        | Person      | 작업 담당자                                        |
+| `작업 유형`     | Select      | 기능, 수정, 문서, 테스트, 리팩터, 설정, 보안, 운영 |
+| `시작일`        | Date        | 실제 작업 시작일                                   |
+| `Blocker`       | Rich text   | 실제 외부 중단 사유와 해제 조건을 수동 기록        |
 
-`작업 유형`은 티켓 생성 시 반드시 하나를 선택한다. Codex가 티켓을 만들거나 사용자가 티켓 생성을 요청하면 아래 기준으로 고른다.
+`IN-progrss`는 오타처럼 보여도 현재 database 값이므로 그대로 사용한다.
 
-| 작업 유형 | When To Use                                             |
-| --------- | ------------------------------------------------------- |
-| `기능`    | 사용자가 새로 체감하는 기능이나 화면, 흐름을 추가한다.  |
-| `수정`    | 버그, 깨진 동작, 잘못된 상태 전이를 바로잡는다.         |
-| `문서`    | README, workflow 문서, 사용 가이드, 주석 중심 변경이다. |
-| `테스트`  | 테스트 추가, 테스트 보강, 검증 자동화 개선이 중심이다.  |
-| `리팩터`  | 외부 동작은 유지하고 내부 구조, 이름, 경계를 개선한다.  |
-| `설정`    | 빌드, CI, 패키지, 앱 설정, 환경 구성을 바꾼다.          |
-| `보안`    | secret, 권한, 인증/인가, 민감 정보 노출 위험을 줄인다.  |
-| `운영`    | 배포, 모니터링, 알림, 반복 운영 절차를 개선한다.        |
-
-## Status Values
-
-`상태`는 현재 Notion 데이터 소스에 존재하는 값을 그대로 사용한다. 오타처럼 보이는 `IN-progrss`도 v1에서는 변경하지 않는다.
-
-| 상태         | Meaning                       | When To Use                                                                |
-| ------------ | ----------------------------- | -------------------------------------------------------------------------- |
-| `TODO`       | 아직 시작하지 않은 작업       | 새 티켓 생성 시 기본 상태다.                                               |
-| `IN-progrss` | 구현이 진행 중인 작업         | Codex 또는 작업자가 티켓 기반 작업을 시작할 때 변경한다.                   |
-| `IN-review`  | PR이 열려 있고 검토 중인 작업 | PR 생성 후 변경한다. CI 실패나 리뷰 수정 요청이 있어도 이 상태를 유지한다. |
-| `DONE`       | PR이 merge되어 완료된 작업    | 연결된 PR이 실제로 merge된 뒤 GitHub Actions가 변경한다.                   |
-
-## CI Status Values
-
-| CI Status     | Meaning                                       |
-| ------------- | --------------------------------------------- |
-| `Not started` | 아직 PR 또는 CI 실행이 없다.                  |
-| `Pending`     | CI/check가 실행 중이다.                       |
-| `Success`     | 필수 CI/check가 모두 통과했다.                |
-| `Failed`      | 하나 이상의 필수 CI/check가 실패했다.         |
-| `Cancelled`   | CI/check가 취소되었다.                        |
-| `Unknown`     | GitHub Actions가 현재 상태를 확인하지 못했다. |
-
-## Review Status Values
-
-| Review Status       | Meaning                                            |
-| ------------------- | -------------------------------------------------- |
-| `Not requested`     | 아직 리뷰가 요청되지 않았다.                       |
-| `Pending`           | Codex 리뷰 또는 사람 리뷰가 진행 중이다.           |
-| `Changes requested` | 해결해야 할 리뷰 의견이 남아 있다.                 |
-| `Passed`            | 현재 확인 가능한 리뷰 문제가 없다.                 |
-| `Unknown`           | GitHub Actions가 현재 리뷰 상태를 확인하지 못했다. |
-
-## Dashboard Views
-
-다음 view를 Notion `프로젝트` 데이터 소스에 둔다.
-
-| View            | Type  | Purpose                                 |
-| --------------- | ----- | --------------------------------------- |
-| `Status Board`  | Board | `상태` 기준으로 전체 티켓 흐름을 본다.  |
-| `Review Queue`  | Table | `IN-review` 티켓을 검토 대기열로 본다.  |
-| `Blockers`      | Table | `Blocker`가 있는 티켓만 본다.           |
-| `Recently Done` | Table | 완료된 티켓을 `종료일` 최신순으로 본다. |
-
-## Ticket Granularity Rules
-
-Notion 티켓은 PR 자동화의 공식 연결 단위다. PR 본문의 `Ticket:` URL은 하나의 대표 티켓만 자동 동기화하므로, 티켓을 만들 때부터 PR 단위와 맞춘다.
-
-- 한 PR로 끝낼 작은 단계들은 Notion `TODO` 카드를 여러 개 만들지 않는다.
-- 작은 단계들은 대표 티켓 본문의 checklist, `작업 범위`, `완료 조건`, `진행 메모`에 넣는다.
-- 별도 Notion 티켓은 독립적으로 리뷰, 검증, merge 가능한 작업에만 만든다.
-- `Related tickets`처럼 PR 본문에 여러 Notion URL을 적어도 GitHub Actions는 공식 `Ticket:` URL 하나만 `DONE`으로 동기화한다.
-- 이미 과하게 쪼갠 카드가 있으면 보드에 남겨둘지 먼저 판단하고, 같은 PR로 처리될 항목은 대표 티켓으로 통합한다.
-
-## State Transition Rules
-
-| Event                | 상태           | CI Status                  | Review Status       | Notes                                                                                                                    |
-| -------------------- | -------------- | -------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| 티켓 생성            | `TODO`         | `Not started`              | `Not requested`     | 아직 GitHub 작업이 없어야 한다.                                                                                          |
-| 작업 시작            | `IN-progrss`   | `Not started`              | `Not requested`     | 브랜치를 만들면 `GitHub Branch`를 기록한다.                                                                              |
-| PR 생성/업데이트     | `IN-review`    | 현재 CI 상태 유지          | 현재 리뷰 상태 유지 | 현재 PR이 closed가 아닐 때만 갱신한다. `Ticket:` URL이 없으면 `Notion Ticket Sync` check가 실패한다.                     |
-| PR 본문 수정         | 현재 상태 유지 | 현재 CI 상태 유지          | 현재 리뷰 상태 유지 | 현재 PR이 closed가 아닐 때만 `Ticket:` URL과 PR metadata를 확인하고 CI/review 상태를 덮어쓰지 않는다.                    |
-| PR branch push       | `IN-review`    | 현재 CI 상태 유지          | 현재 리뷰 상태 유지 | 현재 PR head SHA와 webhook payload SHA가 같을 때만 `Last Push At`, `Last Head SHA`, `Last Push Summary`를 기록한다.      |
-| CI 실패              | `IN-review`    | `Failed`                   | 현재 리뷰 상태 유지 | 실패한 check 이름과 핵심 로그를 사용자에게 보고한다.                                                                     |
-| CI 성공              | `IN-review`    | `Success`                  | 현재 리뷰 상태 유지 | CI 성공만으로 `DONE` 처리하지 않는다.                                                                                    |
-| 리뷰 수정 요청       | `IN-review`    | 현재 CI 상태 유지          | `Changes requested` | `pull_request_review`의 명시적인 change request가 있을 때만 사용한다.                                                    |
-| 리뷰 승인            | `IN-review`    | 현재 CI 상태 유지          | `Passed`            | 현재 PR review 목록을 pagination까지 조회해 활성 change request가 없을 때만 갱신한다. CI도 성공해야 merge 후보가 된다.   |
-| 리뷰 dismiss         | `IN-review`    | 현재 CI 상태 유지          | `Unknown`           | 기존 review 판단이 사라졌으므로 다시 확인해야 하는 상태로 둔다.                                                          |
-| PR merge             | `DONE`         | `Success`                  | `Passed`            | `Merged At`과 `종료일`을 기록한다.                                                                                       |
-| PR 닫힘, merge 안 됨 | 현재 상태 유지 | `Cancelled` 또는 `Unknown` | 현재 리뷰 상태 유지 | 현재 PR도 closed일 때만 `Blocker`에 `PR closed without merge`를 기록한다. PR이 다시 열려 있으면 stale 이벤트로 skip한다. |
-
-## GitHub Actions Requirements
-
-GitHub Actions의 `Notion Ticket Sync` workflow는 다음 값이 있어야 동작한다.
-
-- Repository secret: `NOTION_TOKEN`
-- Repository variable 또는 secret: `NOTION_TICKETS_DATA_SOURCE_ID`
-- Built-in token: `GITHUB_TOKEN`
-
-`NOTION_TOKEN`은 PR branch 또는 신뢰되지 않은 base branch에서 checkout한 코드에 주입하지 않는다.
-Notion 동기화는 `.github/workflows/notion-ticket-sync.yml`에서 `pull_request_target` 또는
-`workflow_run` 이벤트로 실행하며, `scripts/notion-ticket-sync.mjs`는 default branch에서 checkout한
-trusted code만 실행한다. `pull_request_target`은 `main` 대상 PR로 제한해서, 신뢰되지 않은
-same-repository feature branch를 base로 하는 PR에는 secret-bearing sync를 실행하지 않는다.
-
-`pull_request_review` 이벤트는 `.github/workflows/notion-ticket-review-dispatch.yml`의
-토큰 없는 read-only signal job으로만 처리한다. 이 workflow는 `NOTION_TOKEN`,
-`NOTION_TICKETS_DATA_SOURCE_ID`, `actions: write` 권한을 받지 않고, PR base가 default branch인
-경우에만 성공 signal을 남긴다. 실제 Notion review 상태 갱신은 secret-bearing
-`.github/workflows/notion-ticket-sync.yml`이 `workflow_run`으로 이 signal workflow의 완료를 받은
-뒤 default branch의 trusted code에서 현재 PR과 reviews API를 다시 조회해서 수행한다. fork PR은
-secret 노출과 권한 혼선을 피하기 위해 Notion sync 대상에서 제외한다. GitHub API 응답에서
-`head.repo`가 없거나 `null`인 PR도 출처를 신뢰할 수 없으므로 fork PR과 같이 skip한다.
-review approval 이벤트는 단일 이벤트만 믿지 않고 GitHub reviews API로 reviewer별 최신 상태를 확인한다.
-GitHub reviews API는 `per_page=100`으로 조회하고 `Link` header의 `rel="next"` pagination을
-끝까지 따라간 뒤 집계한다. reviewer별 상태 집계에서는 `APPROVED`, `CHANGES_REQUESTED`,
-`DISMISSED`만 결정적 review 상태로 보고, `COMMENTED`는 이전 change request를 해제하지 않는다.
-활성 `CHANGES_REQUESTED` 리뷰가 하나라도 남아 있으면 `Review Status`를 `Passed`로 내리지 않는다.
-현재 집계된 결정적 리뷰 상태가 dismissed-only이면 stale review 이벤트의 fallback 값을 쓰지 않고
-`Review Status = Unknown`으로 기록한다.
-PR 생성, PR 업데이트, PR branch push 같은 PR 이벤트는 `Review Status`와 `Last Review Check`를
-쓰지 않으므로, 더 늦게 끝난 `pull_request_target` job이 이미 기록된 `Passed` 또는
-`Changes requested`를 `Pending`으로 되돌리지 않는다.
-PR 생성, PR 업데이트, PR branch push 같은 활성 PR 이벤트는 `CI Status`와 `Last CI Check`도
-쓰지 않는다. CI 결과는 `workflow_run` 기반 `ci-result` sync가 기록하므로, 더 늦게 끝난
-`pull_request_target` job이 이미 기록된 `Success` 또는 `Failed`를 `Pending`으로 되돌리지 않는다.
-CI-result sync도 fetch한 PR base가 default branch가 아니면 Notion을 갱신하지 않는다.
-같은 head SHA에서 여러 CI run이 생긴 경우에는 Actions run 목록에서 최신 run/attempt를 조회하고,
-더 오래된 `workflow_run` 완료 이벤트는 Notion을 갱신하지 않는다.
-fork PR의 CI `workflow_run`에서 `workflow_run.pull_requests`가 비어 있어도
-`workflow_run.head_repository`가 현재 저장소와 다르면 PR URL을 요구하기 전에 Notion sync를 skip한다.
-
-이 workflow를 추가하는 PR처럼 default branch의 trusted checkout에 아직
-`scripts/notion-ticket-sync.mjs`가 없으면 Notion sync step은 성공적으로 skip한다. merge 이후
-trusted branch에 script가 존재하면 같은 workflow가 실제 동기화를 수행한다.
-
-PR 본문의 `## Notion Ticket` 섹션에는 다음 형식의 Notion page URL이 있어야 한다.
-
-```markdown
-- Ticket: https://app.notion.com/p/...
-```
-
-same-repository PR에서 티켓 URL이 없으면 Notion 원장을 신뢰할 수 없으므로 sync check는 실패한다.
-GitHub Actions는 URL에서 page ID를 추출한 뒤 해당 page가 `NOTION_TICKETS_DATA_SOURCE_ID`로
-설정된 data source에 속하는지 확인하고, 다른 data source의 page면 갱신하지 않는다.
-
-## Ticket Body Template
-
-티켓 본문에는 최소한 다음 항목을 채운다. 내용이 짧아도 각 항목의 의도가 분명해야 한다.
+티켓 본문에는 아래 항목을 작성한다.
 
 ```markdown
 ## 배경
-
-## 작업 유형
 
 ## 작업 범위
 
@@ -194,22 +41,155 @@ GitHub Actions는 URL에서 page ID를 추출한 뒤 해당 page가 `NOTION_TICK
 ## 진행 메모
 ```
 
-GitHub Actions는 PR branch push가 감지되면 현재 PR head SHA를 조회한다. webhook payload의 head SHA가
-현재 PR head SHA와 같을 때만 `Last Push At`, `Last Head SHA`, `Last Push Summary` 속성을 자동 갱신한다.
-더 오래된 `pull_request synchronize` job이 늦게 끝나면 stale 이벤트로 보고 Notion 업데이트를 skip한다.
-`pull_request_target` 이벤트는 Notion 업데이트 전에 현재 PR 상태를 다시 조회한다. 현재 PR이
-이미 closed이면 stale 이벤트로 보고 `IN-review`, PR metadata, push metadata를 다시 쓰지 않는다.
-닫힘 이벤트도 현재 PR이 다시 열려 있으면 stale 이벤트로 보고 `PR closed without merge` blocker를 쓰지 않는다.
-PR 이벤트는 리뷰 속성을 직접 쓰지 않으며 `Review Status`를 `Pending`으로 되돌리지 않는다.
-활성 PR 이벤트는 CI 속성도 직접 쓰지 않으며 `CI Status`를 `Pending`으로 되돌리지 않는다.
-본문 `진행 메모`에 장문의 히스토리를 쌓는 것은 v2.1 이후 필요할 때 추가한다.
+한 PR로 처리할 작은 단계는 여러 티켓으로 나누지 않고 Notion 대표 티켓의 checklist에 넣는다. 독립적으로 리뷰·검증·merge할 작업만 별도 티켓으로 만든다.
 
-## Merge Completion Rule
+### Notion에 접근할 수 없을 때
 
-티켓은 다음 조건을 모두 만족할 때만 `DONE`으로 변경한다.
+Notion page를 직접 조회할 수 없으면 사용자에게 아래 값을 모두 확인받는다.
 
-- 연결된 PR이 실제로 merge되었다.
-- GitHub Actions에서 `Notion Ticket Sync`가 merge 이벤트를 처리했다.
-- `GitHub PR` 속성에 merge된 PR URL이 기록되어 있다.
+- ticket URL과 `프로젝트` data source 소속 여부
+- 현재 `상태`
+- `프로젝트 이름`과 `작업 유형`
+- 본문의 `배경`, `작업 범위`, `완료 조건`, `제외 범위`, `검증 계획`
+- 기존 `GitHub PR`, `GitHub Branch`
+- 연결할 GitHub Issue와 Issue 유형
 
-AI 작업 세션과 repo-local skill은 PR 생성 후 `IN-review`까지만 처리한다. `DONE` 전환은 merge 이벤트를 놓치지 않기 위해 GitHub Actions가 담당한다.
+모든 값을 확인받기 전에는 코드, branch, PR을 변경하지 않는다. 접근하지 못한 티켓을 읽었거나 갱신했다고 말하지 않는다.
+
+### 상태 흐름
+
+```text
+TODO → IN-progrss → IN-review → DONE
+```
+
+| 이벤트               | 상태         | 작성 주체와 비고                                  |
+| -------------------- | ------------ | ------------------------------------------------- |
+| 티켓 생성            | `TODO`       | 작업자가 내용 작성                                |
+| 작업 시작            | `IN-progrss` | 작업자가 `시작일`과 함께 기록                     |
+| 최초 PR 결속         | `IN-review`  | PR event sync가 branch·PR과 함께 기록             |
+| PR 업데이트          | `IN-review`  | PR event sync가 유지하고 기존 CI·리뷰 상태는 보존 |
+| CI·리뷰 완료         | `IN-review`  | 전용 sync가 결과를 기록하며 DONE 처리하지 않음    |
+| PR merge             | `DONE`       | merge event sync만 처리                           |
+| PR close, merge 아님 | 상태 유지    | 자동 blocker만 기록하고 수동 값은 보존            |
+
+AI와 작업자는 상태 흐름에서 실제 구현을 시작할 때 `IN-progrss`와 `시작일`까지만 갱신한다. 실제 외부 중단 사유의 수동 `Blocker`는 아래 수명주기를 따른다. `IN-review`, `DONE`, PR metadata, CI, review, merge 날짜는 각 GitHub Actions sync가 담당한다.
+
+### PR 계약
+
+PR 본문은 다음 형식을 포함한다.
+
+```markdown
+## Notion Ticket
+
+- Ticket: https://app.notion.com/...
+```
+
+최초 결속은 아래 조건을 모두 만족해야 한다.
+
+- PR base가 저장소 default branch다.
+- 티켓이 설정된 `프로젝트` data source에 속한다.
+- 티켓 상태가 `IN-progrss`다.
+- `GitHub PR`이 비어 있다.
+- `GitHub Branch`가 비어 있거나 현재 PR head branch와 같다.
+
+최초 결속 전에는 `GitHub PR` URL로 data source를 역조회해 같은 PR에 이미 결속된 다른 티켓이 없는지 확인한다. 조회 결과가 다음 page를 가리키면 `next_cursor`를 따라가며, 두 번째 결속을 찾거나 결과가 끝날 때까지 확인한다. cursor가 없거나 반복되는 비정상 pagination 응답은 안전하게 실패시킨다. PR event sync는 결속 변경이 경합하지 않도록 전체 PR event job을 순서대로 처리한다.
+
+이미 결속된 티켓은 `GitHub PR`이 현재 PR URL과 같고, `GitHub Branch`가 현재 head branch와 같고, 상태가 `IN-review`일 때만 계속 동기화한다. merge된 동일 PR의 중복 close event는 같은 결속의 `DONE` 티켓에 대해 idempotent하게 처리할 수 있다.
+
+유효한 `Ticket:` URL이 한 번 결속되면 다른 티켓 URL로 바꿀 수 없다. URL을 비웠다가 다른 티켓을 넣거나 변경된 본문으로 이전 `opened` event를 다시 실행해도 기존 결속을 바꾸지 않는다. 같은 page ID를 가리키는 URL 표기 변경은 허용한다. PR 생성 시 URL이 없거나 형식이 잘못되었거나 이전 티켓의 결속 검증이 실패한 경우에는 영속 결속이 없을 때만 첫 유효 URL을 추가할 수 있다. 유효한 티켓 A에서 유효한 티켓 B로 바꾸는 편집은 data source의 기존 결속을 확인한 뒤 Notion page를 갱신하기 전에 거부한다.
+
+same-repository PR에서 URL이 없거나, 다른 data source의 page이거나, URL 형식이 잘못되거나, 위 결속 조건이 맞지 않으면 sync check가 실패하고 Notion을 갱신하지 않는다.
+
+## 자동화 유지보수자가 알아야 할 내용
+
+아래 내용은 GitHub Actions나 Notion 동기화 코드를 바꿀 때 확인한다.
+
+### 자동 갱신 값
+
+| Property                             | Notion type | 작성 주체                                      |
+| ------------------------------------ | ----------- | ---------------------------------------------- |
+| `상태`의 `IN-review`                 | Status      | 최초 PR event sync                             |
+| `GitHub PR`                          | URL         | PR event sync                                  |
+| `GitHub Branch`                      | Rich text   | PR event sync                                  |
+| `PR Created At`                      | Date        | PR event sync                                  |
+| `Last Push At`                       | Date        | 최신 branch push sync                          |
+| `Last Head SHA`, `Last Push Summary` | Rich text   | 최신 branch push sync                          |
+| `CI Status`                          | Select      | CI `workflow_run` sync                         |
+| `Last CI Check`                      | Date        | CI `workflow_run` sync                         |
+| `Review Status`                      | Select      | `pull_request_review` signal 이후 review sync  |
+| `Last Review Check`                  | Date        | review sync                                    |
+| `Merged At`, `종료일`                | Date        | merge event sync                               |
+| `상태`의 `DONE`                      | Status      | merge event sync                               |
+| `Blocker`의 예약값                   | Rich text   | merge 없이 닫힌 PR의 `PR closed without merge` |
+
+Select option은 이름까지 정확히 만든다.
+
+- `CI Status`: `Not started`, `Pending`, `Success`, `Failed`, `Cancelled`, `Unknown`
+- `Review Status`: `Not requested`, `Pending`, `Changes requested`, `Passed`, `Unknown`
+
+### 필요한 GitHub 값
+
+- Repository secret: `NOTION_TOKEN`
+- Repository variable 또는 secret: `NOTION_TICKETS_DATA_SOURCE_ID`
+- Built-in token: `GITHUB_TOKEN`
+
+Notion `프로젝트` data source와 연결할 티켓 page를 `NOTION_TOKEN`에 해당하는 integration에 공유한다.
+
+`NOTION_TOKEN`은 PR branch나 신뢰되지 않은 base branch에서 checkout한 코드에 전달하지 않는다.
+
+### 자동화 안전 규칙
+
+#### 신뢰할 수 있는 코드만 실행
+
+- secret-bearing sync는 `pull_request_target` 또는 `workflow_run`에서 default branch 코드를 checkout한다.
+- PR base가 default branch인 경우에만 Notion을 갱신한다.
+- CI-result sync도 fetch한 PR base가 default branch가 아니면 갱신하지 않는다.
+- fork PR은 sync 대상에서 제외한다.
+- GitHub API에서 `head.repo`가 없거나 `null`인 PR도 fork PR처럼 제외한다.
+
+#### Review signal과 집계
+
+- `pull_request_review`는 secret 없는 read-only signal job에서만 받는다.
+- signal job은 `actions: write` 권한을 받지 않고 `NOTION_TOKEN`도 사용하지 않는다.
+- secret-bearing workflow가 `workflow_run`으로 이 signal workflow의 완료를 받은 뒤 현재 PR과 review를 다시 조회한다.
+- Reviews API는 `per_page=100`과 pagination을 사용한다.
+- `APPROVED`, `CHANGES_REQUESTED`, `DISMISSED`만 결정 상태로 사용하고 `COMMENTED`는 이전 요청을 해제하지 않는다.
+- 활성 change request가 있으면 `Passed`로 기록하지 않는다.
+- 현재 결정 상태가 dismissed-only이면 `Review Status = Unknown`으로 기록한다.
+
+#### 오래된 이벤트 무시
+
+- PR event sync job은 전역 concurrency group과 `queue: max`로 직렬화해 서로 다른 PR의 최초 결속도 동시에 쓰지 않는다.
+- 정상적인 `IN-progrss` 티켓에서 CI 또는 review 결과가 최초 PR 결속보다 먼저 도착하면 해당 결과 sync는 성공적으로 건너뛴다. PR event sync가 결속을 만든 뒤 이후 결과 event가 전용 필드를 갱신하며, 필수 속성 누락이나 잘못된 상태·PR·branch는 계속 실패한다.
+- `pull_request_target` 이벤트는 Notion 업데이트 전에 현재 PR 상태를 다시 조회한다.
+- 이미 닫힌 PR의 오래된 opened·synchronize event는 상태를 되돌리지 않는다.
+- PR이 다시 열려 있으면 오래된 close event로 `PR closed without merge` blocker를 쓰지 않는다.
+- webhook SHA와 현재 PR head SHA가 같을 때만 push metadata를 기록한다.
+- 더 오래된 `pull_request synchronize` job은 skip한다.
+- 같은 SHA의 CI가 여러 번 실행되면 최신 run/attempt만 사용한다.
+
+#### 상태 소유권 분리
+
+- 작업자는 구현 시작 시 `IN-progrss`와 `시작일`까지만 기록한다.
+- PR event sync만 `IN-review`, `GitHub PR`, `GitHub Branch`, `PR Created At`, push metadata를 기록한다.
+- PR event는 `Review Status`를 `Pending`으로 되돌리지 않는다.
+- PR event는 `CI Status`를 `Pending`으로 되돌리지 않는다.
+- review 결과는 review sync만, CI 결과는 CI sync만 기록한다.
+- merge event sync는 완료 결과로 `DONE`, `Merged At`, `종료일`만 기록한다. 아래 수명주기에 해당하는 자동 blocker 정리를 제외하고, CI 성공이나 review 통과를 추측하거나 기존 값을 덮어쓰지 않는다.
+- `workflow_run.pull_requests`가 비어 있어도 `workflow_run.head_repository`가 다른 저장소면 fork로 판단한다.
+
+#### Blocker 수명주기
+
+- 수동 `Blocker`는 정보 부족, 접근 권한, 외부 의존처럼 실제 진행을 멈추는 원인에만 사용한다. 원인과 해제 조건을 함께 기록하고, 해제 조건을 확인한 주체만 지운다.
+- 수동으로 작성한 `Blocker` 값은 자동화가 덮어쓰거나 지우지 않는다.
+- 자동화는 공백을 포함한 원문이 정확히 `PR closed without merge`인 값만 소유한다.
+- 현재 PR이 merge 없이 닫힌 경우에만 이 값을 기록한다. 수동 blocker가 이미 있으면 보존한다.
+- PR이 reopen되거나 merge되면 현재 값이 정확히 `PR closed without merge`일 때만 비운다.
+- 일반 opened·edited·synchronize, CI, review 이벤트는 `Blocker`를 비우지 않는다.
+- 실패한 CI와 미해결 review는 `CI Status`, `Review Status`에서 관리하고 `Blocker`에 중복 기록하지 않는다.
+
+trusted checkout에 sync script가 아직 없으면 workflow는 성공적으로 skip한다.
+
+## 완료 조건
+
+티켓은 연결된 PR이 실제로 merge되고 Notion Ticket Sync가 merge event를 처리했을 때만 `DONE`이 된다. CI 성공이나 review 승인만으로 완료 처리하지 않는다.
