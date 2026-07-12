@@ -6,7 +6,7 @@ import {
   MAX_ANALYSIS_TEXT_LENGTH,
   countAnalysisTextCharacters,
   type AnalysisModelId,
-} from "@nado/shared";
+} from "@nado/shared/analysis-input";
 import { AnalysisResult, InputComposer, InputSample } from "@nado/ui";
 import { AppShell } from "../components/AppShell";
 import { useAnalysisPageState } from "../features/analysis/analysisState";
@@ -15,14 +15,14 @@ import { useVocabularySaveNoticeDismiss } from "../features/analysis/useVocabula
 import { useVocabularySuggestionSaver } from "../features/analysis/useVocabularySuggestionSaver";
 import { VocabularySaveStatus } from "../features/analysis/VocabularySaveStatus";
 import { useAuthState } from "../features/auth/authState";
-import { useVocabularyState } from "../features/vocabulary/vocabularyState";
+import { useVocabularyStateForAuth } from "../features/vocabulary/vocabularyState";
 
 const inputDisclosure = "입력문은 분석에만 사용되며 저장되지 않습니다.";
 
 export default function HomePage() {
   const authState = useAuthState();
   const { snapshot, store: analysisStore } = useAnalysisPageState();
-  const vocabularyState = useVocabularyState();
+  const vocabularyState = useVocabularyStateForAuth(authState);
   const userId = authState.session?.user.id ?? null;
   const isAnalysisScopeCurrent =
     authState.status !== "loading" && snapshot.ownerUserId === userId;

@@ -1,16 +1,19 @@
 "use client";
 
-import { useRef } from "react";
-import { shouldApplyUserScopedMutation } from "@nado/shared";
+import { useEffect, useRef } from "react";
+import { shouldApplyUserScopedMutation } from "@nado/shared/user-scope";
+import {
+  createVocabularySuggestionKey,
+  isVocabularySuggestionSaved,
+} from "@nado/shared/vocabulary";
 import type {
   VocabularySuggestion,
   VocabularySuggestionSaveState,
-} from "@nado/ui";
+} from "@nado/shared/analysis-presentation";
 import type { AnalysisStateStore } from "./analysisState";
 import { getCurrentAccessToken } from "../auth/authClient";
 import { saveVocabularyItem } from "../vocabulary/vocabularyApi";
 import {
-  isVocabularySuggestionSaved,
   vocabularyStateStore,
   type VocabularyStateSnapshot,
 } from "../vocabulary/vocabularyState";
@@ -18,7 +21,6 @@ import {
   createVocabularyLoginRequiredNotice,
   createVocabularySaveSuccessNotice,
 } from "./vocabularySaveNotice";
-import { createVocabularySuggestionKey } from "./vocabularySuggestionKey";
 
 type UseVocabularySuggestionSaverOptions = {
   store: AnalysisStateStore;
@@ -34,7 +36,14 @@ export function useVocabularySuggestionSaver({
   vocabularyState,
 }: UseVocabularySuggestionSaverOptions) {
   const latestUserIdRef = useRef(userId);
-  latestUserIdRef.current = userId;
+  const pendingOwnerUserIdRef = useRef(userId);
+  const pendingSuggestionKeysRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    latestUserIdRef.current = userId;
+    pendingOwnerUserIdRef.current = userId;
+    pendingSuggestionKeysRef.current.clear();
+  }, [userId]);
 
   const getSuggestionState = (suggestion: VocabularySuggestion) => {
     const pendingState =
@@ -65,56 +74,84 @@ export function useVocabularySuggestionSaver({
       return;
     }
 
-    const accessToken = await getCurrentAccessToken();
-
-    if (
-      !shouldApplyUserScopedMutation(requestUserId, latestUserIdRef.current)
-    ) {
+    if (pendingSuggestionKeysRef.current.has(key)) {
       return;
     }
 
-    if (!accessToken) {
-      store.setVocabularySaveMessage(createVocabularyLoginRequiredNotice());
-      return;
-    }
-
+    pendingSuggestionKeysRef.current.add(key);
     store.setVocabularySaveMessage(null);
     store.setVocabularySaveStates((currentStates) => ({
       ...currentStates,
       [key]: "saving",
     }));
 
-    const result = await saveVocabularyItem(
-      {
-        meaning: suggestion.meaning,
-        note: suggestion.note,
-        term: suggestion.term,
-        type: suggestion.type,
-      },
-      accessToken,
-    );
+    try {
+      const accessToken = await getCurrentAccessToken();
 
+      if (
+        !shouldApplyUserScopedMutation(requestUserId, latestUserIdRef.current)
+      ) {
+        return;
+      }
+
+      if (!accessToken) {
+        store.setVocabularySaveMessage(createVocabularyLoginRequiredNotice());
+        return;
+      }
+
+      const result = await saveVocabularyItem(
+        {
+          meaning: suggestion.meaning,
+          note: suggestion.note,
+          term: suggestion.term,
+          type: suggestion.type,
+        },
+        accessToken,
+      );
+
+      if (
+        !shouldApplyUserScopedMutation(requestUserId, latestUserIdRef.current)
+      ) {
+        return;
+      }
+
+      if (result.status === "success") {
+        vocabularyStateStore.upsertItem(result.data);
+        store.setVocabularySaveMessage(createVocabularySaveSuccessNotice());
+        return;
+      }
+
+      store.setVocabularySaveMessage({
+        text: result.message,
+        tone: "error",
+      });
+    } catch {
+      if (
+        shouldApplyUserScopedMutation(requestUserId, latestUserIdRef.current)
+      ) {
+        store.setVocabularySaveMessage({
+          text: "단어장에 저장하지 못했어요. 잠시 후 다시 시도해 주세요.",
+          tone: "error",
+        });
+      }
+    } finally {
+      releaseSuggestionSave(key, requestUserId);
+    }
+  };
+
+  const releaseSuggestionSave = (key: string, requestUserId: string) => {
     if (
+      pendingOwnerUserIdRef.current !== requestUserId ||
       !shouldApplyUserScopedMutation(requestUserId, latestUserIdRef.current)
     ) {
       return;
     }
 
+    pendingSuggestionKeysRef.current.delete(key);
     store.setVocabularySaveStates((currentStates) => {
       const nextStates = { ...currentStates };
       delete nextStates[key];
       return nextStates;
-    });
-
-    if (result.status === "success") {
-      vocabularyStateStore.upsertItem(result.data);
-      store.setVocabularySaveMessage(createVocabularySaveSuccessNotice());
-      return;
-    }
-
-    store.setVocabularySaveMessage({
-      text: result.message,
-      tone: "error",
     });
   };
 

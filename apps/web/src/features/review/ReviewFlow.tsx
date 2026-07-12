@@ -1,17 +1,17 @@
 "use client";
 
+import { ReviewSessionView } from "@nado/ui";
 import { useAuthState } from "../auth/authState";
 import { getVocabularyPanelState } from "../vocabulary/vocabularyViewState";
-import { useVocabularyState } from "../vocabulary/vocabularyState";
+import { useVocabularyStateForAuth } from "../vocabulary/vocabularyState";
 import { ReviewPanel } from "./ReviewPanels";
-import { ReviewSessionView } from "./ReviewSessionView";
 import { useReviewSession } from "./useReviewSession";
 
 type ReviewStatus = "loading" | "ready";
 
 export function ReviewFlow() {
   const authState = useAuthState();
-  const vocabularyState = useVocabularyState();
+  const vocabularyState = useVocabularyStateForAuth(authState);
   const session = useReviewSession(authState, vocabularyState);
   const status: ReviewStatus =
     authState.status === "loading" || vocabularyState.status === "loading"

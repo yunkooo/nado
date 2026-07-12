@@ -1,4 +1,4 @@
-import type { VocabularyItem } from "@nado/shared";
+import type { VocabularyItem } from "@nado/shared/vocabulary";
 import { describe, expect, it, vi } from "vitest";
 import {
   deleteVocabularyItem,
@@ -58,6 +58,44 @@ describe("vocabularyApi", () => {
         status: "success",
       },
     );
+  });
+
+  it("loads every cursor page without reloading the document", async () => {
+    const secondItem = { ...vocabularyItem, id: "row_2", term: "consider" };
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({ items: [vocabularyItem], nextCursor: "next/cursor" }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ items: [secondItem], nextCursor: null }),
+      );
+
+    await expect(listVocabulary("session-token", { fetcher })).resolves.toEqual(
+      {
+        data: [vocabularyItem, secondItem],
+        status: "success",
+      },
+    );
+    expect(fetcher).toHaveBeenNthCalledWith(
+      2,
+      "/api/vocabulary?cursor=next%2Fcursor",
+      expect.objectContaining({ method: "GET" }),
+    );
+  });
+
+  it("stops when the API repeats a vocabulary cursor", async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json({ items: [], nextCursor: "same-cursor" }),
+    );
+
+    await expect(listVocabulary("session-token", { fetcher })).resolves.toEqual(
+      {
+        message: "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+        status: "error",
+      },
+    );
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
   it("deletes a vocabulary item with an authenticated bearer token", async () => {

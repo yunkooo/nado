@@ -3,6 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["NADO_API_BASE_URL", "NEXT_PUBLIC_API_BASE_URL"],
       "outputs": ["dist/**", ".next/**", "storybook-static/**"]
     },
     "typecheck": {

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { VocabularyItem } from "@nado/shared";
+import type { VocabularyItem } from "@nado/shared/vocabulary";
 import { describe, expect, it } from "vitest";
 import { VocabularyList } from "./VocabularyList";
 
@@ -37,7 +37,7 @@ describe("VocabularyList source", () => {
       createElement(VocabularyList, {
         deleteMessage:
           "단어장 항목을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.",
-        deletingItemId: null,
+        deletingItemIds: new Set<string>(),
         isLoading: false,
         items: [vocabularyItem],
         onDeleteItem: () => undefined,
@@ -54,7 +54,7 @@ describe("VocabularyList source", () => {
     const markup = renderToStaticMarkup(
       createElement(VocabularyList, {
         deleteMessage: null,
-        deletingItemId: null,
+        deletingItemIds: new Set<string>(),
         isLoading: false,
         items: [
           {

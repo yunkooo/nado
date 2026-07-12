@@ -205,12 +205,17 @@
     left: 0;
     position: fixed;
     transform: translateX(-100%);
-    transition: transform 160ms ease;
+    transition:
+      transform 160ms ease,
+      visibility 0s linear 160ms;
+    visibility: hidden;
     width: min(280px, calc(100vw - 44px));
     z-index: 60;
   }
 
   .nado-sidebar--open {
     transform: translateX(0);
+    transition-delay: 0s;
+    visibility: visible;
   }
 }

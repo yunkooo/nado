@@ -22,7 +22,7 @@ describe("web source structure", () => {
     ]);
     expect(
       readdirSync(new URL("./components", import.meta.url)).sort(),
-    ).toEqual(["AppShell.tsx", "AuthControls.tsx"]);
+    ).toEqual(["AppShell.tsx", "AppShellView.tsx", "AuthControls.tsx"]);
     expect(readdirSync(new URL("./lib", import.meta.url)).sort()).toEqual([
       "apiClient.ts",
     ]);

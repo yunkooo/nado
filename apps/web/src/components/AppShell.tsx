@@ -1,9 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AuthControls } from "./AuthControls";
+import { AppShellView, type AppShellNavigationKey } from "./AppShellView";
 import { useAuthState } from "../features/auth/authState";
 import {
   useRefreshVocabularyForActiveStudySurface,
@@ -11,23 +12,20 @@ import {
   useSyncVocabularyRealtimeForAuth,
 } from "../features/vocabulary/vocabularyState";
 
-type NavigationItem = {
-  href: string;
-  key: "analysis" | "review" | "vocabulary";
-  label: string;
-};
-
 type AppShellProps = {
-  activeItem: NavigationItem["key"];
+  activeItem: AppShellNavigationKey;
   children: ReactNode;
   workspaceLabel: string;
 };
 
-const navigationItems: NavigationItem[] = [
-  { href: "/", key: "analysis", label: "분석" },
-  { href: "/vocabulary", key: "vocabulary", label: "단어장" },
-  { href: "/review", key: "review", label: "복습" },
-];
+const focusableElementSelector = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
 
 export function AppShell({
   activeItem,
@@ -37,14 +35,15 @@ export function AppShell({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
   const shouldRestoreMenuFocusRef = useRef(false);
   const authState = useAuthState();
   const isStudySurfaceActive =
     activeItem === "vocabulary" || activeItem === "review";
-  const closeSidebar = () => {
+  const closeSidebar = useCallback(() => {
     shouldRestoreMenuFocusRef.current = true;
     setIsSidebarOpen(false);
-  };
+  }, []);
 
   useSyncVocabularyForAuth(authState);
   useSyncVocabularyRealtimeForAuth(authState);
@@ -64,10 +63,53 @@ export function AppShell({
     }
 
     closeButtonRef.current?.focus();
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         closeSidebar();
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const sidebar = sidebarRef.current;
+
+      if (!sidebar) {
+        return;
+      }
+
+      const focusableElements = Array.from(
+        sidebar.querySelectorAll<HTMLElement>(focusableElementSelector),
+      ).filter((element) => element.getClientRects().length > 0);
+      const firstFocusableElement = focusableElements[0];
+      const lastFocusableElement = focusableElements.at(-1);
+
+      if (!firstFocusableElement || !lastFocusableElement) {
+        event.preventDefault();
+        return;
+      }
+
+      if (
+        event.shiftKey &&
+        (document.activeElement === firstFocusableElement ||
+          !sidebar.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        lastFocusableElement.focus();
+        return;
+      }
+
+      if (
+        !event.shiftKey &&
+        (document.activeElement === lastFocusableElement ||
+          !sidebar.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        firstFocusableElement.focus();
       }
     };
 
@@ -75,91 +117,24 @@ export function AppShell({
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
     };
-  }, [isSidebarOpen]);
+  }, [closeSidebar, isSidebarOpen]);
 
   return (
-    <main className="nado-app-shell">
-      {!isSidebarOpen ? (
-        <button
-          aria-controls="nado-sidebar"
-          aria-expanded="false"
-          aria-label="사이드바 열기"
-          className="nado-mobile-menu-button"
-          onClick={() => setIsSidebarOpen(true)}
-          ref={menuButtonRef}
-          type="button"
-        >
-          <span className="nado-mobile-menu-button__bar" />
-          <span className="nado-mobile-menu-button__bar" />
-          <span className="nado-mobile-menu-button__bar" />
-        </button>
-      ) : null}
-      {isSidebarOpen ? (
-        <button
-          aria-label="사이드바 배경 닫기"
-          className="nado-sidebar-scrim"
-          onClick={closeSidebar}
-          type="button"
-        />
-      ) : null}
-      <aside
-        aria-label="주요 화면"
-        className={["nado-sidebar", isSidebarOpen ? "nado-sidebar--open" : null]
-          .filter(Boolean)
-          .join(" ")}
-        id="nado-sidebar"
-      >
-        <div className="nado-sidebar__main">
-          <header className="nado-sidebar__header">
-            <div className="nado-brand">
-              <span className="nado-brand__mark" aria-hidden="true">
-                n
-              </span>
-              <strong className="nado-brand__name">nado</strong>
-            </div>
-            <button
-              aria-label="사이드바 닫기"
-              className="nado-sidebar-close"
-              onClick={closeSidebar}
-              ref={closeButtonRef}
-              type="button"
-            >
-              <span className="nado-sidebar-close__bar" />
-              <span className="nado-sidebar-close__bar" />
-            </button>
-          </header>
-          <nav className="nado-nav" aria-label="주요 메뉴">
-            {navigationItems.map((item) => {
-              const isActive = item.key === activeItem;
-
-              return (
-                <Link
-                  href={item.href}
-                  aria-current={isActive ? "page" : undefined}
-                  className={[
-                    "nado-nav__item",
-                    isActive ? "nado-nav__item--active" : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  key={item.key}
-                  onClick={closeSidebar}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-        <footer className="nado-sidebar__footer">
-          <AuthControls />
-        </footer>
-      </aside>
-
-      <section className="nado-workspace" aria-label={workspaceLabel}>
-        {children}
-      </section>
-    </main>
+    <AppShellView
+      activeItem={activeItem}
+      authControls={<AuthControls />}
+      closeButtonRef={closeButtonRef}
+      isSidebarOpen={isSidebarOpen}
+      linkComponent={Link}
+      menuButtonRef={menuButtonRef}
+      onCloseSidebar={closeSidebar}
+      onOpenSidebar={() => setIsSidebarOpen(true)}
+      sidebarRef={sidebarRef}
+      workspaceLabel={workspaceLabel}
+    >
+      {children}
+    </AppShellView>
   );
 }

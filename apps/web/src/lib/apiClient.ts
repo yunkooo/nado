@@ -4,4 +4,4 @@ export {
   type ApiFetchError,
   type ApiFetchResult,
   type ApiRequestOptions,
-} from "@nado/shared";
+} from "@nado/shared/http";

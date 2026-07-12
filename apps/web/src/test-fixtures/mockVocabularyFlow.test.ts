@@ -4,10 +4,7 @@ import {
   getMockVocabularySummary,
   mockVocabularyItems,
 } from "./mockVocabularyFlow";
-import {
-  getNextReviewIndex,
-  getReviewCard,
-} from "../features/review/reviewSession";
+import { getNextReviewIndex, getReviewCard } from "@nado/shared/review";
 
 describe("mock vocabulary flow", () => {
   it("summarizes the mock vocabulary item count", () => {

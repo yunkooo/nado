@@ -10,7 +10,14 @@ import { vocabularyStateStore } from "./vocabularyState";
 
 type VocabularyDeleteRequestSnapshot = {
   accessToken: string | null;
+  itemId: string;
   requestId: number;
+};
+
+type VocabularyDeleteState = {
+  accessToken: string | null;
+  deletingItemIds: ReadonlySet<string>;
+  message: string | null;
 };
 
 export function isCurrentVocabularyDeleteRequest(
@@ -19,21 +26,34 @@ export function isCurrentVocabularyDeleteRequest(
 ) {
   return (
     request.accessToken === current.accessToken &&
+    request.itemId === current.itemId &&
     request.requestId === current.requestId
   );
 }
 
 export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
-  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
-  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [deleteState, setDeleteState] = useState<VocabularyDeleteState>({
+    accessToken: null,
+    deletingItemIds: new Set(),
+    message: null,
+  });
   const latestAccessTokenRef = useRef(authState.accessToken);
   const requestSequenceRef = useRef(0);
+  const requestsByItemRef = useRef(
+    new Map<string, VocabularyDeleteRequestSnapshot>(),
+  );
+  const isDeleteScopeCurrent =
+    authState.status === "authenticated" &&
+    deleteState.accessToken === authState.accessToken;
+  const deleteMessage = isDeleteScopeCurrent ? deleteState.message : null;
+  const deletingItemIds = isDeleteScopeCurrent
+    ? deleteState.deletingItemIds
+    : new Set<string>();
 
   useEffect(() => {
     latestAccessTokenRef.current = authState.accessToken;
     requestSequenceRef.current += 1;
-    setDeleteMessage(null);
-    setDeletingItemId(null);
+    requestsByItemRef.current.clear();
   }, [authState.accessToken, authState.status]);
 
   const deleteItem = async (itemId: string) => {
@@ -43,38 +63,72 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
       return;
     }
 
+    const currentItemRequest = requestsByItemRef.current.get(itemId);
+
+    if (currentItemRequest?.accessToken === accessToken) {
+      return;
+    }
+
     const requestId = requestSequenceRef.current + 1;
     requestSequenceRef.current = requestId;
     latestAccessTokenRef.current = accessToken;
+    const request = { accessToken, itemId, requestId };
+    requestsByItemRef.current.set(itemId, request);
 
-    setDeletingItemId(itemId);
+    setDeleteState((currentState) => ({
+      accessToken,
+      deletingItemIds: new Set([
+        ...(currentState.accessToken === accessToken
+          ? currentState.deletingItemIds
+          : []),
+        itemId,
+      ]),
+      message: null,
+    }));
 
     const result = await deleteVocabularyItemFromApi(itemId, accessToken);
-    const request = { accessToken, requestId };
-    const currentRequest = {
-      accessToken: latestAccessTokenRef.current,
-      requestId: requestSequenceRef.current,
-    };
+    const currentRequest = requestsByItemRef.current.get(itemId);
 
-    if (!isCurrentVocabularyDeleteRequest(request, currentRequest)) {
+    if (
+      !currentRequest ||
+      latestAccessTokenRef.current !== accessToken ||
+      !isCurrentVocabularyDeleteRequest(request, currentRequest)
+    ) {
       return;
     }
 
-    setDeletingItemId(null);
+    requestsByItemRef.current.delete(itemId);
+
+    const finishDelete = (message: string | null) => {
+      setDeleteState((currentState) => {
+        if (currentState.accessToken !== accessToken) {
+          return currentState;
+        }
+
+        const nextDeletingItemIds = new Set(currentState.deletingItemIds);
+        nextDeletingItemIds.delete(itemId);
+
+        return {
+          accessToken,
+          deletingItemIds: nextDeletingItemIds,
+          message,
+        };
+      });
+    };
 
     if (shouldRemoveVocabularyItemAfterDelete(result)) {
       vocabularyStateStore.removeItem(itemId);
-      setDeleteMessage(null);
+      finishDelete(null);
       return;
     }
 
-    setDeleteMessage(result.message);
+    finishDelete(result.message);
   };
 
   return {
     deleteItem,
     deleteMessage,
-    deletingItemId,
+    deletingItemIds,
   };
 }
 

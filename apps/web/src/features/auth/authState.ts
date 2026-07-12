@@ -13,8 +13,11 @@ export type AuthStateStatus =
   | "error"
   | "loading";
 
+export type AuthStateErrorCode = "configuration" | "oauth_callback" | "session";
+
 export type AuthStateSnapshot = {
   accessToken: string | null;
+  errorCode?: AuthStateErrorCode;
   session: Session | null;
   status: AuthStateStatus;
 };
@@ -58,12 +61,6 @@ const loadingSnapshot: AuthStateSnapshot = {
   status: "loading",
 };
 
-const errorSnapshot: AuthStateSnapshot = {
-  accessToken: null,
-  session: null,
-  status: "error",
-};
-
 export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
   const getClient =
     options.getClient ??
@@ -72,7 +69,7 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
   let snapshot = loadingSnapshot;
   let subscription: { unsubscribe(): void } | null = null;
   let hasStarted = false;
-  let isResolvingInitialSession = false;
+  let startupSequence = 0;
 
   const notify = () => {
     for (const listener of listeners) {
@@ -91,21 +88,28 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
     }
 
     hasStarted = true;
+    snapshot = loadingSnapshot;
+    startupSequence += 1;
+    const startupId = startupSequence;
+    let isResolvingInitialSession = true;
 
     const client = getClient();
 
     if (!client) {
-      setSnapshot(errorSnapshot);
+      setSnapshot(createErrorSnapshot("configuration"));
       return;
     }
 
-    isResolvingInitialSession = true;
-
     const { data } = client.auth.onAuthStateChange((event, nextSession) => {
+      if (startupId !== startupSequence) {
+        return;
+      }
+
       if (isResolvingInitialSession && event === "INITIAL_SESSION") {
         return;
       }
 
+      isResolvingInitialSession = false;
       setSnapshot(toAuthStateSnapshot(nextSession));
     });
 
@@ -118,14 +122,23 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
 
     authCallbackResult
       .then((result) => {
+        if (startupId !== startupSequence || !isResolvingInitialSession) {
+          return undefined;
+        }
+
         if (result === "error") {
-          setSnapshot(errorSnapshot);
+          isResolvingInitialSession = false;
+          setSnapshot(createErrorSnapshot("oauth_callback"));
           return undefined;
         }
 
         return resolveStartupSession(client);
       })
       .then((session) => {
+        if (startupId !== startupSequence || !isResolvingInitialSession) {
+          return;
+        }
+
         isResolvingInitialSession = false;
 
         if (session === undefined) {
@@ -135,8 +148,12 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
         setSnapshot(toAuthStateSnapshot(session));
       })
       .catch(() => {
+        if (startupId !== startupSequence || !isResolvingInitialSession) {
+          return;
+        }
+
         isResolvingInitialSession = false;
-        setSnapshot(errorSnapshot);
+        setSnapshot(createErrorSnapshot("session"));
       });
   };
 
@@ -148,7 +165,7 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
     subscription?.unsubscribe();
     subscription = null;
     hasStarted = false;
-    isResolvingInitialSession = false;
+    startupSequence += 1;
   };
 
   return {
@@ -165,6 +182,15 @@ export function createAuthStateStore(options: AuthStateStoreOptions = {}) {
         stop();
       };
     },
+  };
+}
+
+function createErrorSnapshot(errorCode: AuthStateErrorCode): AuthStateSnapshot {
+  return {
+    accessToken: null,
+    errorCode,
+    session: null,
+    status: "error",
   };
 }
 

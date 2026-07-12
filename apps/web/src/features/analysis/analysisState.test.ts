@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared";
+import { DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared/analysis-input";
 import {
   createAnalysisStateStore,
   type AnalysisPageSnapshot,
@@ -279,5 +279,30 @@ describe("analysis state store", () => {
 
     expect(() => store.setSelectedAnalysisModel("z-ai/glm-5.2")).not.toThrow();
     expect(store.getSnapshot().selectedAnalysisModel).toBe("z-ai/glm-5.2");
+  });
+
+  it("keeps analysis state usable when storage access and cleanup both fail", () => {
+    const blockedStorage = createStorage();
+    blockedStorage.setItem.mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+    blockedStorage.removeItem.mockImplementation(() => {
+      throw new Error("storage cleanup unavailable");
+    });
+    const storeWithBlockedStorage = createAnalysisStateStore({
+      getStorage: () => blockedStorage,
+    });
+    const storeWithBlockedGetter = createAnalysisStateStore({
+      getStorage: () => {
+        throw new Error("storage access unavailable");
+      },
+    });
+
+    expect(() =>
+      storeWithBlockedStorage.setText("I leave home."),
+    ).not.toThrow();
+    expect(() => storeWithBlockedGetter.setText("I stay home.")).not.toThrow();
+    expect(storeWithBlockedStorage.getSnapshot().text).toBe("I leave home.");
+    expect(storeWithBlockedGetter.getSnapshot().text).toBe("I stay home.");
   });
 });

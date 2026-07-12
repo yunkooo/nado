@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared";
+import { DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared/analysis-input";
 import { analyzeText } from "./analysisApi";
 
 describe("analyzeText", () => {

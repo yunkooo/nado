@@ -1,7 +1,7 @@
 import {
   shouldStartVocabularyManualRefresh,
   VOCABULARY_MANUAL_REFRESH_THROTTLE_MS,
-} from "@nado/shared";
+} from "@nado/shared/vocabulary-realtime";
 import { useEffect, useRef, useState } from "react";
 import type { AuthStateSnapshot } from "../auth/authState";
 import {
@@ -13,11 +13,25 @@ const REFRESH_ERROR_MESSAGE = "단어장을 새로고침하지 못했어요.";
 
 type VocabularyManualRefreshStatus = "error" | "idle" | "refreshing";
 
+type VocabularyManualRefreshState = {
+  accessToken: string | null;
+  status: VocabularyManualRefreshStatus;
+};
+
 export function useVocabularyManualRefresh(authState: AuthStateSnapshot) {
   const vocabularyState = useVocabularyState();
+  const currentAccessTokenRef = useRef(authState.accessToken);
   const isRefreshInFlightRef = useRef(false);
   const lastManualRefreshStartedAtRef = useRef<number | undefined>(undefined);
-  const [status, setStatus] = useState<VocabularyManualRefreshStatus>("idle");
+  const [refreshState, setRefreshState] =
+    useState<VocabularyManualRefreshState>({
+      accessToken: null,
+      status: "idle",
+    });
+  const status =
+    refreshState.accessToken === authState.accessToken
+      ? refreshState.status
+      : "idle";
   const isRefreshing = status === "refreshing";
   const isDisabled =
     isRefreshing ||
@@ -26,13 +40,19 @@ export function useVocabularyManualRefresh(authState: AuthStateSnapshot) {
     !authState.accessToken;
 
   useEffect(() => {
+    currentAccessTokenRef.current = authState.accessToken;
     isRefreshInFlightRef.current = false;
     lastManualRefreshStartedAtRef.current = undefined;
-    setStatus("idle");
   }, [authState.accessToken, authState.status]);
 
   const refreshVocabulary = async () => {
     if (isDisabled) {
+      return;
+    }
+
+    const accessToken = authState.accessToken;
+
+    if (!accessToken) {
       return;
     }
 
@@ -51,13 +71,21 @@ export function useVocabularyManualRefresh(authState: AuthStateSnapshot) {
 
     isRefreshInFlightRef.current = true;
     lastManualRefreshStartedAtRef.current = now;
-    setStatus("refreshing");
+    setRefreshState({ accessToken, status: "refreshing" });
 
     try {
       const result = await refreshVocabularyForAuth(authState, { force: true });
-      setStatus(result === "failed" ? "error" : "idle");
+
+      if (currentAccessTokenRef.current === accessToken) {
+        setRefreshState({
+          accessToken,
+          status: result === "failed" ? "error" : "idle",
+        });
+      }
     } finally {
-      isRefreshInFlightRef.current = false;
+      if (currentAccessTokenRef.current === accessToken) {
+        isRefreshInFlightRef.current = false;
+      }
     }
   };
 

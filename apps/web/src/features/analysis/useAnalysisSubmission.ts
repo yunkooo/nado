@@ -1,14 +1,14 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   MAX_ANALYSIS_TEXT_LENGTH,
   countAnalysisTextCharacters,
   hasUnsupportedAnalysisTextCharacters,
-  isCurrentUserScopedRequest,
   normalizeAnalysisText,
   type AnalysisModelId,
-} from "@nado/shared";
+} from "@nado/shared/analysis-input";
+import { isCurrentUserScopedRequest } from "@nado/shared/user-scope";
 import { analyzeText } from "./analysisApi";
 import type { AnalysisState, AnalysisStateStore } from "./analysisState";
 import { getCurrentAccessToken } from "../auth/authClient";
@@ -30,7 +30,11 @@ export function useAnalysisSubmission({
 }: UseAnalysisSubmissionOptions) {
   const latestRequestIdRef = useRef(0);
   const latestUserIdRef = useRef(userId);
-  latestUserIdRef.current = userId;
+
+  useEffect(() => {
+    latestUserIdRef.current = userId;
+    latestRequestIdRef.current += 1;
+  }, [userId]);
 
   return async function submitAnalysis() {
     const nextText = normalizeAnalysisText(text);
