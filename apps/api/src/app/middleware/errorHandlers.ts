@@ -1,5 +1,16 @@
 import type { ErrorRequestHandler } from "express";
 import { isHttpError } from "../../shared/errors/httpErrors.js";
+import { readRequestId } from "../../shared/http/requestContext.js";
+
+export type ApiErrorLogEntry = {
+  error: unknown;
+  method: string;
+  path: string;
+  requestId: string;
+  statusCode: number;
+};
+
+export type ApiErrorLogger = (entry: ApiErrorLogEntry) => void;
 
 export const invalidJsonHandler: ErrorRequestHandler = (
   error,
@@ -7,11 +18,15 @@ export const invalidJsonHandler: ErrorRequestHandler = (
   response,
   next,
 ) => {
+  const requestId = readRequestId(response);
+
   if (isJsonParseError(error)) {
     response.status(400).json({
       error: {
         code: "invalid_json",
         message: "Invalid JSON body.",
+        requestId,
+        retryable: false,
       },
     });
     return;
@@ -27,6 +42,8 @@ export const invalidJsonHandler: ErrorRequestHandler = (
           status === 413
             ? "요청 본문이 너무 큽니다."
             : "요청 본문이 올바르지 않습니다.",
+        requestId,
+        retryable: false,
       },
     });
     return;
@@ -35,34 +52,61 @@ export const invalidJsonHandler: ErrorRequestHandler = (
   next(error);
 };
 
-export const internalErrorHandler: ErrorRequestHandler = (
-  error,
-  _request,
-  response,
-  next,
-) => {
-  if (response.headersSent) {
-    next(error);
-    return;
-  }
+export function createInternalErrorHandler(
+  logger?: ApiErrorLogger,
+): ErrorRequestHandler {
+  return (error, request, response, next) => {
+    if (response.headersSent) {
+      next(error);
+      return;
+    }
 
-  if (isHttpError(error)) {
-    response.status(error.status).json({
+    const requestId = readRequestId(response);
+    const statusCode = isHttpError(error) ? error.status : 500;
+
+    if (statusCode >= 500) {
+      logApiError(logger, {
+        error,
+        method: request.method,
+        path: request.originalUrl,
+        requestId,
+        statusCode,
+      });
+    }
+
+    if (isHttpError(error)) {
+      response.status(error.status).json({
+        error: {
+          code: error.code,
+          message: error.publicMessage,
+          requestId,
+          retryable: error.retryable,
+        },
+      });
+      return;
+    }
+
+    response.status(500).json({
       error: {
-        code: error.code,
-        message: error.publicMessage,
+        code: "internal_error",
+        message: "요청 처리 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+        requestId,
+        retryable: true,
       },
     });
-    return;
-  }
+  };
+}
 
-  response.status(500).json({
-    error: {
-      code: "internal_error",
-      message: "요청 처리 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
-    },
-  });
-};
+function logApiError(
+  logger: ApiErrorLogger | undefined,
+  entry: ApiErrorLogEntry,
+) {
+  try {
+    logger?.(entry);
+  } catch {
+    // Error logging must never replace the original API response.
+  }
+}
 
 function isJsonParseError(error: unknown): boolean {
   return (

@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 import { describe, expect, it } from "vitest";
 import { parseAnalyzeInput } from "../features/analysis/analyzeInput.js";
 import { UpstreamTimeoutError } from "../shared/errors/httpErrors.js";
-import { app, createApp } from "./createApp.js";
+import { createApp } from "./createApp.js";
 
 type TestHttpApp = {
   listen(port: number, hostname: string, callback: () => void): Server;
@@ -97,6 +97,7 @@ describe("app", () => {
       used: 1,
     }),
   };
+  const app = createApp();
 
   it("returns health status", async () => {
     const response = await request(app, "/health");
@@ -186,6 +187,8 @@ describe("app", () => {
       error: {
         code: "invalid_json",
         message: "Invalid JSON body.",
+        requestId: expect.any(String),
+        retryable: false,
       },
     });
   });
@@ -417,6 +420,8 @@ describe("app", () => {
       error: {
         code: "payload_too_large",
         message: "요청 본문이 너무 큽니다.",
+        requestId: expect.any(String),
+        retryable: false,
       },
     });
   });
@@ -601,6 +606,8 @@ describe("app", () => {
       error: {
         code: "auth_unavailable",
         message: "로그인 세션을 확인할 수 없어요. 잠시 후 다시 시도해 주세요.",
+        requestId: expect.any(String),
+        retryable: true,
       },
     });
   });
@@ -820,6 +827,8 @@ describe("app", () => {
       error: {
         code: "internal_error",
         message: "요청 처리 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+        requestId: expect.any(String),
+        retryable: true,
       },
     });
   });

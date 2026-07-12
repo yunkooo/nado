@@ -1,5 +1,7 @@
-import { analyzeRequestSchema } from "@nado/shared";
-import type { AnalysisModelId } from "@nado/shared";
+import {
+  analyzeRequestSchema,
+  type AnalysisModelId,
+} from "@nado/shared/analysis-input";
 
 export type AnalyzeInputResult =
   | { model: AnalysisModelId; ok: true; text: string }

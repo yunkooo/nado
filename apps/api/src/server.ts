@@ -1,6 +1,12 @@
-import { app } from "./app/createApp.js";
+import { createApp } from "./app/createApp.js";
+import {
+  resolveApiPort,
+  validateApiRuntimeConfig,
+} from "./infrastructure/env/apiRuntimeConfig.js";
 
-const port = Number(process.env.NADO_API_PORT ?? process.env.PORT ?? 4000);
+validateApiRuntimeConfig();
+const port = resolveApiPort();
+const app = createApp();
 
 app.listen(port, () => {
   console.log(`nado API listening on http://localhost:${port}`);

@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { runBackendSmoke } from "./backendSmoke.js";
+import {
+  parseOptionalPositiveInteger,
+  runBackendSmoke,
+} from "./backendSmoke.js";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -8,8 +11,24 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+describe("backend smoke configuration", () => {
+  it("parses an optional positive realtime timeout", () => {
+    expect(parseOptionalPositiveInteger(undefined)).toBeUndefined();
+    expect(parseOptionalPositiveInteger(" 5000 ")).toBe(5_000);
+  });
+
+  it.each(["", "0", "-1", "1.5", "5seconds"])(
+    "rejects invalid realtime timeout %s",
+    (value) => {
+      expect(() => parseOptionalPositiveInteger(value)).toThrow(
+        "NADO_SMOKE_REALTIME_TIMEOUT_MS must be a positive integer.",
+      );
+    },
+  );
+});
+
 describe("runBackendSmoke", () => {
-  it("checks API health by default", async () => {
+  it("checks API liveness and readiness by default", async () => {
     const requests: string[] = [];
 
     const result = await runBackendSmoke({
@@ -17,15 +36,15 @@ describe("runBackendSmoke", () => {
       fetch: async (input) => {
         requests.push(String(input));
 
-        return jsonResponse({
-          service: "nado-api",
-          status: "ok",
-        });
+        return backendStatusResponse(input);
       },
     });
 
-    expect(requests).toEqual(["http://api.test/health"]);
-    expect(result.checks).toEqual(["health"]);
+    expect(requests).toEqual([
+      "http://api.test/health",
+      "http://api.test/ready",
+    ]);
+    expect(result.checks).toEqual(["health", "readiness"]);
   });
 
   it.each([
@@ -63,11 +82,8 @@ describe("runBackendSmoke", () => {
           url: String(input),
         });
 
-        if (String(input).endsWith("/health")) {
-          return jsonResponse({
-            service: "nado-api",
-            status: "ok",
-          });
+        if (isBackendStatusRequest(input)) {
+          return backendStatusResponse(input);
         }
 
         return jsonResponse({
@@ -85,11 +101,15 @@ describe("runBackendSmoke", () => {
         url: "http://api.test/health",
       },
       {
+        body: undefined,
+        url: "http://api.test/ready",
+      },
+      {
         body: { text: "I was wondering if you could help me." },
         url: "http://api.test/api/analyze",
       },
     ]);
-    expect(result.checks).toEqual(["health", "analyze"]);
+    expect(result.checks).toEqual(["health", "readiness", "analyze"]);
   });
 
   it("checks vocabulary save, list, and delete when an access token is provided", async () => {
@@ -103,6 +123,7 @@ describe("runBackendSmoke", () => {
     const result = await runBackendSmoke({
       accessToken: "user-token",
       baseUrl: "http://api.test",
+      vocabularyTerm: "nado-smoke-test",
       fetch: async (input, init) => {
         requests.push({
           authorization:
@@ -114,11 +135,8 @@ describe("runBackendSmoke", () => {
           url: String(input),
         });
 
-        if (String(input).endsWith("/health")) {
-          return jsonResponse({
-            service: "nado-api",
-            status: "ok",
-          });
+        if (isBackendStatusRequest(input)) {
+          return backendStatusResponse(input);
         }
 
         if (init?.method === "POST") {
@@ -148,11 +166,17 @@ describe("runBackendSmoke", () => {
         url: "http://api.test/health",
       },
       {
+        authorization: null,
+        body: undefined,
+        method: "GET",
+        url: "http://api.test/ready",
+      },
+      {
         authorization: "Bearer user-token",
         body: {
           meaning: "스모크 테스트 항목",
           note: "백엔드 smoke 검증 후 삭제됩니다.",
-          term: "nado-smoke",
+          term: "nado-smoke-test",
           type: "word",
         },
         method: "POST",
@@ -173,10 +197,82 @@ describe("runBackendSmoke", () => {
     ]);
     expect(result.checks).toEqual([
       "health",
+      "readiness",
       "vocabulary:save",
       "vocabulary:list",
       "vocabulary:delete",
     ]);
+  });
+
+  it("uses a unique vocabulary term for each smoke run by default", async () => {
+    const savedTerms: string[] = [];
+    let itemSequence = 0;
+
+    const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (isBackendStatusRequest(input)) {
+        return backendStatusResponse(input);
+      }
+
+      if (init?.method === "POST") {
+        const body = JSON.parse(String(init.body)) as { term: string };
+        const itemId = `smoke-id-${++itemSequence}`;
+        savedTerms.push(body.term);
+
+        return jsonResponse({ item: { id: itemId, term: body.term } });
+      }
+
+      if (init?.method === "DELETE") {
+        return new Response(null, { status: 204 });
+      }
+
+      return jsonResponse({ items: [{ id: `smoke-id-${itemSequence}` }] });
+    };
+
+    await runBackendSmoke({
+      accessToken: "user-token",
+      baseUrl: "http://api.test",
+      fetch,
+    });
+    await runBackendSmoke({
+      accessToken: "user-token",
+      baseUrl: "http://api.test",
+      fetch,
+    });
+
+    expect(savedTerms).toHaveLength(2);
+    expect(savedTerms[0]).toMatch(/^nado-smoke-[0-9a-f-]{36}$/);
+    expect(savedTerms[1]).toMatch(/^nado-smoke-[0-9a-f-]{36}$/);
+    expect(savedTerms[0]).not.toBe(savedTerms[1]);
+  });
+
+  it("fails listing when the newly saved item is missing and cleans it up", async () => {
+    const deletedIds: string[] = [];
+
+    await expect(
+      runBackendSmoke({
+        accessToken: "user-token",
+        baseUrl: "http://api.test",
+        fetch: async (input, init) => {
+          if (isBackendStatusRequest(input)) {
+            return backendStatusResponse(input);
+          }
+
+          if (init?.method === "POST") {
+            return jsonResponse({ item: { id: "saved-id" } });
+          }
+
+          if (init?.method === "DELETE") {
+            deletedIds.push(String(input).split("/").at(-1) ?? "");
+            return new Response(null, { status: 204 });
+          }
+
+          return jsonResponse({ items: [{ id: "different-id" }] });
+        },
+      }),
+    ).rejects.toThrow(
+      "Vocabulary list smoke response did not include saved item saved-id.",
+    );
+    expect(deletedIds).toEqual(["saved-id"]);
   });
 
   it("checks vocabulary realtime broadcasts when realtime smoke is enabled", async () => {
@@ -200,11 +296,8 @@ describe("runBackendSmoke", () => {
           url: String(input),
         });
 
-        if (String(input).endsWith("/health")) {
-          return jsonResponse({
-            service: "nado-api",
-            status: "ok",
-          });
+        if (isBackendStatusRequest(input)) {
+          return backendStatusResponse(input);
         }
 
         if (init?.method === "POST") {
@@ -255,12 +348,14 @@ describe("runBackendSmoke", () => {
     );
     expect(requests.map((request) => request.method)).toEqual([
       "GET",
+      "GET",
       "POST",
       "GET",
       "DELETE",
     ]);
     expect(result.checks).toEqual([
       "health",
+      "readiness",
       "vocabulary:save",
       "vocabulary:realtime:save",
       "vocabulary:list",
@@ -283,11 +378,8 @@ describe("runBackendSmoke", () => {
         supabaseAnonKey: "anon-key",
         supabaseUrl: "http://supabase.test",
         fetch: async (input, init) => {
-          if (String(input).endsWith("/health")) {
-            return jsonResponse({
-              service: "nado-api",
-              status: "ok",
-            });
+          if (isBackendStatusRequest(input)) {
+            return backendStatusResponse(input);
           }
 
           if (init?.method === "POST") {
@@ -336,11 +428,7 @@ describe("runBackendSmoke", () => {
         realtimeUserId: "user-id",
         supabaseAnonKey: "anon-key",
         supabaseUrl: "http://supabase.test",
-        fetch: async () =>
-          jsonResponse({
-            service: "nado-api",
-            status: "ok",
-          }),
+        fetch: async (input) => backendStatusResponse(input),
       }),
     ).rejects.toThrow(
       "Realtime smoke channel vocabulary:user-id was not subscribed within 1ms.",
@@ -351,6 +439,19 @@ describe("runBackendSmoke", () => {
     );
   });
 });
+
+function isBackendStatusRequest(input: RequestInfo | URL): boolean {
+  const url = String(input);
+
+  return url.endsWith("/health") || url.endsWith("/ready");
+}
+
+function backendStatusResponse(input: RequestInfo | URL): Response {
+  return jsonResponse({
+    service: "nado-api",
+    status: String(input).endsWith("/ready") ? "ready" : "ok",
+  });
+}
 
 function createRealtimeClientStub({
   subscribe = (callback) => callback?.("SUBSCRIBED"),

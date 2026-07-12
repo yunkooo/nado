@@ -1,5 +1,6 @@
 export const DEFAULT_ANONYMOUS_DAILY_ANALYSIS_LIMIT = 0;
 export const DEFAULT_AUTHENTICATED_DAILY_ANALYSIS_LIMIT = 0;
+export const MAX_ANALYSIS_DAILY_LIMIT = 2_147_483_647;
 
 export type AnalysisDailyLimitOptions = {
   defaultValue: number;
@@ -14,9 +15,18 @@ export function readAnalysisDailyLimit(
     return options.defaultValue;
   }
 
-  if (!/^\d+$/.test(value.trim())) {
-    throw new Error(`${options.name} must be a non-negative integer.`);
+  const normalizedValue = value.trim();
+  const parsedValue = Number(normalizedValue);
+
+  if (
+    !/^\d+$/.test(normalizedValue) ||
+    !Number.isSafeInteger(parsedValue) ||
+    parsedValue > MAX_ANALYSIS_DAILY_LIMIT
+  ) {
+    throw new Error(
+      `${options.name} must be a non-negative integer no greater than ${MAX_ANALYSIS_DAILY_LIMIT}.`,
+    );
   }
 
-  return Number.parseInt(value, 10);
+  return parsedValue;
 }

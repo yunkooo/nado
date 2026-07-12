@@ -1,4 +1,5 @@
-import type { AnalysisModelId, AnalyzeResponse } from "@nado/shared";
+import type { AnalyzeResponse } from "@nado/shared/analysis";
+import type { AnalysisModelId } from "@nado/shared/analysis-input";
 import type {
   AnalysisUsageDecision,
   UsageIdentity,
