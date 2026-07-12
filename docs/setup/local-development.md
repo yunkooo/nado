@@ -107,6 +107,14 @@ Mobile의 API 주소는 실행 환경에 맞춰 바꾼다.
 
 `.env.example`의 `EXPO_PUBLIC_API_BASE_URL=http://localhost:4000`은 앱의 Android 자동 fallback보다 우선하므로, Android emulator에서는 반드시 값을 바꾼다.
 
+Mobile의 Supabase 주소도 실행 환경에서 개발 컴퓨터에 도달할 수 있는 host로 설정한다.
+
+- Android emulator: `http://10.0.2.2:54321`
+- iOS simulator: `http://127.0.0.1:54321`
+- 실기기: 같은 네트워크의 개발 컴퓨터 IP를 사용하는 `http://<LAN-IP>:54321`
+
+`.env.example`의 `EXPO_PUBLIC_SUPABASE_URL`은 특정 플랫폼에서만 동작하는 loopback 주소 대신 placeholder로 둔다. `pnpm --filter @nado/mobile ios` 또는 `android`를 실행하기 전에 위 주소 중 현재 환경에 맞는 값을 `.env`에 입력한다.
+
 패키징한 Desktop 앱의 API host를 바꾸면 환경변수만 수정해서는 안 된다. `apps/desktop/src-tauri/capabilities/default.json`의 HTTP 허용 목록과 `apps/desktop/src-tauri/tauri.conf.json`의 CSP도 같은 host로 갱신한다.
 
 ## 5. Google OAuth 설정
