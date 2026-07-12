@@ -171,15 +171,18 @@ describe("Notion workflow repository contracts", () => {
       "workspace-tooling",
     ]) {
       expect(npmConfig).toContain(`${groupName}:`);
+      expect(npmConfig).toMatch(
+        new RegExp(`${groupName}:\\n\\s+applies-to: version-updates`),
+      );
     }
 
-    expect(npmConfig).toContain('dependency-name: "*"');
-    expect(npmConfig).toContain("version-update:semver-major");
-    expect(npmConfig).toMatch(
-      /mobile-runtime:[\s\S]*?update-types:\n\s+- patch/,
+    expect(npmConfig).toContain(
+      'allow:\n      - dependency-name: "*"\n        update-types:\n          - version-update:semver-minor\n          - version-update:semver-patch',
     );
+    expect(npmConfig).not.toContain("ignore:");
+    expect(npmConfig).not.toContain("version-update:semver-major");
     expect(npmConfig).toMatch(
-      /dependency-name: react-native[\s\S]*?version-update:semver-minor/,
+      /mobile-runtime:[\s\S]*?update-types:\n\s+- minor\n\s+- patch/,
     );
   });
 
