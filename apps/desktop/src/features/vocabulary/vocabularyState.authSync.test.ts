@@ -1,0 +1,147 @@
+import { describe, expect, it, vi } from "vitest";
+import type { VocabularyListResult } from "../../api/vocabularyApi";
+import {
+  createVocabularyAuthSync,
+  createVocabularyStateStore,
+  shouldLoadVocabularyForSession,
+} from "./vocabularyState";
+import { flushPromises, vocabularyItem } from "./vocabularyState.testHelpers";
+
+describe("vocabulary state store", () => {
+  it("settles a vocabulary sync request even after the triggering render is gone", async () => {
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => ({
+      data: [vocabularyItem],
+      status: "success" as const,
+    }));
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+
+    sync.sync({
+      accessToken: "session-token",
+      session: null,
+      status: "authenticated",
+    });
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      status: "loading",
+    });
+
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [vocabularyItem],
+      status: "ready",
+    });
+  });
+
+  it("settles thrown vocabulary sync failures as an error state", async () => {
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(async () => {
+      throw new Error("network lost");
+    });
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+
+    sync.sync({
+      accessToken: "session-token",
+      session: null,
+      status: "authenticated",
+    });
+
+    await flushPromises();
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [],
+      message: "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+      status: "error",
+    });
+  });
+
+  it("ignores stale vocabulary responses after the auth session changes", async () => {
+    let resolveListVocabulary: (result: VocabularyListResult) => void = () =>
+      undefined;
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi.fn(
+      () =>
+        new Promise<VocabularyListResult>((resolve) => {
+          resolveListVocabulary = resolve;
+        }),
+    );
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+
+    sync.sync({
+      accessToken: "old-session-token",
+      session: null,
+      status: "authenticated",
+    });
+    sync.sync({
+      accessToken: null,
+      session: null,
+      status: "anonymous",
+    });
+
+    resolveListVocabulary({
+      data: [vocabularyItem],
+      status: "success",
+    });
+    await flushPromises();
+
+    expect(store.getSnapshot()).toEqual({
+      accessToken: null,
+      items: [],
+      message: null,
+      status: "idle",
+    });
+  });
+
+  it("allows a same-token reload after a vocabulary load error", () => {
+    expect(
+      shouldLoadVocabularyForSession(
+        {
+          accessToken: "session-token",
+          items: [],
+          message: "단어장을 불러오지 못했어요.",
+          status: "error",
+        },
+        "session-token",
+      ),
+    ).toBe(true);
+  });
+
+  it("skips same-token reloads while vocabulary is already loading or ready", () => {
+    expect(
+      shouldLoadVocabularyForSession(
+        {
+          accessToken: "session-token",
+          items: [],
+          message: null,
+          status: "loading",
+        },
+        "session-token",
+      ),
+    ).toBe(false);
+
+    expect(
+      shouldLoadVocabularyForSession(
+        {
+          accessToken: "session-token",
+          items: [vocabularyItem],
+          message: null,
+          status: "ready",
+        },
+        "session-token",
+      ),
+    ).toBe(false);
+  });
+});

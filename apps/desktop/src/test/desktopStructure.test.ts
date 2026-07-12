@@ -9,6 +9,10 @@ describe("desktop source structure", () => {
   it("keeps app shell files in the app folder", () => {
     expect(hasDesktopSource("app/App.tsx")).toBe(true);
     expect(hasDesktopSource("app/App.test.tsx")).toBe(true);
+    expect(hasDesktopSource("app/AppDataSync.tsx")).toBe(true);
+    expect(hasDesktopSource("app/AppDataSync.test.tsx")).toBe(true);
+    expect(hasDesktopSource("app/DesktopShellView.tsx")).toBe(true);
+    expect(hasDesktopSource("app/DesktopShellView.test.tsx")).toBe(true);
     expect(hasDesktopSource("App.tsx")).toBe(false);
     expect(hasDesktopSource("App.test.tsx")).toBe(false);
   });
@@ -29,6 +33,7 @@ describe("desktop source structure", () => {
     expect(hasDesktopSource("auth/authClient.ts")).toBe(true);
     expect(hasDesktopSource("auth/authState.ts")).toBe(true);
     expect(hasDesktopSource("auth/desktopAuthDeepLink.ts")).toBe(true);
+    expect(hasDesktopSource("auth/desktopAuthDeepLink.test.tsx")).toBe(true);
     expect(hasDesktopSource("AuthControls.tsx")).toBe(false);
     expect(hasDesktopSource("authClient.ts")).toBe(false);
   });
@@ -43,10 +48,13 @@ describe("desktop source structure", () => {
     expect(hasDesktopSource("features/review/ReviewFlow.tsx")).toBe(true);
     expect(hasDesktopSource("features/review/ReviewPanels.tsx")).toBe(true);
     expect(hasDesktopSource("features/review/ReviewSessionView.tsx")).toBe(
+      false,
+    );
+    expect(hasDesktopSource("features/review/reviewSession.ts")).toBe(false);
+    expect(hasDesktopSource("features/review/useReviewSession.ts")).toBe(true);
+    expect(hasDesktopSource("features/review/useReviewSession.test.ts")).toBe(
       true,
     );
-    expect(hasDesktopSource("features/review/reviewSession.ts")).toBe(true);
-    expect(hasDesktopSource("features/review/useReviewSession.ts")).toBe(true);
     expect(hasDesktopSource("review/ReviewFlow.tsx")).toBe(false);
     expect(hasDesktopSource("ReviewFlow.tsx")).toBe(false);
     expect(hasDesktopSource("reviewHelpers.ts")).toBe(false);
@@ -67,10 +75,16 @@ describe("desktop source structure", () => {
     ).toBe(true);
     expect(
       hasDesktopSource("features/vocabulary/vocabularyPagination.ts"),
-    ).toBe(true);
+    ).toBe(false);
     expect(hasDesktopSource("features/vocabulary/vocabularyState.ts")).toBe(
       true,
     );
+    expect(hasDesktopSource("features/vocabulary/vocabularyRealtime.ts")).toBe(
+      true,
+    );
+    expect(
+      hasDesktopSource("features/vocabulary/vocabularyRealtime.test.ts"),
+    ).toBe(true);
     expect(hasDesktopSource("features/vocabulary/vocabularyViewState.ts")).toBe(
       true,
     );

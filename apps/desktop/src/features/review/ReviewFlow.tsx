@@ -1,13 +1,13 @@
+import { ReviewSessionView } from "@nado/ui-web/ReviewSessionView";
 import { useAuthState } from "../../auth/authState";
 import { getVocabularyPanelState } from "../vocabulary/vocabularyViewState";
-import { useVocabularyState } from "../vocabulary/vocabularyState";
+import { useVocabularyStateForAuth } from "../vocabulary/vocabularyState";
 import { ReviewPanel } from "./ReviewPanels";
-import { ReviewSessionView } from "./ReviewSessionView";
 import { useReviewSession } from "./useReviewSession";
 
 export function ReviewFlow() {
   const authState = useAuthState();
-  const vocabularyState = useVocabularyState();
+  const vocabularyState = useVocabularyStateForAuth(authState);
   const session = useReviewSession(authState, vocabularyState);
   const panelState = getVocabularyPanelState({
     authStatus: authState.status,

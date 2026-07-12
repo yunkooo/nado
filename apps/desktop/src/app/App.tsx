@@ -1,17 +1,15 @@
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { AnalysisFlow } from "../features/analysis/AnalysisFlow";
 import { AuthControls } from "../auth/AuthControls";
-
-type NavigationItem = {
-  key: "analysis" | "review" | "vocabulary";
-  label: string;
-};
-
-const navigationItems: NavigationItem[] = [
-  { key: "analysis", label: "분석" },
-  { key: "vocabulary", label: "단어장" },
-  { key: "review", label: "복습" },
-];
+import { AppDataSync } from "./AppDataSync";
+import { DesktopShellView, type DesktopSurfaceKey } from "./DesktopShellView";
 
 const StudyWorkspace = lazy(() =>
   import("./StudyWorkspace").then(({ StudyWorkspace }) => ({
@@ -23,18 +21,27 @@ const studyFlowFallback = (
     화면을 불러오는 중이에요.
   </div>
 );
+const focusableElementSelector = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
 
 export function App() {
-  const [activeItem, setActiveItem] =
-    useState<NavigationItem["key"]>("analysis");
+  const [activeItem, setActiveItem] = useState<DesktopSurfaceKey>("analysis");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
   const shouldRestoreMenuFocusRef = useRef(false);
-  const closeSidebar = () => {
+  const closeSidebar = useCallback(() => {
     shouldRestoreMenuFocusRef.current = true;
     setIsSidebarOpen(false);
-  };
+  }, []);
+
   useEffect(() => {
     if (!isSidebarOpen) {
       if (shouldRestoreMenuFocusRef.current) {
@@ -45,10 +52,53 @@ export function App() {
     }
 
     closeButtonRef.current?.focus();
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         closeSidebar();
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const sidebar = sidebarRef.current;
+
+      if (!sidebar) {
+        return;
+      }
+
+      const focusableElements = Array.from(
+        sidebar.querySelectorAll<HTMLElement>(focusableElementSelector),
+      ).filter((element) => element.getClientRects().length > 0);
+      const firstFocusableElement = focusableElements[0];
+      const lastFocusableElement = focusableElements.at(-1);
+
+      if (!firstFocusableElement || !lastFocusableElement) {
+        event.preventDefault();
+        return;
+      }
+
+      if (
+        event.shiftKey &&
+        (document.activeElement === firstFocusableElement ||
+          !sidebar.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        lastFocusableElement.focus();
+        return;
+      }
+
+      if (
+        !event.shiftKey &&
+        (document.activeElement === lastFocusableElement ||
+          !sidebar.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        firstFocusableElement.focus();
       }
     };
 
@@ -56,93 +106,35 @@ export function App() {
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
     };
-  }, [isSidebarOpen]);
+  }, [closeSidebar, isSidebarOpen]);
 
-  const selectNavigationItem = (nextItem: NavigationItem["key"]) => {
+  const selectNavigationItem = (nextItem: DesktopSurfaceKey) => {
     setActiveItem(nextItem);
     closeSidebar();
   };
+  const workspaceLabel = {
+    analysis: "분석 화면",
+    review: "복습 화면",
+    vocabulary: "단어장 화면",
+  }[activeItem];
 
   return (
-    <main className="desktop-shell">
-      {!isSidebarOpen ? (
-        <button
-          aria-controls="desktop-sidebar"
-          aria-expanded="false"
-          aria-label="사이드바 열기"
-          className="desktop-mobile-menu-button"
-          onClick={() => setIsSidebarOpen(true)}
-          ref={menuButtonRef}
-          type="button"
-        >
-          <span className="desktop-mobile-menu-button__bar" />
-          <span className="desktop-mobile-menu-button__bar" />
-          <span className="desktop-mobile-menu-button__bar" />
-        </button>
-      ) : null}
-      {isSidebarOpen ? (
-        <button
-          aria-label="사이드바 배경 닫기"
-          className="desktop-sidebar-scrim"
-          onClick={closeSidebar}
-          type="button"
-        />
-      ) : null}
-      <aside
-        className={[
-          "desktop-sidebar",
-          isSidebarOpen ? "desktop-sidebar--open" : null,
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        aria-label="앱 정보"
-        id="desktop-sidebar"
+    <>
+      <AppDataSync activeItem={activeItem} />
+      <DesktopShellView
+        activeItem={activeItem}
+        authControls={<AuthControls />}
+        closeButtonRef={closeButtonRef}
+        isSidebarOpen={isSidebarOpen}
+        menuButtonRef={menuButtonRef}
+        onCloseSidebar={closeSidebar}
+        onOpenSidebar={() => setIsSidebarOpen(true)}
+        onSelectNavigationItem={selectNavigationItem}
+        sidebarRef={sidebarRef}
+        workspaceLabel={workspaceLabel}
       >
-        <div className="desktop-brand">
-          <span className="desktop-brand__mark" aria-hidden="true">
-            n
-          </span>
-          <strong className="desktop-brand__name">nado</strong>
-          <button
-            aria-label="사이드바 닫기"
-            className="desktop-sidebar-close"
-            onClick={closeSidebar}
-            ref={closeButtonRef}
-            type="button"
-          >
-            <span className="desktop-sidebar-close__bar" />
-            <span className="desktop-sidebar-close__bar" />
-          </button>
-        </div>
-        <nav className="desktop-nav" aria-label="주요 메뉴">
-          {navigationItems.map((item) => {
-            const isActive = item.key === activeItem;
-
-            return (
-              <button
-                aria-current={isActive ? "page" : undefined}
-                className={[
-                  "desktop-nav__item",
-                  isActive ? "desktop-nav__item--active" : null,
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                key={item.key}
-                onClick={() => selectNavigationItem(item.key)}
-                type="button"
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
-        <footer className="desktop-sidebar__footer">
-          <AuthControls />
-        </footer>
-      </aside>
-
-      <section className="desktop-workspace" aria-label="분석 화면">
         {activeItem === "analysis" ? <AnalysisFlow /> : null}
 
         {activeItem === "vocabulary" || activeItem === "review" ? (
@@ -150,7 +142,7 @@ export function App() {
             <StudyWorkspace activeItem={activeItem} />
           </Suspense>
         ) : null}
-      </section>
-    </main>
+      </DesktopShellView>
+    </>
   );
 }

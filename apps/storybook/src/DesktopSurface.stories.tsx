@@ -2,25 +2,18 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { expect, userEvent, within } from "storybook/test";
 import { Button, VocabularyItemCard } from "@nado/ui";
+import {
+  DesktopShellView,
+  type DesktopSurfaceKey,
+} from "../../desktop/src/app/DesktopShellView";
 import "../../desktop/src/styles/styles.css";
 
-type DesktopSurfaceKey = "analysis" | "review" | "vocabulary";
-
-interface DesktopShellMockProps {
+interface DesktopShellStoryProps {
   activeItem: DesktopSurfaceKey;
   children: ReactNode;
-  isSidebarOpen?: boolean;
+  initialSidebarOpen?: boolean;
   workspaceLabel: string;
 }
-
-const desktopNavigationItems: {
-  key: DesktopSurfaceKey;
-  label: string;
-}[] = [
-  { key: "analysis", label: "분석" },
-  { key: "vocabulary", label: "단어장" },
-  { key: "review", label: "복습" },
-];
 
 function DesktopAuthMock() {
   return (
@@ -31,102 +24,32 @@ function DesktopAuthMock() {
   );
 }
 
-function DesktopShellMock({
+function DesktopShellStory({
   activeItem,
   children,
-  isSidebarOpen: initialSidebarOpen = false,
+  initialSidebarOpen = false,
   workspaceLabel,
-}: DesktopShellMockProps) {
+}: DesktopShellStoryProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(initialSidebarOpen);
 
   return (
-    <main className="desktop-shell">
-      {!isSidebarOpen ? (
-        <button
-          aria-controls="desktop-sidebar"
-          aria-expanded="false"
-          aria-label="사이드바 열기"
-          className="desktop-mobile-menu-button"
-          onClick={() => setIsSidebarOpen(true)}
-          type="button"
-        >
-          <span className="desktop-mobile-menu-button__bar" />
-          <span className="desktop-mobile-menu-button__bar" />
-          <span className="desktop-mobile-menu-button__bar" />
-        </button>
-      ) : null}
-      {isSidebarOpen ? (
-        <button
-          aria-label="사이드바 배경 닫기"
-          className="desktop-sidebar-scrim"
-          onClick={() => setIsSidebarOpen(false)}
-          type="button"
-        />
-      ) : null}
-      <aside
-        aria-label="앱 정보"
-        className={[
-          "desktop-sidebar",
-          isSidebarOpen ? "desktop-sidebar--open" : null,
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        id="desktop-sidebar"
-      >
-        <div>
-          <div className="desktop-brand">
-            <span className="desktop-brand__mark" aria-hidden="true">
-              n
-            </span>
-            <strong className="desktop-brand__name">nado</strong>
-            <button
-              aria-label="사이드바 닫기"
-              className="desktop-sidebar-close"
-              onClick={() => setIsSidebarOpen(false)}
-              type="button"
-            >
-              <span className="desktop-sidebar-close__bar" />
-              <span className="desktop-sidebar-close__bar" />
-            </button>
-          </div>
-          <nav className="desktop-nav" aria-label="주요 메뉴">
-            {desktopNavigationItems.map((item) => {
-              const isActive = item.key === activeItem;
-
-              return (
-                <button
-                  aria-current={isActive ? "page" : undefined}
-                  className={[
-                    "desktop-nav__item",
-                    isActive ? "desktop-nav__item--active" : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  key={item.key}
-                  onClick={() => setIsSidebarOpen(false)}
-                  type="button"
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-        <footer className="desktop-sidebar__footer">
-          <DesktopAuthMock />
-        </footer>
-      </aside>
-
-      <section className="desktop-workspace" aria-label={workspaceLabel}>
-        {children}
-      </section>
-    </main>
+    <DesktopShellView
+      activeItem={activeItem}
+      authControls={<DesktopAuthMock />}
+      isSidebarOpen={isSidebarOpen}
+      onCloseSidebar={() => setIsSidebarOpen(false)}
+      onOpenSidebar={() => setIsSidebarOpen(true)}
+      onSelectNavigationItem={() => setIsSidebarOpen(false)}
+      workspaceLabel={workspaceLabel}
+    >
+      {children}
+    </DesktopShellView>
   );
 }
 
 function DesktopAnalysisPlaceholder() {
   return (
-    <DesktopShellMock activeItem="analysis" workspaceLabel="분석 화면">
+    <DesktopShellStory activeItem="analysis" workspaceLabel="분석 화면">
       <section className="desktop-analysis-workspace">
         <div className="desktop-analysis-page">
           <section className="desktop-analysis-status">
@@ -134,13 +57,13 @@ function DesktopAnalysisPlaceholder() {
           </section>
         </div>
       </section>
-    </DesktopShellMock>
+    </DesktopShellStory>
   );
 }
 
 function DesktopVocabularySurface() {
   return (
-    <DesktopShellMock activeItem="vocabulary" workspaceLabel="단어장 화면">
+    <DesktopShellStory activeItem="vocabulary" workspaceLabel="단어장 화면">
       <section className="desktop-content-workspace">
         <div className="desktop-page">
           <header className="desktop-page-header">
@@ -223,7 +146,7 @@ function DesktopVocabularySurface() {
           </section>
         </div>
       </section>
-    </DesktopShellMock>
+    </DesktopShellStory>
   );
 }
 
@@ -249,9 +172,9 @@ function DesktopReviewSurface({
   isSidebarOpen?: boolean;
 }) {
   return (
-    <DesktopShellMock
+    <DesktopShellStory
       activeItem="review"
-      isSidebarOpen={isSidebarOpen}
+      initialSidebarOpen={isSidebarOpen}
       workspaceLabel="복습 화면"
     >
       <section className="desktop-content-workspace">
@@ -290,7 +213,7 @@ function DesktopReviewSurface({
           </section>
         </div>
       </section>
-    </DesktopShellMock>
+    </DesktopShellStory>
   );
 }
 

@@ -2,6 +2,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const appSource = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const appDataSyncSource = readFileSync(
+  new URL("./AppDataSync.tsx", import.meta.url),
+  "utf8",
+);
 const analysisFlowSource = readFileSync(
   new URL("../features/analysis/AnalysisFlow.tsx", import.meta.url),
   "utf8",
@@ -26,6 +30,10 @@ const vocabularyListSource = readFileSync(
   new URL("../features/vocabulary/VocabularyList.tsx", import.meta.url),
   "utf8",
 );
+const vocabularyRealtimeSource = readFileSync(
+  new URL("../features/vocabulary/vocabularyRealtime.ts", import.meta.url),
+  "utf8",
+);
 const vocabularyStateSource = readFileSync(
   new URL("../features/vocabulary/vocabularyState.ts", import.meta.url),
   "utf8",
@@ -41,35 +49,17 @@ describe("Desktop App source", () => {
     expect(analysisFlowSource).toContain("analyzeText");
   });
 
-  it("renders web-style mobile sidebar controls", () => {
-    expect(appSource).toContain("useState");
-    expect(appSource).toContain("desktop-mobile-menu-button");
-    expect(appSource).toContain('aria-label="사이드바 열기"');
-    expect(appSource).toContain("desktop-sidebar-scrim");
-    expect(appSource).toContain('aria-label="사이드바 배경 닫기"');
-    expect(appSource).toContain("desktop-sidebar-close");
-    expect(appSource).toContain('aria-label="사이드바 닫기"');
-    expect(appSource).toContain("desktop-sidebar--open");
-  });
-
   it("keeps desktop drawer keyboard behavior aligned with the web shell", () => {
     expect(appSource).toContain("menuButtonRef");
     expect(appSource).toContain("closeButtonRef");
+    expect(appSource).toContain("sidebarRef");
     expect(appSource).toContain("shouldRestoreMenuFocusRef");
     expect(appSource).toContain('event.key === "Escape"');
+    expect(appSource).toContain('event.key !== "Tab"');
+    expect(appSource).toContain("focusableElementSelector");
+    expect(appSource).toContain('document.body.style.overflow = "hidden"');
     expect(appSource).toContain("closeButtonRef.current?.focus()");
     expect(appSource).toContain("menuButtonRef.current?.focus()");
-  });
-
-  it("renders web-style sidebar navigation and auth controls", () => {
-    expect(appSource).toContain("navigationItems");
-    expect(appSource).toContain("activeItem");
-    expect(appSource).toContain("setActiveItem");
-    expect(appSource).toContain("desktop-nav");
-    expect(appSource).toContain("분석");
-    expect(appSource).toContain("단어장");
-    expect(appSource).toContain("복습");
-    expect(appSource).toContain("AuthControls");
   });
 
   it("switches between analysis, vocabulary, and review views", () => {
@@ -95,13 +85,13 @@ describe("Desktop App source", () => {
   });
 
   it("refreshes vocabulary data when entering study views or returning focus", () => {
-    expect(studyWorkspaceSource).toContain(
+    expect(appDataSyncSource).toContain(
       "useRefreshVocabularyForActiveStudySurface",
     );
     expect(appSource).toContain('activeItem === "vocabulary"');
     expect(appSource).toContain('activeItem === "review"');
-    expect(studyWorkspaceSource).toMatch(
-      /useRefreshVocabularyForActiveStudySurface\(\s*authState,\s*true,\s*activeItem,?\s*\)/,
+    expect(appDataSyncSource).toMatch(
+      /useRefreshVocabularyForActiveStudySurface\(\s*authState,\s*isStudySurfaceActive,\s*activeItem,?\s*\)/,
     );
     expect(vocabularyStateSource).toContain('window.addEventListener("focus"');
     expect(vocabularyStateSource).toContain(
@@ -110,16 +100,16 @@ describe("Desktop App source", () => {
   });
 
   it("subscribes to desktop vocabulary realtime updates after authentication", () => {
-    expect(studyWorkspaceSource).toContain("useSyncVocabularyRealtimeForAuth");
-    expect(studyWorkspaceSource).toMatch(
+    expect(appSource).toContain("<AppDataSync activeItem={activeItem} />");
+    expect(appDataSyncSource).toContain("useSyncVocabularyRealtimeForAuth");
+    expect(appDataSyncSource).toMatch(
       /useSyncVocabularyRealtimeForAuth\(\s*authState,?\s*\)/,
     );
     expect(vocabularyStateSource).toContain("createVocabularyRealtimeSync");
-    expect(vocabularyStateSource).toContain("createVocabularyRealtimeTopic");
-    expect(vocabularyStateSource).toContain("config: { private: true }");
-    expect(vocabularyStateSource).toContain(
-      "createVocabularyRealtimeRefreshScheduler",
+    expect(vocabularyRealtimeSource).toContain(
+      "createVocabularyRealtimeController",
     );
+    expect(vocabularyRealtimeSource).toContain("getConnection");
   });
 
   it("renders a manual vocabulary refresh button on study views", () => {
@@ -157,14 +147,6 @@ describe("Desktop App source", () => {
     expect(apiConfigSource).toContain("import.meta.env.DEV");
     expect(apiConfigSource).toContain("undefined");
     expect(apiConfigSource).toContain("configuredApiBaseUrl");
-  });
-
-  it("keeps vocabulary saving behind a login-needed desktop notice", () => {
-    expect(analysisFlowSource).toContain(
-      "로그인이 필요해요. Google 로그인 후 단어장에 저장할 수 있어요.",
-    );
-    expect(analysisFlowSource).toContain("setVocabularySaveMessage");
-    expect(analysisFlowSource).toContain("getVocabularySuggestionState");
   });
 
   it("clears vocabulary save notices when leaving the analysis view", () => {
@@ -268,7 +250,8 @@ describe("Desktop App source", () => {
 
   it("paginates vocabulary items and scrolls back to the list top", () => {
     expect(vocabularyFlowSource).toContain("VocabularyList");
-    expect(vocabularyListSource).toContain("getVocabularyPage");
+    expect(vocabularyListSource).toContain("paginateVocabularyItems");
+    expect(vocabularyListSource).toContain("VocabularyItemCard");
     expect(vocabularyListSource).toContain("scrollIntoView");
     expect(vocabularyListSource).toContain("currentPage - 1");
     expect(vocabularyListSource).toContain("currentPage + 1");

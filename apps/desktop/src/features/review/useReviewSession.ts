@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
-import type { AuthStateSnapshot } from "../../auth/authState";
-import type { VocabularyStateSnapshot } from "../vocabulary/vocabularyState";
+import { useEffect, useMemo, useState } from "react";
 import {
+  createReviewCardKey,
+  getCurrentReviewIndex,
   getNextReviewIndex,
   getReviewCard,
+  getReviewableItems,
   type ReviewDirection,
-} from "./reviewSession";
+} from "@nado/shared/review";
+import type { AuthStateSnapshot } from "../../auth/authState";
+import type { VocabularyStateSnapshot } from "../vocabulary/vocabularyState";
 
 export function useReviewSession(
   authState: AuthStateSnapshot,
@@ -13,34 +16,47 @@ export function useReviewSession(
 ) {
   const [direction, setDirection] =
     useState<ReviewDirection>("english-to-korean");
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
-  const items = vocabularyState.items;
+  const [currentItemId, setCurrentItemId] = useState<string | null>(null);
+  const [revealedCardKey, setRevealedCardKey] = useState<string | null>(null);
+  const items = useMemo(
+    () => getReviewableItems(vocabularyState.items),
+    [vocabularyState.items],
+  );
+  const currentIndex = getCurrentReviewIndex(items, currentItemId);
   const currentItem = items[currentIndex];
   const card = currentItem ? getReviewCard(currentItem, direction) : null;
+  const currentCardKey = currentItem
+    ? createReviewCardKey(currentItem, direction)
+    : null;
+  const isAnswerRevealed =
+    currentCardKey !== null && revealedCardKey === currentCardKey;
 
   useEffect(() => {
-    setCurrentIndex((index) =>
-      items.length === 0 ? 0 : Math.min(index, items.length - 1),
-    );
-    setIsAnswerRevealed(false);
-  }, [items.length]);
+    setCurrentItemId((itemId) => {
+      if (itemId && items.some((item) => item.id === itemId)) {
+        return itemId;
+      }
+
+      return items[0]?.id ?? null;
+    });
+  }, [items]);
 
   useEffect(() => {
     if (authState.status !== "authenticated") {
-      setCurrentIndex(0);
-      setIsAnswerRevealed(false);
+      setCurrentItemId(null);
+      setRevealedCardKey(null);
     }
   }, [authState.status]);
 
   const changeDirection = (nextDirection: ReviewDirection) => {
     setDirection(nextDirection);
-    setIsAnswerRevealed(false);
+    setRevealedCardKey(null);
   };
 
   const moveNext = () => {
-    setCurrentIndex((index) => getNextReviewIndex(index, items.length));
-    setIsAnswerRevealed(false);
+    const nextIndex = getNextReviewIndex(currentIndex, items.length);
+    setCurrentItemId(items[nextIndex]?.id ?? null);
+    setRevealedCardKey(null);
   };
 
   return {
@@ -52,6 +68,14 @@ export function useReviewSession(
     isAnswerRevealed,
     itemCount: items.length,
     moveNext,
-    toggleAnswer: () => setIsAnswerRevealed((isRevealed) => !isRevealed),
+    toggleAnswer: () => {
+      if (!currentCardKey) {
+        return;
+      }
+
+      setRevealedCardKey((cardKey) =>
+        cardKey === currentCardKey ? null : currentCardKey,
+      );
+    },
   };
 }
