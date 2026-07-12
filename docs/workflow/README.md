@@ -65,7 +65,7 @@ commit은 파일 수가 아니라 변경 목적을 기준으로 나눈다.
 
 | 자동화                                                                     | 역할                                     |
 | -------------------------------------------------------------------------- | ---------------------------------------- |
-| [CI](../../.github/workflows/ci.yml)                                       | 정적 검증과 E2E                          |
+| [CI](../../.github/workflows/ci.yml)                                       | 정적 검증, native smoke, E2E             |
 | [Notion Ticket Sync](../../.github/workflows/notion-ticket-sync.yml)       | PR, CI, 리뷰, merge 상태를 Notion에 반영 |
 | [Review signal](../../.github/workflows/notion-ticket-review-dispatch.yml) | secret 없이 review event 신호만 전달     |
 | [Slack PR 알림](../../.github/workflows/slack-pr-notify.yml)               | ready PR의 리뷰 요청 알림                |
@@ -85,13 +85,15 @@ Security update PR도 same-repository PR이므로 merge 전에 `IN-progrss` Noti
 
 - PR을 통해서만 변경한다.
 - branch를 최신 `main` 기준으로 갱신한 뒤 merge한다.
-- `Lint, typecheck, test, build`, `E2E smoke`, `Sync PR event` check를 필수로 둔다.
+- `Lint, typecheck, test, build`, `Supabase migrations and database tests`, `E2E smoke`, `Sync PR event` check를 필수로 둔다.
 - 모든 review conversation이 해결되어야 merge할 수 있다.
 - force push와 branch 삭제를 허용하지 않는다.
 - 1인 운영 중에는 승인 수를 강제하지 않고, 협업자가 생기면 required approval을 추가한다.
 - 저장소 Actions는 GitHub 소유 Action과 저장소 local action만 허용한다.
 - 원격 Action의 `uses:` 참조는 버전 주석과 함께 full commit SHA로 고정한다.
 - Slack 알림은 보조 수단이므로 required check에 포함하지 않는다.
+
+Mobile native generation/export와 Desktop Tauri compile은 `Lint, typecheck, test, build` check 안에서 실행된다.
 
 ## Codex review
 

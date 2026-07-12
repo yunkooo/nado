@@ -452,9 +452,11 @@ export const OtherStory: Story = {
       "../../apps/storybook/README.md#검증-명령",
     );
     expect(tokenParityDemoSource).toContain(
-      "EXPO_PUBLIC_NADO_MOBILE_DESIGN_DEMO=1",
+      "pnpm --filter @nado/mobile dev:design",
     );
-    expect(tokenParityDemoSource).toContain("pnpm --filter @nado/mobile dev");
+    expect(tokenParityDemoSource).toContain(
+      "pnpm --filter @nado/mobile test:design-bundle",
+    );
   });
 
   it("uses viewport globals for narrow sidebar stories", () => {

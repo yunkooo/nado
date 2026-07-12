@@ -1,123 +1,204 @@
-# 로컬 개발 세팅
+# 로컬 개발
 
-이 문서는 `nado` 모노레포를 처음 실행할 때 필요한 최소 명령을 정리한다.
+처음 실행할 때는 아래 순서대로 진행한다. 모든 앱은 저장소 루트의 `.env`를 기준으로 시작한다.
 
-## 요구 도구
+필요한 범위까지만 진행해도 된다.
 
-- Node.js 22 이상
+| 하려는 일                | 필요한 단계                         |
+| ------------------------ | ----------------------------------- |
+| API와 Web 화면 실행      | 1~3단계                             |
+| 실제 AI 분석             | 1~3단계 + 사용할 provider key 1개   |
+| 로그인·단어장 확인       | 1~3단계 + 5단계                     |
+| Mobile·Desktop·Storybook | 위 설정 후 필요한 앱만 4단계로 실행 |
+
+## 1. 준비
+
+필요한 도구:
+
+- Node.js 22.12 이상 23 미만
 - pnpm 11 이상
 - Docker Desktop
 
-Supabase CLI는 root devDependency로 설치한다. 별도 전역 설치 없이 `pnpm exec supabase ...`로 실행한다.
+버전 관리 도구를 사용한다면 저장소 루트의 `.node-version`으로 검증된 Node.js 패치 버전을 맞춘다. 지원 범위는 루트 `package.json`의 `engines`가 기준이다.
 
-## 설치
+플랫폼 앱을 실행할 때는 추가 도구가 필요하다.
+
+| 대상           | 추가 도구                                       |
+| -------------- | ----------------------------------------------- |
+| Mobile iOS     | Xcode, iOS simulator 또는 연결한 기기           |
+| Mobile Android | Android Studio, Android SDK, emulator 또는 기기 |
+| Desktop        | Rust toolchain과 운영체제별 Tauri build 도구    |
 
 ```bash
 pnpm install
-```
-
-## 자주 쓰는 명령
-
-```bash
-pnpm dev:api
-pnpm dev:web
-pnpm dev:storybook
-pnpm typecheck
-pnpm test
-pnpm build
-```
-
-## Supabase local stack
-
-```bash
 cp .env.example .env
+```
+
+실제 key와 token은 `.env`에만 넣고 커밋하지 않는다.
+
+## 2. Supabase 시작
+
+```bash
 pnpm supabase:start
 pnpm supabase:status
 ```
 
-`supabase:status` 출력의 local anon key와 service role key를 `.env`에 채운다. 실제 운영 key나 OpenAI key는 커밋하지 않는다.
+`supabase:status`에서 확인한 local anon key와 service role key를 `.env`에 입력한다.
 
-웹 앱의 Google 로그인은 브라우저에서 Supabase Auth OAuth를 시작한다. `.env`에는 서버용 `SUPABASE_URL`, `SUPABASE_ANON_KEY`와 별도로 브라우저에 공개 가능한 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`를 같은 local Supabase 값으로 채운다. 웹 앱은 저장소 루트의 `.env`를 읽으므로 `apps/web` 아래에 별도 env 파일을 복사하지 않는다. 값을 수정했다면 `pnpm dev:web`을 재시작한다.
+| 환경변수                            | 사용 위치                | 공개 여부                  |
+| ----------------------------------- | ------------------------ | -------------------------- |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | API 서버                 | 서버 설정                  |
+| `SUPABASE_SERVICE_ROLE_KEY`         | 사용량 추적 등 서버 작업 | 절대 공개하지 않음         |
+| `NEXT_PUBLIC_SUPABASE_*`            | Web, Desktop fallback    | 공개 가능한 anon 값만 사용 |
+| `EXPO_PUBLIC_SUPABASE_*`            | Mobile                   | 공개 가능한 anon 값만 사용 |
 
-Google OAuth를 로컬에서 실제로 테스트하려면 Google Cloud OAuth 클라이언트의 승인된 redirect URI에 아래 값을 추가하고, 발급받은 값을 `.env`에 채운다.
+Supabase CLI는 workspace dependency이므로 전역 설치 없이 `pnpm exec supabase`로 실행한다.
+
+## 3. API와 Web 실행
+
+터미널을 나눠 실행한다.
+
+```bash
+pnpm dev:api
+pnpm dev:web
+```
+
+기본 주소:
+
+- API: `http://localhost:4000`
+- Web: `http://localhost:3000`
+
+먼저 `http://localhost:4000/health`로 process 생존 여부를 확인하고, `http://localhost:4000/ready`로 Supabase 연결까지 확인한 뒤 Web에서 분석 화면을 연다. Railway의 배포 health check 경로는 의존성 장애도 감지하는 `/ready`를 사용한다.
+
+## 4. 다른 앱 실행
+
+```bash
+pnpm --filter @nado/mobile dev
+pnpm --filter @nado/desktop tauri:dev
+pnpm dev:storybook
+```
+
+Mobile의 일반 UI와 API 연결은 `dev`로 확인할 수 있다. `nado://auth/callback`을 사용하는 로그인은 Expo Go가 아니라 설치된 development build가 필요하다. 플랫폼별 development build는 다음 명령으로 설치한다.
+
+```bash
+pnpm --filter @nado/mobile ios
+pnpm --filter @nado/mobile android
+```
+
+설치 후 Metro는 development client 모드로 실행한다.
+
+```bash
+pnpm --filter @nado/mobile dev:client
+```
+
+iOS·Android 실기기 OAuth 확인은 [P0 검증 항목](../release-readiness.md#p0-크로스-플랫폼-학습-흐름)에 기록한다.
+
+| 앱      | 기본 API 환경변수                                               |
+| ------- | --------------------------------------------------------------- |
+| Web     | `NEXT_PUBLIC_API_BASE_URL`                                      |
+| Mobile  | `EXPO_PUBLIC_API_BASE_URL` 또는 `EXPO_PUBLIC_NADO_API_BASE_URL` |
+| Desktop | `VITE_API_BASE_URL` 또는 `VITE_NADO_API_BASE_URL`               |
+
+Mobile의 API 주소는 실행 환경에 맞춰 바꾼다.
+
+- Android emulator: `http://10.0.2.2:4000`
+- iOS simulator: `http://localhost:4000`
+- 실기기: 같은 네트워크의 개발 컴퓨터 IP 또는 접근 가능한 API URL
+
+`.env.example`의 `EXPO_PUBLIC_API_BASE_URL=http://localhost:4000`은 앱의 Android 자동 fallback보다 우선하므로, Android emulator에서는 반드시 값을 바꾼다.
+
+패키징한 Desktop 앱의 API host를 바꾸면 환경변수만 수정해서는 안 된다. `apps/desktop/src-tauri/capabilities/default.json`의 HTTP 허용 목록과 `apps/desktop/src-tauri/tauri.conf.json`의 CSP도 같은 host로 갱신한다.
+
+## 5. Google OAuth 설정
+
+Google Cloud OAuth client의 승인된 redirect URI에 Supabase callback을 등록한다.
 
 ```text
 http://127.0.0.1:54321/auth/v1/callback
 ```
 
-```bash
-SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID="<Google OAuth client id>"
-SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET="<Google OAuth client secret>"
+Supabase Auth의 Redirect URLs에는 실제로 돌아올 앱 주소를 허용한다.
+
+| 환경      | Redirect 예시                                                      |
+| --------- | ------------------------------------------------------------------ |
+| Web local | 현재 Web origin                                                    |
+| Web 배포  | 실제 Vercel origin                                                 |
+| Mobile    | `nado://auth/callback` 또는 `EXPO_PUBLIC_MOBILE_AUTH_REDIRECT_URL` |
+| Desktop   | `http://127.0.0.1:17654`                                           |
+
+Desktop은 PKCE authorization code를 loopback callback으로 받은 뒤 실행 중인 앱에서 session으로 교환한다. URL fragment의 access/refresh token은 처리하지 않는다.
+
+로컬 `supabase/config.toml`에는 Desktop loopback과 Mobile custom scheme이 허용되어 있다. redirect URL을 바꿨다면 `pnpm supabase:stop` 후 `pnpm supabase:start`로 local stack을 다시 시작한다.
+
+## 6. AI provider와 timeout
+
+분석 모델에 따라 서버 key가 다르다.
+
+| Provider   | 환경변수             | 서버 기본 timeout | 클라이언트 timeout |
+| ---------- | -------------------- | ----------------- | ------------------ |
+| OpenRouter | `OPENROUTER_API_KEY` | 150초             | 155초              |
+| OpenAI     | `OPENAI_API_KEY`     | 30초              | 35초               |
+
+재시도가 발생해도 서버의 전체 시간 예산은 새로 시작하지 않는다. Supabase 요청의 기본 timeout은 10초이며 `SUPABASE_TIMEOUT_MS`로 조정한다.
+
+## 7. 개발 단계 사용량 제한
+
+```text
+NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT=0
+NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT=0
 ```
 
-원격 Supabase 프로젝트도 Dashboard의 Authentication provider에서 Google을 켜고 같은 redirect URI 계열을 등록해야 한다. 웹 앱은 로그인 완료 후 현재 origin으로 돌아오므로, Supabase Auth의 Site URL 또는 Redirect URLs에 배포 origin을 함께 허용한다. 현재 배포된 웹 origin은 `https://nado-web.vercel.app`이다.
+현재 코드와 `.env.example`의 기본값 `0`은 개발 편의를 위한 무제한 설정이다. 환경변수를 생략해도 기본값은 `0`이다.
 
-데스크톱 앱은 Google 로그인 완료 후 브라우저가 앱 내부 loopback callback으로 돌아오도록 `VITE_DESKTOP_AUTH_REDIRECT_URL=http://127.0.0.1:17654`를 사용한다. 이 값도 Supabase Auth Redirect URLs에 추가해야 한다. 패키지 앱은 PKCE 코드 교환으로 세션을 만들며, loopback callback 페이지는 인증 코드를 실행 중인 앱으로 전달한 뒤 완료 화면을 보여준다.
+운영에서는 두 환경변수를 반드시 명시한다. `0`은 사용량을 기록하되 요청을 차단하지 않는 무제한 설정이고, PostgreSQL integer 범위 안의 양수(`1`~`2147483647`)는 실제 일일 상한이다. 익명 `3`, 로그인 `20`은 정책 예시일 뿐 기본값이 아니다. 운영의 누락·음수·범위를 벗어난 값은 서버 시작 시 거부하고, 개발 중 잘못된 숫자는 첫 유효한 분석 요청에서 오류로 드러난다. 일일 기간은 UTC 자정을 기준으로 전환되며, 양수 제한에 도달하면 API는 `429`와 `Retry-After`를 반환한다.
 
-Railway API를 배포해서 웹 배포본에서 호출할 때는 API 서버 환경변수에 아래 origin을 허용한다.
+익명 제한을 실제 사용자 IP 기준으로 적용하려면 운영 `NADO_USAGE_IP_HASH_SALT`에 충분히 긴 임의 secret을 설정한다. 신뢰할 reverse proxy가 없거나 앱이 인터넷에 직접 노출되면 `NADO_TRUST_PROXY=0` 또는 `false`를 사용한다. 배포 proxy가 `X-Forwarded-For`를 안전하게 덮어쓰는 환경에서만 실제 hop 수 `1`~`10`을 설정한다.
 
-```bash
-NADO_CORS_ORIGINS=https://nado-web.vercel.app
-```
+## 8. 검증
 
-API 서버는 단어장 API에서 `Authorization: Bearer <Supabase access token>` 헤더를 읽어 `supabase.auth.getUser(token)`으로 사용자를 검증한다. 단어장 조회, 저장, 삭제는 사용자 토큰이 붙은 Supabase client로 실행해서 `vocabulary_items`의 RLS 정책을 그대로 적용한다.
-
-분석 API는 모델 선택에 따라 서버 환경변수의 `OPENROUTER_API_KEY` 또는 `OPENAI_API_KEY`를 사용한다. 기본 분석 모델은 OpenRouter의 `moonshotai/kimi-k2.7-code`이고, `z-ai/glm-5.2`도 OpenRouter로 호출한다. `gpt-5.4-mini`를 선택한 요청만 기존 OpenAI Responses API 흐름을 사용한다. `OPENAI_MODEL`은 GPT 선택 시 실제 OpenAI 모델명을 바꾸는 서버 전용 설정이다. 서버 timeout은 `OPENAI_TIMEOUT_MS`와 `OPENROUTER_TIMEOUT_MS`로 나뉘며 기본값은 각각 `30000`, `150000`이다. OpenRouter 모델은 응답이 더 오래 걸릴 수 있어 웹 클라이언트도 OpenRouter 선택 시 더 오래 기다린다.
-
-분석 API는 사용량 추적을 위해 `analysis_usage_limits`를 `SUPABASE_SERVICE_ROLE_KEY`로 읽고 쓴다. 이 key는 서버 전용이며 웹, 모바일, 데스크톱 클라이언트에 노출하면 안 된다. 익명 사용자는 Express가 확인한 요청 IP를 `NADO_USAGE_IP_HASH_SALT`와 함께 SHA-256으로 해시해서 하루 단위로 추적하고, 로그인 사용자는 Supabase user id로 추적한다.
-
-API 서버가 신뢰할 수 있는 reverse proxy 뒤에서 실행되고 그 proxy가 `X-Forwarded-For`를 덮어쓴다는 점이 확인된 경우에만 `NADO_TRUST_PROXY`를 설정한다. 로컬 기본값은 `0`이다. Railway 배포에서 실제 클라이언트 IP 기반 익명 제한이 필요하면 플랫폼의 proxy 동작을 확인한 뒤 `1` 또는 Express `trust proxy`가 지원하는 값을 설정한다.
-
-일일 분석 제한은 아래 환경변수로 조정한다.
-
-- `NADO_ANONYMOUS_DAILY_ANALYSIS_LIMIT`: 익명 사용자 하루 분석 제한. 값이 없으면 기본값 `3`을 사용한다.
-- `NADO_AUTHENTICATED_DAILY_ANALYSIS_LIMIT`: 로그인 사용자 하루 분석 제한. 값이 없으면 기본값 `20`을 사용한다.
-
-명시적으로 `0`을 설정한 경우에만 요청을 차단하지 않고 사용량만 기록한다. 숫자가 아닌 값은 설정 오류로 처리된다. 제한에 도달하면 `POST /api/analyze`는 `429`와 `Retry-After` 헤더를 반환한다.
-
-## API 서버 확인
+E2E를 처음 실행하는 컴퓨터에서는 Chromium을 한 번 설치한다.
 
 ```bash
-pnpm dev:api
+pnpm e2e:install
 ```
 
-주요 엔드포인트:
+```bash
+pnpm lint
+pnpm format:check
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm test:db:upgrade
+pnpm supabase:lint
+pnpm supabase:advisors
+pnpm test:db
+pnpm e2e
+```
 
-- `GET /health`
-- `POST /api/analyze`
-- `GET /api/vocabulary`
-- `POST /api/vocabulary`
-- `DELETE /api/vocabulary/:id`
+`pnpm test:db:upgrade`는 로컬 DB를 초기화한 뒤 legacy fixture에 최신 migration을 적용하고, 검증 데이터를 정리한 최신 schema를 남긴다. 따라서 직후에 `pnpm supabase:reset`을 다시 실행할 필요가 없다.
 
-`/api/analyze`는 로그인 없이 사용할 수 있다. `/api/vocabulary` 계열은 Google 로그인 후 받은 Supabase access token이 필요하다.
-
-## 백엔드 smoke 검증
-
-API 서버를 실행한 상태에서 아래 명령으로 실제 HTTP 경로를 확인한다.
+API 서버가 실행 중이라면 smoke 검증을 추가한다.
 
 ```bash
 pnpm smoke:backend
 ```
 
-기본값은 `GET /health`만 확인한다. `.env`에 `NADO_SMOKE_ANALYZE_TEXT`가 있으면 `POST /api/analyze`도 확인한다. `NADO_SMOKE_ACCESS_TOKEN`이 있으면 단어장 저장, 목록, 삭제까지 확인한다.
+분석과 단어장까지 확인하려면 `.env`에 아래 값을 준비한다.
 
-```bash
-NADO_API_BASE_URL=http://localhost:4000 \
-NADO_SMOKE_ANALYZE_TEXT="I was wondering if you could help me." \
-NADO_SMOKE_ACCESS_TOKEN="<Supabase access token>" \
-pnpm smoke:backend
+```text
+NADO_SMOKE_ANALYZE_TEXT=I was wondering if you could help me.
+NADO_SMOKE_ACCESS_TOKEN=<Supabase access token>
 ```
 
-단어장 smoke 검증은 `NADO_SMOKE_VOCABULARY_TERM` 값으로 임시 단어를 저장한 뒤 삭제한다. 기본값은 `nado-smoke`다.
+`.env.example`의 선택 smoke 값은 기본적으로 비어 있다. 두 값을 비우면 `/health`와 `/ready`만 확인하므로 Supabase가 실행 중이어야 한다. 분석은 영어 입력을 설정할 때만, 단어장 검증은 유효한 access token을 설정할 때만 실행한다. `NADO_SMOKE_VOCABULARY_TERM`을 생략하면 실행마다 고유한 term을 만든다.
 
-단어장 Realtime broadcast까지 함께 검증하려면 `NADO_SMOKE_REALTIME=1`을 추가한다. 자세한 실행 방법과 web, desktop, mobile 크로스 플랫폼 수동 체크리스트는 [단어장 Realtime 동기화 검증](realtime-vocabulary-sync.md)을 참고한다.
+Realtime까지 확인하는 방법은 [단어장 Realtime 검증](realtime-vocabulary-sync.md)을 참고한다.
 
-## 앱 경계
+## 문제 확인 순서
 
-- `apps/web`: Next.js 웹 MVP의 첫 구현 대상
-- `apps/mobile`: Expo React Native 앱
-- `apps/desktop`: Tauri 데스크톱 shell
-- `apps/storybook`: `packages/ui` 컴포넌트 작업 공간
-- `apps/api`: Railway에 배포할 Node API 서버
-- `packages/shared`: API schema, validation, 공통 타입
-- `packages/ui`: 웹/Tauri 공통 UI 컴포넌트와 토큰
+1. 실행 중인 process와 port를 확인한다.
+2. API `/health`와 `/ready`를 직접 호출한다.
+3. 앱의 API base URL이 같은 서버를 가리키는지 확인한다.
+4. Supabase URL과 anon key가 모든 앱에서 같은 프로젝트인지 확인한다.
+5. OAuth Redirect URLs와 실제 callback URL을 비교한다.
+6. 그 다음 앱 로그와 GitHub Actions 로그를 확인한다.
