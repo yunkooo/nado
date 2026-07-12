@@ -16,7 +16,7 @@
     "@nado/shared": "workspace:*",
     "@nado/ui": "workspace:*",
     "@supabase/supabase-js": "^2.107.0",
-    "next": "^16.2.7",
+    "next": "^16.2.10",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
