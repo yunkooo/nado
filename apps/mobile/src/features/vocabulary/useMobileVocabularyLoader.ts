@@ -18,6 +18,7 @@ import {
   createMobileVocabularyLoadCoordinator,
   type MobileVocabularyRefreshResult,
 } from "./mobileVocabularyLoadCoordinator";
+import type { MobileVocabularyReadySnapshot } from "./mobileVocabularyDeleteRequest";
 import { useMobileVocabularyRealtimeSync } from "./useMobileVocabularyRealtimeSync";
 
 export type MobileVocabularyStateUpdater = (
@@ -51,6 +52,10 @@ export function useMobileVocabularyLoader({
   const latestAuthStateRef = useRef(authState);
   const loadCoordinatorRef = useRef(createMobileVocabularyLoadCoordinator());
   const requestSequenceRef = useRef(0);
+  const readySnapshotRef = useRef<MobileVocabularyReadySnapshot>({
+    items: [],
+    revision: 0,
+  });
   const statusRef = useRef<MobileVocabularyState["status"]>(
     initialVocabularyState.status,
   );
@@ -67,6 +72,11 @@ export function useMobileVocabularyLoader({
         return nextState;
       });
     },
+    [],
+  );
+
+  const getLatestReadySnapshot = useCallback(
+    () => readySnapshotRef.current,
     [],
   );
 
@@ -127,13 +137,18 @@ export function useMobileVocabularyLoader({
           }
 
           if (result.status === "success") {
+            const nextReadyRevision = readySnapshotRef.current.revision + 1;
             lastLoadedAtRef.current = Date.now();
+            readySnapshotRef.current = {
+              items: result.data,
+              revision: nextReadyRevision,
+            };
             updateVocabularyState(() => ({
               items: result.data,
               message: null,
               status: "ready",
             }));
-            setReadyRevision((currentRevision) => currentRevision + 1);
+            setReadyRevision(nextReadyRevision);
             return "refreshed";
           }
 
@@ -185,6 +200,10 @@ export function useMobileVocabularyLoader({
       loadCoordinatorRef.current.cancel();
       accessTokenRef.current = null;
       lastLoadedAtRef.current = undefined;
+      readySnapshotRef.current = {
+        items: [],
+        revision: readySnapshotRef.current.revision,
+      };
       updateVocabularyState(() => initialVocabularyState);
       return;
     }
@@ -241,6 +260,7 @@ export function useMobileVocabularyLoader({
   });
 
   return {
+    getLatestReadySnapshot,
     readyRevision,
     refreshVocabularyInBackground,
     updateVocabularyState,

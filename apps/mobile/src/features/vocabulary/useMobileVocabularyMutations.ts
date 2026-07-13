@@ -21,6 +21,11 @@ import {
   VOCABULARY_ERROR_MESSAGE,
 } from "../../api/vocabularyApi";
 import type { MobileAuthStateSnapshot } from "../../auth/authState";
+import {
+  shouldReleaseMobileVocabularyDeleteRequest,
+  type MobileVocabularyDeleteRequest,
+  type MobileVocabularyReadySnapshot,
+} from "./mobileVocabularyDeleteRequest";
 import type { MobileVocabularyRefreshResult } from "./mobileVocabularyLoadCoordinator";
 import {
   addMobileVocabularyDeletingId,
@@ -38,19 +43,16 @@ import type { MobileVocabularyStateUpdater } from "./useMobileVocabularyLoader";
 const configuredMobileApiBaseUrl = readMobileApiBaseUrl();
 const configuredMobileApiPlatform = Platform.OS;
 
-type MobileVocabularyDeleteRequest = {
-  heldAtReadyRevision: number | null;
-  meaningKey: string;
-};
-
 export function useMobileVocabularyMutations({
   authState,
+  getLatestReadySnapshot,
   readyRevision,
   refreshVocabularyInBackground,
   updateVocabularyState,
   vocabularyState,
 }: {
   authState: MobileAuthStateSnapshot;
+  getLatestReadySnapshot(): MobileVocabularyReadySnapshot;
   readyRevision: number;
   refreshVocabularyInBackground(options?: {
     force?: boolean;
@@ -142,6 +144,7 @@ export function useMobileVocabularyMutations({
       itemId,
     );
     const meaningKey = createVocabularyMeaningMutationKey(itemId, meaning);
+    const readyRevisionAtStart = getLatestReadySnapshot().revision;
     const nextDeletingKeys = addMobileVocabularyDeletingKey(
       deletingMeaningKeysRef.current,
       meaningKey,
@@ -151,6 +154,7 @@ export function useMobileVocabularyMutations({
     deletingRequestsByItemRef.current.set(itemId, {
       heldAtReadyRevision: null,
       meaningKey,
+      readyRevisionAtStart,
     });
     setDeletingMeaningKeys(nextDeletingKeys);
     const result = await deleteVocabularyMeaning(
@@ -210,12 +214,27 @@ export function useMobileVocabularyMutations({
       } else {
         const trackedRequest = deletingRequestsByItemRef.current.get(itemId);
 
-        if (trackedRequest?.meaningKey === meaningKey) {
-          deletingRequestsByItemRef.current.set(itemId, {
-            ...trackedRequest,
-            heldAtReadyRevision: readyRevision,
-          });
+        if (trackedRequest?.meaningKey !== meaningKey) {
+          return;
         }
+
+        const latestReadySnapshot = getLatestReadySnapshot();
+
+        if (
+          shouldReleaseMobileVocabularyDeleteRequest({
+            itemId,
+            readySnapshot: latestReadySnapshot,
+            request: trackedRequest,
+          })
+        ) {
+          finishDelete();
+          return;
+        }
+
+        deletingRequestsByItemRef.current.set(itemId, {
+          ...trackedRequest,
+          heldAtReadyRevision: latestReadySnapshot.revision,
+        });
 
         updateVocabularyState((currentState) =>
           applyDeleteVocabularyError(currentState, VOCABULARY_ERROR_MESSAGE),

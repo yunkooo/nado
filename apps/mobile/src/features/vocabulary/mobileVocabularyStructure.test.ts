@@ -8,6 +8,7 @@ const loadCoordinatorSource = readSource(
 );
 const manualRefreshSource = readSource("./useMobileVocabularyManualRefresh.ts");
 const mutationsSource = readSource("./useMobileVocabularyMutations.ts");
+const deleteRequestSource = readSource("./mobileVocabularyDeleteRequest.ts");
 
 describe("mobile vocabulary hook boundaries", () => {
   it("keeps the public hook as a small composition boundary", () => {
@@ -43,6 +44,10 @@ describe("mobile vocabulary hook boundaries", () => {
     expect(mutationsSource).toContain("VOCABULARY_ERROR_MESSAGE");
     expect(mutationsSource).toContain("heldAtReadyRevision");
     expect(mutationsSource).toContain("readyRevision");
+    expect(mutationsSource).toContain("getLatestReadySnapshot");
+    expect(deleteRequestSource).toContain(
+      "shouldReleaseMobileVocabularyDeleteRequest",
+    );
     expect(loaderSource).toContain("setReadyRevision");
   });
 
