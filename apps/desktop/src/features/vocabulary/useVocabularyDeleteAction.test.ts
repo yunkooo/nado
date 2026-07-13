@@ -60,8 +60,22 @@ const updatedItem: VocabularyItem = {
   updatedAt: "2026-07-12T00:01:00.000Z",
 };
 
-function publishReadyRevision(readyRevision: number) {
+const itemWithRemainingMeaning: VocabularyItem = {
+  ...updatedItem,
+  id: "item-1",
+};
+
+function publishReadyRevision(
+  readyRevision: number,
+  items: VocabularyItem[] = [],
+) {
   mocks.getReadyRevision.mockReturnValue(readyRevision);
+  mocks.getSnapshot.mockReturnValue({
+    accessToken: "session-token",
+    items,
+    message: null,
+    status: "ready",
+  });
 
   for (const listener of mocks.storeListeners) {
     listener();
@@ -214,6 +228,7 @@ describe("desktop vocabulary delete action", () => {
       heldAtReadyRevision: null,
       itemId: "item-1",
       meaningKey: "meaning-1",
+      readyRevisionAtStart: 0,
       requestId: 1,
     };
 
@@ -307,6 +322,35 @@ describe("desktop vocabulary delete action", () => {
       expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(2);
     },
   );
+
+  it("releases a 404 deletion when an intervening snapshot already removed the meaning", async () => {
+    mocks.deleteVocabularyMeaning
+      .mockResolvedValueOnce({
+        message: "저장된 단어나 뜻을 찾지 못했어요.",
+        status: "not-found",
+      })
+      .mockResolvedValueOnce({
+        data: { item: null, itemDeleted: true },
+        status: "success",
+      });
+    mocks.refreshVocabularyForAuth.mockImplementationOnce(async () => {
+      publishReadyRevision(1, [itemWithRemainingMeaning]);
+      return "failed";
+    });
+    const { result } = renderHook(() => useVocabularyDeleteAction(authState));
+
+    await act(async () => {
+      await result.current.deleteMeaning("item-1", meaning);
+    });
+
+    expect(result.current.deletingMeaningKeys).toEqual(new Set());
+    expect(result.current.deleteMessage).toBeNull();
+
+    await act(async () => {
+      await result.current.deleteMeaning("item-1", { meaning: "지역 주" });
+    });
+    expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(2);
+  });
 });
 
 function createDeferred<T>() {

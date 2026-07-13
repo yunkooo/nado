@@ -18,6 +18,7 @@ type VocabularyDeleteRequestSnapshot = {
   heldAtReadyRevision: number | null;
   itemId: string;
   meaningKey: string;
+  readyRevisionAtStart: number;
   requestId: number;
 };
 
@@ -145,6 +146,7 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
       heldAtReadyRevision: null,
       itemId,
       meaningKey,
+      readyRevisionAtStart: vocabularyStateStore.getReadyRevision(),
       requestId,
     };
     requestsByItemRef.current.set(itemId, request);
@@ -217,9 +219,31 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
         return;
       }
 
+      const readyRevision = vocabularyStateStore.getReadyRevision();
+      const vocabularyState = vocabularyStateStore.getSnapshot();
+      const targetMeaningExists = vocabularyState.items.some(
+        (item) =>
+          item.id === itemId &&
+          item.meanings.some(
+            (currentMeaning) =>
+              createVocabularyMeaningMutationKey(itemId, currentMeaning) ===
+              meaningKey,
+          ),
+      );
+
+      if (
+        vocabularyState.status === "ready" &&
+        vocabularyState.accessToken === accessToken &&
+        readyRevision > trackedRequest.readyRevisionAtStart &&
+        !targetMeaningExists
+      ) {
+        finishDelete(null);
+        return;
+      }
+
       requestsByItemRef.current.set(itemId, {
         ...trackedRequest,
-        heldAtReadyRevision: vocabularyStateStore.getReadyRevision(),
+        heldAtReadyRevision: readyRevision,
       });
 
       setDeleteState((currentState) =>
