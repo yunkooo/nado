@@ -66,6 +66,39 @@ class MemoryVocabularyStore implements VocabularyStore {
 
     return this.rows.length < before;
   }
+
+  async deleteMeaningByUserId(
+    id: string,
+    userId: string,
+    meaning: VocabularyRow["meanings"][number],
+  ) {
+    const row = this.rows.find(
+      (candidate) => candidate.id === id && candidate.user_id === userId,
+    );
+
+    if (!row) {
+      return null;
+    }
+
+    const meaningIndex = row.meanings.findIndex(
+      (candidate) =>
+        candidate.meaning.trim() === meaning.meaning.trim() &&
+        (candidate.note?.trim() ?? "") === (meaning.note?.trim() ?? "") &&
+        (!meaning.createdAt || candidate.createdAt === meaning.createdAt),
+    );
+
+    if (meaningIndex < 0) {
+      return null;
+    }
+
+    if (row.meanings.length === 1) {
+      this.rows = this.rows.filter((candidate) => candidate.id !== row.id);
+      return { itemDeleted: true as const, row: null };
+    }
+
+    row.meanings = row.meanings.filter((_, index) => index !== meaningIndex);
+    return { itemDeleted: false as const, row };
+  }
 }
 
 describe("createVocabularyService", () => {
@@ -271,6 +304,87 @@ describe("createVocabularyService", () => {
 
     await expect(service.delete("user_2", "row_1")).resolves.toBe(false);
     await expect(service.delete("user_1", "row_1")).resolves.toBe(true);
+  });
+
+  it("deletes only the selected meaning and returns the updated item", async () => {
+    const store = new MemoryVocabularyStore([
+      {
+        created_at: "2026-06-09T00:00:00.000Z",
+        id: "row_1",
+        meanings: [
+          {
+            createdAt: "2026-06-09T00:00:00.000Z",
+            meaning: "상태",
+          },
+          {
+            createdAt: "2026-06-09T00:01:00.000Z",
+            meaning: "지역 주",
+          },
+        ],
+        normalized_term: "state",
+        term: "state",
+        type: "word",
+        updated_at: "2026-06-09T00:01:00.000Z",
+        user_id: "user_1",
+      },
+    ]);
+    const service = createVocabularyService({ store });
+
+    await expect(
+      service.deleteMeaning("user_1", "row_1", {
+        createdAt: "2026-06-09T00:00:00.000Z",
+        meaning: "상태",
+      }),
+    ).resolves.toMatchObject({
+      item: { meanings: [{ meaning: "지역 주" }] },
+      itemDeleted: false,
+    });
+    expect(store.rows).toHaveLength(1);
+  });
+
+  it("deletes the vocabulary row when its last meaning is removed", async () => {
+    const store = new MemoryVocabularyStore([
+      {
+        created_at: "2026-06-09T00:00:00.000Z",
+        id: "row_1",
+        meanings: [{ meaning: "상태" }],
+        normalized_term: "state",
+        term: "state",
+        type: "word",
+        updated_at: "2026-06-09T00:00:00.000Z",
+        user_id: "user_1",
+      },
+    ]);
+    const service = createVocabularyService({ store });
+
+    await expect(
+      service.deleteMeaning("user_1", "row_1", { meaning: "상태" }),
+    ).resolves.toEqual({ item: null, itemDeleted: true });
+    expect(store.rows).toEqual([]);
+  });
+
+  it("does not delete a missing meaning or another user's meaning", async () => {
+    const service = createVocabularyService({
+      store: new MemoryVocabularyStore([
+        {
+          created_at: "2026-06-09T00:00:00.000Z",
+          id: "row_1",
+          meanings: [{ meaning: "상태" }],
+          normalized_term: "state",
+          term: "state",
+          type: "word",
+          updated_at: "2026-06-09T00:00:00.000Z",
+          user_id: "user_1",
+        },
+      ]),
+    });
+
+    await expect(
+      service.deleteMeaning("user_2", "row_1", { meaning: "상태" }),
+    ).resolves.toBeNull();
+    await expect(
+      service.deleteMeaning("user_1", "row_1", { meaning: "다른 뜻" }),
+    ).resolves.toBeNull();
   });
 });
 

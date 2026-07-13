@@ -77,6 +77,23 @@ describe("Supabase migrations", () => {
     );
   });
 
+  it("deletes vocabulary meanings atomically with authenticated privileges", () => {
+    const migrationSql = readLatestMigrationDefining(
+      "create or replace function public.delete_vocabulary_meaning",
+    ).sql;
+
+    expect(migrationSql).toContain("security invoker");
+    expect(migrationSql).toContain("set search_path = ''");
+    expect(migrationSql).toContain("for update");
+    expect(migrationSql).toContain("with ordinality");
+    expect(migrationSql).toContain(
+      "revoke all on function public.delete_vocabulary_meaning",
+    );
+    expect(migrationSql).toContain(
+      "grant execute on function public.delete_vocabulary_meaning",
+    );
+  });
+
   it("constrains new vocabulary input without rejecting legacy rows", () => {
     const migrationSql = readLatestMigrationDefining(
       "vocabulary_items_user_updated_id_idx",

@@ -23,17 +23,17 @@ describe("desktop VocabularyList", () => {
     const markup = renderToStaticMarkup(
       createElement(VocabularyList, {
         deleteMessage:
-          "단어장 항목을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.",
-        deletingItemIds: new Set<string>(),
+          "단어장 뜻을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.",
+        deletingMeaningKeys: new Set<string>(),
         isLoading: false,
         items: [vocabularyItem],
-        onDeleteItem: () => undefined,
+        onDeleteMeaning: () => undefined,
       }),
     );
 
     expect(markup).toContain("after");
     expect(markup).toContain('role="alert"');
-    expect(markup).toContain("단어장 항목을 삭제하지 못했어요.");
+    expect(markup).toContain("단어장 뜻을 삭제하지 못했어요.");
     expect(markup).not.toContain("단어장을 불러오지 못했어요");
   });
 
@@ -41,7 +41,7 @@ describe("desktop VocabularyList", () => {
     const markup = renderToStaticMarkup(
       createElement(VocabularyList, {
         deleteMessage: null,
-        deletingItemIds: new Set<string>(),
+        deletingMeaningKeys: new Set<string>(),
         isLoading: false,
         items: [
           {
@@ -50,7 +50,7 @@ describe("desktop VocabularyList", () => {
             term: "avoid",
           },
         ],
-        onDeleteItem: () => undefined,
+        onDeleteMeaning: () => undefined,
       }),
     );
 

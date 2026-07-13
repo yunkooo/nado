@@ -16,14 +16,14 @@ describe("mobile vocabulary hook boundaries", () => {
     expect(vocabularyHookSource).toContain("useMobileVocabularyManualRefresh");
     expect(vocabularyHookSource).toContain("useMobileVocabularyMutations");
     expect(vocabularyHookSource).not.toContain("listVocabulary(");
-    expect(vocabularyHookSource).not.toContain("deleteVocabularyItem(");
+    expect(vocabularyHookSource).not.toContain("deleteVocabularyMeaning(");
   });
 
   it("keeps load lifecycle, manual presentation, and mutations independent", () => {
     expect(loaderSource).toContain("listVocabulary(");
     expect(loaderSource).toContain("useMobileVocabularyRealtimeSync");
     expect(manualRefreshSource).toContain("shouldStartVocabularyManualRefresh");
-    expect(mutationsSource).toContain("deleteVocabularyItem(");
+    expect(mutationsSource).toContain("deleteVocabularyMeaning(");
     expect(mutationsSource).toContain("saveVocabularyItem(");
   });
 

@@ -2,10 +2,12 @@ import {
   MAX_VOCABULARY_MEANINGS_PER_ITEM,
   VOCABULARY_API_PAGE_SIZE,
   vocabularyMeaningSchema,
+  type DeleteVocabularyMeaningRequest,
 } from "@nado/shared/vocabulary";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   createVocabularyService,
+  type DeleteVocabularyMeaningStoreResult,
   type NewVocabularyRow,
   type VocabularyRow,
   type VocabularyRowsPage,
@@ -63,6 +65,40 @@ function createSupabaseVocabularyStore(
       }
 
       return Boolean(result.data);
+    },
+
+    async deleteMeaningByUserId(
+      id: string,
+      userId: string,
+      meaning: DeleteVocabularyMeaningRequest,
+    ): Promise<DeleteVocabularyMeaningStoreResult | null> {
+      let result;
+
+      try {
+        result = await client
+          .rpc("delete_vocabulary_meaning", {
+            p_item_id: id,
+            p_meaning: meaning,
+            p_user_id: userId,
+          })
+          .maybeSingle();
+      } catch (error) {
+        throw createSupabaseUnavailableError(
+          "vocabulary meaning delete",
+          error,
+        );
+      }
+
+      if (result.error) {
+        throw createSupabaseUnavailableError(
+          "vocabulary meaning delete",
+          new Error(result.error.message),
+        );
+      }
+
+      return result.data
+        ? toDeleteVocabularyMeaningStoreResult(result.data)
+        : null;
     },
 
     async listByUser(
@@ -154,6 +190,31 @@ function createSupabaseVocabularyStore(
 
       return saved;
     },
+  };
+}
+
+function toDeleteVocabularyMeaningStoreResult(
+  value: unknown,
+): DeleteVocabularyMeaningStoreResult {
+  if (!isRecord(value) || typeof value.item_deleted !== "boolean") {
+    throw createSupabaseInvalidResponseError(
+      "vocabulary meaning delete result",
+    );
+  }
+
+  if (value.item_deleted) {
+    if (value.item !== null) {
+      throw createSupabaseInvalidResponseError(
+        "vocabulary meaning delete result",
+      );
+    }
+
+    return { itemDeleted: true, row: null };
+  }
+
+  return {
+    itemDeleted: false,
+    row: toVocabularyRow(value.item),
   };
 }
 

@@ -1,5 +1,7 @@
 import {
   vocabularyItemSchema,
+  type DeleteVocabularyMeaningRequest,
+  type DeleteVocabularyMeaningResponse,
   type SaveVocabularyRequest,
   type VocabularyItem,
   type VocabularyMeaning,
@@ -31,12 +33,21 @@ export type NewVocabularyRow = {
 
 export type VocabularyStore = {
   deleteByUserId(id: string, userId: string): Promise<boolean>;
+  deleteMeaningByUserId(
+    id: string,
+    userId: string,
+    meaning: DeleteVocabularyMeaningRequest,
+  ): Promise<DeleteVocabularyMeaningStoreResult | null>;
   listByUser(
     userId: string,
     cursor: VocabularyCursor | undefined,
   ): Promise<VocabularyRowsPage>;
   save(row: NewVocabularyRow): Promise<VocabularyRow>;
 };
+
+export type DeleteVocabularyMeaningStoreResult =
+  | { itemDeleted: false; row: VocabularyRow }
+  | { itemDeleted: true; row: null };
 
 export type VocabularyRowsPage = {
   nextCursor: VocabularyCursor | null;
@@ -60,6 +71,27 @@ export function createVocabularyService(options: VocabularyServiceOptions) {
   return {
     async delete(userId: string, id: string): Promise<boolean> {
       return store.deleteByUserId(id, userId);
+    },
+
+    async deleteMeaning(
+      userId: string,
+      id: string,
+      meaning: DeleteVocabularyMeaningRequest,
+    ): Promise<DeleteVocabularyMeaningResponse | null> {
+      const result = await store.deleteMeaningByUserId(id, userId, meaning);
+
+      if (!result) {
+        return null;
+      }
+
+      if (result.itemDeleted) {
+        return { item: null, itemDeleted: true };
+      }
+
+      return {
+        item: toVocabularyItem(result.row),
+        itemDeleted: false,
+      };
     },
 
     async list(userId: string, cursor?: string): Promise<VocabularyPage> {

@@ -61,6 +61,7 @@ describe("createApp vocabulary reads", () => {
 
         return {
           delete: async () => false,
+          deleteMeaning: async () => null,
           list: async (_userId) => ({
             items: [
               {
@@ -120,6 +121,7 @@ describe("createApp vocabulary reads", () => {
       },
       vocabularyServiceFactory: () => ({
         delete: async () => false,
+        deleteMeaning: async () => null,
         list: async () => ({ items: [], nextCursor: null }),
         save: async () => {
           throw new Error("not used");
@@ -146,6 +148,7 @@ describe("createApp vocabulary reads", () => {
       },
       vocabularyServiceFactory: () => ({
         delete: async () => false,
+        deleteMeaning: async () => null,
         list: async () => ({ items: [], nextCursor: null }),
         save: async () => {
           throw new Error("not used");

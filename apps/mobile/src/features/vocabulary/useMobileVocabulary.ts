@@ -1,4 +1,5 @@
 import type { MobileVocabularySuggestion } from "../../api/analysisApi";
+import type { VocabularyMeaning } from "@nado/shared/vocabulary";
 import type { MobileAuthStateSnapshot } from "../../auth/authState";
 import type { MobileVocabularyState } from "./mobileVocabularyState";
 import { useMobileVocabularyLoader } from "./useMobileVocabularyLoader";
@@ -9,8 +10,8 @@ export type { MobileVocabularyState } from "./mobileVocabularyState";
 
 export type MobileVocabularyActions = {
   clearSaveMessage(): void;
-  deleteItem(itemId: string): Promise<void>;
-  deletingItemIds: ReadonlySet<string>;
+  deleteMeaning(itemId: string, meaning: VocabularyMeaning): Promise<void>;
+  deletingMeaningKeys: ReadonlySet<string>;
   getSuggestionState(
     suggestion: MobileVocabularySuggestion,
   ): "idle" | "saved" | "saving";
@@ -36,6 +37,7 @@ export function useMobileVocabulary(
   });
   const mutations = useMobileVocabularyMutations({
     authState,
+    refreshVocabularyInBackground: loader.refreshVocabularyInBackground,
     updateVocabularyState: loader.updateVocabularyState,
     vocabularyState: loader.vocabularyState,
   });
@@ -44,8 +46,8 @@ export function useMobileVocabulary(
     loader.vocabularyState,
     {
       clearSaveMessage: mutations.clearSaveMessage,
-      deleteItem: mutations.deleteItem,
-      deletingItemIds: mutations.deletingItemIds,
+      deleteMeaning: mutations.deleteMeaning,
+      deletingMeaningKeys: mutations.deletingMeaningKeys,
       getSuggestionState: mutations.getSuggestionState,
       isRefreshing: manualRefresh.isRefreshing,
       refreshVocabulary: manualRefresh.refreshVocabulary,

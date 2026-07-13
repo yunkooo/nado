@@ -5,9 +5,12 @@ import {
 } from "@nado/shared/http";
 import { readApiErrorMessage } from "@nado/shared/api-errors";
 import {
+  deleteVocabularyMeaningResponseSchema,
   saveVocabularyResponseSchema,
   VOCABULARY_MAX_API_PAGES,
   vocabularyListResponseSchema,
+  type DeleteVocabularyMeaningRequest,
+  type DeleteVocabularyMeaningResponse,
   type SaveVocabularyRequest,
   type VocabularyItem,
 } from "@nado/shared/vocabulary";
@@ -21,7 +24,7 @@ export type VocabularyListResult =
   | { message: string; status: "error" };
 
 export type DeleteVocabularyResult =
-  | { status: "success" }
+  | { data: DeleteVocabularyMeaningResponse; status: "success" }
   | { message: string; status: "not-found" }
   | { message: string; status: "error" };
 
@@ -32,7 +35,7 @@ export type SaveVocabularyResult =
 export const VOCABULARY_ERROR_MESSAGE =
   "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
 export const DELETE_VOCABULARY_ERROR_MESSAGE =
-  "단어장 항목을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.";
+  "단어장 뜻을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.";
 const VOCABULARY_TIMEOUT_MESSAGE =
   "단어장 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.";
 const DELETE_VOCABULARY_TIMEOUT_MESSAGE =
@@ -111,8 +114,9 @@ export async function listVocabulary(
   return { message: VOCABULARY_ERROR_MESSAGE, status: "error" };
 }
 
-export async function deleteVocabularyItem(
+export async function deleteVocabularyMeaning(
   itemId: string,
+  meaning: DeleteVocabularyMeaningRequest,
   accessToken: string,
   options: VocabularyApiOptions = {},
 ): Promise<DeleteVocabularyResult> {
@@ -122,9 +126,13 @@ export async function deleteVocabularyItem(
 
   try {
     fetchResult = await fetchWithTimeout(
-      resolveApiUrl(`/api/vocabulary/${encodeURIComponent(itemId)}`),
+      resolveApiUrl(`/api/vocabulary/${encodeURIComponent(itemId)}/meanings`),
       {
-        headers: createAuthHeaders(accessToken),
+        body: JSON.stringify(meaning),
+        headers: {
+          ...createAuthHeaders(accessToken),
+          "Content-Type": "application/json",
+        },
         method: "DELETE",
       },
       {
@@ -146,28 +154,32 @@ export async function deleteVocabularyItem(
   }
 
   const { response } = fetchResult;
+  const payload = await readJson(response);
 
   if (response.status === 404) {
     return {
-      message: readApiErrorMessage(
-        await readJson(response),
-        DELETE_VOCABULARY_ERROR_MESSAGE,
-      ),
+      message: readApiErrorMessage(payload, DELETE_VOCABULARY_ERROR_MESSAGE),
       status: "not-found",
     };
   }
 
   if (!response.ok) {
     return {
-      message: readApiErrorMessage(
-        await readJson(response),
-        DELETE_VOCABULARY_ERROR_MESSAGE,
-      ),
+      message: readApiErrorMessage(payload, DELETE_VOCABULARY_ERROR_MESSAGE),
       status: "error",
     };
   }
 
-  return { status: "success" };
+  const parsed = deleteVocabularyMeaningResponseSchema.safeParse(payload);
+
+  if (!parsed.success) {
+    return {
+      message: DELETE_VOCABULARY_ERROR_MESSAGE,
+      status: "error",
+    };
+  }
+
+  return { data: parsed.data, status: "success" };
 }
 
 export async function saveVocabularyItem(

@@ -1,7 +1,7 @@
 import type { VocabularyItem } from "@nado/shared/vocabulary";
 import { describe, expect, it, vi } from "vitest";
 import {
-  deleteVocabularyItem,
+  deleteVocabularyMeaning,
   listVocabulary,
   saveVocabularyItem,
 } from "./vocabularyApi";
@@ -98,19 +98,31 @@ describe("vocabularyApi", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
-  it("deletes a vocabulary item with an authenticated bearer token", async () => {
-    const fetcher = vi.fn(async () => new Response(null, { status: 204 }));
+  it("deletes one vocabulary meaning with an authenticated bearer token", async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json({ item: null, itemDeleted: true }),
+    );
 
-    const result = await deleteVocabularyItem("row_1", "session-token", {
-      fetcher,
-    });
+    const result = await deleteVocabularyMeaning(
+      "row_1",
+      vocabularyItem.meanings[0]!,
+      "session-token",
+      { fetcher },
+    );
 
-    expect(fetcher).toHaveBeenCalledWith("/api/vocabulary/row_1", {
-      headers: { Authorization: "Bearer session-token" },
+    expect(fetcher).toHaveBeenCalledWith("/api/vocabulary/row_1/meanings", {
+      body: JSON.stringify(vocabularyItem.meanings[0]),
+      headers: {
+        Authorization: "Bearer session-token",
+        "Content-Type": "application/json",
+      },
       method: "DELETE",
       signal: expect.any(AbortSignal),
     });
-    expect(result).toEqual({ status: "success" });
+    expect(result).toEqual({
+      data: { item: null, itemDeleted: true },
+      status: "success",
+    });
   });
 
   it("marks a missing vocabulary item delete as already removed", async () => {
@@ -118,19 +130,22 @@ describe("vocabularyApi", () => {
       Response.json(
         {
           error: {
-            message: "단어장 항목을 찾을 수 없습니다.",
+            message: "단어장 뜻을 찾을 수 없습니다.",
           },
         },
         { status: 404 },
       ),
     );
 
-    const result = await deleteVocabularyItem("row_1", "session-token", {
-      fetcher,
-    });
+    const result = await deleteVocabularyMeaning(
+      "row_1",
+      vocabularyItem.meanings[0]!,
+      "session-token",
+      { fetcher },
+    );
 
     expect(result).toEqual({
-      message: "단어장 항목을 찾을 수 없습니다.",
+      message: "단어장 뜻을 찾을 수 없습니다.",
       status: "not-found",
     });
   });
@@ -229,7 +244,12 @@ describe("vocabularyApi", () => {
     });
 
     await expect(
-      deleteVocabularyItem("row_1", "session-token", { fetcher }),
+      deleteVocabularyMeaning(
+        "row_1",
+        vocabularyItem.meanings[0]!,
+        "session-token",
+        { fetcher },
+      ),
     ).resolves.toEqual({
       message:
         "단어장 삭제 요청 시간이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.",

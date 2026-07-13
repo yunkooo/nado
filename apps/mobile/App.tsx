@@ -179,9 +179,9 @@ export function NadoApp({
         <VocabularyScreen
           authMessage={authMessage}
           authStatus={authState.status}
-          deletingItemIds={vocabularyActions.deletingItemIds}
+          deletingMeaningKeys={vocabularyActions.deletingMeaningKeys}
           isRefreshing={vocabularyActions.isRefreshing}
-          onDeleteItem={vocabularyActions.deleteItem}
+          onDeleteMeaning={vocabularyActions.deleteMeaning}
           onRefresh={vocabularyActions.refreshVocabulary}
           vocabularyState={vocabularyState}
         />

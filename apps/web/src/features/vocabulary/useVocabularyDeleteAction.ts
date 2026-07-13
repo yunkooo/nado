@@ -1,22 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { AuthStateSnapshot } from "../auth/authState";
 import {
-  deleteVocabularyItem as deleteVocabularyItemFromApi,
-  type DeleteVocabularyResult,
-} from "./vocabularyApi";
-import { vocabularyStateStore } from "./vocabularyState";
+  createVocabularyMeaningMutationKey,
+  type VocabularyMeaning,
+} from "@nado/shared/vocabulary";
+import type { AuthStateSnapshot } from "../auth/authState";
+import { deleteVocabularyMeaning as deleteVocabularyMeaningFromApi } from "./vocabularyApi";
+import {
+  refreshVocabularyForAuth,
+  vocabularyStateStore,
+} from "./vocabularyState";
 
 type VocabularyDeleteRequestSnapshot = {
   accessToken: string | null;
   itemId: string;
+  meaningKey: string;
   requestId: number;
 };
 
 type VocabularyDeleteState = {
   accessToken: string | null;
-  deletingItemIds: ReadonlySet<string>;
+  deletingMeaningKeys: ReadonlySet<string>;
   message: string | null;
 };
 
@@ -27,6 +32,7 @@ export function isCurrentVocabularyDeleteRequest(
   return (
     request.accessToken === current.accessToken &&
     request.itemId === current.itemId &&
+    request.meaningKey === current.meaningKey &&
     request.requestId === current.requestId
   );
 }
@@ -34,7 +40,7 @@ export function isCurrentVocabularyDeleteRequest(
 export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
   const [deleteState, setDeleteState] = useState<VocabularyDeleteState>({
     accessToken: null,
-    deletingItemIds: new Set(),
+    deletingMeaningKeys: new Set(),
     message: null,
   });
   const latestAccessTokenRef = useRef(authState.accessToken);
@@ -46,8 +52,8 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
     authState.status === "authenticated" &&
     deleteState.accessToken === authState.accessToken;
   const deleteMessage = isDeleteScopeCurrent ? deleteState.message : null;
-  const deletingItemIds = isDeleteScopeCurrent
-    ? deleteState.deletingItemIds
+  const deletingMeaningKeys = isDeleteScopeCurrent
+    ? deleteState.deletingMeaningKeys
     : new Set<string>();
 
   useEffect(() => {
@@ -56,7 +62,7 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
     requestsByItemRef.current.clear();
   }, [authState.accessToken, authState.status]);
 
-  const deleteItem = async (itemId: string) => {
+  const deleteMeaning = async (itemId: string, meaning: VocabularyMeaning) => {
     const accessToken = authState.accessToken;
 
     if (!accessToken) {
@@ -70,23 +76,28 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
     }
 
     const requestId = requestSequenceRef.current + 1;
+    const meaningKey = createVocabularyMeaningMutationKey(itemId, meaning);
     requestSequenceRef.current = requestId;
     latestAccessTokenRef.current = accessToken;
-    const request = { accessToken, itemId, requestId };
+    const request = { accessToken, itemId, meaningKey, requestId };
     requestsByItemRef.current.set(itemId, request);
 
     setDeleteState((currentState) => ({
       accessToken,
-      deletingItemIds: new Set([
+      deletingMeaningKeys: new Set([
         ...(currentState.accessToken === accessToken
-          ? currentState.deletingItemIds
+          ? currentState.deletingMeaningKeys
           : []),
-        itemId,
+        meaningKey,
       ]),
       message: null,
     }));
 
-    const result = await deleteVocabularyItemFromApi(itemId, accessToken);
+    const result = await deleteVocabularyMeaningFromApi(
+      itemId,
+      meaning,
+      accessToken,
+    );
     const currentRequest = requestsByItemRef.current.get(itemId);
 
     if (
@@ -105,20 +116,34 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
           return currentState;
         }
 
-        const nextDeletingItemIds = new Set(currentState.deletingItemIds);
-        nextDeletingItemIds.delete(itemId);
+        const nextDeletingMeaningKeys = new Set(
+          currentState.deletingMeaningKeys,
+        );
+        nextDeletingMeaningKeys.delete(meaningKey);
 
         return {
           accessToken,
-          deletingItemIds: nextDeletingItemIds,
+          deletingMeaningKeys: nextDeletingMeaningKeys,
           message,
         };
       });
     };
 
-    if (shouldRemoveVocabularyItemAfterDelete(result)) {
+    if (result.status === "success") {
+      if (result.data.itemDeleted) {
+        vocabularyStateStore.removeItem(itemId);
+      } else {
+        vocabularyStateStore.upsertItem(result.data.item);
+      }
+
+      finishDelete(null);
+      return;
+    }
+
+    if (result.status === "not-found") {
       vocabularyStateStore.removeItem(itemId);
       finishDelete(null);
+      await refreshVocabularyForAuth(authState, { force: true });
       return;
     }
 
@@ -126,14 +151,8 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
   };
 
   return {
-    deleteItem,
+    deleteMeaning,
     deleteMessage,
-    deletingItemIds,
+    deletingMeaningKeys,
   };
-}
-
-export function shouldRemoveVocabularyItemAfterDelete(
-  result: DeleteVocabularyResult,
-) {
-  return result.status === "success" || result.status === "not-found";
 }

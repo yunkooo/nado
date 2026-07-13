@@ -1,8 +1,10 @@
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import {
+  createVocabularyMeaningMutationKey,
   createVocabularyMeaningRenderKey,
   getDistinctVocabularyNote,
   type VocabularyItem,
+  type VocabularyMeaning,
 } from "@nado/shared/vocabulary";
 import { Badge, Card } from "@nado/ui/native";
 import type { MobileAuthStateStatus } from "../auth/authState";
@@ -16,9 +18,9 @@ import { mobileColors, styles } from "../styles/mobileStyles";
 type VocabularyScreenProps = {
   authMessage: string | null;
   authStatus: MobileAuthStateStatus;
-  deletingItemIds: ReadonlySet<string>;
+  deletingMeaningKeys: ReadonlySet<string>;
   isRefreshing: boolean;
-  onDeleteItem: (itemId: string) => void;
+  onDeleteMeaning: (itemId: string, meaning: VocabularyMeaning) => void;
   onRefresh: () => void;
   vocabularyState: MobileVocabularyState;
 };
@@ -26,9 +28,9 @@ type VocabularyScreenProps = {
 export function VocabularyScreen({
   authMessage,
   authStatus,
-  deletingItemIds,
+  deletingMeaningKeys,
   isRefreshing,
-  onDeleteItem,
+  onDeleteMeaning,
   onRefresh,
   vocabularyState,
 }: VocabularyScreenProps) {
@@ -121,9 +123,9 @@ export function VocabularyScreen({
       }
       renderItem={({ item }) => (
         <VocabularyItemCard
-          isDeleting={deletingItemIds.has(item.id)}
+          deletingMeaningKeys={deletingMeaningKeys}
           item={item}
-          onDeleteItem={onDeleteItem}
+          onDeleteMeaning={onDeleteMeaning}
         />
       )}
     />
@@ -131,14 +133,20 @@ export function VocabularyScreen({
 }
 
 function VocabularyItemCard({
-  isDeleting,
+  deletingMeaningKeys,
   item,
-  onDeleteItem,
+  onDeleteMeaning,
 }: {
-  isDeleting: boolean;
+  deletingMeaningKeys: ReadonlySet<string>;
   item: VocabularyItem;
-  onDeleteItem: (itemId: string) => void;
+  onDeleteMeaning: (itemId: string, meaning: VocabularyMeaning) => void;
 }) {
+  const isItemDeleting = item.meanings.some((meaning) =>
+    deletingMeaningKeys.has(
+      createVocabularyMeaningMutationKey(item.id, meaning),
+    ),
+  );
+
   return (
     <Card
       padding="lg"
@@ -156,6 +164,11 @@ function VocabularyItemCard({
       </View>
       <View style={styles.meaningList}>
         {item.meanings.map((meaning, meaningIndex) => {
+          const meaningKey = createVocabularyMeaningMutationKey(
+            item.id,
+            meaning,
+          );
+          const isDeleting = deletingMeaningKeys.has(meaningKey);
           const meaningDisplayNote = getDistinctVocabularyNote(meaning.note, [
             meaning.meaning,
           ]);
@@ -172,10 +185,33 @@ function VocabularyItemCard({
               style={styles.meaningCard}
               tone="muted"
             >
-              <Text style={styles.meaningText}>{meaning.meaning}</Text>
-              {meaningDisplayNote ? (
-                <Text style={styles.meaningNote}>{meaningDisplayNote}</Text>
-              ) : null}
+              <View style={styles.meaningRow}>
+                <View style={styles.meaningContent}>
+                  <Text style={styles.meaningText}>{meaning.meaning}</Text>
+                  {meaningDisplayNote ? (
+                    <Text style={styles.meaningNote}>{meaningDisplayNote}</Text>
+                  ) : null}
+                </View>
+                <Pressable
+                  accessibilityLabel={`${item.term}의 ${meaning.meaning} 뜻 삭제`}
+                  accessibilityRole="button"
+                  accessibilityState={{
+                    busy: isDeleting,
+                    disabled: isItemDeleting,
+                  }}
+                  disabled={isItemDeleting}
+                  hitSlop={8}
+                  onPress={() => onDeleteMeaning(item.id, meaning)}
+                  style={[
+                    styles.meaningDeleteButton,
+                    isItemDeleting ? styles.meaningDeleteButtonDisabled : null,
+                  ]}
+                >
+                  <Text style={styles.meaningDeleteButtonText}>
+                    {isDeleting ? "…" : "×"}
+                  </Text>
+                </Pressable>
+              </View>
             </Card>
           );
         })}
@@ -184,17 +220,6 @@ function VocabularyItemCard({
         <Text style={styles.itemMeta}>
           {formatVocabularyDate(item.updatedAt)}
         </Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ disabled: isDeleting }}
-          disabled={isDeleting}
-          onPress={() => onDeleteItem(item.id)}
-          style={styles.secondaryButton}
-        >
-          <Text style={styles.secondaryButtonText}>
-            {isDeleting ? "삭제 중" : "삭제"}
-          </Text>
-        </Pressable>
       </View>
     </Card>
   );

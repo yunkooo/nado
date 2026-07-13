@@ -910,6 +910,7 @@
 }
 
 .nado-vocabulary-meaning {
+  align-items: start;
   background: var(--nado-color-surface-muted);
   border: 1px solid #eeeeea;
   border-radius: 7px;
@@ -917,8 +918,15 @@
   display: grid;
   font-size: 0.875rem;
   gap: 4px;
+  grid-template-columns: minmax(0, 1fr) 28px;
   line-height: 1.45;
-  padding: 10px 12px;
+  padding: 8px 8px 8px 12px;
+}
+
+.nado-vocabulary-meaning__content {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
 }
 
 .nado-vocabulary-meaning small {
@@ -927,11 +935,44 @@
   line-height: 1.45;
 }
 
+.nado-vocabulary-meaning__delete {
+  align-items: center;
+  align-self: start;
+  background: transparent;
+  border: 0;
+  border-radius: var(--nado-radius-sm);
+  color: var(--nado-color-ink-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 1.25rem;
+  height: 28px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  width: 28px;
+}
+
+.nado-vocabulary-meaning__delete:hover:not(:disabled) {
+  background: var(--nado-color-border);
+  color: var(--nado-color-ink);
+}
+
+.nado-vocabulary-meaning__delete:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--nado-color-primary), white 68%);
+  outline-offset: 1px;
+}
+
+.nado-vocabulary-meaning__delete:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
 .nado-vocabulary-item__footer {
   align-items: center;
   display: flex;
   gap: 10px;
-  justify-content: space-between;
+  justify-content: flex-start;
   margin-top: auto;
 }
 

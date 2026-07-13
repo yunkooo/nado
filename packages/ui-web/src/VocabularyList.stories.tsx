@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { createVocabularyMeaningMutationKey } from "@nado/shared/vocabulary";
 import { VocabularyItemCard } from "@nado/ui-web";
 
 const item = {
@@ -6,11 +7,16 @@ const item = {
   id: "storybook-vocabulary-1",
   meanings: [
     {
-      meaning: "출시/배포",
-      note: "제품을 사용자에게 전달하거나 공개하는 일을 말합니다.",
+      createdAt: "2026-07-10T00:00:00.000Z",
+      meaning: "상태",
+    },
+    {
+      createdAt: "2026-07-10T00:01:00.000Z",
+      meaning: "지역, 주",
+      note: "미국 등의 행정 구역을 나타낼 때 사용합니다.",
     },
   ],
-  term: "shipping",
+  term: "state",
   type: "word" as const,
   updatedAt: "2026-07-11T00:00:00.000Z",
 };
@@ -26,9 +32,9 @@ export const Item: Story = {
   render: () => (
     <div className="storybook-vocabulary-surface">
       <VocabularyItemCard
-        isDeleting={false}
+        deletingMeaningKeys={new Set()}
         item={item}
-        onDelete={() => undefined}
+        onDeleteMeaning={() => undefined}
       />
     </div>
   ),
@@ -37,7 +43,15 @@ export const Item: Story = {
 export const Deleting: Story = {
   render: () => (
     <div className="storybook-vocabulary-surface">
-      <VocabularyItemCard isDeleting item={item} onDelete={() => undefined} />
+      <VocabularyItemCard
+        deletingMeaningKeys={
+          new Set([
+            createVocabularyMeaningMutationKey(item.id, item.meanings[0]!),
+          ])
+        }
+        item={item}
+        onDeleteMeaning={() => undefined}
+      />
     </div>
   ),
 };

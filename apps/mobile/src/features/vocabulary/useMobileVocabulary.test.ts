@@ -7,10 +7,12 @@ import {
 import {
   addMobileVocabularySavingKey,
   addMobileVocabularyDeletingId,
+  addMobileVocabularyDeletingKey,
   applyDeleteVocabularyError,
+  applyMissingVocabularyItemDeletion,
   removeMobileVocabularyDeletingId,
+  removeMobileVocabularyDeletingKey,
   removeMobileVocabularySavingKey,
-  shouldRemoveMobileVocabularyItemAfterDelete,
   upsertMobileVocabularyItem,
 } from "./mobileVocabularyState";
 
@@ -55,6 +57,29 @@ describe("applyDeleteVocabularyError", () => {
       items: [],
       message: "삭제하지 못했어요.",
       status: "error",
+    });
+  });
+});
+
+describe("applyMissingVocabularyItemDeletion", () => {
+  it("removes the entire stale card without showing a delete error", () => {
+    const otherItem = {
+      ...savedItem,
+      id: "item-2",
+      term: "another",
+    };
+    const currentState = {
+      items: [savedItem, otherItem],
+      message: "이전 오류",
+      status: "ready" as const,
+    };
+
+    expect(
+      applyMissingVocabularyItemDeletion(currentState, savedItem.id),
+    ).toEqual({
+      items: [otherItem],
+      message: null,
+      status: "ready",
     });
   });
 });
@@ -193,15 +218,15 @@ describe("mobile vocabulary deletion helpers", () => {
     ]).toEqual(["item-2"]);
   });
 
-  it("removes stale local items when the API reports not-found", () => {
-    expect(
-      shouldRemoveMobileVocabularyItemAfterDelete({ status: "success" }),
-    ).toBe(true);
-    expect(
-      shouldRemoveMobileVocabularyItemAfterDelete({ status: "not-found" }),
-    ).toBe(true);
-    expect(
-      shouldRemoveMobileVocabularyItemAfterDelete({ status: "error" }),
-    ).toBe(false);
+  it("tracks the exact meaning deletion shown in the UI", () => {
+    const deletingKeys = addMobileVocabularyDeletingKey(
+      new Set(["item-1:상태"]),
+      "item-2:지역 주",
+    );
+
+    expect([...deletingKeys]).toEqual(["item-1:상태", "item-2:지역 주"]);
+    expect([
+      ...removeMobileVocabularyDeletingKey(deletingKeys, "item-1:상태"),
+    ]).toEqual(["item-2:지역 주"]);
   });
 });

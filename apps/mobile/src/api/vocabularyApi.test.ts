@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  deleteVocabularyItem,
+  deleteVocabularyMeaning,
   listVocabulary,
   saveVocabularyItem,
 } from "./vocabularyApi";
@@ -158,24 +158,64 @@ describe("saveVocabularyItem", () => {
   });
 });
 
-describe("deleteVocabularyItem", () => {
+describe("deleteVocabularyMeaning", () => {
+  it("returns the updated card after deleting one meaning", async () => {
+    const updatedItem = {
+      createdAt: "2026-06-09T00:00:00.000Z",
+      id: "item-1",
+      meanings: [{ meaning: "지역 주" }],
+      term: "state",
+      type: "word" as const,
+      updatedAt: "2026-06-09T00:01:00.000Z",
+    };
+    const fetcher = vi.fn(async () =>
+      Response.json({ item: updatedItem, itemDeleted: false }),
+    );
+
+    await expect(
+      deleteVocabularyMeaning("item-1", { meaning: "상태" }, "access-token", {
+        apiBaseUrl: "https://nadoapi-production.up.railway.app",
+        fetcher,
+      }),
+    ).resolves.toEqual({
+      data: { item: updatedItem, itemDeleted: false },
+      status: "success",
+    });
+    expect(fetcher).toHaveBeenCalledWith(
+      "https://nadoapi-production.up.railway.app/api/vocabulary/item-1/meanings",
+      expect.objectContaining({
+        body: JSON.stringify({ meaning: "상태" }),
+        headers: {
+          Authorization: "Bearer access-token",
+          "Content-Type": "application/json",
+        },
+        method: "DELETE",
+      }),
+    );
+  });
+
   it("treats an already deleted item as an idempotent not-found result", async () => {
     const fetcher = vi.fn(async () =>
       Response.json(
         {
-          error: { message: "단어장 항목을 찾을 수 없습니다." },
+          error: { message: "단어장 뜻을 찾을 수 없습니다." },
         },
         { status: 404 },
       ),
     );
 
     await expect(
-      deleteVocabularyItem("item-1", "access-token", {
-        apiBaseUrl: "https://nadoapi-production.up.railway.app",
-        fetcher,
-      }),
+      deleteVocabularyMeaning(
+        "item-1",
+        { meaning: "궁금해하다" },
+        "access-token",
+        {
+          apiBaseUrl: "https://nadoapi-production.up.railway.app",
+          fetcher,
+        },
+      ),
     ).resolves.toEqual({
-      message: "단어장 항목을 찾을 수 없습니다.",
+      message: "단어장 뜻을 찾을 수 없습니다.",
       status: "not-found",
     });
   });
