@@ -1,4 +1,7 @@
-import type { VocabularyItem } from "./vocabularyContracts.ts";
+import type {
+  VocabularyItem,
+  VocabularyMeaning,
+} from "./vocabularyContracts.ts";
 
 export type VocabularyStateStatus = "idle" | "loading" | "ready" | "error";
 
@@ -19,6 +22,43 @@ export const initialVocabularyStateSnapshot: VocabularyStateSnapshot = {
   message: null,
   status: "idle",
 };
+
+export function removeVocabularyMeaningFromItems(
+  items: VocabularyItem[],
+  itemId: string,
+  targetMeaning: VocabularyMeaning,
+): VocabularyItem[] {
+  const itemIndex = items.findIndex((item) => item.id === itemId);
+
+  if (itemIndex === -1) {
+    return items;
+  }
+
+  const item = items[itemIndex];
+
+  if (!item) {
+    return items;
+  }
+
+  const meaningIndex = item.meanings.findIndex((meaning) =>
+    isSameVocabularyMeaning(meaning, targetMeaning),
+  );
+
+  if (meaningIndex === -1) {
+    return items;
+  }
+
+  if (item.meanings.length === 1) {
+    return items.filter((_, index) => index !== itemIndex);
+  }
+
+  const nextItems = [...items];
+  nextItems[itemIndex] = {
+    ...item,
+    meanings: item.meanings.filter((_, index) => index !== meaningIndex),
+  };
+  return nextItems;
+}
 
 export function createVocabularyStateStore() {
   const listeners = new Set<() => void>();
@@ -48,6 +88,23 @@ export function createVocabularyStateStore() {
       setSnapshot({
         ...snapshot,
         items: snapshot.items.filter((item) => item.id !== itemId),
+      });
+    },
+
+    removeMeaning(itemId: string, meaning: VocabularyMeaning) {
+      const nextItems = removeVocabularyMeaningFromItems(
+        snapshot.items,
+        itemId,
+        meaning,
+      );
+
+      if (nextItems === snapshot.items) {
+        return;
+      }
+
+      setSnapshot({
+        ...snapshot,
+        items: nextItems,
       });
     },
 
@@ -96,4 +153,15 @@ export function createVocabularyStateStore() {
       });
     },
   };
+}
+
+function isSameVocabularyMeaning(
+  candidate: VocabularyMeaning,
+  target: VocabularyMeaning,
+) {
+  return (
+    candidate.meaning === target.meaning &&
+    (candidate.note ?? "") === (target.note ?? "") &&
+    (!target.createdAt || candidate.createdAt === target.createdAt)
+  );
 }

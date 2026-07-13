@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { createVocabularyStateStore } from "./vocabularyState";
+import {
+  createVocabularyStateStore,
+  removeVocabularyMeaningFromItems,
+} from "./vocabularyState";
 
 const item = {
   createdAt: "2026-07-11T00:00:00.000Z",
@@ -45,5 +48,48 @@ describe("createVocabularyStateStore", () => {
     store.setError("token-1", "error");
 
     expect(listener).toHaveBeenCalledTimes(3);
+  });
+
+  it("removes one meaning and removes the card after its last meaning", () => {
+    const store = createVocabularyStateStore();
+    const itemWithMeanings = {
+      ...item,
+      meanings: [
+        {
+          createdAt: "2026-07-11T00:01:00.000Z",
+          meaning: "상태",
+        },
+        {
+          createdAt: "2026-07-11T00:02:00.000Z",
+          meaning: "지역 주",
+        },
+      ],
+    };
+    store.setReady("token-1", [itemWithMeanings]);
+
+    store.removeMeaning(item.id, itemWithMeanings.meanings[0]);
+
+    expect(store.getSnapshot().items).toEqual([
+      {
+        ...itemWithMeanings,
+        meanings: [itemWithMeanings.meanings[1]],
+      },
+    ]);
+
+    store.removeMeaning(item.id, itemWithMeanings.meanings[1]);
+
+    expect(store.getSnapshot().items).toEqual([]);
+  });
+});
+
+describe("removeVocabularyMeaningFromItems", () => {
+  it("keeps the same collection when the requested meaning is already absent", () => {
+    const items = [item];
+
+    expect(
+      removeVocabularyMeaningFromItems(items, item.id, {
+        meaning: "없는 뜻",
+      }),
+    ).toBe(items);
   });
 });

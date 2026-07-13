@@ -16,6 +16,7 @@ import {
 const mocks = vi.hoisted(() => ({
   deleteVocabularyMeaning: vi.fn(),
   removeItem: vi.fn(),
+  removeMeaning: vi.fn(),
   upsertItem: vi.fn(),
 }));
 
@@ -27,6 +28,7 @@ vi.mock("../../api/vocabularyApi", async (importOriginal) => ({
 vi.mock("./vocabularyState", () => ({
   vocabularyStateStore: {
     removeItem: mocks.removeItem,
+    removeMeaning: mocks.removeMeaning,
     upsertItem: mocks.upsertItem,
   },
 }));
@@ -55,6 +57,7 @@ describe("desktop vocabulary delete action", () => {
   beforeEach(() => {
     mocks.deleteVocabularyMeaning.mockReset();
     mocks.removeItem.mockReset();
+    mocks.removeMeaning.mockReset();
     mocks.upsertItem.mockReset();
   });
 
@@ -185,6 +188,22 @@ describe("desktop vocabulary delete action", () => {
         requestId: 2,
       }),
     ).toBe(false);
+  });
+
+  it("treats a missing meaning as already deleted and converges local state", async () => {
+    mocks.deleteVocabularyMeaning.mockResolvedValueOnce({
+      message: "저장된 단어나 뜻을 찾지 못했어요.",
+      status: "not-found",
+    });
+    const { result } = renderHook(() => useVocabularyDeleteAction(authState));
+
+    await act(async () => {
+      await result.current.deleteMeaning("item-1", meaning);
+    });
+
+    expect(mocks.removeMeaning).toHaveBeenCalledWith("item-1", meaning);
+    expect(result.current.deleteMessage).toBeNull();
+    expect(result.current.deletingMeaningKeys).toEqual(new Set());
   });
 });
 

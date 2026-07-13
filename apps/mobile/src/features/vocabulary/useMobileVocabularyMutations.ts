@@ -25,6 +25,7 @@ import {
   addMobileVocabularyDeletingKey,
   addMobileVocabularySavingKey,
   applyDeleteVocabularyError,
+  applyMissingVocabularyMeaningDeletion,
   removeMobileVocabularyDeletingId,
   removeMobileVocabularyDeletingKey,
   removeMobileVocabularySavingKey,
@@ -128,6 +129,13 @@ export function useMobileVocabularyMutations({
     );
     deletingMeaningKeysRef.current = remainingDeletingKeys;
     setDeletingMeaningKeys(remainingDeletingKeys);
+
+    if (result.status === "not-found") {
+      updateVocabularyState((currentState) =>
+        applyMissingVocabularyMeaningDeletion(currentState, itemId, meaning),
+      );
+      return;
+    }
 
     if (result.status !== "success") {
       updateVocabularyState((currentState) =>

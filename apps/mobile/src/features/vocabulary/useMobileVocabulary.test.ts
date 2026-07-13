@@ -9,6 +9,7 @@ import {
   addMobileVocabularyDeletingId,
   addMobileVocabularyDeletingKey,
   applyDeleteVocabularyError,
+  applyMissingVocabularyMeaningDeletion,
   removeMobileVocabularyDeletingId,
   removeMobileVocabularyDeletingKey,
   removeMobileVocabularySavingKey,
@@ -56,6 +57,43 @@ describe("applyDeleteVocabularyError", () => {
       items: [],
       message: "삭제하지 못했어요.",
       status: "error",
+    });
+  });
+});
+
+describe("applyMissingVocabularyMeaningDeletion", () => {
+  it("removes the stale meaning without showing a delete error", () => {
+    const staleMeaning = {
+      createdAt: "2026-06-10T00:01:00.000Z",
+      meaning: "궁금해하다",
+      note: "정중한 표현",
+    };
+    const currentState = {
+      items: [
+        {
+          ...savedItem,
+          meanings: [staleMeaning, { meaning: "의아해하다" }],
+        },
+      ],
+      message: "이전 오류",
+      status: "ready" as const,
+    };
+
+    expect(
+      applyMissingVocabularyMeaningDeletion(
+        currentState,
+        savedItem.id,
+        staleMeaning,
+      ),
+    ).toEqual({
+      items: [
+        {
+          ...savedItem,
+          meanings: [{ meaning: "의아해하다" }],
+        },
+      ],
+      message: null,
+      status: "ready",
     });
   });
 });

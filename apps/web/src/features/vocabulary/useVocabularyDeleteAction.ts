@@ -137,6 +137,12 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
       return;
     }
 
+    if (result.status === "not-found") {
+      vocabularyStateStore.removeMeaning(itemId, meaning);
+      finishDelete(null);
+      return;
+    }
+
     finishDelete(result.message);
   };
 

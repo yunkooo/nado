@@ -12,6 +12,7 @@ import { renderHook } from "../../test-utils/renderHook";
 const mocks = vi.hoisted(() => ({
   deleteVocabularyMeaning: vi.fn(),
   removeItem: vi.fn(),
+  removeMeaning: vi.fn(),
   upsertItem: vi.fn(),
 }));
 
@@ -27,6 +28,7 @@ vi.mock("./vocabularyApi", async (importOriginal) => {
 vi.mock("./vocabularyState", () => ({
   vocabularyStateStore: {
     removeItem: mocks.removeItem,
+    removeMeaning: mocks.removeMeaning,
     upsertItem: mocks.upsertItem,
   },
 }));
@@ -59,6 +61,7 @@ function createDeferred<T>() {
 beforeEach(() => {
   mocks.deleteVocabularyMeaning.mockReset();
   mocks.removeItem.mockReset();
+  mocks.removeMeaning.mockReset();
   mocks.upsertItem.mockReset();
 });
 
@@ -229,6 +232,26 @@ describe("useVocabularyDeleteAction", () => {
     });
 
     expect(mocks.removeItem).not.toHaveBeenCalled();
+    expect(result.current.deletingMeaningKeys.size).toBe(0);
+  });
+
+  it("treats a missing meaning as already deleted and converges local state", async () => {
+    mocks.deleteVocabularyMeaning.mockResolvedValueOnce({
+      message: "저장된 단어나 뜻을 찾지 못했어요.",
+      status: "not-found",
+    });
+    const authState = createAuthenticatedState("session-token", "user-a");
+    const { result } = renderHook(
+      () => useVocabularyDeleteAction(authState),
+      undefined,
+    );
+
+    await act(async () => {
+      await result.current.deleteMeaning("item-1", meaning);
+    });
+
+    expect(mocks.removeMeaning).toHaveBeenCalledWith("item-1", meaning);
+    expect(result.current.deleteMessage).toBeNull();
     expect(result.current.deletingMeaningKeys.size).toBe(0);
   });
 });
