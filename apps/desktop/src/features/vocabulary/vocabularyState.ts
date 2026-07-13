@@ -83,10 +83,11 @@ export function createVocabularyAuthSync({
   store?: VocabularyStateStore;
 } = {}) {
   let requestSequence = 0;
-  let activeLifecycleRefresh: {
+  let activeRefresh: {
     accessToken: string;
     promise: Promise<VocabularyRefreshResult>;
   } | null = null;
+  let pendingForcedRefreshAccessToken: string | null = null;
   const loadedAtByAccessToken = new Map<string, number>();
 
   async function loadVocabularyForSession(
@@ -156,12 +157,48 @@ export function createVocabularyAuthSync({
     });
   }
 
+  function startRefresh(
+    accessToken: string,
+    options: { showLoading: boolean },
+  ): Promise<VocabularyRefreshResult> {
+    const refreshPromise: Promise<VocabularyRefreshResult> = (async () => {
+      const result = await loadVocabularyForSession(accessToken, options);
+
+      if (pendingForcedRefreshAccessToken !== accessToken) {
+        return result;
+      }
+
+      pendingForcedRefreshAccessToken = null;
+
+      if (store.getSnapshot().accessToken !== accessToken) {
+        return result;
+      }
+
+      return startRefresh(accessToken, { showLoading: false });
+    })().finally(() => {
+      if (activeRefresh?.promise === refreshPromise) {
+        activeRefresh = null;
+      }
+    });
+
+    activeRefresh = { accessToken, promise: refreshPromise };
+    return refreshPromise;
+  }
+
   function refresh(
     authState: AuthStateSnapshot,
     { force = false }: { force?: boolean } = {},
   ): Promise<VocabularyRefreshResult> {
     if (authState.status !== "authenticated" || !authState.accessToken) {
       return Promise.resolve("ignored");
+    }
+
+    if (activeRefresh?.accessToken === authState.accessToken) {
+      if (force) {
+        pendingForcedRefreshAccessToken = authState.accessToken;
+      }
+
+      return activeRefresh.promise;
     }
 
     const vocabularyState = store.getSnapshot();
@@ -191,31 +228,9 @@ export function createVocabularyAuthSync({
       vocabularyState.accessToken !== authState.accessToken ||
       vocabularyState.status !== "ready";
 
-    if (
-      !force &&
-      !showLoading &&
-      activeLifecycleRefresh?.accessToken === authState.accessToken
-    ) {
-      return activeLifecycleRefresh.promise;
-    }
-
-    const refreshPromise = loadVocabularyForSession(authState.accessToken, {
+    return startRefresh(authState.accessToken, {
       showLoading,
     });
-
-    if (!force && !showLoading) {
-      activeLifecycleRefresh = {
-        accessToken: authState.accessToken,
-        promise: refreshPromise,
-      };
-      void refreshPromise.finally(() => {
-        if (activeLifecycleRefresh?.promise === refreshPromise) {
-          activeLifecycleRefresh = null;
-        }
-      });
-    }
-
-    return refreshPromise;
   }
 
   return {
@@ -253,7 +268,8 @@ export function createVocabularyAuthSync({
 
       if (authState.status !== "authenticated" || !authState.accessToken) {
         requestSequence += 1;
-        activeLifecycleRefresh = null;
+        activeRefresh = null;
+        pendingForcedRefreshAccessToken = null;
         loadedAtByAccessToken.clear();
         store.reset();
         return;
