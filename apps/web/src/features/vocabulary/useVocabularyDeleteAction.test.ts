@@ -236,19 +236,24 @@ describe("useVocabularyDeleteAction", () => {
     expect(result.current.deletingMeaningKeys.size).toBe(0);
   });
 
-  it("keeps the card visible while refreshing the server snapshot after a 404", async () => {
+  it("keeps a 404 deletion pending until the server snapshot refresh finishes", async () => {
+    const pendingRefresh = createDeferred<string>();
     mocks.deleteVocabularyMeaning.mockResolvedValueOnce({
       message: "저장된 단어나 뜻을 찾지 못했어요.",
       status: "not-found",
     });
+    mocks.refreshVocabularyForAuth.mockReturnValueOnce(pendingRefresh.promise);
     const authState = createAuthenticatedState("session-token", "user-a");
     const { result } = renderHook(
       () => useVocabularyDeleteAction(authState),
       undefined,
     );
+    const meaningKey = createVocabularyMeaningMutationKey("item-1", meaning);
+    let request!: Promise<void>;
 
     await act(async () => {
-      await result.current.deleteMeaning("item-1", meaning);
+      request = result.current.deleteMeaning("item-1", meaning);
+      await Promise.resolve();
     });
 
     expect(mocks.removeItem).not.toHaveBeenCalled();
@@ -256,6 +261,18 @@ describe("useVocabularyDeleteAction", () => {
       force: true,
     });
     expect(result.current.deleteMessage).toBeNull();
+    expect(result.current.deletingMeaningKeys).toEqual(new Set([meaningKey]));
+
+    act(() => {
+      void result.current.deleteMeaning("item-1", meaning);
+    });
+    expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      pendingRefresh.resolve("refreshed");
+      await request;
+    });
+
     expect(result.current.deletingMeaningKeys.size).toBe(0);
   });
 

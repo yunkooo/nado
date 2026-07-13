@@ -105,9 +105,17 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
       return;
     }
 
-    requestsByItemRef.current.delete(itemId);
-
     const finishDelete = (message: string | null) => {
+      const trackedRequest = requestsByItemRef.current.get(itemId);
+
+      if (
+        trackedRequest &&
+        !isCurrentVocabularyDeleteRequest(request, trackedRequest)
+      ) {
+        return;
+      }
+
+      requestsByItemRef.current.delete(itemId);
       setDeleteState((currentState) => {
         if (currentState.accessToken !== accessToken) {
           return currentState;
@@ -138,8 +146,11 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
     }
 
     if (result.status === "not-found") {
-      finishDelete(null);
-      await refreshVocabularyForAuth(authState, { force: true });
+      try {
+        await refreshVocabularyForAuth(authState, { force: true });
+      } finally {
+        finishDelete(null);
+      }
       return;
     }
 

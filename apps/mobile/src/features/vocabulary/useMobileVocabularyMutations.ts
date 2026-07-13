@@ -121,22 +121,30 @@ export function useMobileVocabularyMutations({
       return;
     }
 
-    const remainingDeletingIds = removeMobileVocabularyDeletingId(
-      deletingItemIdsRef.current,
-      itemId,
-    );
-    deletingItemIdsRef.current = remainingDeletingIds;
-    const remainingDeletingKeys = removeMobileVocabularyDeletingKey(
-      deletingMeaningKeysRef.current,
-      meaningKey,
-    );
-    deletingMeaningKeysRef.current = remainingDeletingKeys;
-    setDeletingMeaningKeys(remainingDeletingKeys);
+    const finishDelete = () => {
+      const remainingDeletingIds = removeMobileVocabularyDeletingId(
+        deletingItemIdsRef.current,
+        itemId,
+      );
+      deletingItemIdsRef.current = remainingDeletingIds;
+      const remainingDeletingKeys = removeMobileVocabularyDeletingKey(
+        deletingMeaningKeysRef.current,
+        meaningKey,
+      );
+      deletingMeaningKeysRef.current = remainingDeletingKeys;
+      setDeletingMeaningKeys(remainingDeletingKeys);
+    };
 
     if (result.status === "not-found") {
-      await refreshVocabularyInBackground({ force: true });
+      try {
+        await refreshVocabularyInBackground({ force: true });
+      } finally {
+        finishDelete();
+      }
       return;
     }
+
+    finishDelete();
 
     if (result.status !== "success") {
       updateVocabularyState((currentState) =>

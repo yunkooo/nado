@@ -31,6 +31,16 @@ describe("mobile vocabulary hook boundaries", () => {
     expect(mutationsSource).toContain("saveVocabularyItem(");
   });
 
+  it("keeps a missing meaning pending through the authoritative refresh", () => {
+    const refreshIndex = mutationsSource.indexOf(
+      "await refreshVocabularyInBackground({ force: true })",
+    );
+    const pendingCleanupIndex = mutationsSource.indexOf("finishDelete();");
+
+    expect(refreshIndex).toBeGreaterThan(-1);
+    expect(pendingCleanupIndex).toBeGreaterThan(refreshIndex);
+  });
+
   it("continues using the shared suggestion and realtime contracts", () => {
     expect(mutationsSource).toContain("createVocabularySuggestionKey");
     expect(mutationsSource).toContain("isVocabularySuggestionSaved");
