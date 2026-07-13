@@ -147,6 +147,7 @@ describe("desktop vocabulary delete action", () => {
       await result.current.deleteMeaning("failed-item", meaning);
     });
     expect(result.current.deleteMessage).toBe("단어장 뜻을 삭제하지 못했어요.");
+    expect(mocks.removeItem).not.toHaveBeenCalled();
 
     let pendingRequest!: Promise<void>;
     act(() => {
@@ -191,7 +192,7 @@ describe("desktop vocabulary delete action", () => {
     ).toBe(false);
   });
 
-  it("removes a missing card and refreshes the server snapshot after a 404", async () => {
+  it("keeps the card visible while refreshing the server snapshot after a 404", async () => {
     mocks.deleteVocabularyMeaning.mockResolvedValueOnce({
       message: "저장된 단어나 뜻을 찾지 못했어요.",
       status: "not-found",
@@ -202,7 +203,7 @@ describe("desktop vocabulary delete action", () => {
       await result.current.deleteMeaning("item-1", meaning);
     });
 
-    expect(mocks.removeItem).toHaveBeenCalledWith("item-1");
+    expect(mocks.removeItem).not.toHaveBeenCalled();
     expect(mocks.refreshVocabularyForAuth).toHaveBeenCalledWith(authState, {
       force: true,
     });

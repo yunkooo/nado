@@ -9,7 +9,6 @@ import {
   addMobileVocabularyDeletingId,
   addMobileVocabularyDeletingKey,
   applyDeleteVocabularyError,
-  applyMissingVocabularyItemDeletion,
   removeMobileVocabularyDeletingId,
   removeMobileVocabularyDeletingKey,
   removeMobileVocabularySavingKey,
@@ -57,29 +56,6 @@ describe("applyDeleteVocabularyError", () => {
       items: [],
       message: "삭제하지 못했어요.",
       status: "error",
-    });
-  });
-});
-
-describe("applyMissingVocabularyItemDeletion", () => {
-  it("removes the entire stale card without showing a delete error", () => {
-    const otherItem = {
-      ...savedItem,
-      id: "item-2",
-      term: "another",
-    };
-    const currentState = {
-      items: [savedItem, otherItem],
-      message: "이전 오류",
-      status: "ready" as const,
-    };
-
-    expect(
-      applyMissingVocabularyItemDeletion(currentState, savedItem.id),
-    ).toEqual({
-      items: [otherItem],
-      message: null,
-      status: "ready",
     });
   });
 });

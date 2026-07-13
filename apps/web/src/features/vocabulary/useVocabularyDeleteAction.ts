@@ -141,7 +141,6 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
     }
 
     if (result.status === "not-found") {
-      vocabularyStateStore.removeItem(itemId);
       finishDelete(null);
       await refreshVocabularyForAuth(authState, { force: true });
       return;

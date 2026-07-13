@@ -236,7 +236,7 @@ describe("useVocabularyDeleteAction", () => {
     expect(result.current.deletingMeaningKeys.size).toBe(0);
   });
 
-  it("removes a missing card and refreshes the server snapshot after a 404", async () => {
+  it("keeps the card visible while refreshing the server snapshot after a 404", async () => {
     mocks.deleteVocabularyMeaning.mockResolvedValueOnce({
       message: "저장된 단어나 뜻을 찾지 못했어요.",
       status: "not-found",
@@ -251,11 +251,33 @@ describe("useVocabularyDeleteAction", () => {
       await result.current.deleteMeaning("item-1", meaning);
     });
 
-    expect(mocks.removeItem).toHaveBeenCalledWith("item-1");
+    expect(mocks.removeItem).not.toHaveBeenCalled();
     expect(mocks.refreshVocabularyForAuth).toHaveBeenCalledWith(authState, {
       force: true,
     });
     expect(result.current.deleteMessage).toBeNull();
     expect(result.current.deletingMeaningKeys.size).toBe(0);
+  });
+
+  it("keeps the card visible when the delete service fails", async () => {
+    mocks.deleteVocabularyMeaning.mockResolvedValueOnce({
+      message: "데이터 서비스를 확인할 수 없어요. 잠시 후 다시 시도해 주세요.",
+      status: "error",
+    });
+    const authState = createAuthenticatedState("session-token", "user-a");
+    const { result } = renderHook(
+      () => useVocabularyDeleteAction(authState),
+      undefined,
+    );
+
+    await act(async () => {
+      await result.current.deleteMeaning("item-1", meaning);
+    });
+
+    expect(mocks.removeItem).not.toHaveBeenCalled();
+    expect(mocks.refreshVocabularyForAuth).not.toHaveBeenCalled();
+    expect(result.current.deleteMessage).toBe(
+      "데이터 서비스를 확인할 수 없어요. 잠시 후 다시 시도해 주세요.",
+    );
   });
 });

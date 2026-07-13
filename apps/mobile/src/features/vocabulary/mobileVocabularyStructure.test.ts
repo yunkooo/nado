@@ -24,6 +24,10 @@ describe("mobile vocabulary hook boundaries", () => {
     expect(loaderSource).toContain("useMobileVocabularyRealtimeSync");
     expect(manualRefreshSource).toContain("shouldStartVocabularyManualRefresh");
     expect(mutationsSource).toContain("deleteVocabularyMeaning(");
+    expect(mutationsSource).toContain(
+      "await refreshVocabularyInBackground({ force: true })",
+    );
+    expect(mutationsSource).not.toContain("applyMissingVocabularyItemDeletion");
     expect(mutationsSource).toContain("saveVocabularyItem(");
   });
 
