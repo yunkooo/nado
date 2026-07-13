@@ -11,8 +11,12 @@ import { renderHook } from "../../test-utils/renderHook";
 
 const mocks = vi.hoisted(() => ({
   deleteVocabularyMeaning: vi.fn(),
+  getReadyRevision: vi.fn(),
+  getSnapshot: vi.fn(),
   refreshVocabularyForAuth: vi.fn(),
   removeItem: vi.fn(),
+  storeListeners: new Set<() => void>(),
+  subscribe: vi.fn(),
   upsertItem: vi.fn(),
 }));
 
@@ -28,7 +32,10 @@ vi.mock("./vocabularyApi", async (importOriginal) => {
 vi.mock("./vocabularyState", () => ({
   refreshVocabularyForAuth: mocks.refreshVocabularyForAuth,
   vocabularyStateStore: {
+    getReadyRevision: mocks.getReadyRevision,
+    getSnapshot: mocks.getSnapshot,
     removeItem: mocks.removeItem,
+    subscribe: mocks.subscribe,
     upsertItem: mocks.upsertItem,
   },
 }));
@@ -60,9 +67,27 @@ function createDeferred<T>() {
 
 beforeEach(() => {
   mocks.deleteVocabularyMeaning.mockReset();
+  mocks.getReadyRevision.mockReset();
+  mocks.getReadyRevision.mockReturnValue(0);
+  mocks.getSnapshot.mockReset();
+  mocks.getSnapshot.mockReturnValue({
+    accessToken: "session-token",
+    items: [],
+    message: null,
+    status: "ready",
+  });
   mocks.refreshVocabularyForAuth.mockReset();
   mocks.refreshVocabularyForAuth.mockResolvedValue("refreshed");
   mocks.removeItem.mockReset();
+  mocks.storeListeners.clear();
+  mocks.subscribe.mockReset();
+  mocks.subscribe.mockImplementation((listener: () => void) => {
+    mocks.storeListeners.add(listener);
+
+    return () => {
+      mocks.storeListeners.delete(listener);
+    };
+  });
   mocks.upsertItem.mockReset();
 });
 
@@ -80,18 +105,28 @@ const updatedItem: VocabularyItem = {
   updatedAt: "2026-07-12T00:01:00.000Z",
 };
 
+function publishReadyRevision(readyRevision: number) {
+  mocks.getReadyRevision.mockReturnValue(readyRevision);
+
+  for (const listener of mocks.storeListeners) {
+    listener();
+  }
+}
+
 describe("isCurrentVocabularyDeleteRequest", () => {
   it("accepts only the latest delete request for the same access token", () => {
     expect(
       isCurrentVocabularyDeleteRequest(
         {
           accessToken: "session-token",
+          heldAtReadyRevision: null,
           itemId: "item-1",
           meaningKey: "meaning-1",
           requestId: 2,
         },
         {
           accessToken: "session-token",
+          heldAtReadyRevision: null,
           itemId: "item-1",
           meaningKey: "meaning-1",
           requestId: 2,
@@ -103,12 +138,14 @@ describe("isCurrentVocabularyDeleteRequest", () => {
       isCurrentVocabularyDeleteRequest(
         {
           accessToken: "old-token",
+          heldAtReadyRevision: null,
           itemId: "item-1",
           meaningKey: "meaning-1",
           requestId: 1,
         },
         {
           accessToken: "new-token",
+          heldAtReadyRevision: null,
           itemId: "item-1",
           meaningKey: "meaning-1",
           requestId: 2,
@@ -279,10 +316,15 @@ describe("useVocabularyDeleteAction", () => {
   it.each(["failed", "ignored"] as const)(
     "keeps a 404 deletion locked when the server snapshot refresh is %s",
     async (refreshResult) => {
-      mocks.deleteVocabularyMeaning.mockResolvedValueOnce({
-        message: "저장된 단어나 뜻을 찾지 못했어요.",
-        status: "not-found",
-      });
+      mocks.deleteVocabularyMeaning
+        .mockResolvedValueOnce({
+          message: "저장된 단어나 뜻을 찾지 못했어요.",
+          status: "not-found",
+        })
+        .mockResolvedValueOnce({
+          data: { item: null, itemDeleted: true },
+          status: "success",
+        });
       mocks.refreshVocabularyForAuth.mockResolvedValueOnce(refreshResult);
       const authState = createAuthenticatedState("session-token", "user-a");
       const { result } = renderHook(
@@ -304,6 +346,20 @@ describe("useVocabularyDeleteAction", () => {
         void result.current.deleteMeaning("item-1", meaning);
       });
       expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(1);
+
+      act(() => {
+        publishReadyRevision(1);
+      });
+
+      expect(result.current.deletingMeaningKeys).toEqual(new Set());
+      expect(result.current.deleteMessage).toBeNull();
+
+      await act(async () => {
+        await result.current.deleteMeaning("item-1", {
+          meaning: "지역 주",
+        });
+      });
+      expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(2);
     },
   );
 

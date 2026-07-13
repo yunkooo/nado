@@ -41,6 +41,9 @@ describe("mobile vocabulary hook boundaries", () => {
     expect(pendingCleanupIndex).toBeGreaterThan(refreshIndex);
     expect(mutationsSource).toContain('refreshResult === "refreshed"');
     expect(mutationsSource).toContain("VOCABULARY_ERROR_MESSAGE");
+    expect(mutationsSource).toContain("heldAtReadyRevision");
+    expect(mutationsSource).toContain("readyRevision");
+    expect(loaderSource).toContain("setReadyRevision");
   });
 
   it("continues using the shared suggestion and realtime contracts", () => {

@@ -45,6 +45,7 @@ export function useMobileVocabularyLoader({
   const [vocabularyState, setVocabularyState] = useState<MobileVocabularyState>(
     initialVocabularyState,
   );
+  const [readyRevision, setReadyRevision] = useState(0);
   const accessTokenRef = useRef<string | null>(null);
   const lastLoadedAtRef = useRef<number | undefined>(undefined);
   const latestAuthStateRef = useRef(authState);
@@ -132,6 +133,7 @@ export function useMobileVocabularyLoader({
               message: null,
               status: "ready",
             }));
+            setReadyRevision((currentRevision) => currentRevision + 1);
             return "refreshed";
           }
 
@@ -239,6 +241,7 @@ export function useMobileVocabularyLoader({
   });
 
   return {
+    readyRevision,
     refreshVocabularyInBackground,
     updateVocabularyState,
     vocabularyState,

@@ -15,6 +15,7 @@ import {
 
 type VocabularyDeleteRequestSnapshot = {
   accessToken: string;
+  heldAtReadyRevision: number | null;
   itemId: string;
   meaningKey: string;
   requestId: number;
@@ -52,6 +53,69 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
     });
   }, [authState.accessToken, authState.status]);
 
+  useEffect(
+    () =>
+      vocabularyStateStore.subscribe(() => {
+        const vocabularyState = vocabularyStateStore.getSnapshot();
+
+        if (
+          vocabularyState.status !== "ready" ||
+          !vocabularyState.accessToken
+        ) {
+          return;
+        }
+
+        const readyRevision = vocabularyStateStore.getReadyRevision();
+        const releasedMeaningKeys = new Set<string>();
+
+        for (const [itemId, request] of requestsByItemRef.current) {
+          if (
+            request.accessToken !== vocabularyState.accessToken ||
+            request.heldAtReadyRevision === null ||
+            request.heldAtReadyRevision >= readyRevision
+          ) {
+            continue;
+          }
+
+          requestsByItemRef.current.delete(itemId);
+          releasedMeaningKeys.add(request.meaningKey);
+        }
+
+        if (releasedMeaningKeys.size === 0) {
+          return;
+        }
+
+        const hasHeldRequest = Array.from(
+          requestsByItemRef.current.values(),
+        ).some(
+          (request) =>
+            request.accessToken === vocabularyState.accessToken &&
+            request.heldAtReadyRevision !== null,
+        );
+
+        setDeleteState((currentState) => {
+          if (currentState.accessToken !== vocabularyState.accessToken) {
+            return currentState;
+          }
+
+          const nextDeletingMeaningKeys = new Set(
+            currentState.deletingMeaningKeys,
+          );
+
+          for (const meaningKey of releasedMeaningKeys) {
+            nextDeletingMeaningKeys.delete(meaningKey);
+          }
+
+          return {
+            ...currentState,
+            deletingMeaningKeys: nextDeletingMeaningKeys,
+            message: hasHeldRequest ? currentState.message : null,
+          };
+        });
+      }),
+    [],
+  );
+
   const isDeleteScopeCurrent =
     authState.status === "authenticated" &&
     deleteState.accessToken === authState.accessToken;
@@ -76,7 +140,13 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
     const requestId = requestSequenceRef.current + 1;
     const meaningKey = createVocabularyMeaningMutationKey(itemId, meaning);
     requestSequenceRef.current = requestId;
-    const request = { accessToken, itemId, meaningKey, requestId };
+    const request = {
+      accessToken,
+      heldAtReadyRevision: null,
+      itemId,
+      meaningKey,
+      requestId,
+    };
     requestsByItemRef.current.set(itemId, request);
 
     setDeleteState((currentState) => ({
@@ -141,11 +211,16 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
       const trackedRequest = requestsByItemRef.current.get(itemId);
 
       if (
-        trackedRequest &&
+        !trackedRequest ||
         !isCurrentVocabularyDeleteRequest(request, trackedRequest)
       ) {
         return;
       }
+
+      requestsByItemRef.current.set(itemId, {
+        ...trackedRequest,
+        heldAtReadyRevision: vocabularyStateStore.getReadyRevision(),
+      });
 
       setDeleteState((currentState) =>
         currentState.accessToken === accessToken

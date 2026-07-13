@@ -22,6 +22,7 @@ export const initialVocabularyStateSnapshot: VocabularyStateSnapshot = {
 
 export function createVocabularyStateStore() {
   const listeners = new Set<() => void>();
+  let readyRevision = 0;
   let snapshot = initialVocabularyStateSnapshot;
 
   const notify = () => {
@@ -38,6 +39,10 @@ export function createVocabularyStateStore() {
   return {
     getSnapshot() {
       return snapshot;
+    },
+
+    getReadyRevision() {
+      return readyRevision;
     },
 
     reset() {
@@ -70,6 +75,7 @@ export function createVocabularyStateStore() {
     },
 
     setReady(accessToken: string, items: VocabularyItem[]) {
+      readyRevision += 1;
       setSnapshot({
         accessToken,
         items,
