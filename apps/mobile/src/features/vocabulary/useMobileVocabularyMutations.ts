@@ -25,7 +25,7 @@ import {
   addMobileVocabularyDeletingKey,
   addMobileVocabularySavingKey,
   applyDeleteVocabularyError,
-  applyMissingVocabularyMeaningDeletion,
+  applyMissingVocabularyItemDeletion,
   removeMobileVocabularyDeletingId,
   removeMobileVocabularyDeletingKey,
   removeMobileVocabularySavingKey,
@@ -39,10 +39,14 @@ const configuredMobileApiPlatform = Platform.OS;
 
 export function useMobileVocabularyMutations({
   authState,
+  refreshVocabularyInBackground,
   updateVocabularyState,
   vocabularyState,
 }: {
   authState: MobileAuthStateSnapshot;
+  refreshVocabularyInBackground(options?: {
+    force?: boolean;
+  }): Promise<void> | undefined;
   updateVocabularyState: MobileVocabularyStateUpdater;
   vocabularyState: MobileVocabularyState;
 }) {
@@ -132,8 +136,9 @@ export function useMobileVocabularyMutations({
 
     if (result.status === "not-found") {
       updateVocabularyState((currentState) =>
-        applyMissingVocabularyMeaningDeletion(currentState, itemId, meaning),
+        applyMissingVocabularyItemDeletion(currentState, itemId),
       );
+      await refreshVocabularyInBackground({ force: true });
       return;
     }
 

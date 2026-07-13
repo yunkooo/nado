@@ -1,8 +1,4 @@
-import type {
-  VocabularyItem,
-  VocabularyMeaning,
-} from "@nado/shared/vocabulary";
-import { removeVocabularyMeaningFromItems } from "@nado/shared/vocabulary-state";
+import type { VocabularyItem } from "@nado/shared/vocabulary";
 
 export type MobileVocabularyState = {
   items: VocabularyItem[];
@@ -21,18 +17,13 @@ export function applyDeleteVocabularyError(
   };
 }
 
-export function applyMissingVocabularyMeaningDeletion(
+export function applyMissingVocabularyItemDeletion(
   currentState: MobileVocabularyState,
   itemId: string,
-  meaning: VocabularyMeaning,
 ): MobileVocabularyState {
   return {
     ...currentState,
-    items: removeVocabularyMeaningFromItems(
-      currentState.items,
-      itemId,
-      meaning,
-    ),
+    items: currentState.items.filter((item) => item.id !== itemId),
     message: null,
     status: "ready",
   };

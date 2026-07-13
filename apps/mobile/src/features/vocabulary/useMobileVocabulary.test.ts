@@ -9,7 +9,7 @@ import {
   addMobileVocabularyDeletingId,
   addMobileVocabularyDeletingKey,
   applyDeleteVocabularyError,
-  applyMissingVocabularyMeaningDeletion,
+  applyMissingVocabularyItemDeletion,
   removeMobileVocabularyDeletingId,
   removeMobileVocabularyDeletingKey,
   removeMobileVocabularySavingKey,
@@ -61,37 +61,23 @@ describe("applyDeleteVocabularyError", () => {
   });
 });
 
-describe("applyMissingVocabularyMeaningDeletion", () => {
-  it("removes the stale meaning without showing a delete error", () => {
-    const staleMeaning = {
-      createdAt: "2026-06-10T00:01:00.000Z",
-      meaning: "궁금해하다",
-      note: "정중한 표현",
+describe("applyMissingVocabularyItemDeletion", () => {
+  it("removes the entire stale card without showing a delete error", () => {
+    const otherItem = {
+      ...savedItem,
+      id: "item-2",
+      term: "another",
     };
     const currentState = {
-      items: [
-        {
-          ...savedItem,
-          meanings: [staleMeaning, { meaning: "의아해하다" }],
-        },
-      ],
+      items: [savedItem, otherItem],
       message: "이전 오류",
       status: "ready" as const,
     };
 
     expect(
-      applyMissingVocabularyMeaningDeletion(
-        currentState,
-        savedItem.id,
-        staleMeaning,
-      ),
+      applyMissingVocabularyItemDeletion(currentState, savedItem.id),
     ).toEqual({
-      items: [
-        {
-          ...savedItem,
-          meanings: [{ meaning: "의아해하다" }],
-        },
-      ],
+      items: [otherItem],
       message: null,
       status: "ready",
     });

@@ -7,7 +7,10 @@ import {
 } from "@nado/shared/vocabulary";
 import type { AuthStateSnapshot } from "../auth/authState";
 import { deleteVocabularyMeaning as deleteVocabularyMeaningFromApi } from "./vocabularyApi";
-import { vocabularyStateStore } from "./vocabularyState";
+import {
+  refreshVocabularyForAuth,
+  vocabularyStateStore,
+} from "./vocabularyState";
 
 type VocabularyDeleteRequestSnapshot = {
   accessToken: string | null;
@@ -138,8 +141,9 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
     }
 
     if (result.status === "not-found") {
-      vocabularyStateStore.removeMeaning(itemId, meaning);
+      vocabularyStateStore.removeItem(itemId);
       finishDelete(null);
+      await refreshVocabularyForAuth(authState, { force: true });
       return;
     }
 
