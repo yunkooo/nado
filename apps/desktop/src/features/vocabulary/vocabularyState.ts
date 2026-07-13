@@ -283,7 +283,7 @@ export function createVocabularyAuthSync({
         return;
       }
 
-      void loadVocabularyForSession(authState.accessToken);
+      void startRefresh(authState.accessToken, { showLoading: true });
     },
   };
 }

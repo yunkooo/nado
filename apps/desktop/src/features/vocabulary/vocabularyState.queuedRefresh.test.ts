@@ -158,6 +158,72 @@ describe("vocabulary state store", () => {
     });
   });
 
+  it("queues a forced delete refresh behind an active sync load", async () => {
+    let resolveInitialLoad: (result: VocabularyListResult) => void = () =>
+      undefined;
+    let resolveForcedRefresh: (result: VocabularyListResult) => void = () =>
+      undefined;
+    const latestItem = {
+      ...vocabularyItem,
+      id: "row_latest",
+      term: "latest",
+    };
+    const store = createVocabularyStateStore();
+    const listVocabulary = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<VocabularyListResult>((resolve) => {
+            resolveInitialLoad = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<VocabularyListResult>((resolve) => {
+            resolveForcedRefresh = resolve;
+          }),
+      );
+    const sync = createVocabularyAuthSync({
+      listVocabulary,
+      store,
+    });
+    const authState = createAuthenticatedAuthState();
+
+    store.setError("session-token", "previous load failed");
+    store.upsertItem(vocabularyItem);
+    sync.sync(authState);
+
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [vocabularyItem],
+      status: "loading",
+    });
+
+    const forcedRefresh = sync.refresh(authState, { force: true });
+    let didSettle = false;
+    void forcedRefresh.then(() => {
+      didSettle = true;
+    });
+
+    expect(listVocabulary).toHaveBeenCalledTimes(1);
+
+    resolveInitialLoad({ data: [vocabularyItem], status: "success" });
+    await flushPromises();
+
+    expect(listVocabulary).toHaveBeenCalledTimes(2);
+    expect(didSettle).toBe(false);
+
+    resolveForcedRefresh({ data: [latestItem], status: "success" });
+
+    await expect(forcedRefresh).resolves.toBe("refreshed");
+    expect(didSettle).toBe(true);
+    expect(store.getSnapshot()).toMatchObject({
+      accessToken: "session-token",
+      items: [latestItem],
+      status: "ready",
+    });
+  });
+
   it("keeps concurrent forced refreshes pending through the latest snapshot", async () => {
     let resolveFirstRefresh: (result: VocabularyListResult) => void = () =>
       undefined;
