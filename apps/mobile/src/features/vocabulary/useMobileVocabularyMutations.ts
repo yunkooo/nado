@@ -18,8 +18,10 @@ import { readMobileApiBaseUrl } from "../../api/apiConfig";
 import {
   deleteVocabularyMeaning,
   saveVocabularyItem,
+  VOCABULARY_ERROR_MESSAGE,
 } from "../../api/vocabularyApi";
 import type { MobileAuthStateSnapshot } from "../../auth/authState";
+import type { MobileVocabularyRefreshResult } from "./mobileVocabularyLoadCoordinator";
 import {
   addMobileVocabularyDeletingId,
   addMobileVocabularyDeletingKey,
@@ -45,7 +47,7 @@ export function useMobileVocabularyMutations({
   authState: MobileAuthStateSnapshot;
   refreshVocabularyInBackground(options?: {
     force?: boolean;
-  }): Promise<void> | undefined;
+  }): Promise<MobileVocabularyRefreshResult>;
   updateVocabularyState: MobileVocabularyStateUpdater;
   vocabularyState: MobileVocabularyState;
 }) {
@@ -136,10 +138,29 @@ export function useMobileVocabularyMutations({
     };
 
     if (result.status === "not-found") {
+      let refreshResult: MobileVocabularyRefreshResult = "failed";
+
       try {
-        await refreshVocabularyInBackground({ force: true });
-      } finally {
+        refreshResult = await refreshVocabularyInBackground({ force: true });
+      } catch {
+        refreshResult = "failed";
+      }
+
+      if (
+        !shouldApplyUserScopedMutation(
+          requestUserId,
+          latestAuthStateRef.current.session?.user.id,
+        )
+      ) {
+        return;
+      }
+
+      if (refreshResult === "refreshed") {
         finishDelete();
+      } else {
+        updateVocabularyState((currentState) =>
+          applyDeleteVocabularyError(currentState, VOCABULARY_ERROR_MESSAGE),
+        );
       }
       return;
     }

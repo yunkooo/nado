@@ -14,7 +14,10 @@ import {
   applyLoadVocabularyError,
   type MobileVocabularyState,
 } from "./mobileVocabularyState";
-import { createMobileVocabularyLoadCoordinator } from "./mobileVocabularyLoadCoordinator";
+import {
+  createMobileVocabularyLoadCoordinator,
+  type MobileVocabularyRefreshResult,
+} from "./mobileVocabularyLoadCoordinator";
 import { useMobileVocabularyRealtimeSync } from "./useMobileVocabularyRealtimeSync";
 
 export type MobileVocabularyStateUpdater = (
@@ -87,7 +90,7 @@ export function useMobileVocabularyLoader({
           status: statusRef.current,
         })
       ) {
-        return;
+        return Promise.resolve<MobileVocabularyRefreshResult>("ignored");
       }
 
       return loadCoordinatorRef.current.run(
@@ -119,7 +122,7 @@ export function useMobileVocabularyLoader({
             requestId !== requestSequenceRef.current ||
             accessTokenRef.current !== accessToken
           ) {
-            return;
+            return "ignored";
           }
 
           if (result.status === "success") {
@@ -129,7 +132,7 @@ export function useMobileVocabularyLoader({
               message: null,
               status: "ready",
             }));
-            return;
+            return "refreshed";
           }
 
           updateVocabularyState((currentState) =>
@@ -138,6 +141,7 @@ export function useMobileVocabularyLoader({
               preserveCurrentOnError: shouldPreserveCurrent,
             }),
           );
+          return "failed";
         },
       );
     },
@@ -152,7 +156,7 @@ export function useMobileVocabularyLoader({
         latestAuthState.status !== "authenticated" ||
         !latestAuthState.accessToken
       ) {
-        return;
+        return Promise.resolve<MobileVocabularyRefreshResult>("ignored");
       }
 
       return loadVocabulary(latestAuthState.accessToken, {

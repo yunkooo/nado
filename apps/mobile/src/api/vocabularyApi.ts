@@ -39,7 +39,7 @@ export type SaveVocabularyResult =
   | { data: VocabularyItem; status: "success" }
   | { message: string; status: "error" };
 
-const VOCABULARY_ERROR_MESSAGE =
+export const VOCABULARY_ERROR_MESSAGE =
   "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
 const SAVE_VOCABULARY_ERROR_MESSAGE =
   "단어장에 저장하지 못했어요. 잠시 후 다시 시도해 주세요.";

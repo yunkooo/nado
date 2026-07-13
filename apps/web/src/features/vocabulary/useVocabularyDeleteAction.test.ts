@@ -276,6 +276,37 @@ describe("useVocabularyDeleteAction", () => {
     expect(result.current.deletingMeaningKeys.size).toBe(0);
   });
 
+  it.each(["failed", "ignored"] as const)(
+    "keeps a 404 deletion locked when the server snapshot refresh is %s",
+    async (refreshResult) => {
+      mocks.deleteVocabularyMeaning.mockResolvedValueOnce({
+        message: "저장된 단어나 뜻을 찾지 못했어요.",
+        status: "not-found",
+      });
+      mocks.refreshVocabularyForAuth.mockResolvedValueOnce(refreshResult);
+      const authState = createAuthenticatedState("session-token", "user-a");
+      const { result } = renderHook(
+        () => useVocabularyDeleteAction(authState),
+        undefined,
+      );
+      const meaningKey = createVocabularyMeaningMutationKey("item-1", meaning);
+
+      await act(async () => {
+        await result.current.deleteMeaning("item-1", meaning);
+      });
+
+      expect(result.current.deletingMeaningKeys).toEqual(new Set([meaningKey]));
+      expect(result.current.deleteMessage).toBe(
+        "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+      );
+
+      act(() => {
+        void result.current.deleteMeaning("item-1", meaning);
+      });
+      expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(1);
+    },
+  );
+
   it("keeps the card visible when the delete service fails", async () => {
     mocks.deleteVocabularyMeaning.mockResolvedValueOnce({
       message: "데이터 서비스를 확인할 수 없어요. 잠시 후 다시 시도해 주세요.",

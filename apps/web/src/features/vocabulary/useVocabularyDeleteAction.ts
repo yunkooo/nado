@@ -6,7 +6,10 @@ import {
   type VocabularyMeaning,
 } from "@nado/shared/vocabulary";
 import type { AuthStateSnapshot } from "../auth/authState";
-import { deleteVocabularyMeaning as deleteVocabularyMeaningFromApi } from "./vocabularyApi";
+import {
+  deleteVocabularyMeaning as deleteVocabularyMeaningFromApi,
+  VOCABULARY_ERROR_MESSAGE,
+} from "./vocabularyApi";
 import {
   refreshVocabularyForAuth,
   vocabularyStateStore,
@@ -137,6 +140,23 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
       });
     };
 
+    const holdDelete = (message: string) => {
+      const trackedRequest = requestsByItemRef.current.get(itemId);
+
+      if (
+        trackedRequest &&
+        !isCurrentVocabularyDeleteRequest(request, trackedRequest)
+      ) {
+        return;
+      }
+
+      setDeleteState((currentState) =>
+        currentState.accessToken === accessToken
+          ? { ...currentState, message }
+          : currentState,
+      );
+    };
+
     if (result.status === "success") {
       if (result.data.itemDeleted) {
         vocabularyStateStore.removeItem(itemId);
@@ -150,9 +170,17 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
 
     if (result.status === "not-found") {
       try {
-        await refreshVocabularyForAuth(authState, { force: true });
-      } finally {
-        finishDelete(null);
+        const refreshResult = await refreshVocabularyForAuth(authState, {
+          force: true,
+        });
+
+        if (refreshResult === "refreshed") {
+          finishDelete(null);
+        } else {
+          holdDelete(VOCABULARY_ERROR_MESSAGE);
+        }
+      } catch {
+        holdDelete(VOCABULARY_ERROR_MESSAGE);
       }
       return;
     }
