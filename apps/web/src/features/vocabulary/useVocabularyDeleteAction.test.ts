@@ -110,6 +110,11 @@ const itemWithRemainingMeaning: VocabularyItem = {
   id: "item-1",
 };
 
+const itemWithTargetMeaning: VocabularyItem = {
+  ...itemWithRemainingMeaning,
+  meanings: [meaning, ...itemWithRemainingMeaning.meanings],
+};
+
 function publishReadyRevision(
   readyRevision: number,
   items: VocabularyItem[] = [],
@@ -403,6 +408,55 @@ describe("useVocabularyDeleteAction", () => {
 
     await act(async () => {
       await result.current.deleteMeaning("item-1", meaning);
+    });
+
+    expect(result.current.deletingMeaningKeys).toEqual(new Set());
+    expect(result.current.deleteMessage).toBeNull();
+
+    await act(async () => {
+      await result.current.deleteMeaning("item-1", { meaning: "지역 주" });
+    });
+    expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps a held 404 deletion locked while a later snapshot still contains the meaning", async () => {
+    mocks.deleteVocabularyMeaning
+      .mockResolvedValueOnce({
+        message: "저장된 단어나 뜻을 찾지 못했어요.",
+        status: "not-found",
+      })
+      .mockResolvedValueOnce({
+        data: { item: null, itemDeleted: true },
+        status: "success",
+      });
+    mocks.refreshVocabularyForAuth.mockResolvedValueOnce("failed");
+    const authState = createAuthenticatedState("session-token", "user-a");
+    const { result } = renderHook(
+      () => useVocabularyDeleteAction(authState),
+      undefined,
+    );
+    const meaningKey = createVocabularyMeaningMutationKey("item-1", meaning);
+
+    await act(async () => {
+      await result.current.deleteMeaning("item-1", meaning);
+    });
+
+    act(() => {
+      publishReadyRevision(1, [itemWithTargetMeaning]);
+    });
+
+    expect(result.current.deletingMeaningKeys).toEqual(new Set([meaningKey]));
+    expect(result.current.deleteMessage).toBe(
+      "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+    );
+
+    act(() => {
+      void result.current.deleteMeaning("item-1", { meaning: "지역 주" });
+    });
+    expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      publishReadyRevision(2, [itemWithRemainingMeaning]);
     });
 
     expect(result.current.deletingMeaningKeys).toEqual(new Set());

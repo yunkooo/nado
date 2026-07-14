@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   createVocabularyMeaningMutationKey,
+  type VocabularyItem,
   type VocabularyMeaning,
 } from "@nado/shared/vocabulary";
 import type { AuthStateSnapshot } from "../../auth/authState";
@@ -27,6 +28,21 @@ type VocabularyDeleteState = {
   deletingMeaningKeys: ReadonlySet<string>;
   message: string | null;
 };
+
+function hasVocabularyDeleteTarget(
+  items: VocabularyItem[],
+  itemId: string,
+  meaningKey: string,
+) {
+  return items.some(
+    (item) =>
+      item.id === itemId &&
+      item.meanings.some(
+        (meaning) =>
+          createVocabularyMeaningMutationKey(itemId, meaning) === meaningKey,
+      ),
+  );
+}
 
 export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
   const [deleteState, setDeleteState] = useState<VocabularyDeleteState>({
@@ -73,7 +89,12 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
           if (
             request.accessToken !== vocabularyState.accessToken ||
             request.heldAtReadyRevision === null ||
-            request.heldAtReadyRevision >= readyRevision
+            request.heldAtReadyRevision >= readyRevision ||
+            hasVocabularyDeleteTarget(
+              vocabularyState.items,
+              itemId,
+              request.meaningKey,
+            )
           ) {
             continue;
           }
@@ -221,14 +242,10 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
 
       const readyRevision = vocabularyStateStore.getReadyRevision();
       const vocabularyState = vocabularyStateStore.getSnapshot();
-      const targetMeaningExists = vocabularyState.items.some(
-        (item) =>
-          item.id === itemId &&
-          item.meanings.some(
-            (currentMeaning) =>
-              createVocabularyMeaningMutationKey(itemId, currentMeaning) ===
-              meaningKey,
-          ),
+      const targetMeaningExists = hasVocabularyDeleteTarget(
+        vocabularyState.items,
+        itemId,
+        meaningKey,
       );
 
       if (
