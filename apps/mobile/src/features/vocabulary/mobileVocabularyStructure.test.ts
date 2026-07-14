@@ -8,6 +8,7 @@ const loadCoordinatorSource = readSource(
 );
 const manualRefreshSource = readSource("./useMobileVocabularyManualRefresh.ts");
 const mutationsSource = readSource("./useMobileVocabularyMutations.ts");
+const deleteRequestSource = readSource("./mobileVocabularyDeleteRequest.ts");
 
 describe("mobile vocabulary hook boundaries", () => {
   it("keeps the public hook as a small composition boundary", () => {
@@ -24,7 +25,41 @@ describe("mobile vocabulary hook boundaries", () => {
     expect(loaderSource).toContain("useMobileVocabularyRealtimeSync");
     expect(manualRefreshSource).toContain("shouldStartVocabularyManualRefresh");
     expect(mutationsSource).toContain("deleteVocabularyMeaning(");
+    expect(mutationsSource).toContain(
+      "await refreshVocabularyInBackground({ force: true })",
+    );
+    expect(mutationsSource).not.toContain("applyMissingVocabularyItemDeletion");
     expect(mutationsSource).toContain("saveVocabularyItem(");
+  });
+
+  it("keeps a missing meaning pending through the authoritative refresh", () => {
+    const refreshIndex = mutationsSource.indexOf(
+      "await refreshVocabularyInBackground({ force: true })",
+    );
+    const pendingCleanupIndex = mutationsSource.indexOf("finishDelete();");
+    const snapshotReconciliationIndex = mutationsSource.indexOf(
+      "shouldReleaseMobileVocabularyDeleteRequest",
+      refreshIndex,
+    );
+
+    expect(refreshIndex).toBeGreaterThan(-1);
+    expect(pendingCleanupIndex).toBeGreaterThan(refreshIndex);
+    expect(snapshotReconciliationIndex).toBeGreaterThan(refreshIndex);
+    expect(mutationsSource).not.toContain('refreshResult === "refreshed"');
+    expect(mutationsSource).toContain("VOCABULARY_ERROR_MESSAGE");
+    expect(mutationsSource).toContain("heldAtReadyRevision");
+    expect(mutationsSource).toContain("readyRevision");
+    expect(mutationsSource).toContain("getLatestReadySnapshot");
+    expect(deleteRequestSource).toContain(
+      "shouldReleaseMobileVocabularyDeleteRequest",
+    );
+    expect(deleteRequestSource).toContain(
+      "shouldReleaseHeldMobileVocabularyDeleteRequest",
+    );
+    expect(mutationsSource).toContain(
+      "shouldReleaseHeldMobileVocabularyDeleteRequest",
+    );
+    expect(loaderSource).toContain("setReadyRevision");
   });
 
   it("continues using the shared suggestion and realtime contracts", () => {

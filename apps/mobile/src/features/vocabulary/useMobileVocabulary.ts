@@ -37,6 +37,8 @@ export function useMobileVocabulary(
   });
   const mutations = useMobileVocabularyMutations({
     authState,
+    getLatestReadySnapshot: loader.getLatestReadySnapshot,
+    readyRevision: loader.readyRevision,
     refreshVocabularyInBackground: loader.refreshVocabularyInBackground,
     updateVocabularyState: loader.updateVocabularyState,
     vocabularyState: loader.vocabularyState,

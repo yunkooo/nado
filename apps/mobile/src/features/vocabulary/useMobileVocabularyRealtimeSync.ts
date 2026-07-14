@@ -5,10 +5,11 @@ import {
   createMobileVocabularyRealtimeSync,
   type MobileVocabularyRealtimeClient,
 } from "./mobileVocabularyRealtime";
+import type { MobileVocabularyRefreshResult } from "./mobileVocabularyLoadCoordinator";
 
 type RefreshVocabularyInBackground = (options?: {
   force?: boolean;
-}) => Promise<void> | undefined;
+}) => Promise<MobileVocabularyRefreshResult>;
 
 export function useMobileVocabularyRealtimeSync({
   authState,

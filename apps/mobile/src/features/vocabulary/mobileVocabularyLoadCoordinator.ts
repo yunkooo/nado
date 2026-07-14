@@ -1,12 +1,14 @@
+export type MobileVocabularyRefreshResult = "failed" | "ignored" | "refreshed";
+
 export type MobileVocabularyLoadOperation = (context: {
   isQueuedRefresh: boolean;
-}) => Promise<void>;
+}) => Promise<MobileVocabularyRefreshResult>;
 
 type ActiveVocabularyLoad = {
   accessToken: string;
   cancelled: boolean;
   pendingForcedRefresh: boolean;
-  promise: Promise<void>;
+  promise: Promise<MobileVocabularyRefreshResult>;
 };
 
 export function createMobileVocabularyLoadCoordinator() {
@@ -25,7 +27,7 @@ export function createMobileVocabularyLoadCoordinator() {
       accessToken: string,
       { force = false }: { force?: boolean },
       operation: MobileVocabularyLoadOperation,
-    ): Promise<void> {
+    ): Promise<MobileVocabularyRefreshResult> {
       if (activeLoad?.accessToken === accessToken) {
         if (force) {
           activeLoad.pendingForcedRefresh = true;
@@ -42,7 +44,7 @@ export function createMobileVocabularyLoadCoordinator() {
         accessToken,
         cancelled: false,
         pendingForcedRefresh: false,
-        promise: Promise.resolve(),
+        promise: Promise.resolve("ignored"),
       };
       activeLoad = nextLoad;
       nextLoad.promise = runLoadOperations(nextLoad, operation).finally(() => {
@@ -59,17 +61,23 @@ export function createMobileVocabularyLoadCoordinator() {
 async function runLoadOperations(
   activeLoad: ActiveVocabularyLoad,
   operation: MobileVocabularyLoadOperation,
-) {
+): Promise<MobileVocabularyRefreshResult> {
   let isQueuedRefresh = false;
 
   while (!activeLoad.cancelled) {
-    await operation({ isQueuedRefresh });
+    const result = await operation({ isQueuedRefresh });
 
-    if (activeLoad.cancelled || !activeLoad.pendingForcedRefresh) {
-      return;
+    if (activeLoad.cancelled) {
+      return "ignored";
+    }
+
+    if (!activeLoad.pendingForcedRefresh) {
+      return result;
     }
 
     activeLoad.pendingForcedRefresh = false;
     isQueuedRefresh = true;
   }
+
+  return "ignored";
 }

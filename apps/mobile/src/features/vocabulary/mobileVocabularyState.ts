@@ -17,18 +17,6 @@ export function applyDeleteVocabularyError(
   };
 }
 
-export function applyMissingVocabularyItemDeletion(
-  currentState: MobileVocabularyState,
-  itemId: string,
-): MobileVocabularyState {
-  return {
-    ...currentState,
-    items: currentState.items.filter((item) => item.id !== itemId),
-    message: null,
-    status: "ready",
-  };
-}
-
 export function applyLoadVocabularyError(
   currentState: MobileVocabularyState,
   {

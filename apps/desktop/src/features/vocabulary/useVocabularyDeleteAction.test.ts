@@ -15,8 +15,12 @@ import {
 
 const mocks = vi.hoisted(() => ({
   deleteVocabularyMeaning: vi.fn(),
+  getReadyRevision: vi.fn(),
+  getSnapshot: vi.fn(),
   refreshVocabularyForAuth: vi.fn(),
   removeItem: vi.fn(),
+  storeListeners: new Set<() => void>(),
+  subscribe: vi.fn(),
   upsertItem: vi.fn(),
 }));
 
@@ -28,7 +32,10 @@ vi.mock("../../api/vocabularyApi", async (importOriginal) => ({
 vi.mock("./vocabularyState", () => ({
   refreshVocabularyForAuth: mocks.refreshVocabularyForAuth,
   vocabularyStateStore: {
+    getReadyRevision: mocks.getReadyRevision,
+    getSnapshot: mocks.getSnapshot,
     removeItem: mocks.removeItem,
+    subscribe: mocks.subscribe,
     upsertItem: mocks.upsertItem,
   },
 }));
@@ -53,12 +60,57 @@ const updatedItem: VocabularyItem = {
   updatedAt: "2026-07-12T00:01:00.000Z",
 };
 
+const itemWithRemainingMeaning: VocabularyItem = {
+  ...updatedItem,
+  id: "item-1",
+};
+
+const itemWithTargetMeaning: VocabularyItem = {
+  ...itemWithRemainingMeaning,
+  meanings: [meaning, ...itemWithRemainingMeaning.meanings],
+};
+
+function publishReadyRevision(
+  readyRevision: number,
+  items: VocabularyItem[] = [],
+) {
+  mocks.getReadyRevision.mockReturnValue(readyRevision);
+  mocks.getSnapshot.mockReturnValue({
+    accessToken: "session-token",
+    items,
+    message: null,
+    status: "ready",
+  });
+
+  for (const listener of mocks.storeListeners) {
+    listener();
+  }
+}
+
 describe("desktop vocabulary delete action", () => {
   beforeEach(() => {
     mocks.deleteVocabularyMeaning.mockReset();
+    mocks.getReadyRevision.mockReset();
+    mocks.getReadyRevision.mockReturnValue(0);
+    mocks.getSnapshot.mockReset();
+    mocks.getSnapshot.mockReturnValue({
+      accessToken: "session-token",
+      items: [],
+      message: null,
+      status: "ready",
+    });
     mocks.refreshVocabularyForAuth.mockReset();
     mocks.refreshVocabularyForAuth.mockResolvedValue("refreshed");
     mocks.removeItem.mockReset();
+    mocks.storeListeners.clear();
+    mocks.subscribe.mockReset();
+    mocks.subscribe.mockImplementation((listener: () => void) => {
+      mocks.storeListeners.add(listener);
+
+      return () => {
+        mocks.storeListeners.delete(listener);
+      };
+    });
     mocks.upsertItem.mockReset();
   });
 
@@ -147,6 +199,7 @@ describe("desktop vocabulary delete action", () => {
       await result.current.deleteMeaning("failed-item", meaning);
     });
     expect(result.current.deleteMessage).toBe("단어장 뜻을 삭제하지 못했어요.");
+    expect(mocks.removeItem).not.toHaveBeenCalled();
 
     let pendingRequest!: Promise<void>;
     act(() => {
@@ -177,8 +230,10 @@ describe("desktop vocabulary delete action", () => {
   it("compares the full item request identity before applying a response", () => {
     const request = {
       accessToken: "token-a",
+      heldAtReadyRevision: null,
       itemId: "item-1",
       meaningKey: "meaning-1",
+      readyRevisionAtStart: 0,
       requestId: 1,
     };
 
@@ -191,10 +246,124 @@ describe("desktop vocabulary delete action", () => {
     ).toBe(false);
   });
 
-  it("removes a missing card and refreshes the server snapshot after a 404", async () => {
+  it("keeps a 404 deletion pending until the server snapshot refresh finishes", async () => {
+    const pendingRefresh = createDeferred<string>();
     mocks.deleteVocabularyMeaning.mockResolvedValueOnce({
       message: "저장된 단어나 뜻을 찾지 못했어요.",
       status: "not-found",
+    });
+    mocks.refreshVocabularyForAuth.mockReturnValueOnce(pendingRefresh.promise);
+    const { result } = renderHook(() => useVocabularyDeleteAction(authState));
+    const meaningKey = createVocabularyMeaningMutationKey("item-1", meaning);
+    let request!: Promise<void>;
+
+    await act(async () => {
+      request = result.current.deleteMeaning("item-1", meaning);
+      await Promise.resolve();
+    });
+
+    expect(mocks.removeItem).not.toHaveBeenCalled();
+    expect(mocks.refreshVocabularyForAuth).toHaveBeenCalledWith(authState, {
+      force: true,
+    });
+    expect(result.current.deleteMessage).toBeNull();
+    expect(result.current.deletingMeaningKeys).toEqual(new Set([meaningKey]));
+
+    act(() => {
+      void result.current.deleteMeaning("item-1", meaning);
+    });
+    expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      publishReadyRevision(1);
+      pendingRefresh.resolve("refreshed");
+      await request;
+    });
+
+    expect(result.current.deletingMeaningKeys).toEqual(new Set());
+  });
+
+  it("keeps a 404 deletion locked when a refreshed snapshot still contains the meaning", async () => {
+    mocks.deleteVocabularyMeaning.mockResolvedValueOnce({
+      message: "저장된 단어나 뜻을 찾지 못했어요.",
+      status: "not-found",
+    });
+    mocks.refreshVocabularyForAuth.mockImplementationOnce(async () => {
+      publishReadyRevision(1, [itemWithTargetMeaning]);
+      return "refreshed";
+    });
+    const { result } = renderHook(() => useVocabularyDeleteAction(authState));
+    const meaningKey = createVocabularyMeaningMutationKey("item-1", meaning);
+
+    await act(async () => {
+      await result.current.deleteMeaning("item-1", meaning);
+    });
+
+    expect(result.current.deletingMeaningKeys).toEqual(new Set([meaningKey]));
+    expect(result.current.deleteMessage).toBe(
+      "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+    );
+  });
+
+  it.each(["failed", "ignored"] as const)(
+    "keeps a 404 deletion locked when the server snapshot refresh is %s",
+    async (refreshResult) => {
+      mocks.deleteVocabularyMeaning
+        .mockResolvedValueOnce({
+          message: "저장된 단어나 뜻을 찾지 못했어요.",
+          status: "not-found",
+        })
+        .mockResolvedValueOnce({
+          data: { item: null, itemDeleted: true },
+          status: "success",
+        });
+      mocks.refreshVocabularyForAuth.mockResolvedValueOnce(refreshResult);
+      const { result } = renderHook(() => useVocabularyDeleteAction(authState));
+      const meaningKey = createVocabularyMeaningMutationKey("item-1", meaning);
+
+      await act(async () => {
+        await result.current.deleteMeaning("item-1", meaning);
+      });
+
+      expect(result.current.deletingMeaningKeys).toEqual(new Set([meaningKey]));
+      expect(result.current.deleteMessage).toBe(
+        "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+      );
+
+      act(() => {
+        void result.current.deleteMeaning("item-1", meaning);
+      });
+      expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(1);
+
+      act(() => {
+        publishReadyRevision(1);
+      });
+
+      expect(result.current.deletingMeaningKeys).toEqual(new Set());
+      expect(result.current.deleteMessage).toBeNull();
+
+      await act(async () => {
+        await result.current.deleteMeaning("item-1", {
+          meaning: "지역 주",
+        });
+      });
+      expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it("releases a 404 deletion when an intervening snapshot already removed the meaning", async () => {
+    mocks.deleteVocabularyMeaning
+      .mockResolvedValueOnce({
+        message: "저장된 단어나 뜻을 찾지 못했어요.",
+        status: "not-found",
+      })
+      .mockResolvedValueOnce({
+        data: { item: null, itemDeleted: true },
+        status: "success",
+      });
+    mocks.refreshVocabularyForAuth.mockImplementationOnce(async () => {
+      publishReadyRevision(1, [itemWithRemainingMeaning]);
+      return "failed";
     });
     const { result } = renderHook(() => useVocabularyDeleteAction(authState));
 
@@ -202,12 +371,58 @@ describe("desktop vocabulary delete action", () => {
       await result.current.deleteMeaning("item-1", meaning);
     });
 
-    expect(mocks.removeItem).toHaveBeenCalledWith("item-1");
-    expect(mocks.refreshVocabularyForAuth).toHaveBeenCalledWith(authState, {
-      force: true,
-    });
-    expect(result.current.deleteMessage).toBeNull();
     expect(result.current.deletingMeaningKeys).toEqual(new Set());
+    expect(result.current.deleteMessage).toBeNull();
+
+    await act(async () => {
+      await result.current.deleteMeaning("item-1", { meaning: "지역 주" });
+    });
+    expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps a held 404 deletion locked while a later snapshot still contains the meaning", async () => {
+    mocks.deleteVocabularyMeaning
+      .mockResolvedValueOnce({
+        message: "저장된 단어나 뜻을 찾지 못했어요.",
+        status: "not-found",
+      })
+      .mockResolvedValueOnce({
+        data: { item: null, itemDeleted: true },
+        status: "success",
+      });
+    mocks.refreshVocabularyForAuth.mockResolvedValueOnce("failed");
+    const { result } = renderHook(() => useVocabularyDeleteAction(authState));
+    const meaningKey = createVocabularyMeaningMutationKey("item-1", meaning);
+
+    await act(async () => {
+      await result.current.deleteMeaning("item-1", meaning);
+    });
+
+    act(() => {
+      publishReadyRevision(1, [itemWithTargetMeaning]);
+    });
+
+    expect(result.current.deletingMeaningKeys).toEqual(new Set([meaningKey]));
+    expect(result.current.deleteMessage).toBe(
+      "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+    );
+
+    act(() => {
+      void result.current.deleteMeaning("item-1", { meaning: "지역 주" });
+    });
+    expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      publishReadyRevision(2, [itemWithRemainingMeaning]);
+    });
+
+    expect(result.current.deletingMeaningKeys).toEqual(new Set());
+    expect(result.current.deleteMessage).toBeNull();
+
+    await act(async () => {
+      await result.current.deleteMeaning("item-1", { meaning: "지역 주" });
+    });
+    expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(2);
   });
 });
 

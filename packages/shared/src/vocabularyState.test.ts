@@ -33,6 +33,21 @@ describe("createVocabularyStateStore", () => {
     expect(store.getSnapshot().items).toEqual([]);
   });
 
+  it("advances the ready revision only for authoritative list snapshots", () => {
+    const store = createVocabularyStateStore();
+
+    store.upsertItem(item);
+    store.removeItem(item.id);
+    expect(store.getReadyRevision()).toBe(0);
+
+    store.setReady("token-1", [item]);
+    expect(store.getReadyRevision()).toBe(1);
+
+    store.setLoading("token-1");
+    store.setReady("token-1", []);
+    expect(store.getReadyRevision()).toBe(2);
+  });
+
   it("notifies subscribers and supports upsert, removal, and reset", () => {
     const store = createVocabularyStateStore();
     const listener = vi.fn();

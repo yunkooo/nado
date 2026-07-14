@@ -16,8 +16,9 @@ export const vocabularyItem: VocabularyItem = {
 };
 
 export async function flushPromises() {
-  await Promise.resolve();
-  await Promise.resolve();
+  for (let index = 0; index < 10; index += 1) {
+    await Promise.resolve();
+  }
 }
 
 export function createAuthenticatedAuthState(

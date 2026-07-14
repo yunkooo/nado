@@ -4,10 +4,11 @@ import {
   VOCABULARY_MANUAL_REFRESH_THROTTLE_MS,
 } from "@nado/shared/vocabulary-realtime";
 import type { MobileAuthStateSnapshot } from "../../auth/authState";
+import type { MobileVocabularyRefreshResult } from "./mobileVocabularyLoadCoordinator";
 
 type RefreshVocabularyInBackground = (options?: {
   force?: boolean;
-}) => Promise<void> | undefined;
+}) => Promise<MobileVocabularyRefreshResult>;
 
 export function useMobileVocabularyManualRefresh({
   authState,
@@ -48,10 +49,6 @@ export function useMobileVocabularyManualRefresh({
     }
 
     const refreshPromise = refreshVocabularyInBackground({ force: true });
-
-    if (!refreshPromise) {
-      return;
-    }
 
     isRefreshingRef.current = true;
     lastStartedAtRef.current = now;

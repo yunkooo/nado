@@ -14,7 +14,11 @@ import {
   applyLoadVocabularyError,
   type MobileVocabularyState,
 } from "./mobileVocabularyState";
-import { createMobileVocabularyLoadCoordinator } from "./mobileVocabularyLoadCoordinator";
+import {
+  createMobileVocabularyLoadCoordinator,
+  type MobileVocabularyRefreshResult,
+} from "./mobileVocabularyLoadCoordinator";
+import type { MobileVocabularyReadySnapshot } from "./mobileVocabularyDeleteRequest";
 import { useMobileVocabularyRealtimeSync } from "./useMobileVocabularyRealtimeSync";
 
 export type MobileVocabularyStateUpdater = (
@@ -42,11 +46,16 @@ export function useMobileVocabularyLoader({
   const [vocabularyState, setVocabularyState] = useState<MobileVocabularyState>(
     initialVocabularyState,
   );
+  const [readyRevision, setReadyRevision] = useState(0);
   const accessTokenRef = useRef<string | null>(null);
   const lastLoadedAtRef = useRef<number | undefined>(undefined);
   const latestAuthStateRef = useRef(authState);
   const loadCoordinatorRef = useRef(createMobileVocabularyLoadCoordinator());
   const requestSequenceRef = useRef(0);
+  const readySnapshotRef = useRef<MobileVocabularyReadySnapshot>({
+    items: [],
+    revision: 0,
+  });
   const statusRef = useRef<MobileVocabularyState["status"]>(
     initialVocabularyState.status,
   );
@@ -63,6 +72,11 @@ export function useMobileVocabularyLoader({
         return nextState;
       });
     },
+    [],
+  );
+
+  const getLatestReadySnapshot = useCallback(
+    () => readySnapshotRef.current,
     [],
   );
 
@@ -87,7 +101,7 @@ export function useMobileVocabularyLoader({
           status: statusRef.current,
         })
       ) {
-        return;
+        return Promise.resolve<MobileVocabularyRefreshResult>("ignored");
       }
 
       return loadCoordinatorRef.current.run(
@@ -119,17 +133,23 @@ export function useMobileVocabularyLoader({
             requestId !== requestSequenceRef.current ||
             accessTokenRef.current !== accessToken
           ) {
-            return;
+            return "ignored";
           }
 
           if (result.status === "success") {
+            const nextReadyRevision = readySnapshotRef.current.revision + 1;
             lastLoadedAtRef.current = Date.now();
+            readySnapshotRef.current = {
+              items: result.data,
+              revision: nextReadyRevision,
+            };
             updateVocabularyState(() => ({
               items: result.data,
               message: null,
               status: "ready",
             }));
-            return;
+            setReadyRevision(nextReadyRevision);
+            return "refreshed";
           }
 
           updateVocabularyState((currentState) =>
@@ -138,6 +158,7 @@ export function useMobileVocabularyLoader({
               preserveCurrentOnError: shouldPreserveCurrent,
             }),
           );
+          return "failed";
         },
       );
     },
@@ -152,7 +173,7 @@ export function useMobileVocabularyLoader({
         latestAuthState.status !== "authenticated" ||
         !latestAuthState.accessToken
       ) {
-        return;
+        return Promise.resolve<MobileVocabularyRefreshResult>("ignored");
       }
 
       return loadVocabulary(latestAuthState.accessToken, {
@@ -179,6 +200,10 @@ export function useMobileVocabularyLoader({
       loadCoordinatorRef.current.cancel();
       accessTokenRef.current = null;
       lastLoadedAtRef.current = undefined;
+      readySnapshotRef.current = {
+        items: [],
+        revision: readySnapshotRef.current.revision,
+      };
       updateVocabularyState(() => initialVocabularyState);
       return;
     }
@@ -235,6 +260,8 @@ export function useMobileVocabularyLoader({
   });
 
   return {
+    getLatestReadySnapshot,
+    readyRevision,
     refreshVocabularyInBackground,
     updateVocabularyState,
     vocabularyState,
