@@ -233,7 +233,7 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
       });
     };
 
-    const holdDelete = (message: string) => {
+    const reconcileNotFoundDelete = (message: string) => {
       const trackedRequest = requestsByItemRef.current.get(itemId);
 
       if (
@@ -286,18 +286,14 @@ export function useVocabularyDeleteAction(authState: AuthStateSnapshot) {
 
     if (result.status === "not-found") {
       try {
-        const refreshResult = await refreshVocabularyForAuth(authState, {
+        await refreshVocabularyForAuth(authState, {
           force: true,
         });
-
-        if (refreshResult === "refreshed") {
-          finishDelete(null);
-        } else {
-          holdDelete(VOCABULARY_ERROR_MESSAGE);
-        }
       } catch {
-        holdDelete(VOCABULARY_ERROR_MESSAGE);
+        // Reconcile against the latest trustworthy snapshot below.
       }
+
+      reconcileNotFoundDelete(VOCABULARY_ERROR_MESSAGE);
       return;
     }
 

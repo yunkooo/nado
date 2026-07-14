@@ -37,10 +37,15 @@ describe("mobile vocabulary hook boundaries", () => {
       "await refreshVocabularyInBackground({ force: true })",
     );
     const pendingCleanupIndex = mutationsSource.indexOf("finishDelete();");
+    const snapshotReconciliationIndex = mutationsSource.indexOf(
+      "shouldReleaseMobileVocabularyDeleteRequest",
+      refreshIndex,
+    );
 
     expect(refreshIndex).toBeGreaterThan(-1);
     expect(pendingCleanupIndex).toBeGreaterThan(refreshIndex);
-    expect(mutationsSource).toContain('refreshResult === "refreshed"');
+    expect(snapshotReconciliationIndex).toBeGreaterThan(refreshIndex);
+    expect(mutationsSource).not.toContain('refreshResult === "refreshed"');
     expect(mutationsSource).toContain("VOCABULARY_ERROR_MESSAGE");
     expect(mutationsSource).toContain("heldAtReadyRevision");
     expect(mutationsSource).toContain("readyRevision");

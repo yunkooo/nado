@@ -202,12 +202,10 @@ export function useMobileVocabularyMutations({
     };
 
     if (result.status === "not-found") {
-      let refreshResult: MobileVocabularyRefreshResult = "failed";
-
       try {
-        refreshResult = await refreshVocabularyInBackground({ force: true });
+        await refreshVocabularyInBackground({ force: true });
       } catch {
-        refreshResult = "failed";
+        // Reconcile against the latest trustworthy snapshot below.
       }
 
       if (
@@ -219,37 +217,33 @@ export function useMobileVocabularyMutations({
         return;
       }
 
-      if (refreshResult === "refreshed") {
-        finishDelete();
-      } else {
-        const trackedRequest = deletingRequestsByItemRef.current.get(itemId);
+      const trackedRequest = deletingRequestsByItemRef.current.get(itemId);
 
-        if (trackedRequest?.meaningKey !== meaningKey) {
-          return;
-        }
-
-        const latestReadySnapshot = getLatestReadySnapshot();
-
-        if (
-          shouldReleaseMobileVocabularyDeleteRequest({
-            itemId,
-            readySnapshot: latestReadySnapshot,
-            request: trackedRequest,
-          })
-        ) {
-          finishDelete();
-          return;
-        }
-
-        deletingRequestsByItemRef.current.set(itemId, {
-          ...trackedRequest,
-          heldAtReadyRevision: latestReadySnapshot.revision,
-        });
-
-        updateVocabularyState((currentState) =>
-          applyDeleteVocabularyError(currentState, VOCABULARY_ERROR_MESSAGE),
-        );
+      if (trackedRequest?.meaningKey !== meaningKey) {
+        return;
       }
+
+      const latestReadySnapshot = getLatestReadySnapshot();
+
+      if (
+        shouldReleaseMobileVocabularyDeleteRequest({
+          itemId,
+          readySnapshot: latestReadySnapshot,
+          request: trackedRequest,
+        })
+      ) {
+        finishDelete();
+        return;
+      }
+
+      deletingRequestsByItemRef.current.set(itemId, {
+        ...trackedRequest,
+        heldAtReadyRevision: latestReadySnapshot.revision,
+      });
+
+      updateVocabularyState((currentState) =>
+        applyDeleteVocabularyError(currentState, VOCABULARY_ERROR_MESSAGE),
+      );
       return;
     }
 

@@ -275,11 +275,34 @@ describe("desktop vocabulary delete action", () => {
     expect(mocks.deleteVocabularyMeaning).toHaveBeenCalledTimes(1);
 
     await act(async () => {
+      publishReadyRevision(1);
       pendingRefresh.resolve("refreshed");
       await request;
     });
 
     expect(result.current.deletingMeaningKeys).toEqual(new Set());
+  });
+
+  it("keeps a 404 deletion locked when a refreshed snapshot still contains the meaning", async () => {
+    mocks.deleteVocabularyMeaning.mockResolvedValueOnce({
+      message: "저장된 단어나 뜻을 찾지 못했어요.",
+      status: "not-found",
+    });
+    mocks.refreshVocabularyForAuth.mockImplementationOnce(async () => {
+      publishReadyRevision(1, [itemWithTargetMeaning]);
+      return "refreshed";
+    });
+    const { result } = renderHook(() => useVocabularyDeleteAction(authState));
+    const meaningKey = createVocabularyMeaningMutationKey("item-1", meaning);
+
+    await act(async () => {
+      await result.current.deleteMeaning("item-1", meaning);
+    });
+
+    expect(result.current.deletingMeaningKeys).toEqual(new Set([meaningKey]));
+    expect(result.current.deleteMessage).toBe(
+      "단어장을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+    );
   });
 
   it.each(["failed", "ignored"] as const)(
