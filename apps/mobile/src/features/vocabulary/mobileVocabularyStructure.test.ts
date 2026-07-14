@@ -48,6 +48,12 @@ describe("mobile vocabulary hook boundaries", () => {
     expect(deleteRequestSource).toContain(
       "shouldReleaseMobileVocabularyDeleteRequest",
     );
+    expect(deleteRequestSource).toContain(
+      "shouldReleaseHeldMobileVocabularyDeleteRequest",
+    );
+    expect(mutationsSource).toContain(
+      "shouldReleaseHeldMobileVocabularyDeleteRequest",
+    );
     expect(loaderSource).toContain("setReadyRevision");
   });
 

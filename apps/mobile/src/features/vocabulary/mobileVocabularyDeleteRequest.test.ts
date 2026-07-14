@@ -4,6 +4,7 @@ import {
   type VocabularyItem,
 } from "@nado/shared/vocabulary";
 import {
+  shouldReleaseHeldMobileVocabularyDeleteRequest,
   shouldReleaseMobileVocabularyDeleteRequest,
   type MobileVocabularyDeleteRequest,
 } from "./mobileVocabularyDeleteRequest";
@@ -74,5 +75,42 @@ describe("mobile vocabulary delete request", () => {
         request,
       }),
     ).toBe(false);
+  });
+
+  it("keeps a held item locked when a later snapshot still contains the meaning", () => {
+    expect(
+      shouldReleaseHeldMobileVocabularyDeleteRequest({
+        itemId: mobileVocabularyItem.id,
+        readySnapshot: {
+          items: [mobileVocabularyItem],
+          revision: 3,
+        },
+        request: {
+          ...request,
+          heldAtReadyRevision: 2,
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it("releases a held item only after a later snapshot removes the meaning", () => {
+    expect(
+      shouldReleaseHeldMobileVocabularyDeleteRequest({
+        itemId: mobileVocabularyItem.id,
+        readySnapshot: {
+          items: [
+            {
+              ...mobileVocabularyItem,
+              meanings: [{ meaning: "남은 뜻" }],
+            },
+          ],
+          revision: 3,
+        },
+        request: {
+          ...request,
+          heldAtReadyRevision: 2,
+        },
+      }),
+    ).toBe(true);
   });
 });

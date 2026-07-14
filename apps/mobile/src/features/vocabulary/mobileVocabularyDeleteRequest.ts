@@ -41,3 +41,23 @@ export function shouldReleaseMobileVocabularyDeleteRequest({
       request.meaningKey,
   );
 }
+
+export function shouldReleaseHeldMobileVocabularyDeleteRequest({
+  itemId,
+  readySnapshot,
+  request,
+}: {
+  itemId: string;
+  readySnapshot: MobileVocabularyReadySnapshot;
+  request: MobileVocabularyDeleteRequest;
+}) {
+  return (
+    request.heldAtReadyRevision !== null &&
+    readySnapshot.revision > request.heldAtReadyRevision &&
+    shouldReleaseMobileVocabularyDeleteRequest({
+      itemId,
+      readySnapshot,
+      request,
+    })
+  );
+}

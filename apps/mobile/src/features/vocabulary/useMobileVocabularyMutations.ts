@@ -22,6 +22,7 @@ import {
 } from "../../api/vocabularyApi";
 import type { MobileAuthStateSnapshot } from "../../auth/authState";
 import {
+  shouldReleaseHeldMobileVocabularyDeleteRequest,
   shouldReleaseMobileVocabularyDeleteRequest,
   type MobileVocabularyDeleteRequest,
   type MobileVocabularyReadySnapshot,
@@ -90,14 +91,23 @@ export function useMobileVocabularyMutations({
   }, [authState.session?.user.id]);
 
   useEffect(() => {
+    const latestReadySnapshot = getLatestReadySnapshot();
+
+    if (latestReadySnapshot.revision !== readyRevision) {
+      return;
+    }
+
     let nextDeletingIds = deletingItemIdsRef.current;
     let nextDeletingKeys = deletingMeaningKeysRef.current;
     let didReleaseRequest = false;
 
     for (const [itemId, request] of deletingRequestsByItemRef.current) {
       if (
-        request.heldAtReadyRevision === null ||
-        request.heldAtReadyRevision >= readyRevision
+        !shouldReleaseHeldMobileVocabularyDeleteRequest({
+          itemId,
+          readySnapshot: latestReadySnapshot,
+          request,
+        })
       ) {
         continue;
       }
@@ -121,7 +131,7 @@ export function useMobileVocabularyMutations({
     deletingItemIdsRef.current = nextDeletingIds;
     deletingMeaningKeysRef.current = nextDeletingKeys;
     setDeletingMeaningKeys(nextDeletingKeys);
-  }, [readyRevision]);
+  }, [getLatestReadySnapshot, readyRevision]);
 
   const clearSaveMessage = useCallback(() => {
     setSaveMessage(null);
