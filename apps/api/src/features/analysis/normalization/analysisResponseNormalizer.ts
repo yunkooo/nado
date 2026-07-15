@@ -69,9 +69,7 @@ function supplementSentenceTokens({
   const tokens: AnalysisToken[] = [];
   let existingTokenIndex = 0;
 
-  for (const word of extractEnglishWords(
-    sentence.chunks.map((chunk) => chunk.english).join(" "),
-  )) {
+  for (const word of extractEnglishWords(sentence.source)) {
     const existingTokenMatch = findMatchingAnalysisToken(
       sentence.tokens,
       existingTokenIndex,
@@ -87,12 +85,10 @@ function supplementSentenceTokens({
       resolveValidVocabularyKey(existingToken?.vocabularyKey, vocabularyKeys) ??
       vocabularyKeyByWord.get(normalizeVocabularyMatchText(word));
 
-    if (vocabularyKey || existingTokenMatch) {
-      tokens.push({
-        text: existingToken?.text ?? word,
-        vocabularyKey: vocabularyKey ?? null,
-      });
-    }
+    tokens.push({
+      text: existingToken?.text ?? word,
+      vocabularyKey: vocabularyKey ?? null,
+    });
   }
 
   return tokens.length > 0 ? tokens : sentence.tokens;
