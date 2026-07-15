@@ -7,7 +7,7 @@ import {
 } from "./compactAnalysisContract.js";
 
 const compactResponse = {
-  reason: null,
+  reason: "분석할 수 있는 입력입니다.",
   result: {
     grammarPoints: null,
     sentences: [
@@ -89,6 +89,7 @@ describe("compactAnalysisContract", () => {
     const expanded = expandCompactAnalyzeResponse(compact);
 
     expect(analyzeResponseSchema.safeParse(expanded).success).toBe(true);
+    expect(expanded).not.toHaveProperty("reason");
     expect(expanded).toMatchObject({
       status: "analyzable",
       result: {

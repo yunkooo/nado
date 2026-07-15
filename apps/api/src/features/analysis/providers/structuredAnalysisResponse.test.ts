@@ -5,7 +5,7 @@ import {
 } from "./structuredAnalysisResponse.js";
 
 const compactAnalyzeResponse = {
-  reason: null,
+  reason: "분석할 수 있는 입력입니다.",
   result: {
     grammarPoints: null,
     sentences: [
@@ -107,6 +107,7 @@ describe("structuredAnalysisResponse", () => {
           ],
         },
       });
+      expect(analysis).not.toHaveProperty("reason");
     },
   );
 });

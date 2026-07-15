@@ -9,6 +9,7 @@ import {
   analyzeResponseSchema,
   type AnalyzeResponse,
 } from "@nado/shared/analysis";
+import { MAX_ANALYSIS_FIELD_LENGTH } from "@nado/shared/analysis-input";
 
 const compactChunkSchema = analysisChunkSchema
   .omit({ role: true })
@@ -46,7 +47,7 @@ const compactAnalysisResultSchema = analysisResultSchema
 
 export const compactAnalyzeResponseSchema = z.discriminatedUnion("status", [
   z.object({
-    reason: z.null(),
+    reason: z.string().max(MAX_ANALYSIS_FIELD_LENGTH).nullable(),
     result: compactAnalysisResultSchema,
     status: z.literal("analyzable"),
   }),
