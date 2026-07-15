@@ -7,7 +7,7 @@ import {
   executeStructuredAnalysisRequest,
   type FetchLike,
 } from "./providerRequest.js";
-import { openRouterAnalyzeResponseJsonSchema } from "./openRouterAnalysisContract.js";
+import { compactAnalyzeResponseJsonSchema } from "./compactAnalysisContract.js";
 import { parseOpenRouterAnalysisResponse } from "./structuredAnalysisResponse.js";
 
 const GLM_MODEL_ID: AnalysisModelId = "z-ai/glm-5.2";
@@ -65,7 +65,7 @@ export function analyzeWithOpenRouter({
       response_format: {
         json_schema: {
           name: "nado_analysis_response",
-          schema: openRouterAnalyzeResponseJsonSchema,
+          schema: compactAnalyzeResponseJsonSchema,
           strict: true,
         },
         type: "json_schema",

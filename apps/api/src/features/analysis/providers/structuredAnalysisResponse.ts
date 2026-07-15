@@ -1,17 +1,13 @@
 import {
   ANALYSIS_ERROR_MESSAGES,
-  analyzeResponseSchema,
   type AnalyzeResponse,
 } from "@nado/shared/analysis";
 import { BadGatewayError } from "../../../shared/errors/httpErrors.js";
+import { normalizeCompactAnalysisResponse } from "../normalization/analysisResponseNormalizer.js";
 import {
-  normalizeAnalysisChunks,
-  normalizeOpenRouterAnalysisResponse,
-} from "../normalization/analysisResponseNormalizer.js";
-import {
-  expandOpenRouterAnalyzeResponse,
-  openRouterAnalyzeResponseSchema,
-} from "./openRouterAnalysisContract.js";
+  compactAnalyzeResponseSchema,
+  expandCompactAnalyzeResponse,
+} from "./compactAnalysisContract.js";
 
 export class StructuredOutputError extends BadGatewayError {
   constructor(message: string, cause?: unknown) {
@@ -31,9 +27,9 @@ export async function parseOpenAIAnalysisResponse(
 ): Promise<AnalyzeResponse> {
   const payload = await readJson(response, "OpenAI");
   const outputText = extractOpenAIOutputText(payload);
-  const parsedAnalysis = parseStructuredAnalysis(outputText, "OpenAI");
+  const parsedAnalysis = parseCompactAnalysis(outputText, "OpenAI");
 
-  return normalizeAnalysisChunks(parsedAnalysis);
+  return normalizeCompactAnalysisResponse(parsedAnalysis);
 }
 
 export async function parseOpenRouterAnalysisResponse(
@@ -41,13 +37,21 @@ export async function parseOpenRouterAnalysisResponse(
 ): Promise<AnalyzeResponse> {
   const payload = await readJson(response, "OpenRouter");
   const outputText = extractOpenRouterOutputText(payload);
-  const parsedOutput = parseStructuredJson(outputText, "OpenRouter");
-  const parsedAnalysis =
-    openRouterAnalyzeResponseSchema.safeParse(parsedOutput);
+  const parsedAnalysis = parseCompactAnalysis(outputText, "OpenRouter");
+
+  return normalizeCompactAnalysisResponse(parsedAnalysis);
+}
+
+function parseCompactAnalysis(
+  outputText: string,
+  provider: AnalysisProviderName,
+): AnalyzeResponse {
+  const parsedOutput = parseStructuredJson(outputText, provider);
+  const parsedAnalysis = compactAnalyzeResponseSchema.safeParse(parsedOutput);
 
   if (!parsedAnalysis.success) {
     throw new StructuredOutputError(
-      "OpenRouter structured output did not match the compact analysis schema.",
+      `${provider} structured output did not match the compact analysis schema.`,
       parsedAnalysis.error,
     );
   }
@@ -55,15 +59,15 @@ export async function parseOpenRouterAnalysisResponse(
   let expandedAnalysis: AnalyzeResponse;
 
   try {
-    expandedAnalysis = expandOpenRouterAnalyzeResponse(parsedAnalysis.data);
+    expandedAnalysis = expandCompactAnalyzeResponse(parsedAnalysis.data);
   } catch (error) {
     throw new StructuredOutputError(
-      "OpenRouter structured output could not be expanded.",
+      `${provider} structured output could not be expanded.`,
       error,
     );
   }
 
-  return normalizeOpenRouterAnalysisResponse(expandedAnalysis);
+  return expandedAnalysis;
 }
 
 async function readJson(
@@ -84,24 +88,6 @@ async function readJson(
   }
 }
 
-function parseStructuredAnalysis(
-  value: string,
-  provider: string,
-): AnalyzeResponse {
-  const parsedOutput = parseStructuredJson(value, provider);
-
-  const parsedAnalysis = analyzeResponseSchema.safeParse(parsedOutput);
-
-  if (!parsedAnalysis.success) {
-    throw new StructuredOutputError(
-      `${provider} structured output did not match the analysis schema.`,
-      parsedAnalysis.error,
-    );
-  }
-
-  return parsedAnalysis.data;
-}
-
 function parseStructuredJson(value: string, provider: string): unknown {
   try {
     return JSON.parse(value);
@@ -112,6 +98,8 @@ function parseStructuredJson(value: string, provider: string): unknown {
     );
   }
 }
+
+type AnalysisProviderName = "OpenAI" | "OpenRouter";
 
 function extractOpenAIOutputText(payload: unknown): string {
   if (!isRecord(payload)) {

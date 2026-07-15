@@ -2,9 +2,15 @@ import { describe, expect, it } from "vitest";
 import { MAX_ANALYSIS_PROVIDER_OUTPUT_TOKENS } from "@nado/shared/analysis-input";
 import { analyzeWithOpenAI } from "./openAIProvider.js";
 
-const sampleAnalyzeResponse = {
+const compactAnalyzeResponse = {
   reason: "영어 학습 입력이 아닙니다.",
+  result: null,
   status: "not_analyzable",
+} as const;
+
+const sampleAnalyzeResponse = {
+  reason: compactAnalyzeResponse.reason,
+  status: compactAnalyzeResponse.status,
 } as const;
 
 describe("analyzeWithOpenAI", () => {
@@ -19,7 +25,7 @@ describe("analyzeWithOpenAI", () => {
             {
               content: [
                 {
-                  text: JSON.stringify(sampleAnalyzeResponse),
+                  text: JSON.stringify(compactAnalyzeResponse),
                   type: "output_text",
                 },
               ],
@@ -65,6 +71,8 @@ describe("analyzeWithOpenAI", () => {
         },
       },
     });
-    expect(body.text.format.schema).toBeTruthy();
+    expect(JSON.stringify(body.text.format.schema)).toContain(
+      '"tokens":{"type":"null"}',
+    );
   });
 });

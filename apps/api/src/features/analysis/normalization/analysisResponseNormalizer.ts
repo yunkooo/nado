@@ -25,7 +25,7 @@ export function normalizeAnalysisChunks(
   };
 }
 
-export function normalizeOpenRouterAnalysisResponse(
+export function normalizeCompactAnalysisResponse(
   analysis: AnalyzeResponse,
 ): AnalyzeResponse {
   const normalizedAnalysis = normalizeAnalysisChunks(analysis);

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { AnalysisSentence, AnalyzeResponse } from "@nado/shared/analysis";
 import {
+  normalizeCompactAnalysisResponse,
   normalizeAnalysisChunks,
-  normalizeOpenRouterAnalysisResponse,
 } from "./analysisResponseNormalizer.js";
 
 const baseSentence = {
@@ -135,7 +135,7 @@ describe("analysisResponseNormalizer", () => {
     } satisfies AnalyzeResponse;
 
     expect(
-      normalizeOpenRouterAnalysisResponse(responseWithSparseTokens),
+      normalizeCompactAnalysisResponse(responseWithSparseTokens),
     ).toMatchObject({
       result: {
         sentences: [
@@ -204,7 +204,7 @@ describe("analysisResponseNormalizer", () => {
     } satisfies AnalyzeResponse;
 
     expect(
-      normalizeOpenRouterAnalysisResponse(responseWithDuplicateTokens),
+      normalizeCompactAnalysisResponse(responseWithDuplicateTokens),
     ).toMatchObject({
       result: {
         sentences: [
