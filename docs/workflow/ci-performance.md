@@ -37,9 +37,22 @@ runner 대기, GitHub-hosted runner 성능 편차, Rust cache 상태가 포함�
 
 ## 전후 비교
 
-| 지표       |         변경 전 | 1차 개선 후 |      차이 |
-| ---------- | --------------: | ----------: | --------: |
-| 전체 PR CI | 중앙값 7분 12초 |   측정 예정 | 측정 예정 |
-| 실행 범위  |       전체 검증 |   전체 검증 | 축소 없음 |
+| 지표       |         변경 전 | 1차 개선 후 |                      차이 |
+| ---------- | --------------: | ----------: | ------------------------: |
+| 전체 PR CI | 중앙값 7분 12초 |    4분 51초 | 2분 21초 단축, 32.6% 감소 |
+| 실행 범위  |       전체 검증 |   전체 검증 |                 축소 없음 |
 
-개선 PR의 첫 전체 성공 run이 끝나면 run URL, 전체 시간, 중앙값 대비 절감 시간과 절감률, 가장 오래 걸린 job을 이 표에 기록한다.
+개선 후 값은 [PR #162의 첫 전체 성공 run 29412474053](https://github.com/yunkooo/nado/actions/runs/29412474053)에서 측정했다. 전체 workflow는 2026-07-15 11:40:46 UTC부터 11:45:37 UTC까지 `4분 51초`가 걸렸다. 변경 전 최근 run `9분 46초`와 비교하면 `4분 55초`, `50.3%` 짧다.
+
+| Job                                    | 소요 시간 |
+| -------------------------------------- | --------: |
+| Desktop native                         |  4분 42초 |
+| Supabase migrations and database tests |  2분 55초 |
+| Mobile native                          |  2분 21초 |
+| Quality                                |   2분 1초 |
+| E2E smoke                              |   1분 8초 |
+| Lint, typecheck, test, build gate      |       2초 |
+
+다섯 실검증 job은 workflow 시작 시 함께 실행됐고, required gate는 matrix 완료 직후 성공했다. 첫 시도 run `29412076210`은 Mobile export가 기존 직렬 `pnpm build`의 산출물을 암묵적으로 사용하던 문제로 실패해 성능 표본에서 제외했다. Mobile job이 pnpm workspace dependency graph로 필요한 package를 직접 build하도록 고친 뒤 전체 검증이 성공했다.
+
+1차 개선 후 핵심 경로는 `Desktop native`다. Tauri compile cache 편차가 큰 상태에서도 중앙값 대비 32.6% 단축됐으며, 다음 단계에서는 Rust cache key와 저장 정책을 독립 티켓으로 검토한다.
