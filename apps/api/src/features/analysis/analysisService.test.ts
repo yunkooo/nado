@@ -89,6 +89,8 @@ describe("createAnalysisService", () => {
       type: "json_schema",
     });
     expect(body.provider).toEqual({
+      allow_fallbacks: false,
+      only: ["moonshotai/int4"],
       require_parameters: true,
       sort: "throughput",
     });
@@ -125,6 +127,10 @@ describe("createAnalysisService", () => {
 
     const body = JSON.parse(String(request?.init?.body));
 
+    expect(body.provider).toEqual({
+      require_parameters: true,
+      sort: "throughput",
+    });
     expect(body.reasoning).toEqual({ enabled: false });
     expect(body.temperature).toBe(0);
   });
