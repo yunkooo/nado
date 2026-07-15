@@ -208,6 +208,42 @@ describe("Notion workflow repository contracts", () => {
     expect(issueTemplateConfigSource).toContain("blank_issues_enabled: false");
   });
 
+  it("refreshes the Desktop Rust target cache when build inputs change", () => {
+    const verificationJob = workflowJobSource(
+      ciWorkflowSource,
+      "verification",
+      "verify",
+    );
+
+    expect(verificationJob).toContain(
+      "- name: Resolve Desktop Rust cache context",
+    );
+    expect(verificationJob).toContain("rustc --version --verbose");
+    expect(verificationJob).toContain("git ls-files -s --");
+    expect(verificationJob).toContain("- name: Cache Cargo dependencies");
+    expect(verificationJob).toContain(`path: |
+            ~/.cargo/git
+            ~/.cargo/registry`);
+    expect(verificationJob).toContain("- name: Cache Desktop Rust target");
+    expect(verificationJob).toContain("path: apps/desktop/src-tauri/target");
+    expect(verificationJob).toContain(
+      "steps.rust-cache-context.outputs.toolchain",
+    );
+    expect(verificationJob).toContain(
+      "steps.rust-cache-context.outputs.cargo_lock",
+    );
+    expect(verificationJob).toContain(
+      "steps.rust-cache-context.outputs.desktop_inputs",
+    );
+    expect(verificationJob).toContain(
+      "${{ runner.os }}-${{ runner.arch }}-desktop-target-v1-",
+    );
+    expect(verificationJob).toContain(
+      "- name: Report Desktop Rust cache outcomes",
+    );
+    expect(verificationJob).not.toContain("- name: Cache Rust dependencies");
+  });
+
   it("keeps scheduled Dependabot version updates disabled", () => {
     const ecosystemConfigs = dependabotConfigSource
       .split("\n  - package-ecosystem: ")
