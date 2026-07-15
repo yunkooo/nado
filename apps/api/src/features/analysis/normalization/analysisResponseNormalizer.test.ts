@@ -144,6 +144,9 @@ describe("analysisResponseNormalizer", () => {
               { text: "Fast", vocabularyKey: "fast" },
               { text: "state", vocabularyKey: "state" },
               { text: "design", vocabularyKey: "existing-design" },
+              { text: "helps", vocabularyKey: null },
+              { text: "teams", vocabularyKey: null },
+              { text: "find", vocabularyKey: null },
               { text: "interface", vocabularyKey: "interface" },
               { text: "bugs", vocabularyKey: "interface-bugs" },
               { text: "faster", vocabularyKey: "faster" },
@@ -168,6 +171,8 @@ describe("analysisResponseNormalizer", () => {
             tokens: [
               { text: "Echo", vocabularyKey: null },
               { text: "echo", vocabularyKey: "repeated-echo" },
+              { text: "improves", vocabularyKey: null },
+              { text: "reviews", vocabularyKey: null },
             ],
             chunks: [
               {
@@ -207,6 +212,8 @@ describe("analysisResponseNormalizer", () => {
             tokens: [
               { text: "Echo", vocabularyKey: null },
               { text: "echo", vocabularyKey: "repeated-echo" },
+              { text: "improves", vocabularyKey: null },
+              { text: "reviews", vocabularyKey: null },
             ],
           },
         ],

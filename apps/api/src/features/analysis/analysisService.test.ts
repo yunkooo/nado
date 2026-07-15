@@ -7,6 +7,7 @@ import { createAnalysisService } from "./analysisService.js";
 
 const sampleAnalyzeResponse = {
   reason: "영어 학습 입력이 아닙니다.",
+  result: null,
   status: "not_analyzable",
 } as const;
 
@@ -89,7 +90,43 @@ describe("createAnalysisService", () => {
     });
     expect(body.provider).toEqual({
       require_parameters: true,
+      sort: "throughput",
     });
+    expect(body).not.toHaveProperty("reasoning");
+    expect(body).not.toHaveProperty("temperature");
+  });
+
+  it("disables optional GLM reasoning for shorter structured responses", async () => {
+    let request: { init?: RequestInit } | undefined;
+    const service = createAnalysisService({
+      fetch: async (_input, init) => {
+        request = { init };
+
+        return new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify(sampleAnalyzeResponse),
+                },
+              },
+            ],
+          }),
+          { status: 200 },
+        );
+      },
+      openRouterApiKey: "test-openrouter-key",
+    });
+
+    await service.analyze({
+      model: "z-ai/glm-5.2",
+      text: "Careful tests keep the product reliable.",
+    });
+
+    const body = JSON.parse(String(request?.init?.body));
+
+    expect(body.reasoning).toEqual({ enabled: false });
+    expect(body.temperature).toBe(0);
   });
 
   it("uses OPENAI_TIMEOUT_MS when no timeout option is provided", async () => {
