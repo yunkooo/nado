@@ -2,6 +2,7 @@
 
 - 마지막 코드 기준 검토: 2026-07-12
 - 마지막 전체 릴리스 검증: 아직 기록 없음
+- 마지막 운영 부분 검증: 2026-07-16 02:36 KST ([Notion 티켓](https://app.notion.com/p/39e8944ab9b7814b86b8c2115f65a5ae))
 
 이 문서는 현재 코드가 운영에 나갈 준비가 되었는지 확인하는 release readiness matrix다. 작업 담당자, 일정, 우선순위와 진행 상태의 원장은 Notion `프로젝트` 하나만 사용한다. 이 문서의 미확인 항목을 작업하려면 먼저 Notion 티켓을 만들거나 기존 티켓에 연결한다.
 
@@ -26,13 +27,37 @@
 
 반복 가능한 순서는 [운영 배포 절차](setup/production-deployment.md)를 따른다.
 
-- [ ] Cloud Supabase에 최신 migration을 적용한다.
+- [x] Cloud Supabase에 최신 migration을 적용한다.
 - [ ] Google provider와 Web·Mobile·Desktop redirect URL을 확인한다.
-- [ ] Railway에 server-only key, 임의의 `NADO_USAGE_IP_HASH_SALT`, CORS, 사용량 제한, proxy 설정을 확인한다.
+- [x] Railway에 server-only key, 임의의 `NADO_USAGE_IP_HASH_SALT`, CORS, 사용량 제한, proxy 설정을 확인한다.
 - [ ] Vercel Web에서 운영 API 분석과 Google 로그인을 확인한다.
-- [ ] 운영 API에 `pnpm smoke:backend`를 실행한다.
-- [ ] 실제 제한값과 비용 정책을 정한다. 운영에서도 `0`을 쓸 수 있지만 무제한을 의도한 결정임을 검증 티켓에 기록한다.
-- [ ] `delete_expired_analysis_usage()` 일일 scheduler를 설정하고 첫 성공 실행·삭제 건수를 기록한다.
+- [x] 운영 API에 `pnpm smoke:backend`를 실행한다.
+- [x] 실제 제한값과 비용 정책을 정한다. 운영에서도 `0`을 쓸 수 있지만 무제한을 의도한 결정임을 검증 티켓에 기록한다.
+- [x] `delete_expired_analysis_usage()` 일일 scheduler를 설정하고 첫 성공 실행·삭제 건수를 기록한다.
+
+### 2026-07-16 API·Web 부분 검증
+
+- 증거 티켓: [운영: API·Web P0 릴리스 검증](https://app.notion.com/p/39e8944ab9b7814b86b8c2115f65a5ae)
+- 배포 commit: `00dac49`
+- 환경: Cloud Supabase / Railway production / Vercel production
+- 공개 URL: [Web](https://nado-web.vercel.app) / [API](https://nadoapi-production.up.railway.app)
+
+통과한 경계는 다음과 같다.
+
+- Cloud Supabase의 로컬·원격 migration 11개가 일치하고 `db push --dry-run` 결과도 최신 상태다.
+- Google provider가 활성화되어 있고 Web 로그인 요청이 production Web redirect와 Cloud Supabase callback을 사용해 Google 로그인 화면까지 연결된다.
+- Railway runtime은 `NODE_ENV=production`, Node.js 22.22.2이며 필수 server-only 변수 이름이 존재한다. `NADO_TRUST_PROXY=1`과 production Web CORS origin도 확인했다.
+- Railway healthcheck를 `/ready`로 설정하고 재배포했다. 새 container 활성화 전 `/ready`가 `200`으로 통과했고 `/health`, `/ready`, secret 없는 기본 backend smoke도 다시 성공했다.
+- Vercel production 배포가 성공했고 공개 Web bundle은 production API와 Cloud Supabase origin을 사용한다. server-only 환경변수 이름은 bundle에서 발견되지 않았다.
+- Web 배포본의 로그아웃 분석과 로그인 필요 저장 안내가 동작한다.
+- 운영 일일 분석 제한은 익명·인증 사용자 모두 `0`으로, MVP 기준 사용량은 기록하되 차단하지 않는 정책이다.
+- `pg_cron` 정리 job의 첫 실행이 성공했다. 90일 초과 삭제 건수는 0건이며, 이후 매일 `03:00 UTC`에 `delete_expired_analysis_usage(90)`을 실행한다. `anon`과 `authenticated` 역할에는 실행 권한이 없다.
+
+아래 경계가 남아 있어 전체 P0 완료로 표시하지 않는다.
+
+- 기본 GLM 분석에서 schema가 허용한 `status`·`result` 조합을 runtime parser가 거부해 `502 invalid_analysis_response`가 1회 발생했다. 후속 요청은 성공했지만 간헐 실패가 확인되어 [GitHub Issue #168](https://github.com/yunkooo/nado/issues/168)에서 별도로 수정한다.
+- Google OAuth는 Google 로그인 화면 진입까지 확인했다. 검증 계정 인증이 필요한 로그인 완료, 추천 저장, 단어장 반영, 삭제, 복습 흐름은 아직 실행하지 않았다.
+- Supabase Security Advisor의 `Leaked Password Protection Disabled` 경고가 남아 있다. 제품 UI는 Google 로그인을 사용하지만 Email provider도 활성 상태이므로 후속 보안 정책에서 Email Auth 유지 여부와 보호 기능을 함께 결정한다.
 
 ## P0. 크로스 플랫폼 학습 흐름
 
