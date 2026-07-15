@@ -25,7 +25,7 @@ export const ANALYSIS_MODELS = [
   },
 ] as const;
 
-export const DEFAULT_ANALYSIS_MODEL_ID = ANALYSIS_MODELS[0].id;
+export const DEFAULT_ANALYSIS_MODEL_ID = "z-ai/glm-5.2";
 export const analysisModelIdSchema = z.enum([
   "moonshotai/kimi-k2.7-code",
   "z-ai/glm-5.2",

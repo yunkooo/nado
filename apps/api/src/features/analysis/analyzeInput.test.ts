@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_ANALYSIS_MODEL_ID } from "@nado/shared/analysis-input";
 import { parseAnalyzeInput } from "./analyzeInput.js";
 
 describe("parseAnalyzeInput", () => {
   it("accepts a trimmed English input", () => {
     expect(parseAnalyzeInput({ text: "  I am learning English.  " })).toEqual({
-      model: "moonshotai/kimi-k2.7-code",
+      model: DEFAULT_ANALYSIS_MODEL_ID,
       ok: true,
       text: "I am learning English.",
     });

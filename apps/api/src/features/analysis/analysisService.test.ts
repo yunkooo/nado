@@ -31,7 +31,7 @@ describe("createAnalysisService", () => {
     vi.useRealTimers();
   });
 
-  it("uses Kimi through OpenRouter as the default analysis model", async () => {
+  it("uses GLM through OpenRouter as the default analysis model", async () => {
     let request: { input: RequestInfo | URL; init?: RequestInit } | undefined;
     const fetchMock = async (input: RequestInfo | URL, init?: RequestInit) => {
       request = { input, init };
@@ -89,16 +89,14 @@ describe("createAnalysisService", () => {
       type: "json_schema",
     });
     expect(body.provider).toEqual({
-      allow_fallbacks: false,
-      only: ["moonshotai/int4"],
       require_parameters: true,
       sort: "throughput",
     });
-    expect(body).not.toHaveProperty("reasoning");
-    expect(body).not.toHaveProperty("temperature");
+    expect(body.reasoning).toEqual({ enabled: false });
+    expect(body.temperature).toBe(0);
   });
 
-  it("disables optional GLM reasoning for shorter structured responses", async () => {
+  it("pins Kimi to the verified structured-output provider", async () => {
     let request: { init?: RequestInit } | undefined;
     const service = createAnalysisService({
       fetch: async (_input, init) => {
@@ -121,18 +119,20 @@ describe("createAnalysisService", () => {
     });
 
     await service.analyze({
-      model: "z-ai/glm-5.2",
+      model: "moonshotai/kimi-k2.7-code",
       text: "Careful tests keep the product reliable.",
     });
 
     const body = JSON.parse(String(request?.init?.body));
 
     expect(body.provider).toEqual({
+      allow_fallbacks: false,
+      only: ["moonshotai/int4"],
       require_parameters: true,
       sort: "throughput",
     });
-    expect(body.reasoning).toEqual({ enabled: false });
-    expect(body.temperature).toBe(0);
+    expect(body).not.toHaveProperty("reasoning");
+    expect(body).not.toHaveProperty("temperature");
   });
 
   it("uses OPENAI_TIMEOUT_MS when no timeout option is provided", async () => {
