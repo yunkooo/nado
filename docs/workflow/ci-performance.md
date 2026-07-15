@@ -30,7 +30,7 @@ runner 대기, GitHub-hosted runner 성능 편차, Rust cache 상태가 포함�
 기존 `verify` job 안에서 직렬로 실행하던 검증을 다음 matrix로 분리한다.
 
 - `Quality`: format, lint, typecheck, test, build
-- `Mobile native`: Expo prebuild, pod lock, platform export, design bundle
+- `Mobile native`: workspace dependency build, Expo prebuild, pod lock, platform export, design bundle
 - `Desktop native`: Tauri Linux dependency 설치와 native build
 
 외부 branch protection은 바꾸지 않는다. 기존 `Lint, typecheck, test, build` 이름을 집계 gate로 유지하고 matrix의 실패나 취소를 실패로 전달한다. `E2E smoke`는 다른 job의 결과물을 사용하지 않으므로 선행 의존성을 제거해 처음부터 병렬 실행한다.

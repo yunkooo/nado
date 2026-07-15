@@ -148,6 +148,7 @@ describe("Notion workflow repository contracts", () => {
     expect(verificationJob).toContain("target: quality");
     expect(verificationJob).toContain("target: mobile");
     expect(verificationJob).toContain("target: desktop");
+    expect(verificationJob).toContain("pnpm --filter '@nado/mobile^...' build");
     expect(verifyGateJob).toContain("name: Lint, typecheck, test, build");
     expect(verifyGateJob).toContain("needs: [verification]");
     expect(verifyGateJob).toContain("if: ${{ always() }}");

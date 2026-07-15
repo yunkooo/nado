@@ -143,6 +143,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build Mobile workspace dependencies
+        if: matrix.target == 'mobile'
+        run: pnpm --filter '@nado/mobile^...' build
+
       - name: Check formatting
         if: matrix.target == 'quality'
         run: pnpm format:check
