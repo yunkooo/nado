@@ -8,6 +8,11 @@ const sampleAnalyzeResponse: AnalyzeResponse = {
   status: "not_analyzable",
 };
 
+const compactAnalyzeResponse = {
+  ...sampleAnalyzeResponse,
+  result: null,
+};
+
 type StructuredRequestOptions = Parameters<
   typeof executeStructuredAnalysisRequest
 >[0];
@@ -146,7 +151,7 @@ describe("executeStructuredAnalysisRequest", () => {
               output_text: JSON.stringify(
                 calls === 1
                   ? { result: {}, status: "analyzable" }
-                  : sampleAnalyzeResponse,
+                  : compactAnalyzeResponse,
               ),
             }),
             { status: 200 },

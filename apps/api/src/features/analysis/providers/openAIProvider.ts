@@ -1,8 +1,6 @@
-import {
-  analyzeResponseJsonSchema,
-  type AnalyzeResponse,
-} from "@nado/shared/analysis";
+import { type AnalyzeResponse } from "@nado/shared/analysis";
 import { MAX_ANALYSIS_PROVIDER_OUTPUT_TOKENS } from "@nado/shared/analysis-input";
+import { compactAnalyzeResponseJsonSchema } from "./compactAnalysisContract.js";
 import {
   executeStructuredAnalysisRequest,
   type FetchLike,
@@ -37,7 +35,7 @@ export function analyzeWithOpenAI({
       text: {
         format: {
           name: "nado_analysis_response",
-          schema: analyzeResponseJsonSchema,
+          schema: compactAnalyzeResponseJsonSchema,
           strict: true,
           type: "json_schema",
         },

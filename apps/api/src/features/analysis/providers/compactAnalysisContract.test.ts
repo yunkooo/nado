@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { analyzeResponseSchema } from "@nado/shared/analysis";
 import {
-  expandOpenRouterAnalyzeResponse,
-  openRouterAnalyzeResponseJsonSchema,
-  openRouterAnalyzeResponseSchema,
-} from "./openRouterAnalysisContract.js";
+  compactAnalyzeResponseJsonSchema,
+  compactAnalyzeResponseSchema,
+  expandCompactAnalyzeResponse,
+} from "./compactAnalysisContract.js";
 
 const compactResponse = {
-  reason: null,
+  reason: "분석할 수 있는 입력입니다.",
   result: {
     grammarPoints: null,
     sentences: [
@@ -75,11 +75,9 @@ const compactResponse = {
   status: "analyzable",
 } as const;
 
-describe("openRouterAnalysisContract", () => {
+describe("compactAnalysisContract", () => {
   it("uses null placeholders for fields reconstructed by the API", () => {
-    const serializedSchema = JSON.stringify(
-      openRouterAnalyzeResponseJsonSchema,
-    );
+    const serializedSchema = JSON.stringify(compactAnalyzeResponseJsonSchema);
 
     expect(serializedSchema).toContain('"tokens":{"type":"null"}');
     expect(serializedSchema).toContain('"grammarPoints":{"type":"null"}');
@@ -87,10 +85,11 @@ describe("openRouterAnalysisContract", () => {
   });
 
   it("expands compact provider output into the public analysis contract", () => {
-    const compact = openRouterAnalyzeResponseSchema.parse(compactResponse);
-    const expanded = expandOpenRouterAnalyzeResponse(compact);
+    const compact = compactAnalyzeResponseSchema.parse(compactResponse);
+    const expanded = expandCompactAnalyzeResponse(compact);
 
     expect(analyzeResponseSchema.safeParse(expanded).success).toBe(true);
+    expect(expanded).not.toHaveProperty("reason");
     expect(expanded).toMatchObject({
       status: "analyzable",
       result: {

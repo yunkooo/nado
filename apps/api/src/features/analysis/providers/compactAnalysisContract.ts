@@ -9,6 +9,7 @@ import {
   analyzeResponseSchema,
   type AnalyzeResponse,
 } from "@nado/shared/analysis";
+import { MAX_ANALYSIS_FIELD_LENGTH } from "@nado/shared/analysis-input";
 
 const compactChunkSchema = analysisChunkSchema
   .omit({ role: true })
@@ -44,9 +45,9 @@ const compactAnalysisResultSchema = analysisResultSchema
     vocabularySuggestions: z.array(compactVocabularySuggestionSchema),
   });
 
-export const openRouterAnalyzeResponseSchema = z.discriminatedUnion("status", [
+export const compactAnalyzeResponseSchema = z.discriminatedUnion("status", [
   z.object({
-    reason: z.null(),
+    reason: z.string().max(MAX_ANALYSIS_FIELD_LENGTH).nullable(),
     result: compactAnalysisResultSchema,
     status: z.literal("analyzable"),
   }),
@@ -57,17 +58,17 @@ export const openRouterAnalyzeResponseSchema = z.discriminatedUnion("status", [
   }),
 ]);
 
-export type OpenRouterAnalyzeResponse = z.infer<
-  typeof openRouterAnalyzeResponseSchema
+export type CompactAnalyzeResponse = z.infer<
+  typeof compactAnalyzeResponseSchema
 >;
 
 const nullableOnlyJsonSchema = { type: "null" } as const;
 
-export const openRouterAnalyzeResponseJsonSchema =
-  createOpenRouterAnalyzeResponseJsonSchema();
+export const compactAnalyzeResponseJsonSchema =
+  createCompactAnalyzeResponseJsonSchema();
 
-export function expandOpenRouterAnalyzeResponse(
-  analysis: OpenRouterAnalyzeResponse,
+export function expandCompactAnalyzeResponse(
+  analysis: CompactAnalyzeResponse,
 ): AnalyzeResponse {
   if (analysis.status === "not_analyzable") {
     return {
@@ -105,7 +106,7 @@ export function expandOpenRouterAnalyzeResponse(
   });
 }
 
-function createOpenRouterAnalyzeResponseJsonSchema() {
+function createCompactAnalyzeResponseJsonSchema() {
   const schema = structuredClone(analyzeResponseJsonSchema) as unknown;
   const root = readRecord(schema, "root");
   const rootProperties = readRecord(root.properties, "root.properties");
