@@ -29,8 +29,8 @@ describe("analyzeRequestSchema", () => {
     });
   });
 
-  it("defines Kimi as the default analysis model and exposes all selectable models", () => {
-    expect(DEFAULT_ANALYSIS_MODEL_ID).toBe("moonshotai/kimi-k2.7-code");
+  it("defines GLM as the default analysis model and exposes all selectable models", () => {
+    expect(DEFAULT_ANALYSIS_MODEL_ID).toBe("z-ai/glm-5.2");
     expect(ANALYSIS_MODELS.map((model) => model.label)).toEqual([
       "Kimi K2.7 Code",
       "GLM 5.2",
