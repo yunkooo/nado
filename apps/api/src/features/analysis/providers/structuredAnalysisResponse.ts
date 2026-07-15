@@ -8,6 +8,10 @@ import {
   normalizeAnalysisChunks,
   normalizeOpenRouterAnalysisResponse,
 } from "../normalization/analysisResponseNormalizer.js";
+import {
+  expandOpenRouterAnalyzeResponse,
+  openRouterAnalyzeResponseSchema,
+} from "./openRouterAnalysisContract.js";
 
 export class StructuredOutputError extends BadGatewayError {
   constructor(message: string, cause?: unknown) {
@@ -37,9 +41,29 @@ export async function parseOpenRouterAnalysisResponse(
 ): Promise<AnalyzeResponse> {
   const payload = await readJson(response, "OpenRouter");
   const outputText = extractOpenRouterOutputText(payload);
-  const parsedAnalysis = parseStructuredAnalysis(outputText, "OpenRouter");
+  const parsedOutput = parseStructuredJson(outputText, "OpenRouter");
+  const parsedAnalysis =
+    openRouterAnalyzeResponseSchema.safeParse(parsedOutput);
 
-  return normalizeOpenRouterAnalysisResponse(parsedAnalysis);
+  if (!parsedAnalysis.success) {
+    throw new StructuredOutputError(
+      "OpenRouter structured output did not match the compact analysis schema.",
+      parsedAnalysis.error,
+    );
+  }
+
+  let expandedAnalysis: AnalyzeResponse;
+
+  try {
+    expandedAnalysis = expandOpenRouterAnalyzeResponse(parsedAnalysis.data);
+  } catch (error) {
+    throw new StructuredOutputError(
+      "OpenRouter structured output could not be expanded.",
+      error,
+    );
+  }
+
+  return normalizeOpenRouterAnalysisResponse(expandedAnalysis);
 }
 
 async function readJson(
@@ -64,16 +88,7 @@ function parseStructuredAnalysis(
   value: string,
   provider: string,
 ): AnalyzeResponse {
-  let parsedOutput: unknown;
-
-  try {
-    parsedOutput = JSON.parse(value);
-  } catch (error) {
-    throw new StructuredOutputError(
-      `${provider} output text was not valid JSON.`,
-      error,
-    );
-  }
+  const parsedOutput = parseStructuredJson(value, provider);
 
   const parsedAnalysis = analyzeResponseSchema.safeParse(parsedOutput);
 
@@ -85,6 +100,17 @@ function parseStructuredAnalysis(
   }
 
   return parsedAnalysis.data;
+}
+
+function parseStructuredJson(value: string, provider: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    throw new StructuredOutputError(
+      `${provider} output text was not valid JSON.`,
+      error,
+    );
+  }
 }
 
 function extractOpenAIOutputText(payload: unknown): string {
