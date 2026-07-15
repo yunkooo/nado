@@ -56,3 +56,32 @@ runner 대기, GitHub-hosted runner 성능 편차, Rust cache 상태가 포함�
 다섯 실검증 job은 workflow 시작 시 함께 실행됐고, required gate는 matrix 완료 직후 성공했다. 첫 시도 run `29412076210`은 Mobile export가 기존 직렬 `pnpm build`의 산출물을 암묵적으로 사용하던 문제로 실패해 성능 표본에서 제외했다. Mobile job이 pnpm workspace dependency graph로 필요한 package를 직접 build하도록 고친 뒤 전체 검증이 성공했다.
 
 1차 개선 후 핵심 경로는 `Desktop native`다. Tauri compile cache 편차가 큰 상태에서도 중앙값 대비 32.6% 단축됐으며, 다음 단계에서는 Rust cache key와 저장 정책을 독립 티켓으로 검토한다.
+
+## 2차 개선: Desktop Rust 캐시 갱신 정책
+
+1차 구조의 Rust 캐시는 Cargo 다운로드와 `target` 산출물을 한 key로 저장하고 `Cargo.lock`만 추적했다. 이 방식은 Rust 소스나 Desktop이 사용하는 workspace package가 바뀌어도 기존 key가 계속 exact hit가 되어, 변경된 입력으로 빌드한 최신 `target`을 새 캐시로 저장할 수 없었다.
+
+2차 개선에서는 다음과 같이 책임과 갱신 조건을 분리했다.
+
+- Cargo dependency 캐시: OS, CPU architecture, Rust host/release, `Cargo.lock`
+- Desktop target 캐시: Cargo dependency 입력과 Desktop build 입력 hash
+- Desktop build 입력: root workspace 설정, `apps/desktop`, Desktop이 사용하는 shared/token/UI package
+- restore 정책: 동일 Rust toolchain과 `Cargo.lock`의 직전 target을 증분 빌드 기반으로 사용
+- 관측성: Cargo와 target의 exact hit 여부를 job summary에 별도로 기록
+
+새 cache namespace의 첫 실행은 cold cache이고, 같은 head를 두 번 재실행해 exact hit가 재현되는지 확인했다. 전체 시간은 GitHub Actions run의 `run_started_at`부터 `updated_at`까지이며, runner 합계는 run에 포함된 모든 job의 실행 시간을 더한 값이다.
+
+| 실행                                                                       | Cargo / target |  전체 CI | Desktop native | Rust release compile | runner 합계 |
+| -------------------------------------------------------------------------- | -------------- | -------: | -------------: | -------------------: | ----------: |
+| [1차](https://github.com/yunkooo/nado/actions/runs/29431786500/attempts/1) | miss / miss    | 4분 59초 |       4분 49초 |             3분 47초 |    14분 2초 |
+| [2차](https://github.com/yunkooo/nado/actions/runs/29431786500/attempts/2) | hit / hit      | 3분 24초 |       2분 40초 |              40.16초 |   11분 59초 |
+| [3차](https://github.com/yunkooo/nado/actions/runs/29431786500/attempts/3) | hit / hit      | 3분 32초 |       1분 44초 |              38.14초 |   10분 35초 |
+
+exact hit 두 번의 중앙값은 전체 CI `3분 28초`, Desktop native `2분 12초`, Rust compile `39.15초`, runner 합계 `11분 17초`다. cold 실행과 비교하면 전체 대기 시간은 `1분 31초`(`30.4%`), Desktop native는 `2분 37초`(`54.3%`), Rust compile은 `3분 7.85초`(`82.8%`), runner 합계는 `2분 45초`(`19.6%`) 줄었다.
+
+Cargo cache는 약 `56 MB`, Desktop target cache는 약 `418 MB`였다. exact hit에서도 cache 다운로드, Ubuntu package 설치, runner 성능 편차가 포함되므로 Desktop job 전체 시간은 `1분 44초`에서 `2분 40초`로 흔들렸다. 따라서 이 변경의 핵심은 가장 빠른 단일 수치가 아니라 다음 두 가지다.
+
+- Desktop 입력 변경 시 새 target key가 생겨 최신 빌드 산출물을 저장한다.
+- 입력이 같은 재실행에서는 두 캐시가 모두 exact hit이고 Rust compile이 약 39초로 재현된다.
+
+1차 개선의 첫 전체 성공 run `4분 51초`와 비교하면 새 namespace의 cold 실행은 `8초` 길었지만, exact hit 중앙값은 `1분 23초`(`28.5%`) 짧다. warm 실행에서는 Supabase 검증이 `3분 17초`, `3분 25초`로 가장 오래 걸려 전체 workflow의 핵심 경로가 Desktop에서 database job으로 이동했다.

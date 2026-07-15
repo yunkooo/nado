@@ -128,17 +128,63 @@ jobs:
           corepack enable
           corepack prepare pnpm@11.5.2 --activate
 
-      - name: Cache Rust dependencies
+      - name: Resolve Desktop Rust cache context
+        id: rust-cache-context
+        if: matrix.target == 'desktop'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rust_metadata="$(rustc --version --verbose)"
+          rust_release="$(printf '%s\n' "$rust_metadata" | sed -n 's/^release: //p')"
+          rust_host="$(printf '%s\n' "$rust_metadata" | sed -n 's/^host: //p')"
+          cargo_lock="$(git hash-object apps/desktop/src-tauri/Cargo.lock)"
+          desktop_inputs="$(
+            git ls-files -s -- \
+              package.json \
+              pnpm-lock.yaml \
+              pnpm-workspace.yaml \
+              tsconfig.base.json \
+              apps/desktop \
+              packages/shared \
+              packages/tokens \
+              packages/ui \
+              packages/ui-web |
+              git hash-object --stdin
+          )"
+
+          if [ -z "$rust_release" ] || [ -z "$rust_host" ]; then
+            echo "Unable to resolve the Rust toolchain cache context." >&2
+            exit 1
+          fi
+
+          {
+            echo "toolchain=$rust_host-$rust_release"
+            echo "cargo_lock=$cargo_lock"
+            echo "desktop_inputs=$desktop_inputs"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Cache Cargo dependencies
+        id: cargo-cache
         if: matrix.target == 'desktop'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/git
             ~/.cargo/registry
-            apps/desktop/src-tauri/target
-          key: ${{ runner.os }}-rust-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-cargo-v1-${{ steps.rust-cache-context.outputs.toolchain }}-${{ steps.rust-cache-context.outputs.cargo_lock }}
           restore-keys: |
-            ${{ runner.os }}-rust-
+            ${{ runner.os }}-${{ runner.arch }}-cargo-v1-${{ steps.rust-cache-context.outputs.toolchain }}-
+
+      - name: Cache Desktop Rust target
+        id: desktop-target-cache
+        if: matrix.target == 'desktop'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: apps/desktop/src-tauri/target
+          key: ${{ runner.os }}-${{ runner.arch }}-desktop-target-v1-${{ steps.rust-cache-context.outputs.toolchain }}-${{ steps.rust-cache-context.outputs.cargo_lock }}-${{ steps.rust-cache-context.outputs.desktop_inputs }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-desktop-target-v1-${{ steps.rust-cache-context.outputs.toolchain }}-${{ steps.rust-cache-context.outputs.cargo_lock }}-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -204,6 +250,19 @@ jobs:
       - name: Build Desktop native shell
         if: matrix.target == 'desktop'
         run: pnpm --filter @nado/desktop tauri:build --no-bundle --ci
+
+      - name: Report Desktop Rust cache outcomes
+        if: ${{ matrix.target == 'desktop' && !cancelled() }}
+        env:
+          CARGO_CACHE_HIT: ${{ steps.cargo-cache.outputs.cache-hit }}
+          TARGET_CACHE_HIT: ${{ steps.desktop-target-cache.outputs.cache-hit }}
+        run: |
+          {
+            echo "### Desktop Rust cache outcomes"
+            echo
+            echo "- Cargo dependency exact hit: \`${CARGO_CACHE_HIT:-false}\`"
+            echo "- Desktop target exact hit: \`${TARGET_CACHE_HIT:-false}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Notify Slack on failure
         if: failure() && steps.checkout.outcome == 'success'
