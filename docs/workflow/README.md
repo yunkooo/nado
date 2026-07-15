@@ -10,6 +10,7 @@
 | [Issue 작성](issue-workflow.md)                  | 문제, 범위, 완료 조건             |
 | [PR 작성과 리뷰](pr-workflow.md)                 | PR 본문, 검증, 리뷰, merge        |
 | [Notion 자동화 계약](notion-ticket-db-schema.md) | 상태값, 필수 속성, GitHub Actions |
+| [CI 성능 기록](ci-performance.md)                | 병렬화 기준선과 실측 결과         |
 
 실제 입력 형식은 아래 파일이 기준이다.
 
@@ -93,7 +94,7 @@ Security update PR도 same-repository PR이므로 merge 전에 `IN-progrss` Noti
 - 원격 Action의 `uses:` 참조는 버전 주석과 함께 full commit SHA로 고정한다.
 - Slack 알림은 보조 수단이므로 required check에 포함하지 않는다.
 
-Mobile native generation/export와 Desktop Tauri compile은 `Lint, typecheck, test, build` check 안에서 실행된다.
+`Lint, typecheck, test, build`는 Quality, Mobile native, Desktop native matrix가 모두 성공했는지 집계하는 required gate다. 세 검증과 Supabase, E2E는 서로 불필요하게 기다리지 않고 병렬로 시작하며, 검증 범위와 실패 전파는 유지한다.
 
 ## Codex review
 
