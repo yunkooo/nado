@@ -11,6 +11,8 @@ import { openRouterAnalyzeResponseJsonSchema } from "./openRouterAnalysisContrac
 import { parseOpenRouterAnalysisResponse } from "./structuredAnalysisResponse.js";
 
 const GLM_MODEL_ID: AnalysisModelId = "z-ai/glm-5.2";
+const KIMI_MODEL_ID: AnalysisModelId = "moonshotai/kimi-k2.7-code";
+const KIMI_STRUCTURED_OUTPUT_PROVIDER = "moonshotai/int4";
 
 export function analyzeWithOpenRouter({
   apiKey,
@@ -47,6 +49,12 @@ export function analyzeWithOpenRouter({
       provider: {
         require_parameters: true,
         sort: "throughput",
+        ...(model === KIMI_MODEL_ID
+          ? {
+              allow_fallbacks: false,
+              only: [KIMI_STRUCTURED_OUTPUT_PROVIDER],
+            }
+          : {}),
       },
       ...(model === GLM_MODEL_ID
         ? {
