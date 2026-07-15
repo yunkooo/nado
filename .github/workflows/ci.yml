@@ -14,10 +14,20 @@ permissions:
   contents: read
 
 jobs:
-  verify:
-    name: Lint, typecheck, test, build
+  verification:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: quality
+            name: Quality
+          - target: mobile
+            name: Mobile native
+          - target: desktop
+            name: Desktop native
     steps:
       - name: Checkout
         id: checkout
@@ -26,7 +36,7 @@ jobs:
       - name: Notify Slack on checkout failure
         if: failure() && steps.checkout.outcome == 'failure'
         env:
-          FAILED_JOB_NAME: Lint, typecheck, test, build / Checkout
+          FAILED_JOB_NAME: ${{ matrix.name }} / Checkout
           GITHUB_ACTOR_NAME: ${{ github.actor }}
           GITHUB_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
           GITHUB_RUN_LINK: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -119,6 +129,7 @@ jobs:
           corepack prepare pnpm@11.5.2 --activate
 
       - name: Cache Rust dependencies
+        if: matrix.target == 'desktop'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -132,24 +143,34 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build Mobile workspace dependencies
+        if: matrix.target == 'mobile'
+        run: pnpm --filter '@nado/mobile^...' build
+
       - name: Check formatting
+        if: matrix.target == 'quality'
         run: pnpm format:check
 
       - name: Lint
+        if: matrix.target == 'quality'
         run: pnpm lint
 
       - name: Typecheck
+        if: matrix.target == 'quality'
         run: pnpm typecheck
 
       - name: Test
+        if: matrix.target == 'quality'
         run: pnpm test
 
       - name: Build
+        if: matrix.target == 'quality'
         env:
           NADO_API_BASE_URL: http://127.0.0.1:4000
         run: pnpm build
 
       - name: Validate Mobile native generation
+        if: matrix.target == 'mobile'
         env:
           EXPO_NO_GIT_STATUS: "1"
         run: |
@@ -158,12 +179,15 @@ jobs:
           git diff --exit-code -- apps/mobile/package.json apps/mobile/ios
 
       - name: Export Mobile platform bundles
+        if: matrix.target == 'mobile'
         run: pnpm --filter @nado/mobile exec expo export --platform all --output-dir dist/ci-export
 
       - name: Validate Mobile design system bundles
+        if: matrix.target == 'mobile'
         run: pnpm --filter @nado/mobile test:design-bundle
 
       - name: Install Tauri Linux dependencies
+        if: matrix.target == 'desktop'
         run: |
           sudo apt-get update
           sudo apt-get install --yes \
@@ -178,14 +202,33 @@ jobs:
             wget
 
       - name: Build Desktop native shell
+        if: matrix.target == 'desktop'
         run: pnpm --filter @nado/desktop tauri:build --no-bundle --ci
 
       - name: Notify Slack on failure
         if: failure() && steps.checkout.outcome == 'success'
         uses: ./.github/actions/notify-slack-failure
         with:
-          job-name: Lint, typecheck, test, build
+          job-name: ${{ matrix.name }}
           webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  verify:
+    name: Lint, typecheck, test, build
+    needs: [verification]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Preserve the required verification gate
+        env:
+          VERIFICATION_RESULT: ${{ needs.verification.result }}
+        run: |
+          if [ "$VERIFICATION_RESULT" != "success" ]; then
+            echo "Verification matrix finished with: $VERIFICATION_RESULT"
+            exit 1
+          fi
+
+          echo "All quality and native verification jobs passed."
 
   database:
     name: Supabase migrations and database tests
@@ -322,7 +365,6 @@ jobs:
 
   e2e:
     name: E2E smoke
-    needs: [verify, database]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

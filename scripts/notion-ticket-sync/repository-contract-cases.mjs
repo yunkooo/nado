@@ -129,9 +129,33 @@ describe("Notion workflow repository contracts", () => {
   });
 
   it("keeps repository workflow hardening and release gates configured", () => {
+    const verificationJob = workflowJobSource(
+      ciWorkflowSource,
+      "verification",
+      "verify",
+    );
+    const verifyGateJob = workflowJobSource(
+      ciWorkflowSource,
+      "verify",
+      "database",
+    );
+    const e2eJob = workflowJobSource(ciWorkflowSource, "e2e");
+
     expect(ciWorkflowSource).toContain("concurrency:");
     expect(ciWorkflowSource).toContain("cancel-in-progress: true");
     expect(ciWorkflowSource).not.toContain("pull-requests: read");
+    expect(verificationJob).toContain("fail-fast: false");
+    expect(verificationJob).toContain("target: quality");
+    expect(verificationJob).toContain("target: mobile");
+    expect(verificationJob).toContain("target: desktop");
+    expect(verificationJob).toContain("pnpm --filter '@nado/mobile^...' build");
+    expect(verifyGateJob).toContain("name: Lint, typecheck, test, build");
+    expect(verifyGateJob).toContain("needs: [verification]");
+    expect(verifyGateJob).toContain("if: ${{ always() }}");
+    expect(verifyGateJob).toContain(
+      "VERIFICATION_RESULT: ${{ needs.verification.result }}",
+    );
+    expect(e2eJob).not.toContain("needs:");
     expect(ciWorkflowSource).toContain(
       "expo prebuild --no-install --platform ios",
     );
