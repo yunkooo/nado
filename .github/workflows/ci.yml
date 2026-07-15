@@ -260,8 +260,8 @@ jobs:
           {
             echo "### Desktop Rust cache outcomes"
             echo
-            echo "- Cargo dependency exact hit: \`${CARGO_CACHE_HIT:-unknown}\`"
-            echo "- Desktop target exact hit: \`${TARGET_CACHE_HIT:-unknown}\`"
+            echo "- Cargo dependency exact hit: \`${CARGO_CACHE_HIT:-false}\`"
+            echo "- Desktop target exact hit: \`${TARGET_CACHE_HIT:-false}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Notify Slack on failure

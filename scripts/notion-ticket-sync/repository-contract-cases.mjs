@@ -241,6 +241,8 @@ describe("Notion workflow repository contracts", () => {
     expect(verificationJob).toContain(
       "- name: Report Desktop Rust cache outcomes",
     );
+    expect(verificationJob).toContain("${CARGO_CACHE_HIT:-false}");
+    expect(verificationJob).toContain("${TARGET_CACHE_HIT:-false}");
     expect(verificationJob).not.toContain("- name: Cache Rust dependencies");
   });
 
