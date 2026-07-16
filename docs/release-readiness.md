@@ -2,7 +2,7 @@
 
 - 마지막 코드 기준 검토: 2026-07-12
 - 마지막 전체 릴리스 검증: 아직 기록 없음
-- 마지막 운영 부분 검증: 2026-07-16 02:36 KST ([Notion 티켓](https://app.notion.com/p/39e8944ab9b7814b86b8c2115f65a5ae))
+- 마지막 운영 부분 검증: 2026-07-16 09:10 KST ([Notion 티켓](https://app.notion.com/p/39e8944ab9b7814b86b8c2115f65a5ae))
 
 이 문서는 현재 코드가 운영에 나갈 준비가 되었는지 확인하는 release readiness matrix다. 작업 담당자, 일정, 우선순위와 진행 상태의 원장은 Notion `프로젝트` 하나만 사용한다. 이 문서의 미확인 항목을 작업하려면 먼저 Notion 티켓을 만들거나 기존 티켓에 연결한다.
 
@@ -12,14 +12,14 @@
 
 ## 준비도 요약
 
-| 영역     | 코드 상태                      | 릴리스 기준                         | 증거 티켓 | 마지막 검증 |
-| -------- | ------------------------------ | ----------------------------------- | --------- | ----------- |
-| API      | 분석·단어장·인증·제한 구현     | 운영 key, proxy, `/ready`, smoke    | —         | —           |
-| Web      | 학습 흐름 구현                 | 배포 origin, OAuth, 좁은 화면       | —         | —           |
-| Mobile   | 학습 흐름 구현                 | iOS·Android OAuth, 실기기 API URL   | —         | —           |
-| Desktop  | 학습 흐름 구현                 | 설치본 OAuth, CSP·권한, 작은 창     | —         | —           |
-| Realtime | 저장·삭제 broadcast 구현       | 같은 계정 동기화와 계정 전환 격리   | —         | —           |
-| CI       | format·test·DB·native·E2E 실행 | 필수 check와 실제 PR 알림 지속 확인 | —         | —           |
+| 영역     | 코드 상태                      | 릴리스 기준                         | 증거 티켓                                                              | 마지막 검증          |
+| -------- | ------------------------------ | ----------------------------------- | ---------------------------------------------------------------------- | -------------------- |
+| API      | 분석·단어장·인증·제한 구현     | 운영 key, proxy, `/ready`, smoke    | [운영 검증](https://app.notion.com/p/39e8944ab9b7814b86b8c2115f65a5ae) | 2026-07-16 09:10 KST |
+| Web      | 학습 흐름 구현                 | 배포 origin, OAuth, 좁은 화면       | —                                                                      | —                    |
+| Mobile   | 학습 흐름 구현                 | iOS·Android OAuth, 실기기 API URL   | —                                                                      | —                    |
+| Desktop  | 학습 흐름 구현                 | 설치본 OAuth, CSP·권한, 작은 창     | —                                                                      | —                    |
+| Realtime | 저장·삭제 broadcast 구현       | 같은 계정 동기화와 계정 전환 격리   | —                                                                      | —                    |
+| CI       | format·test·DB·native·E2E 실행 | 필수 check와 실제 PR 알림 지속 확인 | —                                                                      | —                    |
 
 `증거 티켓`과 `마지막 검증`은 실제 운영 검증을 마친 뒤에만 채운다. 구현이 있다는 사실만으로 릴리스 검증 완료로 표시하지 않는다.
 
@@ -38,7 +38,8 @@
 ### 2026-07-16 API·Web 부분 검증
 
 - 증거 티켓: [운영: API·Web P0 릴리스 검증](https://app.notion.com/p/39e8944ab9b7814b86b8c2115f65a5ae)
-- 배포 commit: `00dac49`
+- 최초 검증 commit: `00dac49`
+- GLM 안정화 재검증 commit: `7db9390`
 - 환경: Cloud Supabase / Railway production / Vercel production
 - 공개 URL: [Web](https://nado-web.vercel.app) / [API](https://nadoapi-production.up.railway.app)
 
@@ -48,6 +49,8 @@
 - Google provider가 활성화되어 있고 Web 로그인 요청이 production Web redirect와 Cloud Supabase callback을 사용해 Google 로그인 화면까지 연결된다.
 - Railway runtime은 `NODE_ENV=production`, Node.js 22.22.2이며 필수 server-only 변수 이름이 존재한다. `NADO_TRUST_PROXY=1`과 production Web CORS origin도 확인했다.
 - Railway healthcheck를 `/ready`로 설정하고 재배포했다. 새 container 활성화 전 `/ready`가 `200`으로 통과했고 `/health`, `/ready`, secret 없는 기본 backend smoke도 다시 성공했다.
+- GLM compact 응답 판별 수정 commit `7db9390`이 Railway production에 배포된 것을 GitHub deployment 기록으로 확인했다.
+- 같은 짧은 GLM 입력으로 `health`, `readiness`, `analyze` smoke를 3회 연속 실행했고 모두 성공했다.
 - Vercel production 배포가 성공했고 공개 Web bundle은 production API와 Cloud Supabase origin을 사용한다. server-only 환경변수 이름은 bundle에서 발견되지 않았다.
 - Web 배포본의 로그아웃 분석과 로그인 필요 저장 안내가 동작한다.
 - 운영 일일 분석 제한은 익명·인증 사용자 모두 `0`으로, MVP 기준 사용량은 기록하되 차단하지 않는 정책이다.
@@ -55,7 +58,6 @@
 
 아래 경계가 남아 있어 전체 P0 완료로 표시하지 않는다.
 
-- 기본 GLM 분석에서 schema가 허용한 `status`·`result` 조합을 runtime parser가 거부해 `502 invalid_analysis_response`가 1회 발생했다. 후속 요청은 성공했지만 간헐 실패가 확인되어 [GitHub Issue #168](https://github.com/yunkooo/nado/issues/168)에서 별도로 수정한다.
 - Google OAuth는 Google 로그인 화면 진입까지 확인했다. 검증 계정 인증이 필요한 로그인 완료, 추천 저장, 단어장 반영, 삭제, 복습 흐름은 아직 실행하지 않았다.
 - Supabase Security Advisor의 `Leaked Password Protection Disabled` 경고가 남아 있다. 제품 UI는 Google 로그인을 사용하지만 Email provider도 활성 상태이므로 후속 보안 정책에서 Email Auth 유지 여부와 보호 기능을 함께 결정한다.
 
