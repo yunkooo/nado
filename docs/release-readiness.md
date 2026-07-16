@@ -2,7 +2,7 @@
 
 - 마지막 코드 기준 검토: 2026-07-12
 - 마지막 전체 릴리스 검증: 아직 기록 없음
-- 마지막 운영 부분 검증: 2026-07-16 09:10 KST ([Notion 티켓](https://app.notion.com/p/39e8944ab9b7814b86b8c2115f65a5ae))
+- 마지막 운영 부분 검증: 2026-07-16 09:28 KST ([Notion 티켓](https://app.notion.com/p/39e8944ab9b7814b86b8c2115f65a5ae))
 
 이 문서는 현재 코드가 운영에 나갈 준비가 되었는지 확인하는 release readiness matrix다. 작업 담당자, 일정, 우선순위와 진행 상태의 원장은 Notion `프로젝트` 하나만 사용한다. 이 문서의 미확인 항목을 작업하려면 먼저 Notion 티켓을 만들거나 기존 티켓에 연결한다.
 
@@ -15,7 +15,7 @@
 | 영역     | 코드 상태                      | 릴리스 기준                         | 증거 티켓                                                              | 마지막 검증          |
 | -------- | ------------------------------ | ----------------------------------- | ---------------------------------------------------------------------- | -------------------- |
 | API      | 분석·단어장·인증·제한 구현     | 운영 key, proxy, `/ready`, smoke    | [운영 검증](https://app.notion.com/p/39e8944ab9b7814b86b8c2115f65a5ae) | 2026-07-16 09:10 KST |
-| Web      | 학습 흐름 구현                 | 배포 origin, OAuth, 좁은 화면       | —                                                                      | —                    |
+| Web      | 학습 흐름 구현                 | 배포 origin, OAuth, 좁은 화면       | [운영 검증](https://app.notion.com/p/39e8944ab9b7814b86b8c2115f65a5ae) | 2026-07-16 09:28 KST |
 | Mobile   | 학습 흐름 구현                 | iOS·Android OAuth, 실기기 API URL   | —                                                                      | —                    |
 | Desktop  | 학습 흐름 구현                 | 설치본 OAuth, CSP·권한, 작은 창     | —                                                                      | —                    |
 | Realtime | 저장·삭제 broadcast 구현       | 같은 계정 동기화와 계정 전환 격리   | —                                                                      | —                    |
@@ -30,7 +30,7 @@
 - [x] Cloud Supabase에 최신 migration을 적용한다.
 - [ ] Google provider와 Web·Mobile·Desktop redirect URL을 확인한다.
 - [x] Railway에 server-only key, 임의의 `NADO_USAGE_IP_HASH_SALT`, CORS, 사용량 제한, proxy 설정을 확인한다.
-- [ ] Vercel Web에서 운영 API 분석과 Google 로그인을 확인한다.
+- [x] Vercel Web에서 운영 API 분석과 Google 로그인을 확인한다.
 - [x] 운영 API에 `pnpm smoke:backend`를 실행한다.
 - [x] 실제 제한값과 비용 정책을 정한다. 운영에서도 `0`을 쓸 수 있지만 무제한을 의도한 결정임을 검증 티켓에 기록한다.
 - [x] `delete_expired_analysis_usage()` 일일 scheduler를 설정하고 첫 성공 실행·삭제 건수를 기록한다.
@@ -53,12 +53,13 @@
 - 같은 짧은 GLM 입력으로 `health`, `readiness`, `analyze` smoke를 3회 연속 실행했고 모두 성공했다.
 - Vercel production 배포가 성공했고 공개 Web bundle은 production API와 Cloud Supabase origin을 사용한다. server-only 환경변수 이름은 bundle에서 발견되지 않았다.
 - Web 배포본의 로그아웃 분석과 로그인 필요 저장 안내가 동작한다.
+- Google 검증 계정으로 로그인한 뒤 GLM 분석에서 `astrolabe`를 저장했다. 단어장 9개와 복습 `1 / 9` 카드에 반영된 것을 확인하고 정답 공개와 다음 카드 이동을 실행했다.
+- 검증 항목의 뜻만 삭제한 뒤 단어장과 복습이 모두 8개로 돌아온 것을 확인해 운영 데이터도 정리했다.
 - 운영 일일 분석 제한은 익명·인증 사용자 모두 `0`으로, MVP 기준 사용량은 기록하되 차단하지 않는 정책이다.
 - `pg_cron` 정리 job의 첫 실행이 성공했다. 90일 초과 삭제 건수는 0건이며, 이후 매일 `03:00 UTC`에 `delete_expired_analysis_usage(90)`을 실행한다. `anon`과 `authenticated` 역할에는 실행 권한이 없다.
 
 아래 경계가 남아 있어 전체 P0 완료로 표시하지 않는다.
 
-- Google OAuth는 Google 로그인 화면 진입까지 확인했다. 검증 계정 인증이 필요한 로그인 완료, 추천 저장, 단어장 반영, 삭제, 복습 흐름은 아직 실행하지 않았다.
 - Supabase Security Advisor의 `Leaked Password Protection Disabled` 경고가 남아 있다. 제품 UI는 Google 로그인을 사용하지만 Email provider도 활성 상태이므로 후속 보안 정책에서 Email Auth 유지 여부와 보호 기능을 함께 결정한다.
 
 ## P0. 크로스 플랫폼 학습 흐름
@@ -69,7 +70,7 @@
 로그인 → 분석 → 추천 저장 → 단어장 반영 → 삭제 → 복습
 ```
 
-- [ ] Web 배포본
+- [x] Web 배포본
 - [ ] iOS simulator 또는 실기기
 - [ ] Android emulator 또는 실기기
 - [ ] Desktop `tauri:dev`
@@ -88,7 +89,7 @@
 ## P1. 운영 문서와 기록
 
 - [x] Railway, Cloud Supabase, Vercel 운영 확인 절차를 비밀값 없이 [운영 배포 문서](setup/production-deployment.md)에 남긴다.
-- [ ] 플랫폼 검증 결과를 날짜·환경·실패 지점과 함께 관련 Notion 티켓에 기록한다.
+- [x] 플랫폼 검증 결과를 날짜·환경·실패 지점과 함께 관련 Notion 티켓에 기록한다.
 - [ ] 새 UI 변경 시 Storybook 또는 Mobile demo 검증 결과를 PR과 관련 Notion 티켓에 남긴다.
 - [ ] Notion Ticket Sync와 Slack 알림이 실제 PR에서 계속 동작하는지 확인한다.
 
