@@ -108,4 +108,33 @@ describe("compactAnalysisContract", () => {
       },
     });
   });
+
+  it("reconciles known status and result combinations before validation", () => {
+    expect(
+      compactAnalyzeResponseSchema.parse({
+        ...compactResponse,
+        status: "not_analyzable",
+      }).status,
+    ).toBe("analyzable");
+    expect(
+      compactAnalyzeResponseSchema.parse({
+        reason: "영어 학습 입력이 아닙니다.",
+        result: null,
+        status: "analyzable",
+      }),
+    ).toEqual({
+      reason: "영어 학습 입력이 아닙니다.",
+      result: null,
+      status: "not_analyzable",
+    });
+  });
+
+  it("does not infer a status that is outside the provider contract", () => {
+    expect(
+      compactAnalyzeResponseSchema.safeParse({
+        ...compactResponse,
+        status: "unknown",
+      }).success,
+    ).toBe(false);
+  });
 });

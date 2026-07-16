@@ -45,7 +45,7 @@ const compactAnalysisResultSchema = analysisResultSchema
     vocabularySuggestions: z.array(compactVocabularySuggestionSchema),
   });
 
-export const compactAnalyzeResponseSchema = z.discriminatedUnion("status", [
+const compactAnalyzeResponseVariantsSchema = z.discriminatedUnion("status", [
   z.object({
     reason: z.string().max(MAX_ANALYSIS_FIELD_LENGTH).nullable(),
     result: compactAnalysisResultSchema,
@@ -57,6 +57,11 @@ export const compactAnalyzeResponseSchema = z.discriminatedUnion("status", [
     status: z.literal("not_analyzable"),
   }),
 ]);
+
+export const compactAnalyzeResponseSchema = z.preprocess(
+  reconcileCompactAnalyzeResponseStatus,
+  compactAnalyzeResponseVariantsSchema,
+);
 
 export type CompactAnalyzeResponse = z.infer<
   typeof compactAnalyzeResponseSchema
@@ -197,6 +202,32 @@ function readArray(value: unknown, path: string): unknown[] {
   }
 
   return value;
+}
+
+function reconcileCompactAnalyzeResponseStatus(value: unknown): unknown {
+  if (!isRecord(value) || !isCompactAnalysisStatus(value.status)) {
+    return value;
+  }
+
+  if (isRecord(value.result) && value.status === "not_analyzable") {
+    return { ...value, status: "analyzable" };
+  }
+
+  if (value.result === null && value.status === "analyzable") {
+    return { ...value, status: "not_analyzable" };
+  }
+
+  return value;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isCompactAnalysisStatus(
+  value: unknown,
+): value is "analyzable" | "not_analyzable" {
+  return value === "analyzable" || value === "not_analyzable";
 }
 
 function createDerivedKey(prefix: "s" | "v", index: number) {

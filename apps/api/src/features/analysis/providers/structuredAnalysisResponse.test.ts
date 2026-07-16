@@ -54,18 +54,16 @@ const compactAnalyzeResponse = {
   status: "analyzable",
 } as const;
 
-describe("structuredAnalysisResponse", () => {
-  it.each([
-    {
-      parseResponse: parseOpenAIAnalysisResponse,
-      provider: "OpenAI",
-      response: new Response(
+const providerResponseCases = [
+  {
+    createResponse: (output: unknown) =>
+      new Response(
         JSON.stringify({
           output: [
             {
               content: [
                 {
-                  text: JSON.stringify(compactAnalyzeResponse),
+                  text: JSON.stringify(output),
                   type: "output_text",
                 },
               ],
@@ -73,25 +71,32 @@ describe("structuredAnalysisResponse", () => {
           ],
         }),
       ),
-    },
-    {
-      parseResponse: parseOpenRouterAnalysisResponse,
-      provider: "OpenRouter",
-      response: new Response(
+    parseResponse: parseOpenAIAnalysisResponse,
+    provider: "OpenAI",
+  },
+  {
+    createResponse: (output: unknown) =>
+      new Response(
         JSON.stringify({
           choices: [
             {
               message: {
-                content: JSON.stringify(compactAnalyzeResponse),
+                content: JSON.stringify(output),
               },
             },
           ],
         }),
       ),
-    },
-  ])(
+    parseResponse: parseOpenRouterAnalysisResponse,
+    provider: "OpenRouter",
+  },
+] as const;
+
+describe("structuredAnalysisResponse", () => {
+  it.each(providerResponseCases)(
     "rebuilds word tokens from compact $provider output",
-    async ({ parseResponse, response }) => {
+    async ({ createResponse, parseResponse }) => {
+      const response = createResponse(compactAnalyzeResponse);
       const analysis = await parseResponse(response);
 
       expect(analysis).toMatchObject({
@@ -108,6 +113,39 @@ describe("structuredAnalysisResponse", () => {
         },
       });
       expect(analysis).not.toHaveProperty("reason");
+    },
+  );
+
+  it.each(providerResponseCases)(
+    "uses a valid result object when the compact $provider status disagrees",
+    async ({ createResponse, parseResponse }) => {
+      const response = createResponse({
+        ...compactAnalyzeResponse,
+        status: "not_analyzable",
+      });
+
+      await expect(parseResponse(response)).resolves.toMatchObject({
+        status: "analyzable",
+        result: {
+          translation: compactAnalyzeResponse.result.translation,
+        },
+      });
+    },
+  );
+
+  it.each(providerResponseCases)(
+    "preserves a genuine compact $provider not-analyzable response",
+    async ({ createResponse, parseResponse }) => {
+      const response = createResponse({
+        reason: "영어 학습 입력이 아닙니다.",
+        result: null,
+        status: "not_analyzable",
+      });
+
+      await expect(parseResponse(response)).resolves.toEqual({
+        reason: "영어 학습 입력이 아닙니다.",
+        status: "not_analyzable",
+      });
     },
   );
 });
