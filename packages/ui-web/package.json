@@ -79,6 +79,6 @@
     "@types/react-dom": "^19.2.3",
     "storybook": "10.4.2",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.11"
   }
 }
