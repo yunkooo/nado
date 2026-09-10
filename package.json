@@ -38,6 +38,6 @@
     "supabase": "^2.105.0",
     "turbo": "^2.9.16",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.11"
   }
 }
